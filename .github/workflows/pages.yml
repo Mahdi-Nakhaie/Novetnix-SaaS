@@ -27,11 +27,16 @@ jobs:
       - name: Verify links, assets and structure
         run: python3 tools/verify.py
       - name: Fail if the committed build is stale
-        run: git diff --exit-code -- site
+        run: git diff --exit-code -- site index.html .nojekyll
+      - name: Prepare Pages root and site paths
+        run: |
+          mkdir -p _pages/site
+          cp index.html .nojekyll _pages/
+          cp -R site/. _pages/site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: _pages
 
   deploy:
     needs: build

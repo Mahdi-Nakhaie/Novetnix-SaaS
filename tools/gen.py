@@ -21,7 +21,7 @@ from catalog import (  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / "site"
-SITE_PATH = "/Novetnix-SaaS"   # "" for a custom domain, "/repo" for a project site
+SITE_PATH = "/Novetnix-SaaS/site"  # GitHub Pages currently serves the main branch root
 
 YEAR = "۱۴۰۵"
 
@@ -200,7 +200,7 @@ def footer_html():
 # --------------------------------------------------------------- views
 
 def view_home():
-    out = "<main>" + demo_notice() + (
+    out = "<main>" + (
         '<section class="hero container"><div class="hero-copy">'
         '<span class="eyebrow"><span class="dot"></span> مسیر تازه یادگیری هوش مصنوعی</span>'
         "<h1>فقط یاد نگیر؛<br><em>واقعاً بساز.</em></h1>"
@@ -624,7 +624,7 @@ def admin_section(sub):
                 + progress_bar(2)
                 + '<div class="usage-row"><span>Projects</span><strong>نامحدود</strong></div></section>'
                 '<section class="plan-tile"><span class="eyebrow">Current Plan</span>'
-                f'<h2>{h(PLANS[0]["name"])}</h2><p>تمدید: {jalali_demo(30)}</p>'
+                f'<h2>{h(PLANS[0]["name"])}</h2><p>اشتراک فعالی ثبت نشده است.</p>'
                 + linkto("pricing", "ارتقای پلن", "btn btn-gold") + "</section></div>")
         out += ('<div class="panel-card narrow"><h2>فعال‌سازی اشتراک ۳۰ روزه</h2>'
                 '<form class="stack-form" data-form="activate">'
@@ -714,13 +714,6 @@ def admin_section(sub):
     return '<div class="empty-state">این بخش در دسترس نیست.</div>'
 
 
-def jalali_demo(days_ahead):
-    """Display-only Jalali date for dates relative to today."""
-    import datetime
-    d = datetime.date.today() + datetime.timedelta(days=days_ahead)
-    return fa(f"{d.year}/{d.month:02d}/{d.day:02d}")
-
-
 # ------------------------------------------------------------ assembly
 
 def seed_script():
@@ -756,8 +749,8 @@ def render_page(route):
         + f'<script src="{h(asset("demo.js"))}" defer></script></head><body>'
     )
     if view == "panel":
-        return out + body + "</body></html>"
-    return out + header_html(route.get("nav", "")) + body + footer_html() + "</body></html>"
+        return out.replace('<body>', '<body class="is-panel">', 1) + body + "</body></html>"
+    return out + header_html(route.get("nav", "")) + demo_notice() + body + footer_html() + "</body></html>"
 
 
 def view_body(route):
@@ -821,7 +814,10 @@ def panel_shell(role, sub):
             f'<span>Noventix <span class="muted">/ {"مدیریت" if role == "admin" else "دانش‌آموز"}</span></span>'
             '<span class="panel-avatar" data-avatar>ک</span></div>')
     section = admin_section(sub) if role == "admin" else student_section(sub)
-    return out + f'<main class="panel-content">{section}</main></div>'
+    switch = ('<div class="demo-switch"><span>پیش‌نمایش پنل‌ها · اطلاعات فقط در همین مرورگر</span>'
+              + linkto("panel/student", "دانشجو", "selected" if role == "student" else "")
+              + linkto("panel/admin", "مدیر", "selected" if role == "admin" else "") + "</div>")
+    return out + f'<main class="panel-content">{switch}{section}</main></div>'
 
 
 def build_routes():
@@ -882,7 +878,9 @@ def main():
             shutil.copy2(item, assets_dst / item.name)
     shutil.copy2(ROOT / "tools" / "demo.js", assets_dst / "demo.js")
     (OUT / ".nojekyll").write_text("", encoding="utf-8")
-    print(f"generated {written} pages into {OUT.relative_to(ROOT)}/")
+    (ROOT / "index.html").write_text((OUT / "index.html").read_text(encoding="utf-8"), encoding="utf-8")
+    (ROOT / ".nojekyll").write_text("", encoding="utf-8")
+    print(f"generated {written} pages into {OUT.relative_to(ROOT)}/ and root index.html")
 
 
 if __name__ == "__main__":

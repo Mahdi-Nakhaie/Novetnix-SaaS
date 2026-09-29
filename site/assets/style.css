@@ -1,4 +1,4 @@
-@font-face{font-family:Vazirmatn;src:url(/assets/vazirmatn.ttf) format('truetype');font-weight:400;font-display:swap}
+@font-face{font-family:Vazirmatn;src:url(vazirmatn.ttf) format('truetype');font-weight:400;font-display:swap}
 :root{
   --brand:#7c1fd1; --brand-2:#5a12a0; --brand-soft:#f3ebfd; --brand-line:#e4d4f8;
   --gold:#c08a12; --gold-soft:#fdf6e6;
@@ -264,6 +264,11 @@ body.is-panel{display:grid;grid-template-columns:264px 1fr;background:#f7f5fb}
 .panel-avatar{margin-inline-start:auto;background:var(--brand);color:#fff;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:800}
 .panel-menu{display:none;background:none;border:0;font-size:1.15rem;cursor:pointer}
 .panel-content{padding:clamp(1.2rem,3vw,2rem);display:flex;flex-direction:column;gap:1.3rem}
+.demo-switch{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;background:#eee7fa;border:1px solid var(--brand-line);border-radius:var(--r-md);padding:.65rem 1rem;color:var(--brand-2);font-size:.8rem;font-weight:700}
+.demo-switch span{margin-inline-end:auto}
+.demo-switch a{border:1px solid var(--brand-line);border-radius:8px;padding:.2rem .8rem;background:#fff}
+.demo-switch a.selected{background:var(--brand);border-color:var(--brand);color:#fff}
+.demo-notice{font-size:.83rem;margin-top:1rem;margin-bottom:0}
 .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}
 .stat-card{display:grid;gap:.3rem;padding:1.2rem 1.3rem}
 .stat-card span{color:var(--muted);font-size:.82rem;font-weight:700}

@@ -10,7 +10,7 @@
   var KEY = "noventix.demo.v1";
   var seed = window.NOVENTIX_SEED || { courses: {}, projects: [], plans: [] };
   var plans = seed.plans || [];
-  var lastCode = null;
+  var lastCode = sessionStorage.getItem("noventix.demo.code");
 
   function planById(id) {
     var found = plans.filter(function (p) { return p.id === id; })[0];
@@ -88,20 +88,24 @@
 
   var actions = {
     login: function (form) {
-      var phone = (form.phone.value || "").replace(/[۰-۹]/g, function (d) { return "۰۱۲۳۴۵۶۷۸۹".indexOf(d); })
+      var phone = (form.elements.namedItem("phone").value || "").replace(/[۰-۹]/g, function (d) { return "۰۱۲۳۴۵۶۷۸۹".indexOf(d); })
         .replace(/[\s-]/g, "").replace(/^(\+98|98)/, "0");
       if (!/^09[0-9]{9}$/.test(phone)) { note(form, "شماره موبایل معتبر وارد کنید.", "error"); return; }
       lastCode = String(Math.floor(100000 + Math.random() * 900000));
       state.pending_phone = phone;
+      sessionStorage.setItem("noventix.demo.code", lastCode);
       store();
-      note(form, "کد تأیید نمایشی: " + fa(lastCode), "success");
-      setTimeout(function () { location.href = join("verify/"); }, 1200);
+      location.href = join("verify/");
     },
 
     verify: function (form) {
-      var code = (form.code.value || "").replace(/[۰-۹]/g, function (d) { return "۰۱۲۳۴۵۶۷۸۹".indexOf(d); });
-      if (!lastCode || code !== lastCode) { note(form, "کد واردشده صحیح نیست.", "error"); return; }
-      var user = signIn(state.pending_phone || "09000000000");
+      var code = (form.elements.namedItem("code").value || "").replace(/[۰-۹]/g, function (d) { return "۰۱۲۳۴۵۶۷۸۹".indexOf(d); });
+      if (!lastCode || code !== lastCode || !state.pending_phone) { note(form, "کد واردشده صحیح نیست.", "error"); return; }
+      var user = signIn(state.pending_phone);
+      sessionStorage.removeItem("noventix.demo.code");
+      lastCode = null;
+      delete state.pending_phone;
+      store();
       note(form, user.role === "admin" ? "خوش آمدید؛ ورود به پنل مدیریت…" : "خوش آمدید!", "success");
       var target = user.role === "admin" ? "panel/admin/" : "panel/student/";
       setTimeout(function () { location.href = join(target); }, 700);
@@ -109,19 +113,19 @@
 
     profile: function (form) {
       if (!state.user) return;
-      var name = (form.name.value || "").trim();
+      var name = (form.elements.namedItem("name").value || "").trim();
       if (name.length < 2 || name.length > 100) { note(form, "نام باید بین ۲ تا ۱۰۰ نویسه باشد.", "error"); return; }
       state.user.name = name;
-      state.user.email = (form.email.value || "").trim();
+      state.user.email = (form.elements.namedItem("email").value || "").trim();
       store();
       paintProfile();
       note(form, "پروفایل ذخیره شد.", "success");
     },
 
     contact: function (form) {
-      var name = (form.name.value || "").trim();
-      var email = (form.email.value || "").trim();
-      var message = (form.message.value || "").trim();
+      var name = (form.elements.namedItem("name").value || "").trim();
+      var email = (form.elements.namedItem("email").value || "").trim();
+      var message = (form.elements.namedItem("message").value || "").trim();
       if (name.length < 2 || email.indexOf("@") < 1 || message.length < 10) {
         note(form, "نام، ایمیل و پیام معتبر وارد کنید.", "error"); return;
       }
@@ -132,8 +136,8 @@
     },
 
     post: function (form) {
-      var title = (form.title.value || "").trim();
-      var body = (form.body.value || "").trim();
+      var title = (form.elements.namedItem("title").value || "").trim();
+      var body = (form.elements.namedItem("body").value || "").trim();
       if (title.length < 5 || title.length > 180) { note(form, "عنوان باید بین ۵ تا ۱۸۰ نویسه باشد.", "error"); return; }
       if (body.length < 10 || body.length > 5000) { note(form, "متن باید بین ۱۰ تا ۵۰۰۰ نویسه باشد.", "error"); return; }
       state.posts.unshift({
@@ -148,12 +152,12 @@
     },
 
     ticket: function (form) {
-      var subject = (form.subject.value || "").trim();
-      var body = (form.body.value || "").trim();
+      var subject = (form.elements.namedItem("subject").value || "").trim();
+      var body = (form.elements.namedItem("body").value || "").trim();
       if (subject.length < 5 || subject.length > 180 || body.length < 10) {
         note(form, "موضوع، متن و اولویت معتبر وارد کنید.", "error"); return;
       }
-      state.tickets.unshift({ subject: subject, body: body, priority: form.priority.value, status: "open", created_at: new Date().toISOString() });
+      state.tickets.unshift({ subject: subject, body: body, priority: form.elements.namedItem("priority").value, status: "open", created_at: new Date().toISOString() });
       store();
       form.reset();
       note(form, "تیکت شما ثبت شد.", "success");
@@ -161,8 +165,8 @@
     },
 
     announcement: function (form) {
-      var title = (form.title.value || "").trim();
-      var body = (form.body.value || "").trim();
+      var title = (form.elements.namedItem("title").value || "").trim();
+      var body = (form.elements.namedItem("body").value || "").trim();
       if (title.length < 3 || body.length < 5) { note(form, "عنوان و متن اعلان معتبر وارد کنید.", "error"); return; }
       state.notifications.unshift({ title: title, body: body, created_at: new Date().toISOString() });
       store();
@@ -172,9 +176,9 @@
     },
 
     content: function (form) {
-      var title = (form.title.value || "").trim();
+      var title = (form.elements.namedItem("title").value || "").trim();
       if (title.length < 3 || title.length > 180) { note(form, "عنوان باید بین ۳ تا ۱۸۰ نویسه باشد.", "error"); return; }
-      state.content.unshift({ title: title, kind: form.kind.value, status: "منتشرشده", created_at: new Date().toISOString() });
+      state.content.unshift({ title: title, kind: form.elements.namedItem("kind").value, status: "منتشرشده", created_at: new Date().toISOString() });
       store();
       form.reset();
       note(form, "محتوا ذخیره و منتشر شد.", "success");
@@ -182,15 +186,15 @@
     },
 
     setting: function (form) {
-      state.settings[form.key.value] = (form.value.value || "").trim();
+      state.settings[form.elements.namedItem("key").value] = (form.elements.namedItem("value").value || "").trim();
       store();
       note(form, "تنظیم ذخیره شد.", "success");
     },
 
     activate: function (form) {
-      var phone = (form.phone.value || "").trim().replace(/[۰-۹]/g, function (d) { return "۰۱۲۳۴۵۶۷۸۹".indexOf(d); });
+      var phone = (form.elements.namedItem("phone").value || "").trim().replace(/[۰-۹]/g, function (d) { return "۰۱۲۳۴۵۶۷۸۹".indexOf(d); });
       if (!/^09[0-9]{9}$/.test(phone)) { note(form, "شماره و پلن معتبر وارد کنید.", "error"); return; }
-      var plan = form.plan.value;
+      var plan = form.elements.namedItem("plan").value;
       state.subscriptions.unshift({ phone: phone, plan: plan, status: "فعال", starts_at: new Date().toISOString(), expires_at: new Date(Date.now() + 30 * 864e5).toISOString() });
       var match = state.users.filter(function (u) { return u.phone === phone; })[0];
       if (match) match.plan = plan;
@@ -307,17 +311,19 @@
   function paintAnnouncements() {
     var host = el("[data-announcements]");
     if (!host || !state.notifications.length) return;
+    if (!host.dataset.initialMarkup) host.dataset.initialMarkup = host.innerHTML;
     host.innerHTML = state.notifications.map(function (a) {
       return '<div class="announce-card"><div><h2>' + esc(a.title) + '</h2><p>' + esc(a.body) + '</p></div><small>' + jalali(a.created_at) + '</small></div>';
-    }).join("") + host.innerHTML;
+    }).join("") + host.dataset.initialMarkup;
   }
 
   function paintContent() {
     var host = el("[data-content-list]");
     if (!host || !state.content.length) return;
+    if (!host.dataset.initialMarkup) host.dataset.initialMarkup = host.innerHTML;
     host.innerHTML = state.content.map(function (c) {
       return '<div class="content-row"><div><h3>' + esc(c.title) + '</h3><span class="muted">' + esc(c.kind) + ' · ' + esc(c.status) + '</span></div><div class="content-actions"><span class="icon-btn" aria-hidden="true">✎</span></div></div>';
-    }).join("") + host.innerHTML;
+    }).join("") + host.dataset.initialMarkup;
   }
 
   function paintUsers() {
@@ -441,7 +447,15 @@
   });
 
   var phoneSlot = el("[data-demo-phone]");
-  if (phoneSlot && state.pending_phone) phoneSlot.textContent = state.pending_phone;
+  if (phoneSlot && state.pending_phone) {
+    phoneSlot.textContent = state.pending_phone;
+    if (lastCode) {
+      var codeHint = document.createElement("p");
+      codeHint.className = "notice success";
+      codeHint.textContent = "کد تأیید نمایشی: " + fa(lastCode);
+      phoneSlot.insertAdjacentElement("afterend", codeHint);
+    }
+  }
 
   window.NOVENTIX = { state: state, save: store, fa: fa, join: join, repaint: paintAll };
   paintAll();

@@ -7,7 +7,7 @@ from html.parser import HTMLParser
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SITE = ROOT / "site"
-BASE = "/Novetnix-SaaS"
+BASE = "/Novetnix-SaaS/site"
 
 VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link",
         "meta", "param", "source", "track", "wbr"}
@@ -103,8 +103,17 @@ for name in ("style.css", "app.js", "demo.js", "logo.png", "nova.png", "favicon.
 
 # the demo layer must have its seed payload on every page that uses it
 index = (SITE / "index.html").read_text(encoding="utf-8")
+root_index = (ROOT / "index.html").read_text(encoding="utf-8")
+if root_index != index:
+    failures.append("root index.html differs from site/index.html")
+if not (ROOT / ".nojekyll").exists():
+    failures.append("root .nojekyll is missing")
 if "NOVENTIX_SEED" not in index or "NOVENTIX_BASE" not in index:
     failures.append("index.html: seed payload missing")
+if 'class="is-panel"' not in (SITE / "panel" / "student" / "index.html").read_text(encoding="utf-8"):
+    failures.append("student panel lacks layout class")
+if "url(vazirmatn.ttf)" not in (SITE / "assets" / "style.css").read_text(encoding="utf-8"):
+    failures.append("font URL must be relative to stylesheet")
 
 if failures:
     print(f"{len(failures)} problems:\n")
