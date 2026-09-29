@@ -315,8 +315,79 @@ body.is-panel{display:grid;grid-template-columns:264px 1fr;background:#f7f5fb}
 .footer-end{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding-top:1.2rem;font-size:.8rem;color:#9c8fc0}
 
 /* responsive */
+/* panel — analytics charts */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem}
+.chart-bars{display:flex;align-items:flex-end;gap:.5rem;height:150px;background:var(--brand-soft);border-radius:var(--r-md);padding:.9rem}
+.chart-bars span{flex:1;background:var(--brand);border-radius:6px 6px 3px 3px;min-height:4px;transition:opacity .15s}
+.chart-bars.is-gold span{background:var(--gold)}
+.chart-bars span:hover{opacity:.8}
+
+/* panel — subscription usage */
+.sub-layout{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem}
+.plan-tile{background:var(--dark);color:#efeaf9;border-radius:var(--r-lg);padding:1.5rem;display:flex;flex-direction:column;gap:.4rem;box-shadow:var(--shadow)}
+.plan-tile h2{color:#fff;margin:0}
+.plan-tile p{color:#c4b8dd;margin:0;font-size:.88rem}
+.plan-tile .eyebrow{color:#c08bff;margin-bottom:.2rem}
+.plan-tile .btn{align-self:flex-start;margin-top:auto}
+.usage-row{display:flex;justify-content:space-between;align-items:center;font-size:.86rem;font-weight:700;color:var(--ink-2);margin-top:.8rem}
+.usage-row strong{color:var(--brand);font-weight:800}
+.progress{height:9px;background:#f0ecf7;border-radius:999px;overflow:hidden;margin-top:.45rem}
+.progress span{display:block;height:100%;background:linear-gradient(90deg,var(--brand),#a855f7);border-radius:999px}
+
+/* panel — challenges */
+.challenge-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem}
+.challenge-card{background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:1.4rem;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;gap:.6rem}
+.challenge-card h3{margin:.2rem 0 0;font-size:1.05rem}
+.challenge-card .muted{font-size:.82rem}
+.challenge-card .btn{margin-top:auto}
+.challenge-card .xp{color:var(--gold);font-weight:800;font-size:.82rem}
+.challenge-card .is-done{color:var(--ok);border-color:#bfe7d1;background:#eefaf3}
+
+/* panel — gamification */
+.skill-row{margin-bottom:.9rem}
+.badge-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem}
+.badge{background:var(--brand-soft);border:1px solid var(--brand-line);border-radius:var(--r-md);padding:.7rem;display:flex;align-items:center;gap:.5rem;font-size:.82rem;font-weight:700;color:var(--brand-2)}
+.badge span{font-size:1.05rem}
+
+/* panel — community reactions */
+.react-row{display:flex;gap:1.2rem;align-items:center;border-top:1px solid var(--line);margin-top:.9rem;padding-top:.7rem;font-size:.84rem;color:var(--muted);flex-wrap:wrap}
+.react-row .text-button{color:var(--muted);font-weight:700}
+.react-row .text-button:hover{color:var(--brand)}
+.react-form{margin:0}
+
+/* panel — announcements & content */
+.announce-card{background:#fff;border:1px solid var(--line);border-radius:var(--r-md);padding:1rem 1.3rem;display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;box-shadow:var(--shadow-sm);border-inline-end:3px solid var(--brand)}
+.announce-card h2{font-size:1rem;margin:0 0 .3rem}
+.announce-card p{margin:0;color:var(--ink-2);font-size:.88rem}
+.announce-card small{color:var(--muted);font-size:.76rem;white-space:nowrap}
+.content-list{display:grid;gap:.6rem;margin-top:.8rem}
+.content-row{display:flex;justify-content:space-between;align-items:center;gap:1rem;border:1px dashed var(--line-2);border-radius:var(--r-md);padding:.8rem 1rem}
+.content-row h3{margin:0 0 .2rem;font-size:.98rem}
+.content-row .muted{font-size:.8rem}
+.content-actions{display:flex;align-items:center;gap:.6rem}
+.content-actions form{margin:0}
+.icon-btn{color:var(--muted);font-size:1rem}
+
+/* panel — settings */
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem}
+.setting-card{background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:1.2rem 1.4rem;box-shadow:var(--shadow-sm);display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}
+.setting-card h3{margin:0;font-size:1rem}
+.setting-card .muted{font-size:.8rem}
+.setting-form{display:flex;gap:.5rem;align-items:center;margin:0}
+.setting-form input{border:1.5px solid var(--line-2);border-radius:10px;padding:.45rem .7rem;background:#fdfcff;font-size:.86rem;min-width:150px}
+.setting-form input:focus{border-color:var(--brand);outline:none}
+
+/* panel — profile */
+.profile-head{background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:1.4rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;box-shadow:var(--shadow-sm);flex-wrap:wrap}
+.profile-head>div{display:flex;align-items:center;gap:1rem}
+.profile-head img{width:56px;height:56px;flex-shrink:0}
+.profile-head h2{margin:0 0 .2rem;font-size:1.15rem}
+.profile-head p{margin:0;font-size:.84rem}
+
 @media (max-width:1080px){
   .pricing-grid{grid-template-columns:repeat(3,1fr)}
+  .chart-grid,.sub-layout,.settings-grid{grid-template-columns:1fr}
+  .challenge-grid{grid-template-columns:repeat(2,1fr)}
   .price-card.featured{transform:none}
   .course-grid,.project-grid,.features-grid{grid-template-columns:repeat(2,1fr)}
   .footer-grid{grid-template-columns:1fr 1fr}
@@ -338,8 +409,9 @@ body.is-panel{display:grid;grid-template-columns:264px 1fr;background:#f7f5fb}
   .panel-top{justify-content:flex-start}
 }
 @media (max-width:640px){
-  .course-grid,.project-grid,.features-grid,.pricing-grid{grid-template-columns:1fr}
+  .course-grid,.project-grid,.features-grid,.pricing-grid,.challenge-grid,.badge-grid{grid-template-columns:1fr}
   .stat-grid{grid-template-columns:1fr}
+  .chart-bars{height:120px}
   .footer-grid{grid-template-columns:1fr}
   .hero-buttons .btn{width:100%}
   .floating-note{position:static;margin-top:1rem}

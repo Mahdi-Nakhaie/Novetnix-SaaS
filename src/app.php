@@ -139,5 +139,63 @@ function handle_post(string $path): void {
         q('INSERT INTO subscriptions(user_id,plan,status,starts_at,expires_at) VALUES (?,?,\'active\',?,?)',[$target['id'],$selected,gmdate('Y-m-d H:i:s'),gmdate('Y-m-d H:i:s',time()+30*86400)]);
         flash('اشتراک ۳۰ روزه فعال شد.'); redirect('dashboard/subscriptions');
     }
+    if ($path==='challenges/start') {
+        $index=filter_var($_POST['index'] ?? '',FILTER_VALIDATE_INT);
+        if ($index===false || !isset(CHALLENGES[$index])) { http_response_code(404); exit; }
+        if (db()->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql') q("INSERT INTO challenge_progress(user_id,challenge_index,status) VALUES (?,?,'started') ON DUPLICATE KEY UPDATE status='started'",[$u['id'],$index]);
+        else q("INSERT INTO challenge_progress(user_id,challenge_index,status) VALUES (?,?,'started') ON CONFLICT(user_id,challenge_index) DO UPDATE SET status='started'",[$u['id'],$index]);
+        flash('چالش به فهرست شما اضافه شد.'); redirect('dashboard/challenges');
+    }
+    if ($path==='community/react') {
+        $id=filter_var($_POST['post_id'] ?? '',FILTER_VALIDATE_INT); $kind=(string)($_POST['kind'] ?? '');
+        if (!$id || !in_array($kind,['like','save'],true) || !q('SELECT id FROM community_posts WHERE id=?',[$id])->fetch()) { http_response_code(404); exit; }
+        if (db()->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql') q('INSERT IGNORE INTO post_reactions(post_id,user_id,kind) VALUES (?,?,?)',[$id,$u['id'],$kind]);
+        else q('INSERT OR IGNORE INTO post_reactions(post_id,user_id,kind) VALUES (?,?,?)',[$id,$u['id'],$kind]);
+        redirect('dashboard/community');
+    }
+    if ($path==='tickets/create') {
+        $subject=trim((string)($_POST['subject'] ?? '')); $body=trim((string)($_POST['body'] ?? '')); $priority=(string)($_POST['priority'] ?? 'متوسط');
+        if (mb_strlen($subject)<5 || mb_strlen($subject)>180 || mb_strlen($body)<10 || mb_strlen($body)>5000 || !in_array($priority,TICKET_PRIORITIES,true)) { flash('موضوع، متن و اولویت معتبر وارد کنید.','error'); redirect('dashboard/support'); }
+        q('INSERT INTO tickets(user_id,subject,priority) VALUES (?,?,?)',[$u['id'],$subject,$priority]);
+        flash('تیکت شما ثبت شد.'); redirect('dashboard/support');
+    }
+    if ($path==='profile/account') {
+        $name=trim((string)($_POST['name'] ?? '')); $email=trim((string)($_POST['email'] ?? ''));
+        if (mb_strlen($name)<2 || mb_strlen($name)>100 || ($email!=='' && !filter_var($email,FILTER_VALIDATE_EMAIL))) { flash('نام و ایمیل معتبر وارد کنید.','error'); redirect('dashboard/profile'); }
+        q('UPDATE users SET name=? WHERE id=?',[$name,$u['id']]);
+        flash('پروفایل به‌روزرسانی شد.'); redirect('dashboard/profile');
+    }
+    if ($path==='settings/save' && $u['role']==='admin') {
+        $key=(string)($_POST['key'] ?? '');
+        if (!in_array($key,array_column(SETTINGS_GROUPS,'key'),true)) { flash('تنظیم نامعتبر است.','error'); redirect('dashboard/settings'); }
+        $value=trim((string)($_POST['value'] ?? ''));
+        if (db()->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql') q('INSERT INTO settings(skey,svalue) VALUES (?,?) ON DUPLICATE KEY UPDATE svalue=?',[$key,$value,$value]);
+        else q('INSERT INTO settings(skey,svalue) VALUES (?,?) ON CONFLICT(skey) DO UPDATE SET svalue=?',[$key,$value,$value]);
+        flash('تنظیم ذخیره شد.'); redirect('dashboard/settings');
+    }
+    if ($path==='content/create' && $u['role']==='admin') {
+        $title=trim((string)($_POST['title'] ?? '')); $kind=trim((string)($_POST['kind'] ?? 'مقاله'));
+        if (mb_strlen($title)<3 || mb_strlen($title)>180) { flash('عنوان باید بین ۳ تا ۱۸۰ نویسه باشد.','error'); redirect('dashboard/content'); }
+        if (!in_array($kind,['مقاله','صفحه'],true)) $kind='مقاله';
+        q('INSERT INTO content_items(title,kind,status) VALUES (?,?,?)',[$title,$kind,'پیش‌نویس']);
+        flash('محتوای جدید ذخیره و منتشر شد.'); redirect('dashboard/content');
+    }
+    if ($path==='content/publish' && $u['role']==='admin') {
+        $id=filter_var($_POST['id'] ?? '',FILTER_VALIDATE_INT);
+        if (!$id) { http_response_code(404); exit; }
+        q("UPDATE content_items SET status='منتشرشده' WHERE id=?",[$id]);
+        flash('محتوا منتشر شد.'); redirect('dashboard/content');
+    }
+    if ($path==='announcements/send' && $u['role']==='admin') {
+        $title=trim((string)($_POST['title'] ?? '')); $body=trim((string)($_POST['body'] ?? ''));
+        if (mb_strlen($title)<3 || mb_strlen($title)>255 || mb_strlen($body)<5 || mb_strlen($body)>2000) { flash('عنوان و متن اعلان معتبر وارد کنید.','error'); redirect('dashboard/announcements'); }
+        q('INSERT INTO announcements(title,body) VALUES (?,?)',[$title,$body]);
+        flash('اعلان برای کاربران ارسال شد.'); redirect('dashboard/announcements');
+    }
+    if ($path==='admin/seed-demo' && $u['role']==='admin') {
+        foreach (ANNOUNCEMENTS as $a) q('INSERT INTO announcements(title,body) VALUES (?,?)',[$a['title'],$a['body']]);
+        foreach (CONTENT_ITEMS as $c) q('INSERT INTO content_items(title,kind,status) VALUES (?,?,?)',[$c['title'],$c['kind'],$c['status']]);
+        flash('داده‌های نمونه ایجاد شد.'); redirect('dashboard');
+    }
     http_response_code(404); exit('صفحه پیدا نشد.');
 }

@@ -14,6 +14,18 @@
       return;
     }
 
+    var opener = event.target.closest("[data-toggle]");
+    if (opener) {
+      var target = document.querySelector(opener.getAttribute("data-toggle"));
+      if (target) {
+        var willOpen = target.hasAttribute("hidden");
+        if (willOpen) target.removeAttribute("hidden");
+        else target.setAttribute("hidden", "");
+        opener.setAttribute("aria-expanded", String(willOpen));
+      }
+      return;
+    }
+
     var panelButton = event.target.closest(".panel-menu");
     if (panelButton) {
       document.body.classList.toggle("nav-open");

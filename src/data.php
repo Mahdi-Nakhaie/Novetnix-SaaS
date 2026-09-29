@@ -74,3 +74,45 @@ const PROJECTS = [
     ['title'=>'سیستم پیشنهاد مقاله','topic'=>'Machine Learning','level'=>'متوسط','description'=>'برای کاربران با علایق مختلف مقاله‌های مرتبط پیشنهاد بده و کیفیت آن را بسنج.','skills'=>'Recommendations · Ranking · Python'],
     ['title'=>'تحلیل بازخورد کاربران','topic'=>'NLP','level'=>'مقدماتی','description'=>'موضوع‌های پرتکرار در بازخوردهای متنی را استخراج و دسته‌بندی کن.','skills'=>'Text mining · Pandas · Python'],
 ];
+
+const CHALLENGES = [
+    ['kind'=>'Daily Challenge','title'=>'یک function برای محاسبه تخفیف بنویس','xp'=>40,'topic'=>'Python'],
+    ['kind'=>'Weekly Challenge','title'=>'API سفارش‌های فروشگاه را کامل کن','xp'=>200,'topic'=>'FastAPI'],
+    ['kind'=>'Learning Quest','title'=>'سه درس FastAPI را کامل کن','xp'=>120,'topic'=>'Web'],
+    ['kind'=>'Daily Challenge','title'=>'داده گم‌شده را با Pandas پاک‌سازی کن','xp'=>50,'topic'=>'Data'],
+    ['kind'=>'Weekly Challenge','title'=>'مدل دسته‌بندی ریزش مشتری را آموزش بده','xp'=>250,'topic'=>'ML'],
+];
+
+const BADGES = [
+    ['title'=>'Python Explorer','icon'=>'🐍','need'=>'۶۸٪ مسیر پایتون'],
+    ['title'=>'Day Streak ۷','icon'=>'🔥','need'=>'۷ روز پیوسته'],
+    ['title'=>'API Starter','icon'=>'🚀','need'=>'اولین سرویس FastAPI'],
+    ['title'=>'AI Curious','icon'=>'🤖','need'=>'شروع مسیر هوش مصنوعی'],
+    ['title'=>'First Project','icon'=>'⭐','need'=>'تحویل اولین پروژه'],
+    ['title'=>'FastAPI Learner','icon'=>'🏅','need'=>'۳ درس FastAPI'],
+];
+
+const TRACKS = [
+    ['name'=>'Python','percent'=>68],['name'=>'Web','percent'=>32],['name'=>'AI','percent'=>24],['name'=>'Data','percent'=>18],
+];
+
+const ANNOUNCEMENTS = [
+    ['title'=>'تست‌های API تو آماده بررسی است.','body'=>'پس از اجرای تست‌ها، نتیجه را در تب پروژه‌ها ببین و خطاهای باقی‌مانده را برطرف کن.','ago'=>'۱ ساعت پیش'],
+    ['title'=>'تبریک! ۵۰ XP برای تکمیل درس دریافت کردی.','body'=>'مسیر پایتون را ادامه بده تا نشان Python Explorer را فعال کنی.','ago'=>'۳ ساعت پیش'],
+    ['title'=>'یک پاسخ جدید برای پست Community تو ثبت شد.','body'=>'گفت‌وگو را در انجمن دنبال کن و اگر پاسخ کامل نبود، سؤال دقیق‌تری بپرس.','ago'=>'دیروز'],
+];
+
+const CONTENT_ITEMS = [
+    ['title'=>'راهنمای شروع FastAPI','kind'=>'مقاله','status'=>'منتشرشده'],
+    ['title'=>'صفحه معرفی پروژه‌ها','kind'=>'صفحه','status'=>'منتشرشده'],
+    ['title'=>'راهنمای Nova AI','kind'=>'مقاله','status'=>'پیش‌نویس'],
+];
+
+const SETTINGS_GROUPS = [
+    ['title'=>'امنیت سیستم','hint'=>'مدیریت تنظیمات مرتبط','key'=>'security'],
+    ['title'=>'اتصال حساب‌ها','hint'=>'مدیریت تنظیمات مرتبط','key'=>'accounts'],
+    ['title'=>'اعلان‌های سراسری','hint'=>'مدیریت تنظیمات مرتبط','key'=>'notifications'],
+    ['title'=>'تنظیمات سیستم','hint'=>'مدیریت تنظیمات مرتبط','key'=>'system'],
+];
+
+const TICKET_PRIORITIES = ['کم','متوسط','زیاد','بحرانی'];

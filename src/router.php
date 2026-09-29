@@ -18,7 +18,8 @@ function route(): void {
     if ($path==='verify') { page_verify(); return; }
     if ($path==='dashboard' || str_starts_with($path,'dashboard/')) {
         $u=require_user();
-        if (str_starts_with($path,'dashboard/') && !in_array(substr($path,10),['profile','learning','projects','community','subscription','users','courses','subscriptions','messages','analytics'],true)) { http_response_code(404); head_page('یافت نشد',''); notice(); echo '<main class="container section"><h1>این صفحه پیدا نشد.</h1>'; linkto('dashboard','بازگشت به پنل ←','inline-link'); echo '</main>'; foot_page(); return; }
+        $allowed=['profile','learning','projects','community','subscription','users','users-new','courses','catalog','subscriptions','messages','analytics','challenges','payments','support','announcements','gamification','content','settings'];
+        if (str_starts_with($path,'dashboard/') && !in_array(substr($path,10),$allowed,true)) { http_response_code(404); head_page('یافت نشد',''); notice(); echo '<main class="container section"><h1>این صفحه پیدا نشد.</h1>'; linkto('dashboard','بازگشت به پنل ←','inline-link'); echo '</main>'; foot_page(); return; }
         head_page('پنل', '', true); notice(); panel(str_starts_with($path,'dashboard/') ? substr($path,10) : ''); foot_page(true); return;
     }
     http_response_code(404); head_page('یافت نشد','صفحه مورد نظر پیدا نشد.'); notice(); echo '<main class="container section"><span class="eyebrow">404</span><h1>این صفحه پیدا نشد.</h1><p>ممکن است نشانی تغییر کرده باشد.</p>'; linkto('','بازگشت به خانه ←','btn btn-primary'); echo '</main>'; foot_page();
