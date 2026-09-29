@@ -24,6 +24,16 @@ OUT = ROOT / "site"
 SITE_PATH = "/Novetnix-SaaS/site"  # GitHub Pages currently serves the main branch root
 
 YEAR = "۱۴۰۵"
+PROJECT_PLANS = ("free", "free", "bronze", "silver", "bronze", "gold", "silver", "gold", "titanium")
+PAID_COURSES = ("ml-basics", "nlp-practice", "api-deployment")
+ARTICLE_DETAILS = {
+    "python-foundations": [("مثال قابل اجرا", "فهرست فروش‌های روزانه را دریافت کن، ورودی خالی را جداگانه بررسی کن و مجموع را بر تعداد تقسیم کن. سپس با داده‌های [۱۰۰، ۲۰۰، ۳۰۰] انتظار خروجی ۲۰۰ را داشته باش. این مثال نشان می‌دهد چرا قرارداد تابع باید قبل از پیاده‌سازی روشن باشد."), ("خطاهای رایج", "تقسیم بر صفر، تغییر ناخواسته فهرست ورودی و آمیختن دریافت داده با منطق محاسبه از خطاهای متداول‌اند. تابع را مستقل از ورودی کاربر بنویس تا بتوانی آن را با چند مجموعه داده آزمون کنی."), ("تمرین و معیار پذیرش", "تابعی بنویس که برای فهرست خالی نتیجه مشخصی برگرداند و برای اعداد اعشاری هم درست کار کند. دست‌کم سه آزمون برای حالت عادی، ورودی خالی و داده منفی بنویس.")],
+    "data-analysis": [("نمونه واقعی", "در یک جدول سفارش، شناسه مشتری، زمان ثبت و مبلغ را بررسی کن. نرخ بازگشت را به‌صورت تعداد مشتریانی که در ماه بعد خرید داشته‌اند تقسیم بر تعداد مشتریان ماه اول تعریف کن؛ تعریف جمعیت پایه را در گزارش بیاور."), ("دام‌های تحلیل", "اگر تاریخ‌ها timezone یکسان نداشته باشند، سفارش‌های مرزی ممکن است به ماه اشتباه بروند. همچنین حذف مشتریان بدون خرید دوم، نرخ بازگشت را غیرواقعی بالا نشان می‌دهد."), ("تمرین عملی", "یک فایل نمونه کوچک بساز، مقادیر گمشده و سفارش‌های تکراری را بشمار و قبل از رسم نمودار تصمیم پاک‌سازی را ثبت کن. خروجی باید شامل تعداد ردیف‌های اولیه و نهایی باشد.")],
+    "ml-basics": [("خط پایه و داده آزمون", "برای پیش‌بینی ریزش، داده را بر اساس زمان جدا کن تا رفتار آینده وارد آموزش نشود. یک پیش‌بین ساده که همه را در کلاس غالب می‌گذارد بساز و سپس precision و recall مدل را با آن مقایسه کن."), ("تفسیر خطا", "ماتریس درهم‌ریختگی را بخوان: مشتریان در معرض ریزش که از دست رفته‌اند کدام‌اند؟ هزینه تماس اضافه را کنار هزینه از دست دادن مشتری قرار بده تا آستانه تصمیم را آگاهانه انتخاب کنی."), ("تمرین عملی", "یک pipeline پیش‌پردازش و مدل بساز. داده آزمون را تا پایان تنظیم پارامترها کنار بگذار و در گزارش معیار خط پایه، معیار مدل و محدودیت داده را بنویس.")],
+    "deep-learning": [("معماری اولیه", "برای دسته‌بندی تصویر، ابتدا اندازه ورودی و تعداد کلاس‌ها را تعیین کن. یک شبکه کوچک آموزش بده؛ تعداد پارامترها را با حجم داده مقایسه کن و از افزایش بی‌دلیل لایه‌ها خودداری کن."), ("پایش آموزش", "نمودار loss آموزش و اعتبارسنجی را در هر epoch نگه دار. اگر خطای آموزش پایین می‌رود اما اعتبارسنجی بدتر می‌شود، به بیش‌برازش فکر کن و early stopping یا داده بیشتر را بررسی کن."), ("تمرین عملی", "ده تصویرِ طبقه‌بندی‌شدهٔ اشتباه را مرور کن و برای هر خطا علت احتمالی ثبت کن. پیش از تغییر مدل بررسی کن آیا برچسب‌ها و کیفیت تصویر قابل اعتمادند.")],
+    "nlp-practice": [("نرمال‌سازی قابل تکرار", "حروف ي و ك عربی را به شکل فارسی تبدیل کن و نیم‌فاصله را با یک قاعده ثابت مدیریت کن. نسخه تابع نرمال‌سازی را همراه مدل نگه دار تا پردازش ورودی جدید با آموزش یکسان بماند."), ("ارزیابی در سطح کاربر", "وقتی چند متن از یک نویسنده داری، تمام متن‌های او را در یک بخش داده قرار بده. در غیر این صورت مدل ممکن است سبک نویسنده را به‌جای احساس متن یاد بگیرد و نتیجه آزمون گمراه‌کننده شود."), ("تمرین عملی", "یک دسته‌بند ساده متن بساز؛ خطاهای مثبت کاذب و منفی کاذب را جدا فهرست کن. اثر حذف نیم‌فاصله و تغییر حروف را با دو نمونه واقعی مقایسه کن.")],
+    "api-deployment": [("قرارداد درخواست", "برای endpoint پیش‌بینی یک JSON نمونه با نوع هر فیلد و محدوده معتبر آن مشخص کن. پاسخ موفق باید علاوه بر نتیجه، شناسه نسخه مدل داشته باشد تا پیگیری خطا ممکن شود."), ("یکسانی آموزش و اجرا", "مدل و تمام تبدیل‌های داده را در یک pipeline نگه دار. اگر در سرویس‌دهی ترتیب ستون‌ها یا تبدیل مقادیر گمشده متفاوت باشد، حتی مدل سالم هم پیش‌بینی نامعتبر می‌دهد."), ("تمرین عملی", "برای ورودی معتبر، مقدار گمشده و نوع داده نادرست سه آزمون API بنویس. زمان پاسخ و نرخ خطا را بسنج و داده شخصی را در لاگ ثبت نکن.")],
+}
 
 
 # --------------------------------------------------------------- utilities
@@ -114,6 +124,10 @@ def plan_cards(short=False):
     return out + "</div>"
 
 
+def plan_name(pid):
+    return next(p["name"] for p in PLANS if p["id"] == pid)
+
+
 def project_cards(limit=None):
     rows = PROJECTS if limit is None else PROJECTS[:limit]
     glyphs = ["{ }", "◈", "◇", "⌘"]
@@ -126,7 +140,7 @@ def project_cards(limit=None):
             f'<span class="visual-glyph">{glyphs[i % 4]}</span>'
             f'<span class="visual-label">{h(topic.upper())}</span></div>'
             f'<div class="project-info"><div class="meta-row"><span class="pill">{h(topic)}</span>'
-            f'<span>{h(level)}</span></div><h3>{h(title)}</h3><p>{h(desc)}</p>'
+            f'<span>{h(level)}</span><span class="pill">پلن {h(plan_name(PROJECT_PLANS[i]))}</span></div><h3>{h(title)}</h3><p>{h(desc)}</p>'
             f'<div class="project-bottom"><span dir="ltr">{h(skills)}</span>'
             f'<a href="{h(href(f"project/{i}"))}" aria-label="مشاهده پروژه {h(title)}">مشاهده پروژه ←</a>'
             "</div></div></article>"
@@ -140,7 +154,8 @@ def course_cards():
         out += (
             f'<article class="course-card"><div class="course-icon icon-{i % 4}">{h(c["topic"][0])}</div>'
             f'<div class="meta-row"><span class="pill">{h(c["topic"])}</span>'
-            f'<span>{h(c["level"])} · {fa(c["minutes"])} دقیقه مطالعه</span></div>'
+            f'<span>{h(c["level"])} · {fa(c["minutes"])} دقیقه مطالعه</span>'
+            f'<span class="pill">{("پلن برنزی" if slug in PAID_COURSES else "رایگان")}</span></div>'
             f'<h3>{h(c["title"])}</h3><p>{h(c["intro"])}</p>'
             f'<a class="inline-link" href="{h(href(f"course/{slug}"))}">مطالعه مقاله ←</a></article>'
         )
@@ -286,15 +301,29 @@ def view_courses():
 
 def view_course(slug):
     c = COURSES[slug]
-    out = (f'<main class="article"><div class="container narrow-container">'
-           f'<span class="eyebrow">{h(c["topic"])} · {h(c["level"])}</span>'
+    sections = list(c["sections"]) + ARTICLE_DETAILS.get(slug, [])
+    paid = slug in PAID_COURSES
+    out = ('<div class="reading-progress" aria-hidden="true"><span data-reading-progress></span></div>'
+           f'<main class="article"><div class="container narrow-container">'
+           f'<span class="eyebrow">{h(c["topic"])} · {h(c["level"])} · '
+           f'{"پلن برنزی" if paid else "رایگان"}</span>'
            f'<h1>{h(c["title"])}</h1><p class="lead">{h(c["intro"])}</p>'
            f'<div class="article-meta"><span>زمان مطالعه: {fa(c["minutes"])} دقیقه</span>'
-           f"<span>به‌روزرسانی: {YEAR[:4]}</span></div>")
-    for i, (heading, body) in enumerate(c["sections"]):
-        out += (f'<section class="article-section"><h2><span>{fa(i + 1)}</span>{h(heading)}</h2>'
-                f"<p>{h(body)}</p></section>")
-    out += ('<div class="article-footer">'
+           f'<span>{fa(len(sections))} بخش</span><span>به‌روزرسانی: {YEAR[:4]}</span></div>'
+           '<nav class="article-toc" aria-label="فهرست مطالب"><strong>در این مقاله می‌خوانید</strong><ol>')
+    for heading, _ in sections:
+        out += f"<li>{h(heading)}</li>"
+    out += "</ol></nav>"
+    for i, (heading, body) in enumerate(sections):
+        out += f'<section class="article-section" id="section-{i + 1}"><h2><span>{fa(i + 1)}</span>{h(heading)}</h2>'
+        for para in body.split("\n"):
+            out += f"<p>{h(para)}</p>"
+        out += "</section>"
+    out += ('<section class="article-section takeaways"><h2><span>✓</span>جمع‌بندی و گام بعدی</h2><ul class="check-list">'
+            f'<li>مفهوم اصلی «{h(c["title"])}» را با یک مثال کوچک روی داده خودت تمرین کن.</li>'
+            "<li>قبل از افزودن پیچیدگی، نتیجه را با یک خط پایه ساده مقایسه کن.</li>"
+            "<li>پس از مطالعه، همین الگو را در یک پروژه واقعی به کار بگیر.</li></ul></section>"
+            '<div class="article-footer">'
             f'<button type="button" class="btn btn-primary" data-enroll="{h(slug)}">افزودن به مسیر یادگیری</button>'
             + linkto("projects", "پروژه مرتبط را ببین ←", "btn btn-outline") + "</div></div></main>")
     return out
@@ -314,7 +343,7 @@ def view_project(index):
         ("ارزیابی و انتقال", "کیفیت راه‌حل را با معیار روشن بسنج و همان الگو را روی یک مسئله تازه امتحان کن تا مهارت واقعی شکل بگیرد."),
     ]
     out = (f'<main class="article"><div class="container narrow-container">'
-           f'<span class="eyebrow">{h(topic)} · {h(level)}</span><h1>{h(title)}</h1>'
+           f'<span class="eyebrow">{h(topic)} · {h(level)} · پلن {h(plan_name(PROJECT_PLANS[index]))}</span><h1>{h(title)}</h1>'
            f'<p class="lead">{h(desc)}</p><div class="article-meta"><span dir="ltr">{h(skills)}</span></div>')
     for i, (heading, body) in enumerate(steps):
         out += f'<section class="article-section"><h2><span>{fa(i + 1)}</span>{h(heading)}</h2><p>{h(body)}</p></section>'
@@ -343,10 +372,9 @@ def view_pricing():
             out += f"<td>{h(v)}</td>"
         out += "</tr>"
     out += ('</tbody></table></div></section><section class="section container"><div class="cta-panel">'
-            '<span class="eyebrow">پرداخت</span><h2>فعال‌سازی اشتراک با پشتیبانی</h2>'
-            "<p>دروازه پرداخت هنوز متصل نشده است؛ برای فعال‌سازی مجوز خود را برای تیم ما بفرستید "
-            "تا پس از تأیید، اشتراک شما فعال شود.</p>"
-            + linkto("contact", "تماس با پشتیبانی ←", "btn btn-light") + "</div></section></main>")
+            '<span class="eyebrow">نسخه نمایشی</span><h2>پلن‌ها را بدون پرداخت تجربه کن</h2>'
+            '<p>در پنل اشتراک، پلن را به‌صورت آزمایشی فعال کنید. هیچ پرداخت یا اشتراک واقعی انجام نمی‌شود.</p>'
+            + linkto("panel/student/subscription", "مشاهده پلن‌های نمایشی ←", "btn btn-light") + "</div></section></main>")
     return out
 
 
@@ -396,8 +424,10 @@ def view_login():
     return ('<main class="auth-page"><div class="auth-card">'
             f'<img src="{h(asset("nova.png"))}" alt="مسکات Nova" width="70" height="70">'
             "<h1>ورود یا ثبت‌نام</h1>"
-            "<p class=\"muted\">شماره موبایل خود را وارد کنید تا کد تأیید برایتان ارسال شود.</p>"
+            "<p class=\"muted\">نام، نام خانوادگی و شماره موبایل خود را برای شروع وارد کنید.</p>"
             '<form class="stack-form" data-form="login">'
+            '<label>نام<input name="first_name" required minlength="2" maxlength="50" autocomplete="given-name" placeholder="نام"></label>'
+            '<label>نام خانوادگی<input name="last_name" required minlength="2" maxlength="50" autocomplete="family-name" placeholder="نام خانوادگی"></label>'
             '<label>شماره موبایل<input type="tel" dir="ltr" name="phone" required pattern="0?9[0-9]{9}" '
             'placeholder="09123456789" autocomplete="tel"></label>'
             '<button class="btn btn-primary">ارسال کد تأیید</button></form>'
@@ -495,7 +525,8 @@ def profile_view():
             "<p class=\"muted\">سازنده‌ای در مسیر یادگیری هوش مصنوعی</p></div></div>"
             + linkto("panel/student/settings", "ویرایش پروفایل", "btn btn-outline") + "</div>")
     out += ('<div class="panel-card narrow"><form class="stack-form" data-form="profile">'
-            '<label>نام نمایشی<input name="name" maxlength="100" minlength="2" required placeholder="نام شما"></label>'
+            '<label>نام<input name="first_name" maxlength="50" minlength="2" required autocomplete="given-name"></label>'
+            '<label>نام خانوادگی<input name="last_name" maxlength="50" minlength="2" required autocomplete="family-name"></label>'
             '<label>ایمیل (اختیاری)<input type="email" dir="ltr" name="email" maxlength="255" placeholder="you@example.com"></label>'
             '<label>شماره موبایل<input dir="ltr" disabled data-profile-phone-input value="—"></label>'
             '<button class="btn btn-primary">ذخیره تغییرات</button></form>'
@@ -519,22 +550,17 @@ def settings_view():
 
 
 def student_subscription():
-    plan = PLANS[0]
     out = panel_head("اشتراک من", "وضعیت پلن و ظرفیت امکانات شما.")
-    out += ('<div class="sub-layout"><section class="panel-card"><h2>Usage</h2>'
-            f'<div class="usage-row"><span>AI Credits</span><strong>۰ از {fa(plan["nova"])}</strong></div>'
-            + progress_bar(2)
-            + '<div class="usage-row"><span>Projects</span><strong>'
-            + ("نامحدود" if plan["projects"] == -1 else fa(plan["projects"])) + "</strong></div></section>"
-            '<section class="plan-tile"><span class="eyebrow">Current Plan</span>'
-            f'<h2>{h(plan["name"])}</h2><p>اشتراک فعالی ثبت نشده است.</p>'
-            + linkto("pricing", "ارتقای پلن", "btn btn-gold") + "</section></div>")
-    out += '<div class="panel-card"><h2>امکانات فعلی</h2><ul class="check-list">'
-    for feature in plan["features"]:
-        out += f"<li>{h(feature)}</li>"
-    out += ('</ul><p class="muted">در نسخه نمایشی، فعال‌سازی پلن به‌صورت شبیه‌سازی‌شده '
-            "در همین صفحه انجام می‌شود.</p></div>")
-    return out
+    out += ('<div class="sub-layout"><section class="panel-card"><h2>مصرف حساب</h2>'
+            '<div class="usage-row"><span>اعتبار Nova</span><strong data-plan-credits>۰</strong></div>'
+            '<div class="usage-row"><span>ظرفیت پروژه</span><strong data-plan-projects>۰</strong></div></section>'
+            '<section class="plan-tile"><span class="eyebrow">پلن فعلی</span>'
+            '<h2 data-current-plan>رایگان</h2><p data-plan-expiry>اشتراک پولی فعالی ثبت نشده است.</p></section></div>')
+    out += '<div class="panel-card"><h2>انتخاب پلن نمایشی</h2><p class="muted">این فعال‌سازی فقط برای پیش‌نمایش است؛ هزینه‌ای دریافت نمی‌شود و اشتراک واقعی ایجاد نمی‌کند.</p><div class="pricing-grid demo-plan-grid">'
+    for p in PLANS[1:]:
+        out += (f'<article class="price-card"><h3>{h(p["name"])}</h3><p>{money(p["price"])} / ماه</p>'
+                f'<p class="muted">{h(p["summary"])}</p><button type="button" class="btn btn-primary" data-demo-plan="{h(p["id"])}">فعال‌سازی آزمایشی</button></article>')
+    return out + '</div><p class="form-note" data-plan-note hidden></p></div>'
 
 
 def student_section(sub):
@@ -552,6 +578,16 @@ def student_section(sub):
                   '<span class="eyebrow">کنار هم یاد می‌گیریم</span><h2>انجمن Noventix</h2>'
                   "<p>سؤال‌ها، تجربه‌ها و ایده‌ها را با جامعه یادگیری در میان بگذار.</p>"
                 + linkto("community", "ورود به انجمن ←", "btn btn-outline") + "</section></div>")
+        out += ('<div class="panel-columns"><section class="panel-card"><h2>ادامه مسیر یادگیری</h2>'
+                '<ul class="check-list">'
+                '<li>دو مقاله رایگان را کامل بخوان و هر کدام را در مسیر یادگیری ذخیره کن.</li>'
+                '<li>یک پروژه رایگان را انتخاب کن و نسخه اولیه راه‌حل را بنویس.</li>'
+                '<li>سؤال‌های باقی‌مانده را در انجمن مطرح کن.</li></ul></section>'
+                '<section class="panel-card"><h2>دسترسی پلن فعلی</h2><ul class="check-list">'
+                '<li>اعتبار Nova: <strong data-plan-credits>۰</strong></li>'
+                '<li>ظرفیت پروژه: <strong data-plan-projects>۰</strong></li></ul>'
+                '<p class="muted">برای دسترسی به پروژه‌ها و مقاله‌های پیشرفته، پلن مناسب را فعال کنید.</p>'
+                + linkto("panel/student/subscription", "مدیریت اشتراک ←", "btn btn-outline") + "</section></div>")
         return out
     if sub == "learning":
         return (panel_head("مسیر یادگیری من", "مقاله‌های ذخیره‌شده برای ادامه مطالعه.")
@@ -611,6 +647,17 @@ def admin_section(sub):
         return (panel_head("دوره‌ها", "مدیریت کاتالوگ آموزش.")
                 + f'<div class="panel-card"><p class="muted">{fa(len(COURSES))} مقاله فعال در کاتالوگ.</p>'
                 + linkto("courses", "مشاهده کاتالوگ ←", "btn btn-outline") + "</div>" + course_cards())
+    if sub == "course-new":
+        return (panel_head("مقاله جدید", "ایجاد مقاله آموزشی در کاتالوگ.")
+                + '<div class="panel-card narrow-left"><form class="stack-form" data-form="content">'
+                  '<label>عنوان مقاله<input name="title" required minlength="5" maxlength="180"></label>'
+                  '<label>موضوع<input name="topic" required minlength="3" maxlength="60" placeholder="Python"></label>'
+                  '<label>سطح<select name="kind"><option value="مقدماتی">مقدماتی</option>'
+                  '<option value="متوسط">متوسط</option><option value="پیشرفته">پیشرفته</option></select></label>'
+                  '<button class="btn btn-primary">ذخیره پیش‌نویس</button></form>'
+                  '<p class="form-note" hidden></p></div>'
+                + '<div class="panel-card"><p class="muted">مقاله‌های ثبت‌شده در این مرورگر:</p>'
+                  '<div class="content-list" data-content-list></div></div>')
     if sub == "catalog":
         return (panel_head("پروژه‌ها", "کاتالوگ پروژه‌های فعال پلتفرم.")
                 + f'<div class="panel-card"><p class="muted">{fa(len(PROJECTS))} پروژه فعال در کاتالوگ.</p>'
@@ -721,8 +768,9 @@ def seed_script():
     payload = {
         "courses": {slug: {"title": c["title"], "topic": c["topic"], "level": c["level"], "intro": c["intro"]}
                     for slug, c in COURSES.items()},
-        "projects": [{"title": t, "topic": topic, "description": desc}
-                     for t, topic, _lvl, desc, _sk in PROJECTS],
+        "projects": [{"title": t, "topic": topic, "description": desc, "plan": PROJECT_PLANS[i]}
+                     for i, (t, topic, _lvl, desc, _sk) in enumerate(PROJECTS)],
+        "paid_courses": PAID_COURSES,
         "plans": [{"id": p["id"], "name": p["name"], "price": p["price"]} for p in PLANS],
     }
     return ("<script>window.NOVENTIX_BASE=" + json.dumps(SITE_PATH, ensure_ascii=False)
@@ -733,6 +781,7 @@ def render_page(route):
     title, desc, view = route["title"], route.get("description", ""), route["view"]
     full = "Noventix | از یادگیری تا ساختن" if title == "خانه" else f"{h(title)} | Noventix"
     body = view_body(route)
+    guard = (f' data-protected="{h(route["path"])}"' if view in ("courses", "course", "projects", "project", "community", "panel") else '')
     out = (
         '<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
@@ -746,10 +795,10 @@ def render_page(route):
         f'<link rel="stylesheet" href="{h(asset("style.css"))}">'
         + seed_script()
         + f'<script src="{h(asset("app.js"))}" defer></script>'
-        + f'<script src="{h(asset("demo.js"))}" defer></script></head><body>'
+        + f'<script src="{h(asset("demo.js"))}" defer></script></head><body{guard}>'
     )
     if view == "panel":
-        return out.replace('<body>', '<body class="is-panel">', 1) + body + "</body></html>"
+        return out.replace('<body', '<body class="is-panel"', 1) + body + "</body></html>"
     return out + header_html(route.get("nav", "")) + demo_notice() + body + footer_html() + "</body></html>"
 
 
@@ -790,7 +839,7 @@ STUDENT_ITEMS = [("", "نمای کلی"), ("learning", "مسیر یادگیری"
                  ("settings", "تنظیمات")]
 
 ADMIN_ITEMS = [("", "Overview"), ("users", "کاربران"), ("users-new", "کاربران جدید"),
-               ("courses", "دوره‌ها"), ("catalog", "پروژه‌ها"), ("challenges", "چالش‌ها"),
+               ("courses", "دوره‌ها"), ("course-new", "مقاله جدید"), ("catalog", "پروژه‌ها"), ("challenges", "چالش‌ها"),
                ("subscriptions", "اشتراک‌ها"), ("payments", "پرداخت‌ها"), ("community", "Community"),
                ("support", "پشتیبانی"), ("announcements", "اعلان‌ها"), ("gamification", "Gamification"),
                ("analytics", "Analytics"), ("content", "Content"), ("profile", "پروفایل"),

@@ -10,6 +10,8 @@
   var KEY = "noventix.demo.v1";
   var seed = window.NOVENTIX_SEED || { courses: {}, projects: [], plans: [] };
   var plans = seed.plans || [];
+  var planOrder = ["free", "bronze", "silver", "gold", "titanium"];
+  var planLimits = { free: [0, 0], bronze: [1, 5], silver: [3, 30], gold: [-1, 100], titanium: [-1, 300] };
   var lastCode = sessionStorage.getItem("noventix.demo.code");
 
   function planById(id) {
@@ -84,15 +86,61 @@
 
   function isAdmin() { return state.user && state.user.role === "admin"; }
 
+  function accountReady() { return !!(state.user && state.user.phone && state.user.first_name && state.user.last_name); }
+  function currentPlan() {
+    if (!accountReady() || !state.user.plan || !state.user.plan_expires || new Date(state.user.plan_expires) <= new Date()) return "free";
+    return state.user.plan;
+  }
+  function canProject(index) {
+    var item = seed.projects[index];
+    return accountReady() && item && planOrder.indexOf(currentPlan()) >= planOrder.indexOf(item.plan);
+  }
+  function canCourse(slug) {
+    return accountReady() && (seed.paid_courses.indexOf(slug) < 0 || currentPlan() !== "free");
+  }
+
+  function guardPage() {
+    var path = document.body && document.body.getAttribute("data-protected");
+    if (path === null || path === undefined) return;
+    if (!accountReady()) {
+      sessionStorage.setItem("noventix.demo.return", path);
+      location.href = join("login/");
+      return;
+    }
+    var project = /^project\/(\d+)$/.exec(path);
+    var course = /^course\/(.+)$/.exec(path);
+    if ((project && !canProject(Number(project[1]))) || (course && !canCourse(course[1]))) {
+      location.href = join("panel/student/subscription/");
+    }
+  }
+
+  function paintPlan() {
+    var id = currentPlan();
+    var slot = el("[data-current-plan]");
+    if (slot) slot.textContent = planById(id).name;
+    slot = el("[data-plan-expiry]");
+    if (slot) slot.textContent = id === "free" ? "اشتراک پولی فعالی ثبت نشده است." : "پایان دوره آزمایشی: " + jalali(state.user.plan_expires);
+    slot = el("[data-plan-credits]");
+    if (slot) slot.textContent = fa(planLimits[id][1]);
+    slot = el("[data-plan-projects]");
+    if (slot) slot.textContent = planLimits[id][0] < 0 ? "نامحدود" : fa(planLimits[id][0]);
+  }
+
   /* ------------------------------------------------------------ actions */
 
   var actions = {
     login: function (form) {
-      var phone = (form.elements.namedItem("phone").value || "").replace(/[۰-۹]/g, function (d) { return "۰۱۲۳۴۵۶۷۸۹".indexOf(d); })
+      var first = (form.elements.namedItem("first_name").value || "").trim();
+      var last = (form.elements.namedItem("last_name").value || "").trim();
+      if (first.length < 2 || last.length < 2 || first.length > 50 || last.length > 50) {
+        note(form, "نام و نام خانوادگی معتبر وارد کنید.", "error"); return;
+      }
+      var phone = (form.elements.namedItem("phone").value || "").replace(/[۰-۹٠-٩]/g, function (d) { return "۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩".indexOf(d) % 10; })
         .replace(/[\s-]/g, "").replace(/^(\+98|98)/, "0");
       if (!/^09[0-9]{9}$/.test(phone)) { note(form, "شماره موبایل معتبر وارد کنید.", "error"); return; }
       lastCode = String(Math.floor(100000 + Math.random() * 900000));
       state.pending_phone = phone;
+      state.pending_name = { first: first, last: last };
       sessionStorage.setItem("noventix.demo.code", lastCode);
       store();
       location.href = join("verify/");
@@ -102,20 +150,28 @@
       var code = (form.elements.namedItem("code").value || "").replace(/[۰-۹]/g, function (d) { return "۰۱۲۳۴۵۶۷۸۹".indexOf(d); });
       if (!lastCode || code !== lastCode || !state.pending_phone) { note(form, "کد واردشده صحیح نیست.", "error"); return; }
       var user = signIn(state.pending_phone);
+      user.first_name = state.pending_name.first;
+      user.last_name = state.pending_name.last;
+      user.name = user.first_name + " " + user.last_name;
       sessionStorage.removeItem("noventix.demo.code");
       lastCode = null;
       delete state.pending_phone;
+      delete state.pending_name;
       store();
       note(form, user.role === "admin" ? "خوش آمدید؛ ورود به پنل مدیریت…" : "خوش آمدید!", "success");
-      var target = user.role === "admin" ? "panel/admin/" : "panel/student/";
-      setTimeout(function () { location.href = join(target); }, 700);
+      var target = sessionStorage.getItem("noventix.demo.return") || (user.role === "admin" ? "panel/admin" : "panel/student");
+      sessionStorage.removeItem("noventix.demo.return");
+      setTimeout(function () { location.href = join(target.replace(/\/$/, "") + "/"); }, 700);
     },
 
     profile: function (form) {
       if (!state.user) return;
-      var name = (form.elements.namedItem("name").value || "").trim();
-      if (name.length < 2 || name.length > 100) { note(form, "نام باید بین ۲ تا ۱۰۰ نویسه باشد.", "error"); return; }
-      state.user.name = name;
+      var first = (form.elements.namedItem("first_name").value || "").trim();
+      var last = (form.elements.namedItem("last_name").value || "").trim();
+      if (first.length < 2 || last.length < 2 || first.length > 50 || last.length > 50) { note(form, "نام و نام خانوادگی معتبر وارد کنید.", "error"); return; }
+      state.user.first_name = first;
+      state.user.last_name = last;
+      state.user.name = first + " " + last;
       state.user.email = (form.elements.namedItem("email").value || "").trim();
       store();
       paintProfile();
@@ -213,6 +269,10 @@
     els("[data-profile-name]").forEach(function (n) { n.textContent = state.user.name || "کاربر Noventix"; });
     els("[data-profile-phone]").forEach(function (n) { n.textContent = state.user.phone + " · Level ۱۲ · XP ۲٬۴۸۰"; });
     els("[data-profile-phone-input]").forEach(function (n) { n.value = state.user.phone; });
+    var first = el('[data-form="profile"] [name="first_name"]');
+    var last = el('[data-form="profile"] [name="last_name"]');
+    if (first) first.value = state.user.first_name || "";
+    if (last) last.value = state.user.last_name || "";
     els("[data-avatar]").forEach(function (n) { n.textContent = (state.user.name || state.user.phone).slice(0, 1); });
   }
 
@@ -379,7 +439,7 @@
   function paintAll() {
     paintProfile(); paintStats(); paintEnrollments(); paintMyProjects();
     paintPosts(); paintTickets(); paintAnnouncements(); paintContent();
-    paintUsers(); paintSubscriptions(); paintChallenges();
+    paintUsers(); paintSubscriptions(); paintChallenges(); paintPlan();
   }
 
   /* ------------------------------------------------------------- wiring */
@@ -398,9 +458,24 @@
   });
 
   document.addEventListener("click", function (event) {
+    var upgrade = event.target.closest("[data-demo-plan]");
+    if (upgrade) {
+      if (!accountReady()) { location.href = join("login/"); return; }
+      var selected = upgrade.getAttribute("data-demo-plan");
+      if (planOrder.indexOf(selected) < 1) return;
+      state.user.plan = selected;
+      state.user.plan_expires = new Date(Date.now() + 30 * 864e5).toISOString();
+      state.subscriptions.unshift({ phone: state.user.phone, plan: selected, status: "آزمایشی", starts_at: new Date().toISOString(), expires_at: state.user.plan_expires });
+      store(); paintAll();
+      var message = el("[data-plan-note]");
+      if (message) { message.hidden = false; message.className = "form-note notice success"; message.textContent = "پلن " + planById(selected).name + " برای ۳۰ روز به‌صورت نمایشی فعال شد؛ پرداختی انجام نشد."; }
+      return;
+    }
+
     var enroll = event.target.closest("[data-enroll]");
     if (enroll) {
       var slug = enroll.getAttribute("data-enroll");
+      if (!canCourse(slug)) { location.href = join(accountReady() ? "panel/student/subscription/" : "login/"); return; }
       if (state.enrollments.indexOf(slug) < 0) state.enrollments.push(slug);
       store(); paintStats();
       enroll.outerHTML = '<span class="btn btn-primary is-done">در مسیر یادگیری شما ✓</span>';
@@ -410,6 +485,7 @@
     var project = event.target.closest("[data-project]");
     if (project) {
       var index = Number(project.getAttribute("data-project"));
+      if (!canProject(index)) { location.href = join(accountReady() ? "panel/student/subscription/" : "login/"); return; }
       if (state.projects.indexOf(index) < 0) state.projects.push(index);
       store(); paintStats();
       project.outerHTML = '<span class="btn btn-primary is-done">به پروژه‌های من اضافه شد ✓</span>';
@@ -446,6 +522,18 @@
     }
   });
 
+  var progress = el("[data-reading-progress]");
+  if (progress) {
+    var update = function () {
+      var height = document.documentElement.scrollHeight - window.innerHeight;
+      var ratio = height > 0 ? Math.min(1, Math.max(0, window.pageYOffset / height)) : 0;
+      progress.style.width = (ratio * 100).toFixed(1) + "%";
+    };
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    update();
+  }
+
   var phoneSlot = el("[data-demo-phone]");
   if (phoneSlot && state.pending_phone) {
     phoneSlot.textContent = state.pending_phone;
@@ -458,5 +546,6 @@
   }
 
   window.NOVENTIX = { state: state, save: store, fa: fa, join: join, repaint: paintAll };
+  guardPage();
   paintAll();
 })();
