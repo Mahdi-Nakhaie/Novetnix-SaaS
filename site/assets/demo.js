@@ -32,7 +32,8 @@
       user: null, enrollments: [], projects: [], challenges: [],
       posts: [], tickets: [], notifications: [], content: [],
       settings: {}, subscriptions: [], messages: [], users: [],
-      nova: [], solutions: [], snippets: [], runs: 0
+      nova: [], solutions: [], snippets: [], runs: 0,
+      chat: [], reviews: [], terminal: [], payments: []
     };
   }
 
@@ -149,11 +150,152 @@
     if (/print\s*\(/.test(code)) issues.push("✓ فراخوانی print پیدا شد؛ خروجی در اجرای واقعی نمایش داده می‌شود.");
     if (/\bdef\s+\w+\s*\(/.test(code)) issues.push("✓ تعریف تابع پیدا شد.");
     if (!/\breturn\b/.test(code) && /\bdef\s+\w+\s*\(/.test(code)) issues.push("! تابع بدون return تعریف شده است.");
-    if (/\bTODO\b|pass\s*$/m.test(code)) issues.push("! بخش ناتمام (TODO/pass) در کد باقی مانده است.");
+    if (/\bTODO\b|\n\s*pass\s*\n|\n\s*pass$/.test(code)) issues.push("! بخش ناتمام (TODO/pass) در کد باقی مانده است.");
     if (/\bexcept\s*:/.test(code)) issues.push("! except بدون نوع خطا، خطاهای واقعی را پنهان می‌کند.");
     issues.push("— " + fa(lines.length) + " خط بررسی شد.");
     issues.push("این نسخه نمایشی کد را اجرا نمی‌کند؛ خروجی بالا فقط بررسی ساختاری است.");
     return issues.join("\n");
+  }
+
+  /* A simulated shell: only a few commands are answered, nothing is executed. */
+  var TERMINAL_HELP = [
+    "فرمان‌های پشتیبانی‌شده:",
+    "  python <file>   اجرای فایل پایتون (شبیه‌سازی‌شده)",
+    "  pip install <p> نصب بسته (شبیه‌سازی‌شده)",
+    "  git status      وضعیت مخزن نمونه",
+    "  ls              فهرست فایل‌های نمونه",
+    "  clear           پاک‌کردن ترمینال",
+  ].join("\n");
+
+  function runCommand(raw) {
+    var host = el("[data-terminal-log]");
+    if (!host) return;
+    var command = String(raw || "").trim();
+    var body;
+    if (!command) return;
+    if (command === "help" || command === "--help") body = TERMINAL_HELP;
+    else if (command === "clear") { host.innerHTML = ""; return; }
+    else if (command === "ls") body = "main.py  data/\nnotebooks/\nrequirements.txt";
+    else if (command === "git status") body = "On branch main\nnothing to commit, working tree clean";
+    else if (/^pip\s+install\s+\S+/.test(command)) body = "Successfully installed " + command.split(/\s+/)[2] + "-0.0.0 (demo)";
+    else if (/^python\s+\S+/.test(command)) body = "اجرای فایل در نسخه نمایشی شبیه‌سازی می‌شود.\nخروجی: 42";
+    else if (/^python$/.test(command)) body = "Python 3.12 (demo shell)\n>>> برای خروج Ctrl+D را بزنید";
+    else body = "فرمان شناخته نشد: " + command + "\nبرای دیدن فرمان‌های مجاز «help» را اجرا کنید.";
+
+    appendTerminal("$ " + command, "term-cmd");
+    appendTerminal(body, "term-out");
+    state.terminal = (state.terminal || []).concat([{ command: command, at: new Date().toISOString() }]).slice(-40);
+    store();
+    paintStats();
+  }
+
+  function appendTerminal(text, css) {
+    var host = el("[data-terminal-log]");
+    if (!host) return;
+    var hint = el(".term-hint", host);
+    if (hint) hint.remove();
+    text.split("\n").forEach(function (line) {
+      var span = document.createElement("span");
+      span.className = "term-line " + css;
+      span.textContent = line;
+      host.appendChild(span);
+    });
+    host.scrollTop = host.scrollHeight;
+  }
+
+  /* Rule-based review: no model runs, the checks are deterministic. */
+  function reviewCode(code) {
+    var lines = code.split("\n");
+    var findings = [];
+    var add = function (level, text) { findings.push({ level: level, text: text }); };
+
+    if (!/\bdef\s+\w+\s*\(/.test(code)) add("warn", "هیچ تابعی تعریف نشده است؛ منطق را در یک تابع با نام گویا بگذار.");
+    else add("ok", "تعریف تابع پیدا شد.");
+
+    if (/\bdef\s+\w+\s*\(/.test(code) && !/\breturn\b/.test(code)) add("bad", "تابع بدون return است؛ خروجی مشخصی برنمی‌گرداند.");
+    if (/\bprint\s*\(/.test(code)) add("warn", "print برای دیباگ مناسب است، اما خروجی نهایی را با return برگردان.");
+    if ((code.match(/\bif\b/g) || []).length && !/\b(else|elif)\b/.test(code)) add("info", "فقط یک شاخه شرطی دیده شد؛ حالت‌های دیگر را هم پوشش بده.");
+    if (/\bexcept\s*:/.test(code)) add("bad", "except بدون نوع خطا، خطاهای واقعی را پنهان می‌کند.");
+    if (/\bexcept\b/.test(code) && !/\braise\b/.test(code) && !/\blog|print/.test(code)) add("warn", "در بخش except خطا را بی‌صدا رد می‌کنی؛ حداقل آن را ثبت کن.");
+    if (/\bTODO\b|\n\s*pass\s*\n|\n\s*pass$/.test(code)) add("bad", "بخش ناتمام (TODO یا pass) در کد باقی مانده است.");
+    if (/\bfor\s+\w+\s+in\s+range\(len\(/.test(code)) add("info", "به‌جای range(len(...)) می‌توانی مستقیم روی عناصر پیمایش کنی.");
+    if (lines.some(function (l) { return l.length > 100; })) add("info", "خط بلندتر از ۱۰۰ نویسه دیده شد؛ خوانایی را بهتر کن.");
+    if (!/(==|!=|<=|>=|<|>)/.test(code)) add("info", "هیچ مقایسه‌ای در کد نیست؛ حالت‌های مرزی را بررسی کن.");
+    add("info", "پیشنهاد آزمون: ورودی عادی، ورودی خالی و ورودی نامعتبر را جدا بسنج.");
+    add("info", "در پایان یک آزمون کوچک بنویس تا رفتار تابع تثبیت شود.");
+    return findings;
+  }
+
+  function paintReview(findings) {
+    var host = el("[data-review-output]");
+    if (!host) return;
+    var list = findings || (state.reviews[0] && state.reviews[0].findings) || [];
+    if (!list.length) { host.hidden = true; return; }
+    var labels = { ok: "درست", warn: "هشدار", bad: "باید اصلاح شود", info: "پیشنهاد" };
+    host.innerHTML = '<h3>نتیجه بررسی</h3><ul class="review-list">' + list.map(function (item) {
+      return '<li class="review-' + item.level + '"><span class="review-tag">' + labels[item.level] + '</span>' + esc(item.text) + '</li>';
+    }).join("") + '</ul>';
+    host.hidden = false;
+  }
+
+  function paintChat() {
+    var host = el("[data-chat-log]");
+    if (!host) return;
+    if (!state.chat.length) {
+      host.innerHTML = '<div class="chat-empty" data-chat-empty>هنوز پیامی در گفت‌وگوی زنده نیست. اولین نفر باشید.</div>';
+      return;
+    }
+    host.innerHTML = state.chat.map(function (m) {
+      return '<div class="chat-msg' + (m.mine ? " is-mine" : "") + '"><div class="chat-meta"><strong>' + esc(m.author) +
+        '</strong><small>' + jalali(m.created_at) + '</small></div><p>' + esc(m.body).replace(/\n/g, "<br>") + '</p></div>';
+    }).join("");
+    host.scrollTop = host.scrollHeight;
+  }
+
+  /* Symbolic checkout: the card data is validated, then discarded — never stored. */
+  function openCheckout(planId) {
+    var box = el("#checkout");
+    if (!box) return;
+    box.hidden = false;
+    var slot = el("[data-checkout-plan]", box);
+    if (slot) slot.textContent = planById(planId).name + " · " + fa(planById(planId).price.toLocaleString("en-US")) + " تومان";
+    var field = el('[data-form="checkout"] [name="plan"]', box);
+    if (field) field.value = planId;
+    var receipt = el("[data-receipt]", box);
+    if (receipt) { receipt.hidden = true; receipt.innerHTML = ""; }
+    var message = el(".form-note", box);
+    if (message) message.hidden = true;
+    box.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function digits(value) {
+    return String(value || "").replace(/[۰-۹٠-٩]/g, function (d) {
+      return "۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩".indexOf(d) % 10;
+    });
+  }
+
+  function luhn(number) {
+    var sum = 0;
+    var flip = false;
+    for (var i = number.length - 1; i >= 0; i--) {
+      var n = Number(number.charAt(i));
+      if (flip) { n *= 2; if (n > 9) n -= 9; }
+      sum += n;
+      flip = !flip;
+    }
+    return sum % 10 === 0;
+  }
+
+  function receiptHtml(planId) {
+    var plan = planById(planId);
+    var ref = "NVX-" + String(Date.now()).slice(-8);
+    return '<h3>رسید پرداخت نمادین</h3>' +
+      '<ul class="receipt-list">' +
+      '<li><span>پلن</span><strong>' + esc(plan.name) + '</strong></li>' +
+      '<li><span>مبلغ</span><strong>' + fa(plan.price.toLocaleString("en-US")) + ' تومان</strong></li>' +
+      '<li><span>شماره پیگیری</span><strong dir="ltr">' + esc(ref) + '</strong></li>' +
+      '<li><span>وضعیت</span><strong>پرداخت نشده — نمایشی</strong></li>' +
+      '</ul><p class="muted">هیچ مبلغی از حساب شما کم نشد و اطلاعات کارت ذخیره نشد.</p>';
   }
 
   /* ------------------------------------------------------------ actions */
@@ -296,6 +438,81 @@
       paintStats(); paintChallenges(); paintSnippets();
     },
 
+    terminal: function (form) {
+      var input = form.elements.namedItem("command");
+      runCommand(input ? input.value : "");
+      if (input) input.value = "";
+      if (input) input.focus();
+    },
+
+    review: function (form) {
+      var code = (form.elements.namedItem("code").value || "").trim();
+      if (code.length < 20) { note(form, "کد باید دست‌کم ۲۰ نویسه باشد.", "error"); return; }
+      var findings = reviewCode(code);
+      state.reviews.unshift({ code: code, findings: findings, created_at: new Date().toISOString() });
+      store();
+      note(form, "بررسی انجام شد.", "success");
+      paintReview(findings);
+      paintStats();
+    },
+
+    chat: function (form) {
+      if (!accountReady()) { location.href = join("login/"); return; }
+      var input = form.elements.namedItem("message");
+      var message = (input.value || "").trim();
+      if (!message) { note(form, "پیام خالی است.", "error"); return; }
+      if (message.length > 500) { note(form, "پیام باید کمتر از ۵۰۰ نویسه باشد.", "error"); return; }
+      state.chat.push({
+        author: state.user.name, body: message,
+        created_at: new Date().toISOString(), mine: true
+      });
+      store();
+      form.reset();
+      paintChat();
+      paintStats();
+    },
+
+    checkout: function (form) {
+      if (!accountReady()) { location.href = join("login/"); return; }
+      var planId = form.elements.namedItem("plan").value;
+      if (planOrder.indexOf(planId) < 1) { note(form, "پلن انتخاب‌شده معتبر نیست.", "error"); return; }
+      var card = digits(form.elements.namedItem("card").value).replace(/[\s-]/g, "");
+      if (!/^[0-9]{16}$/.test(card) || !luhn(card)) {
+        note(form, "شماره کارت نمونه باید ۱۶ رقم و از نظر ساختار معتبر باشد.", "error"); return;
+      }
+      var holder = (form.elements.namedItem("holder").value || "").trim();
+      if (holder.length < 2) { note(form, "نام روی کارت را وارد کنید.", "error"); return; }
+      var month = digits(form.elements.namedItem("month").value);
+      var year = digits(form.elements.namedItem("year").value);
+      var cvv = digits(form.elements.namedItem("cvv").value);
+      if (!/^(0[1-9]|1[0-2])$/.test(month)) { note(form, "ماه انقضا نامعتبر است.", "error"); return; }
+      if (!/^[0-9]{2}$/.test(year)) { note(form, "سال انقضا نامعتبر است.", "error"); return; }
+      if (!/^[0-9]{3,4}$/.test(cvv)) { note(form, "CVV نامعتبر است.", "error"); return; }
+      if (!form.elements.namedItem("agree").checked) { note(form, "تأیید نمایشی‌بودن پرداخت لازم است.", "error"); return; }
+
+      var now = new Date();
+      var expires = new Date(now.getTime() + 30 * 864e5);
+      state.user.plan = planId;
+      state.user.plan_expires = expires.toISOString();
+      state.subscriptions.unshift({
+        phone: state.user.phone, plan: planId, status: "فعال‌شده (نمایشی)",
+        starts_at: now.toISOString(), expires_at: expires.toISOString(),
+        holder: holder, last4: card.slice(-4)
+      });
+      state.payments.unshift({
+        plan: planId, amount: planById(planId).price, status: "نمایشی",
+        reference: "NVX-" + String(Date.now()).slice(-8),
+        last4: card.slice(-4), created_at: now.toISOString()
+      });
+      store();
+      form.reset();
+      var box = el("#checkout");
+      var receipt = box ? el("[data-receipt]", box) : null;
+      if (receipt) { receipt.innerHTML = receiptHtml(planId); receipt.hidden = false; }
+      note(form, "پلن " + planById(planId).name + " به‌صورت نمادین فعال شد.", "success");
+      paintAll();
+    },
+
     setting: function (form) {
       state.settings[form.elements.namedItem("key").value] = (form.elements.namedItem("value").value || "").trim();
       store();
@@ -346,11 +563,15 @@
       xp: 2480 + state.challenges.length * 120,
       streak: 7 + state.projects.length,
       runs: state.runs,
+      terminal_runs: (state.terminal || []).length,
+      chat_messages: state.chat.length,
+      reviews: state.reviews.length,
       solved: state.solutions.length,
       snippets: state.snippets.length,
       nova_today: state.nova.length,
       nova_open: Math.max(0, state.nova.length - state.solutions.length),
-      plan_credits: planLimits[currentPlan()][1]
+      plan_credits: planLimits[currentPlan()][1],
+      week_now: state.runs + state.solutions.length + (state.terminal || []).length
     };
     els("[data-stat]").forEach(function (n) {
       var key = n.getAttribute("data-stat");
@@ -487,6 +708,24 @@
           }).join("")
         : '<tr><td colspan="5" class="muted">هنوز پرداختی ثبت نشده است.</td></tr>';
     }
+
+    var studentPay = el("[data-student-payments]");
+    if (studentPay) {
+      studentPay.innerHTML = rows.length
+        ? rows.map(function (r) {
+            return '<tr><td>' + esc(r.plan) + '</td><td>' + fa(r.price.toLocaleString("en-US")) + ' تومان</td><td>' + esc(r.status) + '</td><td>' + jalali(r.expires) + '</td></tr>';
+          }).join("")
+        : '<tr><td colspan="4" class="muted">هنوز پرداختی ثبت نشده است.</td></tr>';
+    }
+
+    var ownPay = el("[data-subscription-payments]");
+    if (ownPay) {
+      ownPay.innerHTML = state.payments.length
+        ? state.payments.map(function (p) {
+            return '<tr><td>' + esc(planById(p.plan).name) + '</td><td>' + fa(p.amount.toLocaleString("en-US")) + ' تومان</td><td>' + esc(p.status) + '</td><td>' + jalali(p.created_at) + '</td></tr>';
+          }).join("")
+        : '<tr><td colspan="4" class="muted">هنوز پرداختی ثبت نشده است.</td></tr>';
+    }
   }
 
   function paintNova() {
@@ -525,11 +764,26 @@
     });
   }
 
+  function paintChallengeNotes() {
+    els("[data-challenge-note]").forEach(function (note) {
+      var form = note.closest(".panel-card");
+      var code = form ? el('[name="code"]', form) : null;
+      if (code && code.value) return;
+      var index = Number(note.getAttribute("data-challenge-note"));
+      var done = state.solutions.indexOf(index) >= 0;
+      note.hidden = false;
+      note.className = "form-note notice " + (done ? "success" : "info");
+      note.textContent = done
+        ? "راه‌حل این چالش ثبت شده است؛ می‌توانی نسخه بهتری هم اضافه کنی."
+        : "پس از نوشتن راه‌حل و پاس‌شدن آزمون‌های پذیرش، آن را ثبت کن.";
+    });
+  }
+
   function paintAll() {
     paintProfile(); paintStats(); paintEnrollments(); paintMyProjects();
     paintPosts(); paintTickets(); paintAnnouncements(); paintContent();
     paintUsers(); paintSubscriptions(); paintChallenges(); paintPlan();
-    paintNova(); paintSnippets();
+    paintNova(); paintSnippets(); paintChat(); paintReview(); paintChallengeNotes();
   }
 
   /* ------------------------------------------------------------- wiring */
@@ -548,6 +802,14 @@
   });
 
   document.addEventListener("click", function (event) {
+    var termRun = event.target.closest("[data-terminal-run]");
+    if (termRun) {
+      var termInput = el("#term-input") || el('[data-form="terminal"] [name="command"]');
+      runCommand(termInput ? termInput.value : "");
+      if (termInput) { termInput.value = ""; termInput.focus(); }
+      return;
+    }
+
     var run = event.target.closest("[data-code-run]");
     if (run) {
       var card = run.closest(".code-col") || document;
@@ -582,12 +844,13 @@
       if (!accountReady()) { location.href = join("login/"); return; }
       var selected = upgrade.getAttribute("data-demo-plan");
       if (planOrder.indexOf(selected) < 1) return;
-      state.user.plan = selected;
-      state.user.plan_expires = new Date(Date.now() + 30 * 864e5).toISOString();
-      state.subscriptions.unshift({ phone: state.user.phone, plan: selected, status: "آزمایشی", starts_at: new Date().toISOString(), expires_at: state.user.plan_expires });
-      store(); paintAll();
-      var message = el("[data-plan-note]");
-      if (message) { message.hidden = false; message.className = "form-note notice success"; message.textContent = "پلن " + planById(selected).name + " برای ۳۰ روز به‌صورت نمایشی فعال شد؛ پرداختی انجام نشد."; }
+      openCheckout(selected);
+      return;
+    }
+
+    if (event.target.closest("[data-checkout-cancel]")) {
+      var box = el("#checkout");
+      if (box) box.hidden = true;
       return;
     }
 

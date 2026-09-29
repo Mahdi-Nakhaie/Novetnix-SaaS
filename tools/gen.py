@@ -456,7 +456,22 @@ def view_community():
               '<label>متن<textarea name="body" required minlength="10" maxlength="5000" rows="5"></textarea></label>'
               '<button class="btn btn-primary">ثبت در انجمن</button></form>'
               '<p class="form-note" hidden></p></div>'
-              '<div class="community-list" data-community-list></div></section></main>')
+              '<div class="community-list" data-community-list></div></section>'
+            + '<section class="section container">' + live_chat() + "</section></main>")
+
+
+def live_chat():
+    return ('<div class="panel-card chat-card"><div class="code-bar"><h2>گفت‌وگوی زنده</h2>'
+            '<span class="live-badge"><span class="live-dot"></span> Live</span></div>'
+            '<p class="muted">پیام‌ها بی‌درنگ در همین صفحه نمایش داده می‌شوند و در مرورگر شما ذخیره می‌مانند.</p>'
+            '<div class="chat-log" data-chat-log role="log" aria-live="polite">'
+            '<div class="chat-empty" data-chat-empty>هنوز پیامی در گفت‌وگوی زنده نیست. اولین نفر باشید.</div></div>'
+            '<form class="chat-form" data-form="chat">'
+            '<label class="sr-only" for="chat-input">پیام</label>'
+            '<input id="chat-input" name="message" autocomplete="off" maxlength="500" '
+            'placeholder="پیام خود را بنویسید…" required minlength="1">'
+            '<button class="btn btn-primary" type="submit">ارسال</button></form>'
+            '<p class="form-note" hidden></p></div>')
 
 
 def view_notfound():
@@ -548,6 +563,8 @@ def workspace_view():
     out += stat_grid([("اجراهای من", "۰", "runs"), ("چالش حل‌شده", "۰", "solved"),
                       ("قطعه کد ذخیره‌شده", "۰", "snippets"), ("زبان پیشنهادی", "Python", None)])
     out += code_workspace()
+    out += terminal_view()
+    out += nova_review_card()
     out += ('<div class="panel-columns"><section class="panel-card"><h2>قطعه‌های ذخیره‌شده</h2>'
             '<div class="panel-list" data-snippets>'
             '<div class="empty-state">هنوز قطعه‌کدی ذخیره نکرده‌ای.</div></div></section>'
@@ -559,6 +576,33 @@ def workspace_view():
     return out
 
 
+def terminal_view():
+    return ('<section class="panel-card code-col"><div class="code-bar"><span class="pill">Terminal</span>'
+            '<span class="muted">فرمان‌های مجاز در نسخه نمایشی: python، pip، git، ls، help</span></div>'
+            '<div class="terminal" data-terminal-log dir="ltr" role="log" aria-live="polite">'
+            '<span class="term-line term-hint">$ help</span></div>'
+            '<form class="terminal-form" data-form="terminal">'
+            '<label class="sr-only" for="term-input">فرمان ترمینال</label>'
+            '<span class="term-prompt" aria-hidden="true">$</span>'
+            '<input id="term-input" class="term-input" dir="ltr" name="command" autocomplete="off" '
+            'spellcheck="false" placeholder="python main.py">'
+            '<button class="btn btn-small btn-primary" type="button" data-terminal-run>اجرا</button></form>'
+            '<p class="muted">این ترمینال شبیه‌سازی‌شده است؛ هیچ فرمانی روی سیستم اجرا نمی‌شود و خروجی '
+            'فقط برای تمرین نوشتن فرمان درست است.</p></section>')
+
+
+def nova_review_card():
+    return ('<section class="panel-card"><div class="code-bar"><h2>بررسی کد با Nova</h2>'
+            '<span class="pill">Nova Review</span></div>'
+            '<p class="muted">کد خود را برای بازبینی بفرستید؛ Nova نکته‌های ساختاری، خوانایی و آزمون‌های '
+            'پیشنهادی را فهرست می‌کند. در نسخه نمایشی بررسی به‌صورت قاعده‌محور و داخل مرورگر انجام می‌شود.</p>'
+            '<form class="stack-form" data-form="review">'
+            '<label>کد برای بررسی<textarea class="code-input" dir="ltr" name="code" rows="10" '
+            'spellcheck="false" required minlength="20" placeholder="def solve(data):&#10;    return data"></textarea></label>'
+            '<button class="btn btn-primary">ارسال برای بررسی</button></form>'
+            '<p class="form-note" hidden></p><div class="review-output" data-review-output hidden></div></section>')
+
+
 
 def community_tools():
     return ('<div class="panel-card narrow-left"><h2>Create Post</h2>'
@@ -566,7 +610,9 @@ def community_tools():
             '<label>عنوان<input name="title" required minlength="5" maxlength="180"></label>'
             '<label>متن<textarea name="body" required minlength="10" maxlength="5000" rows="4"></textarea></label>'
             '<button class="btn btn-primary">Create Post</button></form>'
-            '<p class="form-note" hidden></p></div><div class="panel-list" data-panel-posts></div>')
+            '<p class="form-note" hidden></p></div>'
+            '<div class="panel-columns"><div class="panel-list" data-panel-posts></div>'
+            + live_chat() + "</div>")
 
 
 def ticket_tools():
@@ -649,7 +695,7 @@ def student_payments():
             '<p class="muted">در نسخه نمایشی هیچ پرداختی انجام نمی‌شود؛ ردیف‌های زیر فقط نتیجه '
             'فعال‌سازی آزمایشی پلن هستند.</p></div>'
             '<div class="panel-card table-wrap"><table><thead><tr><th>پلن</th><th>مبلغ ماهانه</th>'
-            "<th>وضعیت</th><th>پایان</th></tr></thead><tbody data-payments-table>"
+            "<th>وضعیت</th><th>پایان</th></tr></thead><tbody data-student-payments>"
             '<tr><td colspan="4" class="muted">هنوز پرداختی ثبت نشده است.</td></tr></tbody></table></div>')
     return out
 
@@ -678,8 +724,38 @@ def student_subscription():
     out += '<div class="panel-card"><h2>انتخاب پلن نمایشی</h2><p class="muted">این فعال‌سازی فقط برای پیش‌نمایش است؛ هزینه‌ای دریافت نمی‌شود و اشتراک واقعی ایجاد نمی‌کند.</p><div class="pricing-grid demo-plan-grid">'
     for p in PLANS[1:]:
         out += (f'<article class="price-card"><h3>{h(p["name"])}</h3><p>{money(p["price"])} / ماه</p>'
-                f'<p class="muted">{h(p["summary"])}</p><button type="button" class="btn btn-primary" data-demo-plan="{h(p["id"])}">فعال‌سازی آزمایشی</button></article>')
-    return out + '</div><p class="form-note" data-plan-note hidden></p></div>'
+                f'<p class="muted">{h(p["summary"])}</p>'
+                f'<button type="button" class="btn btn-primary" data-demo-plan="{h(p["id"])}">خرید نمادین</button></article>')
+    out += '</div><p class="form-note" data-plan-note hidden></p></div>'
+    out += checkout_form()
+    out += ('<div class="panel-card"><h2>تاریخچه پرداخت نمادین</h2>'
+            '<div class="table-wrap"><table><thead><tr><th>پلن</th><th>مبلغ</th><th>وضعیت</th>'
+            '<th>تاریخ</th></tr></thead><tbody data-subscription-payments>'
+            '<tr><td colspan="4" class="muted">هنوز پرداختی ثبت نشده است.</td></tr></tbody></table></div></div>')
+    return out
+
+
+def checkout_form():
+    return ('<div id="checkout" class="panel-card narrow checkout-card" hidden>'
+            '<div class="code-bar"><h2>پرداخت نمادین</h2><span class="pill" data-checkout-plan>—</span></div>'
+            '<p class="muted">این درگاه واقعی نیست و هیچ مبلغی دریافت نمی‌شود. شماره کارت نمونه را وارد کنید '
+            'تا مسیر خرید را ببینید؛ شماره کارت واقعی وارد نکنید.</p>'
+            '<form class="stack-form" data-form="checkout">'
+            '<input type="hidden" name="plan" value="">'
+            '<label>شماره کارت نمونه<input dir="ltr" inputmode="numeric" name="card" required '
+            'pattern="[0-9۰-۹ -]{16,19}" placeholder="6037 9977 0000 0000" autocomplete="off"></label>'
+            '<label>نام روی کارت<input name="holder" required minlength="2" maxlength="60" placeholder="نام نمونه"></label>'
+            '<div class="checkout-grid">'
+            '<label>ماه<input dir="ltr" inputmode="numeric" name="month" required pattern="0[1-9]|1[0-2]" placeholder="۰۵"></label>'
+            '<label>سال<input dir="ltr" inputmode="numeric" name="year" required pattern="[0-9۰-۹]{2}" placeholder="۰۷"></label>'
+            '<label>CVV<input dir="ltr" inputmode="numeric" name="cvv" required pattern="[0-9۰-۹]{3,4}" placeholder="۱۲۳" autocomplete="off"></label>'
+            '</div>'
+            '<label class="check-row"><input type="checkbox" name="agree" required> '
+            'می‌دانم این یک پرداخت نمایشی است و مبلغی پرداخت نمی‌شود.</label>'
+            '<div class="code-actions"><button class="btn btn-primary" type="submit" data-checkout-pay>پرداخت نمادین</button>'
+            '<button class="btn btn-outline" type="button" data-checkout-cancel>انصراف</button></div>'
+            '</form><p class="form-note" hidden></p>'
+            '<div class="receipt" data-receipt hidden></div></div>')
 
 
 def student_section(sub):
@@ -732,6 +808,23 @@ def student_section(sub):
                           for title, icon, need in BADGES[:3])
                 + "</div>" + linkto("panel/student/gamification", "همه نشان‌ها ←", "btn btn-outline")
                 + "</section></div>")
+        out += ('<div class="panel-columns"><section class="panel-card"><h2>سرعت یادگیری</h2>'
+                '<p class="muted">مقایسه این هفته با هفته گذشته</p><ul class="check-list">'
+                '<li>تمرین‌های این هفته: <strong data-stat="week_now">۰</strong></li>'
+                '<li>تمرین‌های هفته گذشته: <strong>۱۸</strong></li>'
+                '<li>هدف هفتگی: <strong>۲۵ تمرین</strong></li></ul>'
+                + progress_bar(48) + '</section>'
+                '<section class="panel-card"><h2>کتابخانه من</h2><ul class="check-list">'
+                '<li>مقاله‌های ذخیره‌شده: <strong data-stat="enrollments">۰</strong></li>'
+                '<li>پروژه‌های فعال: <strong data-stat="projects">۰</strong></li>'
+                '<li>قطعه‌کد ذخیره‌شده: <strong data-stat="snippets">۰</strong></li>'
+                '<li>گفت‌وگوهای زنده: <strong data-stat="chat_messages">۰</strong></li></ul>'
+                + linkto("panel/student/workspace", "رفتن به میزکار ←", "btn btn-outline") + "</section></div>")
+        out += ('<div class="panel-card"><h2>رخدادهای تازه</h2><div class="panel-list" data-announcements>')
+        for title, body, ago in ANNOUNCEMENTS:
+            out += (f'<div class="announce-card"><div><h2>{h(title)}</h2><p>{h(body)}</p></div>'
+                    f"<small>{h(ago)}</small></div>")
+        out += ("</div>" + linkto("panel/student/notifications", "همه اعلان‌ها ←", "btn btn-outline") + "</div>")
         return out
     if sub == "learning":
         return (panel_head("مسیر یادگیری من", "مقاله‌های ذخیره‌شده برای ادامه مطالعه.")

@@ -29,12 +29,24 @@ function load(protectedPath) {
   const handlers = {};
   const location = { href: "" };
   const swaps = [];
+  const terminalLines = [];
+  const terminalHost = {
+    innerHTML: "",
+    scrollTop: 0,
+    scrollHeight: 0,
+    querySelector: () => null,
+    appendChild(node) { terminalLines.push(node.textContent); },
+  };
+  const nodes = { "[data-terminal-log]": terminalHost };
   const document = {
     body: protectedPath === undefined ? null : { getAttribute: () => protectedPath },
-    querySelector: (selector) => (swaps.length && selector === "main" ? swaps[0] : null),
+    querySelector: (selector) => (swaps.length && selector === "main" ? swaps[0] : (nodes[selector] || null)),
     querySelectorAll: () => [],
     addEventListener: (event, handler) => { handlers[event] = handler; },
-    createElement: () => ({ style: {}, insertAdjacentElement: () => {} }),
+    createElement: () => ({
+      style: {}, className: "", textContent: "", insertAdjacentElement: () => {},
+      remove: () => {},
+    }),
   };
   const context = {
     window: {
@@ -45,11 +57,18 @@ function load(protectedPath) {
     document, location, setTimeout: (callback) => callback(), Math, Date, String,
   };
   vm.runInNewContext(source, context);
-  return { handlers, location, context, swaps };
+  return { handlers, location, context, swaps, terminalLines, nodes };
 }
 
 function submit(app, action, values) {
-  const fields = Object.fromEntries(Object.entries(values).map(([key, value]) => [key, { value }]));
+  const fields = Object.fromEntries(
+    Object.entries(values).map(([key, value]) => {
+      // a plain value becomes a text field; an object is passed through so
+      // checkboxes can carry their own `checked` property
+      if (value && typeof value === "object") return [key, { focus: () => {}, ...value }];
+      return [key, { value, focus: () => {} }];
+    })
+  );
   const form = {
     getAttribute: () => action,
     elements: { namedItem: (key) => fields[key] },
@@ -99,12 +118,40 @@ assert.equal(lockedCourse.location.href, "/Novetnix-SaaS/site/panel/student/subs
 const openCourse = load("course/python-foundations");
 assert.equal(openCourse.location.href, "");
 
-// activating a demo plan unlocks both gates
-lockedProject.handlers.click({
+// buying a plan goes through the symbolic checkout, which validates the card first
+const checkout = load("panel/student/subscription");
+const receipt = { hidden: true, innerHTML: "" };
+const planSlot = { textContent: "" };
+checkout.nodes["#checkout"] = {
+  hidden: true,
+  scrollIntoView: () => {},
+  querySelector: () => null,
+};
+checkout.context.document.querySelector = (selector) => checkout.nodes[selector] || null;
+checkout.handlers.click({
   target: { closest: (selector) => (selector === "[data-demo-plan]" ? { getAttribute: () => "bronze" } : null) },
+});
+assert.equal(checkout.nodes["#checkout"].hidden, false);
+
+// a card that fails the Luhn check must not activate anything
+submit(checkout, "checkout", {
+  plan: "bronze", card: "1234567890123456", holder: "کاربر نمونه",
+  month: "05", year: "07", cvv: "123", agree: { checked: true },
+});
+state = JSON.parse(memory.get("noventix.demo.v1"));
+assert.equal(state.user.plan, undefined);
+
+// a structurally valid test card completes the symbolic payment
+submit(checkout, "checkout", {
+  plan: "bronze", card: "6037997712345678", holder: "کاربر نمونه",
+  month: "05", year: "07", cvv: "123", agree: { checked: true },
 });
 state = JSON.parse(memory.get("noventix.demo.v1"));
 assert.equal(state.user.plan, "bronze");
+assert.equal(state.payments.length, 1);
+assert.equal(state.payments[0].last4, "5678");
+assert.equal(state.payments[0].status, "نمایشی");
+assert.equal(state.payments[0].card, undefined);
 const upgraded = load("project/1");
 assert.equal(upgraded.location.href, "");
 assert.equal(load("course/ml-basics").location.href, "");
@@ -112,8 +159,11 @@ assert.equal(load("course/ml-basics").location.href, "");
 const workspace = load("panel/student/workspace");
 const codeField = { value: "def solve(data):\n    return sum(data)" };
 const outputField = { textContent: "" };
-workspace.context.document.querySelector = (selector) =>
-  selector === "[data-code-input]" ? codeField : selector === "[data-code-output]" ? outputField : null;
+workspace.context.document.querySelector = (selector) => {
+  if (selector === "[data-code-input]") return codeField;
+  if (selector === "[data-code-output]") return outputField;
+  return workspace.nodes[selector] || null;
+};
 workspace.handlers.click({
   target: { closest: (selector) => (selector === "[data-code-run]" ? { closest: () => null } : null) },
 });
@@ -133,4 +183,29 @@ state = JSON.parse(memory.get("noventix.demo.v1"));
 assert.equal(state.nova.length, 1);
 assert.match(state.nova[0].answer, /ورودی خالی/);
 
-console.log("Demo gate, plan limits, activation, workspace, Nova, login, community and contact passed");
+// simulated terminal answers known commands and refuses the rest
+workspace.terminalLines.length = 0;
+submit(workspace, "terminal", { command: "python main.py" });
+assert.ok(workspace.terminalLines.some((line) => line.includes("شبیه‌سازی")));
+submit(workspace, "terminal", { command: "rm -rf /" });
+assert.ok(workspace.terminalLines.some((line) => line.includes("شناخته نشد")));
+state = JSON.parse(memory.get("noventix.demo.v1"));
+assert.equal(state.terminal.length, 2);
+
+// Nova code review flags missing return and silent except
+submit(workspace, "review", { code: "def solve(data):\n    try:\n        print(data)\n    except:\n        pass" });
+state = JSON.parse(memory.get("noventix.demo.v1"));
+assert.equal(state.reviews.length, 1);
+const levels = state.reviews[0].findings.map((f) => f.level);
+assert.ok(levels.includes("bad"));
+assert.ok(state.reviews[0].findings.some((f) => f.text.includes("return")));
+
+// live chat keeps the message and attributes it to the signed-in account
+const community = load("community");
+submit(community, "chat", { message: "کسی روی پروژه تحلیل فروش کار می‌کند؟" });
+state = JSON.parse(memory.get("noventix.demo.v1"));
+assert.equal(state.chat.length, 1);
+assert.equal(state.chat[0].author, "کاربر نمونه");
+assert.equal(state.chat[0].mine, true);
+
+console.log("Demo gate, plan limits, activation, workspace, terminal, review, chat, Nova and community passed");
