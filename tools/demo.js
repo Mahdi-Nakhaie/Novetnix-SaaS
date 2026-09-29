@@ -37,7 +37,7 @@
     };
   }
 
-  var state = read() || blank();
+  var state = Object.assign(blank(), read() || {});
 
   function store() {
     try { localStorage.setItem(KEY, JSON.stringify(state)); }
@@ -812,7 +812,7 @@
 
     var run = event.target.closest("[data-code-run]");
     if (run) {
-      var card = run.closest(".code-col") || document;
+      var card = run.closest(".code-layout") || document;
       var source = el("[data-code-input]", card);
       var output = el("[data-code-output]", card);
       var status = el("[data-code-status]", card);
@@ -831,7 +831,7 @@
 
     var reset = event.target.closest("[data-code-reset]");
     if (reset) {
-      var rcard = reset.closest(".code-col") || document;
+      var rcard = reset.closest(".code-layout") || document;
       var rinput = el("[data-code-input]", rcard);
       var routput = el("[data-code-output]", rcard);
       if (rinput) rinput.value = "";

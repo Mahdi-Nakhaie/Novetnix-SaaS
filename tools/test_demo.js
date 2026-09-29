@@ -164,9 +164,23 @@ workspace.context.document.querySelector = (selector) => {
   if (selector === "[data-code-output]") return outputField;
   return workspace.nodes[selector] || null;
 };
-workspace.handlers.click({
-  target: { closest: (selector) => (selector === "[data-code-run]" ? { closest: () => null } : null) },
-});
+const codeStatus = { textContent: "" };
+const inputColumn = { querySelector: (selector) => selector === "[data-code-input]" ? codeField : null };
+const codeLayout = {
+  querySelector: (selector) => ({
+    "[data-code-input]": codeField,
+    "[data-code-output]": outputField,
+    "[data-code-status]": codeStatus,
+  })[selector] || null,
+};
+function workspaceClick(action) {
+  workspace.handlers.click({
+    target: { closest: (selector) => selector === action ? {
+      closest: (parent) => parent === ".code-layout" ? codeLayout : inputColumn,
+    } : null },
+  });
+}
+workspaceClick("[data-code-run]");
 assert.match(outputField.textContent, /تعریف تابع/);
 assert.match(outputField.textContent, /اجرا نمی‌کند/);
 state = JSON.parse(memory.get("noventix.demo.v1"));
@@ -208,4 +222,54 @@ assert.equal(state.chat.length, 1);
 assert.equal(state.chat[0].author, "کاربر نمونه");
 assert.equal(state.chat[0].mine, true);
 
-console.log("Demo gate, plan limits, activation, workspace, terminal, review, chat, Nova and community passed");
+workspaceClick("[data-code-reset]");
+assert.equal(codeField.value, "");
+assert.match(outputField.textContent, /هنوز/);
+workspaceClick("[data-code-run]");
+assert.match(outputField.textContent, /ابتدا کدی/);
+assert.equal(JSON.parse(memory.get("noventix.demo.v1")).runs, 2);
+
+const legacy = {
+  user: state.user, users: [state.user], enrollments: [], projects: [], challenges: [],
+  posts: state.posts, tickets: [], notifications: [], content: [], settings: {},
+  subscriptions: [], messages: [],
+};
+memory.set("noventix.demo.v1", JSON.stringify(legacy));
+const returning = load("panel/student/workspace");
+function click(app, selector, value) {
+  const button = { getAttribute: () => String(value), outerHTML: "" };
+  app.handlers.click({ target: { closest: (query) => query === selector ? button : null } });
+  return button;
+}
+for (const [selector, value, field] of [
+  ["[data-enroll]", "python-foundations", "enrollments"],
+  ["[data-project]", 0, "projects"],
+  ["[data-challenge]", 0, "challenges"],
+]) {
+  assert.match(click(returning, selector, value).outerHTML, /is-done/);
+  click(returning, selector, value);
+  assert.deepEqual(JSON.parse(memory.get("noventix.demo.v1"))[field], [value]);
+}
+submit(returning, "terminal", { command: "help" });
+assert.ok(returning.terminalLines.some((line) => line.includes("فرمان‌های")));
+returning.nodes["#term-input"] = { value: "ls", focus() {} };
+click(returning, "[data-terminal-run]");
+assert.ok(returning.terminalLines.some((line) => line.includes("main.py")));
+assert.equal(returning.nodes["#term-input"].value, "");
+codeField.value = "def solve(data):\n    return data";
+returning.handlers.click({
+  target: { closest: (selector) => selector === "[data-code-run]" ? {
+    closest: () => codeLayout,
+  } : null },
+});
+assert.match(outputField.textContent, /تعریف تابع/);
+submit(returning, "content", { title: "مقاله آزمایشی تازه", kind: "مقاله" });
+const reloaded = load("panel/student/workspace").context.window.NOVENTIX.state;
+assert.equal(reloaded.user.phone, legacy.user.phone);
+assert.equal(reloaded.posts[0].title, legacy.posts[0].title);
+assert.equal(reloaded.content[0].title, "مقاله آزمایشی تازه");
+assert.equal(reloaded.terminal.length, 2);
+assert.equal(reloaded.runs, 1);
+assert.equal(reloaded.reviews.length, 0);
+
+console.log("Demo interactions, legacy storage, sibling code output, terminal and persistence passed");

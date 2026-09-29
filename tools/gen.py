@@ -536,7 +536,7 @@ def challenge_detail(index):
            f'<span class="xp">XP +{fa(xp)}</span><span class="muted">{h(topic)}</span></div>'
            f"<h2>صورت مسئله</h2><p class=\"muted\">{h(hint)}</p>"
            f'<button type="button" class="btn btn-primary" data-challenge="{index}">افزودن به چالش‌های من</button>'
-           '<p class="form-note" data-challenge-note hidden></p></div>')
+           f'<p class="form-note" data-challenge-note="{index}" hidden></p></div>')
     out += ('<div class="panel-card narrow-left"><h2>آزمون‌های پذیرش</h2><ul class="check-list">')
     for case in tests:
         out += f"<li>{h(case)}</li>"
