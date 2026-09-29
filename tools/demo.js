@@ -31,7 +31,8 @@
     return {
       user: null, enrollments: [], projects: [], challenges: [],
       posts: [], tickets: [], notifications: [], content: [],
-      settings: {}, subscriptions: [], messages: [], users: []
+      settings: {}, subscriptions: [], messages: [], users: [],
+      nova: [], solutions: [], snippets: [], runs: 0
     };
   }
 
@@ -124,6 +125,35 @@
     if (slot) slot.textContent = fa(planLimits[id][1]);
     slot = el("[data-plan-projects]");
     if (slot) slot.textContent = planLimits[id][0] < 0 ? "نامحدود" : fa(planLimits[id][0]);
+  }
+
+  /* Demo-only canned replies; no model call leaves the browser. */
+  function sampleAnswer(question) {
+    var text = question.toLowerCase();
+    if (text.indexOf("خالی") >= 0 || text.indexOf("empty") >= 0) {
+      return "برای ورودی خالی پیش از محاسبه شرط بگذار و خروجی مشخص برگردان؛ مثلاً اگر فهرست خالی است مقدار پیش‌فرض برگردان یا خطای روشن بده. سپس همین حالت را در آزمون بنویس.";
+    }
+    if (text.indexOf("خطا") >= 0 || text.indexOf("error") >= 0 || text.indexOf("debug") >= 0) {
+      return "پیام خطا را کامل بخوان، خط مربوطه را پیدا کن و مقدار متغیرها را در همان نقطه چاپ کن. کوچک‌ترین ورودی‌ای که خطا را بازتولید می‌کند بساز و سپس اصلاح کن.";
+    }
+    if (text.indexOf("pandas") >= 0 || text.indexOf("داده") >= 0) {
+      return "پیش از تحلیل نوع ستون‌ها را بررسی کن، مقادیر گمشده و ردیف‌های تکراری را بشمار و تصمیم پاک‌سازی را در گزارش ثبت کن. نمونه کوچک بساز تا نتیجه قابل بازتولید بماند.";
+    }
+    return "مسئله را به گام‌های کوچک بشکن: ورودی، خروجی و معیار موفقیت را بنویس، ساده‌ترین راه‌حل را پیاده کن و سپس آن را با یک حالت مرزی آزمون کن.";
+  }
+
+  /* The demo never evaluates code; it reports what the browser can check statically. */
+  function simulateRun(code) {
+    var lines = code.split("\n");
+    var issues = [];
+    if (/print\s*\(/.test(code)) issues.push("✓ فراخوانی print پیدا شد؛ خروجی در اجرای واقعی نمایش داده می‌شود.");
+    if (/\bdef\s+\w+\s*\(/.test(code)) issues.push("✓ تعریف تابع پیدا شد.");
+    if (!/\breturn\b/.test(code) && /\bdef\s+\w+\s*\(/.test(code)) issues.push("! تابع بدون return تعریف شده است.");
+    if (/\bTODO\b|pass\s*$/m.test(code)) issues.push("! بخش ناتمام (TODO/pass) در کد باقی مانده است.");
+    if (/\bexcept\s*:/.test(code)) issues.push("! except بدون نوع خطا، خطاهای واقعی را پنهان می‌کند.");
+    issues.push("— " + fa(lines.length) + " خط بررسی شد.");
+    issues.push("این نسخه نمایشی کد را اجرا نمی‌کند؛ خروجی بالا فقط بررسی ساختاری است.");
+    return issues.join("\n");
   }
 
   /* ------------------------------------------------------------ actions */
@@ -241,6 +271,31 @@
       paintContent();
     },
 
+    nova: function (form) {
+      var question = (form.elements.namedItem("question").value || "").trim();
+      if (question.length < 10) { note(form, "سؤال باید دست‌کم ۱۰ نویسه باشد.", "error"); return; }
+      var guess = sampleAnswer(question);
+      state.nova.push({ question: question, answer: guess, created_at: new Date().toISOString() });
+      store();
+      form.reset();
+      note(form, "پاسخ Nova ثبت شد.", "success");
+      paintNova();
+      paintStats();
+    },
+
+    solution: function (form) {
+      var code = (form.elements.namedItem("code").value || "").trim();
+      if (code.length < 20) { note(form, "راه‌حل باید دست‌کم ۲۰ نویسه باشد.", "error"); return; }
+      var index = Number(form.elements.namedItem("challenge").value);
+      if (state.solutions.indexOf(index) < 0) state.solutions.push(index);
+      if (state.challenges.indexOf(index) < 0) state.challenges.push(index);
+      state.runs++;
+      state.snippets.unshift({ challenge: index, code: code, created_at: new Date().toISOString() });
+      store();
+      note(form, "راه‌حل ثبت شد؛ چالش به فهرست شما اضافه شد.", "success");
+      paintStats(); paintChallenges(); paintSnippets();
+    },
+
     setting: function (form) {
       state.settings[form.elements.namedItem("key").value] = (form.elements.namedItem("value").value || "").trim();
       store();
@@ -289,7 +344,13 @@
       projects_all: state.projects.length,
       enroll_all: state.enrollments.length,
       xp: 2480 + state.challenges.length * 120,
-      streak: 7 + state.projects.length
+      streak: 7 + state.projects.length,
+      runs: state.runs,
+      solved: state.solutions.length,
+      snippets: state.snippets.length,
+      nova_today: state.nova.length,
+      nova_open: Math.max(0, state.nova.length - state.solutions.length),
+      plan_credits: planLimits[currentPlan()][1]
     };
     els("[data-stat]").forEach(function (n) {
       var key = n.getAttribute("data-stat");
@@ -428,6 +489,34 @@
     }
   }
 
+  function paintNova() {
+    var host = el("[data-nova-thread]");
+    if (!host) return;
+    if (!state.nova.length) {
+      host.innerHTML = '<div class="empty-state">هنوز گفت‌وگویی با Nova ثبت نشده است. اولین سؤال را بپرس.</div>';
+      return;
+    }
+    host.innerHTML = state.nova.map(function (item) {
+      return '<div class="chat-bubble is-user"><p>' + esc(item.question) + '</p><small>' + jalali(item.created_at) + '</small></div>' +
+        '<div class="chat-bubble is-nova"><span class="chip">Nova</span><p>' + esc(item.answer) + '</p></div>';
+    }).join("");
+  }
+
+  function paintSnippets() {
+    var host = el("[data-snippets]");
+    if (!host) return;
+    if (!state.snippets.length) {
+      host.innerHTML = '<div class="empty-state">هنوز قطعه‌کدی ذخیره نکرده‌ای.</div>';
+      return;
+    }
+    host.innerHTML = state.snippets.map(function (item) {
+      var ch = seed.challenges ? seed.challenges[item.challenge] : null;
+      var label = ch ? ch : "چالش " + fa(item.challenge + 1);
+      return '<div class="list-item"><div><span class="pill">' + esc(label) + '</span>' +
+        '<pre class="code-block" dir="ltr"><code>' + esc(item.code) + '</code></pre></div><small>' + jalali(item.created_at) + '</small></div>';
+    }).join("");
+  }
+
   function paintChallenges() {
     els("[data-challenge]").forEach(function (btn) {
       var index = Number(btn.getAttribute("data-challenge"));
@@ -440,6 +529,7 @@
     paintProfile(); paintStats(); paintEnrollments(); paintMyProjects();
     paintPosts(); paintTickets(); paintAnnouncements(); paintContent();
     paintUsers(); paintSubscriptions(); paintChallenges(); paintPlan();
+    paintNova(); paintSnippets();
   }
 
   /* ------------------------------------------------------------- wiring */
@@ -458,6 +548,35 @@
   });
 
   document.addEventListener("click", function (event) {
+    var run = event.target.closest("[data-code-run]");
+    if (run) {
+      var card = run.closest(".code-col") || document;
+      var source = el("[data-code-input]", card);
+      var output = el("[data-code-output]", card);
+      var status = el("[data-code-status]", card);
+      var code = source ? source.value.trim() : "";
+      if (!code) {
+        if (output) output.textContent = "برای اجرا، ابتدا کدی بنویس.";
+        return;
+      }
+      state.runs++;
+      store();
+      paintStats();
+      if (output) output.textContent = simulateRun(code);
+      if (status) status.textContent = jalali(new Date().toISOString());
+      return;
+    }
+
+    var reset = event.target.closest("[data-code-reset]");
+    if (reset) {
+      var rcard = reset.closest(".code-col") || document;
+      var rinput = el("[data-code-input]", rcard);
+      var routput = el("[data-code-output]", rcard);
+      if (rinput) rinput.value = "";
+      if (routput) routput.textContent = "هنوز کدی اجرا نشده است.";
+      return;
+    }
+
     var upgrade = event.target.closest("[data-demo-plan]");
     if (upgrade) {
       if (!accountReady()) { location.href = join("login/"); return; }

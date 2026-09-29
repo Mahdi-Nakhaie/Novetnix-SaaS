@@ -472,8 +472,92 @@ def challenge_grid():
     for i, (kind, title, xp, topic) in enumerate(CHALLENGES):
         out += (f'<article class="challenge-card"><div class="meta-row"><span class="pill">{h(kind)}</span>'
                 f'<span class="xp">XP +{fa(xp)}</span></div><h3>{h(title)}</h3><span class="muted">{h(topic)}</span>'
-                f'<button type="button" class="btn btn-primary full" data-challenge="{i}">شروع چالش</button></article>')
+                f'<a class="btn btn-primary full" href="{h(href(f"panel/student/challenge/{i}"))}">شروع چالش</a></article>')
     return out + "</div>"
+
+
+CHALLENGE_SOLUTIONS = [
+    ("def discount(price, percent):\n    if price < 0:\n        raise ValueError(\"price must be positive\")\n    return price * (1 - percent / 100)\n\nprint(discount(200, 15))",
+     "تابع باید ورودی نامعتبر را واضح رد کند و برای تخفیف صفر هم درست کار کند.",
+     ["تخفیف صفر", "قیمت منفی", "درصد بیش از ۱۰۰"]),
+    ("from fastapi import FastAPI\nfrom pydantic import BaseModel\n\napp = FastAPI()\n\nclass Order(BaseModel):\n    id: int\n    total: int\n\norders: list[Order] = []\n\n@app.post(\"/orders\", status_code=201)\ndef create(order: Order):\n    orders.append(order)\n    return order",
+     "هر endpoint باید کد وضعیت درست، اعتبارسنجی ورودی و پاسخ یکسان برگرداند.",
+     ["ثبت سفارش", "سفارش تکراری", "ورودی ناقص"]),
+    ("from fastapi import FastAPI\n\napp = FastAPI()\n\nITEMS = [{\"id\": 1, \"name\": \"course\"}]\n\n@app.get(\"/items/{item_id}\")\ndef item(item_id: int):\n    found = [i for i in ITEMS if i[\"id\"] == item_id]\n    return found[0] if found else {\"detail\": \"not found\"}",
+     "مسیرهای پارامتری و مسیرهای ثابت را جدا کن و نبود داده را با پاسخ روشن بگو.",
+     ["آیتم موجود", "آیتم ناموجود", "شناسه نامعتبر"]),
+    ("import pandas as pd\n\ndf = pd.read_csv(\"sales.csv\")\ndf = df.dropna(subset=[\"amount\"])\ndf[\"amount\"] = pd.to_numeric(df[\"amount\"], errors=\"coerce\")\ndf = df.drop_duplicates()\nprint(df[\"amount\"].sum())",
+     "پیش از هر محاسبه نوع ستون‌ها را مشخص کن و اثر حذف ردیف‌ها را گزارش بده.",
+     ["مقدار گمشده", "مقدار متنی در ستون عددی", "ردیف تکراری"]),
+    ("from sklearn.model_selection import train_test_split\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.metrics import recall_score\n\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify=y, random_state=42)\nmodel = LogisticRegression(max_iter=1000, class_weight=\"balanced\")\nmodel.fit(X_train, y_train)\nprint(recall_score(y_test, model.predict(X_test)))",
+     "داده نامتوازن را با stratify جدا کن و معیار را متناسب با هزینه خطا انتخاب کن.",
+     ["کلاس نامتوازن", "داده آزمون دست‌نخورده", "معیار recall"]),
+]
+
+
+def code_workspace():
+    return ('<div class="code-layout"><section class="panel-card code-col">'
+            '<div class="code-bar"><span class="pill">main.py</span>'
+            '<span class="muted">ویرایشگر تمرین · اجرا در نسخه نمایشی شبیه‌سازی می‌شود</span></div>'
+            '<label class="sr-only" for="code-input">کد تمرین</label>'
+            '<textarea id="code-input" class="code-input" dir="ltr" spellcheck="false" rows="14" '
+            'data-code-input placeholder="def solve(data):&#10;    return data"></textarea>'
+            '<div class="code-actions"><button type="button" class="btn btn-primary" data-code-run>اجرای کد</button>'
+            '<button type="button" class="btn btn-outline" data-code-reset>پاک‌کردن</button>'
+            '<span class="muted">آخرین اجرا: <span data-code-status>—</span></span></div></section>'
+            '<section class="panel-card code-col"><h2>خروجی</h2>'
+            '<pre class="code-output" dir="ltr" data-code-output>هنوز کدی اجرا نشده است.</pre>'
+            '<h2>راهنمای تمرین</h2>'
+            '<ul class="check-list"><li>ورودی و خروجی تابع را قبل از نوشتن مشخص کن.</li>'
+            '<li>حالت مرزی مثل ورودی خالی را فراموش نکن.</li>'
+            '<li>یک خطای عمدی بساز و پیام آن را بخوان.</li></ul></section></div>')
+
+
+def challenge_detail(index):
+    kind, title, xp, topic = CHALLENGES[index]
+    starter, hint, tests = CHALLENGE_SOLUTIONS[index % len(CHALLENGE_SOLUTIONS)]
+    out = panel_head(title, f"{kind} · {topic}")
+    out += (f'<div class="panel-card"><div class="meta-row"><span class="pill">{h(kind)}</span>'
+           f'<span class="xp">XP +{fa(xp)}</span><span class="muted">{h(topic)}</span></div>'
+           f"<h2>صورت مسئله</h2><p class=\"muted\">{h(hint)}</p>"
+           f'<button type="button" class="btn btn-primary" data-challenge="{index}">افزودن به چالش‌های من</button>'
+           '<p class="form-note" data-challenge-note hidden></p></div>')
+    out += ('<div class="panel-card narrow-left"><h2>آزمون‌های پذیرش</h2><ul class="check-list">')
+    for case in tests:
+        out += f"<li>{h(case)}</li>"
+    out += '</ul><p class="muted">کدی که همه این حالت‌ها را پوشش دهد، به‌عنوان راه‌حل قابل قبول ثبت می‌شود.</p></div>'
+    out += '<div class="panel-card"><h2>نمونه راه‌حل</h2>' + code_block(starter) + "</div>"
+    out += ('<div class="panel-card"><h2>فضای تمرین</h2>'
+            '<form class="stack-form" data-form="solution">'
+            f'<input type="hidden" name="challenge" value="{h(index)}">'
+            '<label>راه‌حل شما<textarea class="code-input" dir="ltr" name="code" rows="12" spellcheck="false" '
+            f'required minlength="20" placeholder="{h(starter[:60])}"></textarea></label>'
+            '<button class="btn btn-primary">ثبت راه‌حل</button></form>'
+            '<p class="form-note" hidden></p></div>')
+    out += ('<div class="article-footer">' + linkto("panel/student/challenges", "بازگشت به چالش‌ها ←", "btn btn-outline")
+            + linkto("panel/student/workspace", "تمرین آزاد در میزکار ←", "btn btn-outline") + "</div>")
+    return out
+
+
+def code_block(source):
+    return f'<pre class="code-block" dir="ltr"><code>{h(source)}</code></pre>'
+
+
+def workspace_view():
+    out = panel_head("میزکار کد", "محیط تمرین آزاد برای نوشتن و آزمودن ایده‌ها.")
+    out += stat_grid([("اجراهای من", "۰", "runs"), ("چالش حل‌شده", "۰", "solved"),
+                      ("قطعه کد ذخیره‌شده", "۰", "snippets"), ("زبان پیشنهادی", "Python", None)])
+    out += code_workspace()
+    out += ('<div class="panel-columns"><section class="panel-card"><h2>قطعه‌های ذخیره‌شده</h2>'
+            '<div class="panel-list" data-snippets>'
+            '<div class="empty-state">هنوز قطعه‌کدی ذخیره نکرده‌ای.</div></div></section>'
+            '<section class="panel-card"><h2>تمرین‌های پیشنهادی</h2><ul class="check-list">'
+            '<li>یک تابع بنویس که فهرست خالی را مدیریت کند.</li>'
+            '<li>همان راه‌حل را با نوع داده متفاوت آزمون کن.</li>'
+            '<li>خطا را عمداً ایجاد کن و پیام آن را مستند کن.</li></ul>'
+            + linkto("panel/student/challenges", "شروع چالش هفتگی ←", "btn btn-outline") + "</section></div>")
+    return out
+
 
 
 def community_tools():
@@ -535,6 +619,41 @@ def profile_view():
     return out
 
 
+def nova_view():
+    out = panel_head("Nova AI", "مربی همراه شما در مسیر یادگیری.")
+    out += stat_grid([("گفت‌وگوهای امروز", "۰", "nova_today"), ("اعتبار پلن", "۰", "plan_credits"),
+                      ("پرسش بی‌پاسخ", "۰", "nova_open"), ("وضعیت Nova", "آماده", None)])
+    out += ('<div class="panel-card narrow-left"><h2>پرسش تازه</h2>'
+            '<p class="muted">سؤال فنی خود را بنویسید. در نسخه نمایشی پاسخ Nova الگویی و بدون هوش مصنوعی واقعی است.</p>'
+            '<form class="stack-form" data-form="nova">'
+            '<label>سؤال شما<textarea name="question" required minlength="10" maxlength="2000" rows="4" '
+            'placeholder="چطور ورودی خالی را در تابع مدیریت کنم؟"></textarea></label>'
+            '<button class="btn btn-primary">پرسیدن از Nova</button></form>'
+            '<p class="form-note" hidden></p></div>')
+    out += '<div class="panel-list" data-nova-thread></div>'
+    return out
+
+
+def notifications_view():
+    out = panel_head("اعلان‌ها", "رخدادهای مسیر یادگیری و پیام‌های سامانه.")
+    out += '<div class="panel-card"><div class="panel-list" data-announcements>'
+    for title, body, ago in ANNOUNCEMENTS:
+        out += (f'<div class="announce-card"><div><h2>{h(title)}</h2><p>{h(body)}</p></div>'
+                f"<small>{h(ago)}</small></div>")
+    return out + "</div></div>"
+
+
+def student_payments():
+    out = panel_head("پرداخت‌ها", "تاریخچه پرداخت و وضعیت اشتراک شما.")
+    out += ('<div class="panel-card narrow-left"><h2>وضعیت پرداخت</h2>'
+            '<p class="muted">در نسخه نمایشی هیچ پرداختی انجام نمی‌شود؛ ردیف‌های زیر فقط نتیجه '
+            'فعال‌سازی آزمایشی پلن هستند.</p></div>'
+            '<div class="panel-card table-wrap"><table><thead><tr><th>پلن</th><th>مبلغ ماهانه</th>'
+            "<th>وضعیت</th><th>پایان</th></tr></thead><tbody data-payments-table>"
+            '<tr><td colspan="4" class="muted">هنوز پرداختی ثبت نشده است.</td></tr></tbody></table></div>')
+    return out
+
+
 def settings_view():
     rows = [("اعلان‌های ایمیلی", "خبر پروژه‌ها و پاسخ‌های انجمن", "فعال"),
             ("اعلان‌های پیامکی", "یادآور مسیر یادگیری", "غیرفعال"),
@@ -588,6 +707,31 @@ def student_section(sub):
                 '<li>ظرفیت پروژه: <strong data-plan-projects>۰</strong></li></ul>'
                 '<p class="muted">برای دسترسی به پروژه‌ها و مقاله‌های پیشرفته، پلن مناسب را فعال کنید.</p>'
                 + linkto("panel/student/subscription", "مدیریت اشتراک ←", "btn btn-outline") + "</section></div>")
+        out += ('<div class="panel-columns"><section class="panel-card"><h2>پیشرفت مسیرها</h2>')
+        for name, percent in TRACKS:
+            out += (f'<div class="skill-row"><div class="usage-row"><span>{h(name)}</span>'
+                    f"<strong>{fa(percent)}٪</strong></div>" + progress_bar(percent) + "</div>")
+        out += ('</section><section class="panel-card"><h2>فعالیت هفته گذشته</h2>'
+                '<p class="muted">تعداد تمرین‌ها در هفت روز گذشته</p>')
+        out += '<div class="week-grid">'
+        for day, count in (("شنبه", 3), ("یک‌شنبه", 5), ("دوشنبه", 2), ("سه‌شنبه", 6),
+                           ("چهارشنبه", 4), ("پنج‌شنبه", 7), ("جمعه", 1)):
+            out += (f'<div class="week-cell"><strong>{fa(count)}</strong>'
+                    f'<span class="week-bar" style="height:{round(count / 7 * 100)}%"></span>'
+                    f"<small>{h(day)}</small></div>")
+        out += "</div></section></div>"
+        out += ('<div class="panel-columns"><section class="panel-card"><h2>میان‌بُرهای امروز</h2>'
+                '<div class="quick-links">'
+                + linkto("panel/student/workspace", "میزکار کد", "btn btn-outline")
+                + linkto("panel/student/challenges", "چالش روزانه", "btn btn-outline")
+                + linkto("panel/student/nova", "پرسش از Nova", "btn btn-outline")
+                + linkto("panel/student/notifications", "اعلان‌ها", "btn btn-outline") + "</div></section>"
+                '<section class="panel-card soft"><h2>نشان بعدی</h2>'
+                '<div class="badge-grid">'
+                + "".join(f'<div class="badge" title="{h(need)}"><span>{h(icon)}</span>{h(title)}</div>'
+                          for title, icon, need in BADGES[:3])
+                + "</div>" + linkto("panel/student/gamification", "همه نشان‌ها ←", "btn btn-outline")
+                + "</section></div>")
         return out
     if sub == "learning":
         return (panel_head("مسیر یادگیری من", "مقاله‌های ذخیره‌شده برای ادامه مطالعه.")
@@ -601,10 +745,21 @@ def student_section(sub):
                   f'<a href="{h(href("projects"))}">پروژه‌ها را ببین ←</a></div></div>')
     if sub == "challenges":
         return panel_head("چالش‌ها", "مسئله‌های کوتاه برای تمرین روزانه و هفتگی.") + challenge_grid()
+    if sub.startswith("challenge/"):
+        index = int(sub.split("/")[1])
+        return challenge_detail(index)
+    if sub == "workspace":
+        return workspace_view()
+    if sub == "nova":
+        return nova_view()
+    if sub == "notifications":
+        return notifications_view()
     if sub == "community":
         return panel_head("Community", "از سؤال کوچک تا نمایش بزرگ‌ترین پروژه‌ها.") + community_tools()
     if sub == "subscription":
         return student_subscription()
+    if sub == "payments":
+        return student_payments()
     if sub == "support":
         return panel_head("پشتیبانی", "تیکت‌های باز و اولویت‌بندی آن‌ها.") + ticket_tools()
     if sub == "gamification":
@@ -632,6 +787,24 @@ def admin_section(sub):
                   "<h2>انجمن Noventix</h2>"
                   "<p>سؤال‌ها، تجربه‌ها و ایده‌ها را با جامعه یادگیری در میان بگذار.</p>"
                 + linkto("community", "ورود به انجمن ←", "btn btn-outline") + "</section></div>")
+        out += ('<div class="chart-grid"><section class="panel-card"><h2>کاربران جدید</h2>'
+                '<p class="muted">هشت هفته گذشته</p>' + bars([3, 5, 4, 8, 6, 9, 7, 11], True)
+                + '</section><section class="panel-card"><h2>درآمد ماهانه</h2>'
+                  '<p class="muted">به تفکیک پلن، به تومان</p>'
+                + bars([190000, 990000, 1290000, 2900000]) + "</section></div>")
+        out += ('<div class="panel-columns"><section class="panel-card"><h2>توزیع پلن‌ها</h2>'
+                '<div class="table-wrap"><table><thead><tr><th>پلن</th><th>اشتراک فعال</th></tr></thead><tbody>')
+        for p in PLANS:
+            out += f'<tr><td>{h(p["name"])}</td><td data-plan-count="{h(p["name"])}">۰</td></tr>'
+        out += ('</tbody></table></div></section><section class="panel-card"><h2>کارهای پیشنهادی</h2>'
+                '<ul class="check-list">'
+                '<li>کاربران جدید را بررسی و در صورت نیاز تأیید کن.</li>'
+                '<li>تیکت‌های اولویت‌دار را پاسخ بده.</li>'
+                '<li>محتوای پیش‌نویس را برای انتشار بازبینی کن.</li></ul><div class="quick-links">'
+                + linkto("panel/admin/users-new", "کاربران جدید", "btn btn-outline")
+                + linkto("panel/admin/support", "پشتیبانی", "btn btn-outline")
+                + linkto("panel/admin/content", "Content", "btn btn-outline")
+                + "</div></section></div>")
         return out
     if sub == "users":
         return (panel_head("کاربران", "فهرست حساب‌های ثبت‌شده.")
@@ -771,6 +944,7 @@ def seed_script():
         "projects": [{"title": t, "topic": topic, "description": desc, "plan": PROJECT_PLANS[i]}
                      for i, (t, topic, _lvl, desc, _sk) in enumerate(PROJECTS)],
         "paid_courses": PAID_COURSES,
+        "challenges": [title for _kind, title, _xp, _topic in CHALLENGES],
         "plans": [{"id": p["id"], "name": p["name"], "price": p["price"]} for p in PLANS],
     }
     return ("<script>window.NOVENTIX_BASE=" + json.dumps(SITE_PATH, ensure_ascii=False)
@@ -834,9 +1008,10 @@ def view_body(route):
 
 
 STUDENT_ITEMS = [("", "نمای کلی"), ("learning", "مسیر یادگیری"), ("projects", "پروژه‌ها"),
-                 ("challenges", "چالش‌ها"), ("community", "Community"), ("subscription", "اشتراک"),
-                 ("support", "پشتیبانی"), ("gamification", "Gamification"), ("profile", "پروفایل"),
-                 ("settings", "تنظیمات")]
+                 ("workspace", "میزکار کد"), ("challenges", "چالش‌ها"), ("nova", "Nova AI"),
+                 ("community", "Community"), ("notifications", "اعلان‌ها"), ("subscription", "اشتراک"),
+                 ("payments", "پرداخت‌ها"), ("support", "پشتیبانی"), ("gamification", "Gamification"),
+                 ("profile", "پروفایل"), ("settings", "تنظیمات")]
 
 ADMIN_ITEMS = [("", "Overview"), ("users", "کاربران"), ("users-new", "کاربران جدید"),
                ("courses", "دوره‌ها"), ("course-new", "مقاله جدید"), ("catalog", "پروژه‌ها"), ("challenges", "چالش‌ها"),
@@ -901,6 +1076,10 @@ def build_routes():
             routes.append({"path": f"panel/{role}" + (f"/{key}" if key else ""),
                            "title": label, "view": "panel", "role": role, "sub": key, "nav": "",
                            "description": f"پنل Noventix — {label}"})
+    for i, (kind, title, _xp, _topic) in enumerate(CHALLENGES):
+        routes.append({"path": f"panel/student/challenge/{i}", "title": title, "view": "panel",
+                       "role": "student", "sub": f"challenge/{i}", "nav": "",
+                       "description": f"چالش Noventix — {title}"})
     return routes
 
 

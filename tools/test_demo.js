@@ -21,6 +21,7 @@ const SEED = {
     { title: "پروژه برنزی", topic: "ML", description: "…", plan: "bronze" },
   ],
   paid_courses: ["ml-basics"],
+  challenges: ["چالش نمونه"],
   plans: [{ id: "free", name: "رایگان", price: 0 }, { id: "bronze", name: "برنزی", price: 190000 }],
 };
 
@@ -107,4 +108,29 @@ assert.equal(state.user.plan, "bronze");
 const upgraded = load("project/1");
 assert.equal(upgraded.location.href, "");
 assert.equal(load("course/ml-basics").location.href, "");
-console.log("Demo gate, plan limits, demo activation, login, community and contact passed");
+// code workspace: static run report, snippet saved, run counter advances
+const workspace = load("panel/student/workspace");
+const codeField = { value: "def solve(data):\n    return sum(data)" };
+const outputField = { textContent: "" };
+workspace.context.document.querySelector = (selector) =>
+  selector === "[data-code-input]" ? codeField : selector === "[data-code-output]" ? outputField : null;
+workspace.handlers.click({
+  target: { closest: (selector) => (selector === "[data-code-run]" ? { closest: () => null } : null) },
+});
+assert.match(outputField.textContent, /تعریف تابع/);
+assert.match(outputField.textContent, /اجرا نمی‌کند/);
+state = JSON.parse(memory.get("noventix.demo.v1"));
+assert.equal(state.runs, 1);
+
+submit(workspace, "solution", { code: "def solve(data):\n    return sum(data)", challenge: 0 });
+state = JSON.parse(memory.get("noventix.demo.v1"));
+assert.deepEqual(state.solutions, [0]);
+assert.equal(state.snippets[0].challenge, 0);
+
+// Nova replies stay local and are stored with the question
+submit(workspace, "nova", { question: "چطور ورودی خالی را مدیریت کنم؟" });
+state = JSON.parse(memory.get("noventix.demo.v1"));
+assert.equal(state.nova.length, 1);
+assert.match(state.nova[0].answer, /ورودی خالی/);
+
+console.log("Demo gate, plan limits, activation, workspace, Nova, login, community and contact passed");
