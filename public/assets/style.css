@@ -257,6 +257,13 @@ main{display:block;min-height:60vh}
 .quick-links{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.9rem}
 @media (max-width:900px){.code-layout{grid-template-columns:1fr}}
 
+.workspace-files{display:grid;gap:.65rem;padding:.7rem;background:#f8f6fc;border:1px solid var(--brand-line);border-radius:var(--r-md)}
+.file-tree{display:flex;gap:.4rem;flex-wrap:wrap;min-height:2rem}
+.file-item{border:1px solid var(--brand-line);border-radius:8px;background:#fff;color:var(--ink-2);padding:.35rem .65rem;cursor:pointer;font:700 .75rem ui-monospace,SFMono-Regular,Menlo,monospace;direction:ltr}
+.file-item.is-active{background:var(--brand);border-color:var(--brand);color:#fff}
+.file-actions{display:flex;gap:.5rem;align-items:center}.file-name-input{min-width:0;flex:1;border:1px solid var(--brand-line);border-radius:8px;padding:.5rem .65rem;font:.78rem ui-monospace,SFMono-Regular,Menlo,monospace;direction:ltr}
+.package-status{border:1px solid var(--brand-line);border-radius:8px;padding:.55rem .7rem;background:#faf8ff;color:var(--muted);font-size:.78rem;direction:rtl}
+
 /* terminal */
 .terminal{background:#120e22;border:1px solid #2c2444;border-radius:var(--r-md);padding:.9rem 1rem;min-height:190px;max-height:320px;overflow-y:auto;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.82rem;line-height:1.85;direction:ltr;text-align:left}
 .term-line{display:block;white-space:pre-wrap;word-break:break-word}

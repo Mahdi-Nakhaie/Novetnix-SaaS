@@ -1,7 +1,6 @@
 "use strict";
 
 const BASE = "https://cdn.jsdelivr.net/pyodide/v0.27.7/full/";
-
 let loading = null;
 
 function boot() {
@@ -34,6 +33,15 @@ plt.show = _noventix_show
   return loading;
 }
 
+function mountFiles(engine, files) {
+  Object.keys(files || {}).forEach((name) => {
+    if (!/^(?!\\.)(?:[A-Za-z0-9_./-])+$/.test(name) || name.indexOf("..") >= 0 || name[0] === "/") return;
+    const parent = name.split("/").slice(0, -1).join("/");
+    if (parent) engine.FS.mkdirTree(parent);
+    engine.FS.writeFile(name, String(files[name] == null ? "" : files[name]));
+  });
+}
+
 self.onmessage = async function (event) {
   const code = event.data.code || "";
   let output = "";
@@ -41,15 +49,20 @@ self.onmessage = async function (event) {
   try {
     self.postMessage({ type: "status", text: "در حال آماده‌سازی موتور Python…" });
     const engine = await boot();
+    mountFiles(engine, event.data.files);
+    const packages = Array.isArray(event.data.packages) ? event.data.packages.filter((name) => /^[a-z0-9][a-z0-9._-]*$/i.test(name)) : [];
+    if (packages.length) {
+      self.postMessage({ type: "status", text: "در حال آماده‌سازی بسته‌های میزکار…" });
+      try { await engine.loadPackage(packages); } catch (error) { append("بارگیری برخی بسته‌ها ناموفق بود: " + String(error)); }
+    }
     engine.setStdout({ batched: append });
     engine.setStderr({ batched: append });
     engine.setStdin({ stdin: () => { throw new Error("input() در این محیط پشتیبانی نمی‌شود؛ داده را داخل کد بسازید."); } });
-    self.postMessage({ type: "status", text: "در حال بارگذاری کتابخانه‌ها…" });
+    self.postMessage({ type: "status", text: "در حال بارگذاری وابستگی‌های کد…" });
     try { await engine.loadPackagesFromImports(code); } catch (error) { append(String(error)); }
     self.postMessage({ type: "running" });
     const result = await engine.runPythonAsync(code);
     if (result !== undefined && result !== null) append(String(result));
-    /* a figure created without an explicit plt.show() still gets rendered */
     await engine.runPythonAsync("_noventix_show()");
     self.postMessage({ type: "done", ok: true, output });
   } catch (error) {

@@ -543,24 +543,26 @@ def code_workspace(starter="", challenge=None):
     form_open = (f'<form class="stack-form" data-form="solution"><input type="hidden" name="challenge" value="{challenge}">' if challenge is not None else '')
     form_close = ('<button class="btn btn-primary" type="submit">ذخیره پاسخ من</button></form><p class="form-note" hidden></p>' if challenge is not None else '')
     return (f'<div class="code-layout"><section class="panel-card code-col">{form_open}'
-            '<div class="code-bar"><span class="pill">main.py</span>'
-            '<span class="muted">Python در مرورگر · اجرای مستقل با سقف ۱۰ ثانیه</span></div>'
-            '<label class="sr-only" for="code-input">کد تمرین</label>'
+            '<div class="code-bar"><span class="pill" data-file-name>main.py</span>'
+            '<span class="muted">میزکار چندفایلی Python · اجرای مستقل با سقف ۱۰ ثانیه</span></div>'
+            '<div class="workspace-files"><div class="file-tree" data-file-tree role="listbox" aria-label="فایل‌های میزکار"></div>'
+            '<div class="file-actions"><input class="file-name-input" data-file-name-input dir="ltr" placeholder="نام فایل جدید" aria-label="نام فایل جدید">'
+            '<button type="button" class="btn btn-small btn-outline" data-file-create>فایل جدید</button></div></div>'
+            '<label class="sr-only" for="code-input">کد فایل</label>'
             '<textarea id="code-input" name="code" class="code-input" dir="ltr" spellcheck="false" rows="14" '
             f'data-code-input placeholder="print(2 + 3)">{h(starter)}</textarea>'
-            '<div class="code-actions"><button type="button" class="btn btn-primary" data-code-run>اجرای کد</button>'
+            '<div class="code-actions"><button type="button" class="btn btn-primary" data-code-run>اجرای فایل</button>'
             '<button type="button" class="btn btn-outline" data-code-stop disabled>توقف اجرا</button>'
-            '<button type="button" class="btn btn-outline" data-code-reset>پاک‌کردن</button>'
+            '<button type="button" class="btn btn-outline" data-code-reset>پاک‌کردن فایل</button>'
             '<span class="muted" data-code-status role="status">آماده اجرا</span></div>'
             f'{form_close}</section>'
             '<section class="panel-card code-col"><h2>خروجی</h2>'
             '<pre class="code-output" dir="ltr" data-code-output aria-live="polite">هنوز کدی اجرا نشده است.</pre>'
             '<div class="code-plots" data-code-plots aria-label="نمودارهای خروجی"></div>'
-            '<p class="muted">برای دیدن ماتریس از print و برای نمودار و هیت‌مپ از matplotlib استفاده کنید. اجرای کد به اینترنت برای دریافت موتور پایتون نیاز دارد؛ ورودی تعاملی و دسترسی به فایل‌های دستگاه پشتیبانی نمی‌شود.</p>'
-            '<h2>راهنمای تمرین</h2>'
-            '<ul class="check-list"><li>ورودی و خروجی تابع را قبل از نوشتن مشخص کن.</li>'
-            '<li>حالت مرزی مثل ورودی خالی را فراموش نکن.</li>'
-            '<li>یک خطای عمدی بساز و پیام آن را بخوان.</li></ul></section></div>')
+            '<p class="muted">فایل‌ها و بسته‌ها در میزکار مجازی همین مرورگر نگهداری می‌شوند. بسته‌های سازگار با Pyodide هنگام اجرا بارگیری می‌شوند؛ دسترسی به فایل واقعی دستگاه و پوسته سیستم‌عامل پشتیبانی نمی‌شود.</p>'
+            '<h2>راهنمای تمرین</h2><ul class="check-list"><li>فایل‌های داده را با نام نسبی مثل <code>data.csv</code> بخوان.</li>'
+            '<li>برای بسته‌ها از <code>pip install numpy</code> در ترمینال استفاده کن.</li>'
+            '<li>حالت‌های مرزی و خطاها را در فایل جداگانه آزمون کن.</li></ul></section></div>')
 
 
 def challenge_detail(index):
@@ -607,16 +609,17 @@ def workspace_view():
 
 def terminal_view():
     return ('<section class="panel-card code-col"><div class="code-bar"><span class="pill">Terminal</span>'
-            '<span class="muted">python main.py · ls · clear · help</span></div>'
+            '<span class="muted">فایل مجازی · pip · python · ls</span></div>'
             '<div class="terminal" data-terminal-log dir="ltr" role="log" aria-live="polite">'
             '<span class="term-line term-hint">$ help</span></div>'
             '<form class="terminal-form" data-form="terminal">'
             '<label class="sr-only" for="term-input">فرمان ترمینال</label>'
             '<span class="term-prompt" aria-hidden="true">$</span>'
             '<input id="term-input" class="term-input" dir="ltr" name="command" autocomplete="off" '
-            'spellcheck="false" placeholder="python main.py">'
+            'spellcheck="false" placeholder="pip install numpy یا python main.py">'
             '<button class="btn btn-small btn-primary" type="button" data-terminal-run>اجرا</button></form>'
-            '<p class="muted">python main.py کد ویرایشگر را اجرا می‌کند و نتیجه را در خروجی میزکار نشان می‌دهد. این بخش پوسته سیستم‌عامل نیست.</p></section>')
+            '<div class="package-status" data-package-status>بسته‌های پایه: numpy، pandas، matplotlib، scipy</div>'
+            '<p class="muted">این ترمینال فقط فرمان‌های مجازی میزکار را اجرا می‌کند و به سیستم‌عامل، شبکه یا فایل‌های واقعی دسترسی ندارد.</p></section>')
 
 
 def nova_review_card():
