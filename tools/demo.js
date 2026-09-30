@@ -89,10 +89,7 @@
   function isAdmin() { return state.user && state.user.role === "admin"; }
 
   function accountReady() { return !!(state.user && state.user.phone && state.user.first_name && state.user.last_name); }
-  function currentPlan() {
-    if (!accountReady() || !state.user.plan || !state.user.plan_expires || new Date(state.user.plan_expires) <= new Date()) return "free";
-    return state.user.plan;
-  }
+  function currentPlan() { return "free"; }
   function canProject(index) {
     var item = seed.projects[index];
     return accountReady() && item && planOrder.indexOf(currentPlan()) >= planOrder.indexOf(item.plan);
@@ -104,6 +101,10 @@
   function guardPage() {
     var path = document.body && document.body.getAttribute("data-protected");
     if (path === null || path === undefined) return;
+    if (path.indexOf("panel/admin") === 0) {
+      location.href = join(accountReady() ? "panel/student/" : "login/");
+      return;
+    }
     if (!accountReady()) {
       sessionStorage.setItem("noventix.demo.return", path);
       location.href = join("login/");
@@ -242,52 +243,6 @@
         '</strong><small>' + jalali(m.created_at) + '</small></div><p>' + esc(m.body).replace(/\n/g, "<br>") + '</p></div>';
     }).join("");
     host.scrollTop = host.scrollHeight;
-  }
-
-  /* Symbolic checkout: the card data is validated, then discarded — never stored. */
-  function openCheckout(planId) {
-    var box = el("#checkout");
-    if (!box) return;
-    box.hidden = false;
-    var slot = el("[data-checkout-plan]", box);
-    if (slot) slot.textContent = planById(planId).name + " · " + fa(planById(planId).price.toLocaleString("en-US")) + " تومان";
-    var field = el('[data-form="checkout"] [name="plan"]', box);
-    if (field) field.value = planId;
-    var receipt = el("[data-receipt]", box);
-    if (receipt) { receipt.hidden = true; receipt.innerHTML = ""; }
-    var message = el(".form-note", box);
-    if (message) message.hidden = true;
-    box.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
-  function digits(value) {
-    return String(value || "").replace(/[۰-۹٠-٩]/g, function (d) {
-      return "۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩".indexOf(d) % 10;
-    });
-  }
-
-  function luhn(number) {
-    var sum = 0;
-    var flip = false;
-    for (var i = number.length - 1; i >= 0; i--) {
-      var n = Number(number.charAt(i));
-      if (flip) { n *= 2; if (n > 9) n -= 9; }
-      sum += n;
-      flip = !flip;
-    }
-    return sum % 10 === 0;
-  }
-
-  function receiptHtml(planId) {
-    var plan = planById(planId);
-    var ref = "NVX-" + String(Date.now()).slice(-8);
-    return '<h3>نتیجه فعال‌سازی آزمایشی</h3>' +
-      '<ul class="receipt-list">' +
-      '<li><span>پلن</span><strong>' + esc(plan.name) + '</strong></li>' +
-      '<li><span>مبلغ</span><strong>' + fa(plan.price.toLocaleString("en-US")) + ' تومان</strong></li>' +
-      '<li><span>شماره پیگیری</span><strong dir="ltr">' + esc(ref) + '</strong></li>' +
-      '<li><span>وضعیت</span><strong>بدون تراکنش واقعی</strong></li>' +
-      '</ul><p class="muted">هیچ مبلغی از حساب شما کم نشد و اطلاعات کارت ذخیره نشد.</p>';
   }
 
   /* ------------------------------------------------------------ actions */
@@ -466,65 +421,10 @@
       paintStats();
     },
 
-    checkout: function (form) {
-      if (!accountReady()) { location.href = join("login/"); return; }
-      var planId = form.elements.namedItem("plan").value;
-      if (planOrder.indexOf(planId) < 1) { note(form, "پلن انتخاب‌شده معتبر نیست.", "error"); return; }
-      var card = digits(form.elements.namedItem("card").value).replace(/[\s-]/g, "");
-      if (!/^[0-9]{16}$/.test(card) || !luhn(card)) {
-        note(form, "شماره کارت نمونه باید ۱۶ رقم و از نظر ساختار معتبر باشد.", "error"); return;
-      }
-      var holder = (form.elements.namedItem("holder").value || "").trim();
-      if (holder.length < 2) { note(form, "نام روی کارت را وارد کنید.", "error"); return; }
-      var month = digits(form.elements.namedItem("month").value);
-      var year = digits(form.elements.namedItem("year").value);
-      var cvv = digits(form.elements.namedItem("cvv").value);
-      if (!/^(0[1-9]|1[0-2])$/.test(month)) { note(form, "ماه انقضا نامعتبر است.", "error"); return; }
-      if (!/^[0-9]{2}$/.test(year)) { note(form, "سال انقضا نامعتبر است.", "error"); return; }
-      if (!/^[0-9]{3,4}$/.test(cvv)) { note(form, "CVV نامعتبر است.", "error"); return; }
-      if (!form.elements.namedItem("agree").checked) { note(form, "تأیید آزمایشی‌بودن فعال‌سازی لازم است.", "error"); return; }
-
-      var now = new Date();
-      var expires = new Date(now.getTime() + 30 * 864e5);
-      state.user.plan = planId;
-      state.user.plan_expires = expires.toISOString();
-      state.subscriptions.unshift({
-        phone: state.user.phone, plan: planId, status: "فعال‌شده (آزمایشی)",
-        starts_at: now.toISOString(), expires_at: expires.toISOString(),
-        holder: holder, last4: card.slice(-4)
-      });
-      state.payments.unshift({
-        plan: planId, amount: planById(planId).price, status: "آزمایشی",
-        reference: "NVX-" + String(Date.now()).slice(-8),
-        last4: card.slice(-4), created_at: now.toISOString()
-      });
-      store();
-      form.reset();
-      var box = el("#checkout");
-      var receipt = box ? el("[data-receipt]", box) : null;
-      if (receipt) { receipt.innerHTML = receiptHtml(planId); receipt.hidden = false; }
-      note(form, "پلن " + planById(planId).name + " به‌صورت آزمایشی فعال شد.", "success");
-      paintAll();
-    },
-
     setting: function (form) {
       state.settings[form.elements.namedItem("key").value] = (form.elements.namedItem("value").value || "").trim();
       store();
       note(form, "تنظیم ذخیره شد.", "success");
-    },
-
-    activate: function (form) {
-      var phone = (form.elements.namedItem("phone").value || "").trim().replace(/[۰-۹]/g, function (d) { return "۰۱۲۳۴۵۶۷۸۹".indexOf(d); });
-      if (!/^09[0-9]{9}$/.test(phone)) { note(form, "شماره و پلن معتبر وارد کنید.", "error"); return; }
-      var plan = form.elements.namedItem("plan").value;
-      state.subscriptions.unshift({ phone: phone, plan: plan, status: "فعال", starts_at: new Date().toISOString(), expires_at: new Date(Date.now() + 30 * 864e5).toISOString() });
-      var match = state.users.filter(function (u) { return u.phone === phone; })[0];
-      if (match) match.plan = plan;
-      store();
-      form.reset();
-      note(form, "اشتراک ۳۰ روزه فعال شد.", "success");
-      paintSubscriptions();
-      paintStats();
     }
   };
 
@@ -886,21 +786,6 @@
       if (rplots) rplots.replaceChildren();
       if (rinput) rinput.value = "";
       if (routput) routput.textContent = "هنوز کدی اجرا نشده است.";
-      return;
-    }
-
-    var upgrade = event.target.closest("[data-demo-plan]");
-    if (upgrade) {
-      if (!accountReady()) { location.href = join("login/"); return; }
-      var selected = upgrade.getAttribute("data-demo-plan");
-      if (planOrder.indexOf(selected) < 1) return;
-      openCheckout(selected);
-      return;
-    }
-
-    if (event.target.closest("[data-checkout-cancel]")) {
-      var box = el("#checkout");
-      if (box) box.hidden = true;
       return;
     }
 

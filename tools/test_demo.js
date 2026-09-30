@@ -144,43 +144,16 @@ assert.equal(lockedCourse.location.href, "/Novetnix-SaaS/site/panel/student/subs
 const openCourse = load("course/python-foundations");
 assert.equal(openCourse.location.href, "");
 
-// buying a plan goes through the symbolic checkout, which validates the card first
+// checkout submissions cannot activate plans without a payment backend
 const checkout = load("panel/student/subscription");
-const receipt = { hidden: true, innerHTML: "" };
-const planSlot = { textContent: "" };
-checkout.nodes["#checkout"] = {
-  hidden: true,
-  scrollIntoView: () => {},
-  querySelector: () => null,
-};
-checkout.context.document.querySelector = (selector) => checkout.nodes[selector] || null;
-checkout.handlers.click({
-  target: { closest: (selector) => (selector === "[data-demo-plan]" ? { getAttribute: () => "bronze" } : null) },
-});
-assert.equal(checkout.nodes["#checkout"].hidden, false);
-
-// a card that fails the Luhn check must not activate anything
-submit(checkout, "checkout", {
-  plan: "bronze", card: "1234567890123456", holder: "کاربر نمونه",
-  month: "05", year: "07", cvv: "123", agree: { checked: true },
-});
-state = JSON.parse(memory.get("noventix.demo.v1"));
-assert.equal(state.user.plan, undefined);
-
-// a structurally valid test card completes the symbolic payment
 submit(checkout, "checkout", {
   plan: "bronze", card: "6037997712345678", holder: "کاربر نمونه",
   month: "05", year: "07", cvv: "123", agree: { checked: true },
 });
 state = JSON.parse(memory.get("noventix.demo.v1"));
-assert.equal(state.user.plan, "bronze");
-assert.equal(state.payments.length, 1);
-assert.equal(state.payments[0].last4, "5678");
-assert.equal(state.payments[0].status, "آزمایشی");
-assert.equal(state.payments[0].card, undefined);
-const upgraded = load("project/1");
-assert.equal(upgraded.location.href, "");
-assert.equal(load("course/ml-basics").location.href, "");
+assert.equal(state.user.plan, undefined);
+assert.equal(state.payments.length, 0);
+assert.equal(load("project/1").location.href, "/Novetnix-SaaS/site/panel/student/subscription/");
 // code workspace: static run report, snippet saved, run counter advances
 const workspace = load("panel/student/workspace");
 const codeField = { value: "def solve(data):\n    return sum(data)" };

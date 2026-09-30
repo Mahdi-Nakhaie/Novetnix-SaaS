@@ -26,9 +26,17 @@ function flash(string $message, string $kind='success'): void { $_SESSION['flash
 function user(): ?array {
     if (empty($_SESSION['uid'])) return null;
     $u=q('SELECT id,phone,name,role FROM users WHERE id=?',[(int)$_SESSION['uid']])->fetch();
+    if ($u && $u['role']==='admin' && (!hash_equals((string)getenv('ADMIN_PHONE'), $u['phone']) || ($_SESSION['admin_verified_uid'] ?? null)!==(int)$u['id'])) $u['role']='student';
     return $u ?: null;
 }
-function require_user(): array { $u=user(); if (!$u) redirect('login?next='.rawurlencode(trim(parse_url($_SERVER['REQUEST_URI'],PHP_URL_PATH) ?: '/','/'))); return $u; }
+function require_user(): array {
+    $u=user();
+    if (!$u || trim($u['name'])==='') {
+        unset($_SESSION['uid'],$_SESSION['admin_verified_uid']);
+        redirect('login?next='.rawurlencode(trim(parse_url($_SERVER['REQUEST_URI'],PHP_URL_PATH) ?: '/','/')));
+    }
+    return $u;
+}
 function plan_for(array $u): string {
     $row=q("SELECT plan FROM subscriptions WHERE user_id=? AND status='active' AND starts_at<=? AND expires_at>? ORDER BY expires_at DESC LIMIT 1",[$u['id'],gmdate('Y-m-d H:i:s'),gmdate('Y-m-d H:i:s')])->fetch();
     return $row && isset(PLANS[$row['plan']]) ? $row['plan'] : 'free';
@@ -57,6 +65,9 @@ function handle_post(string $path): void {
     validate_csrf();
     if ($path==='auth/request') {
         $phone=normalized_phone((string)($_POST['phone'] ?? ''));
+        $first=trim((string)($_POST['first_name'] ?? ''));
+        $last=trim((string)($_POST['last_name'] ?? ''));
+        if (mb_strlen($first)<2 || mb_strlen($first)>50 || mb_strlen($last)<2 || mb_strlen($last)>50) { flash('نام و نام خانوادگی معتبر وارد کنید.','error'); redirect('login'); }
         if (!$phone) { flash('شماره موبایل معتبر وارد کنید.','error'); redirect('login'); }
         $count=(int)($_SESSION['otp_requests'] ?? 0);
         if ($count>=8) { flash('تعداد درخواست‌ها بیش از حد مجاز است. بعداً دوباره تلاش کنید.','error'); redirect('login'); }
@@ -68,6 +79,7 @@ function handle_post(string $path): void {
         q('INSERT INTO otp_codes(phone,code_hash,expires_at,attempts,sent_at) VALUES (?,?,?,?,?)',[$phone,password_hash($code,PASSWORD_DEFAULT),time()+300,0,time()]);
         $_SESSION['otp_requests']=$count+1;
         $_SESSION['verify_phone']=$phone;
+        $_SESSION['verify_name']=$first.' '.$last;
         flash('کد تأیید ارسال شد. کد تا ۵ دقیقه معتبر است.'); redirect('verify');
     }
     if ($path==='auth/verify') {
@@ -79,9 +91,24 @@ function handle_post(string $path): void {
         if (!preg_match('/^[0-9]{6}$/D',$code) || !password_verify($code,$entry['code_hash'])) { flash('کد واردشده صحیح نیست.','error'); redirect('verify'); }
         q('DELETE FROM otp_codes WHERE phone=?',[$phone]);
         $u=q('SELECT id FROM users WHERE phone=?',[$phone])->fetch();
-        if (!$u) { q('INSERT INTO users(phone) VALUES (?)',[$phone]); $u=q('SELECT id FROM users WHERE phone=?',[$phone])->fetch(); }
-        session_regenerate_id(true); $_SESSION['uid']=$u['id']; unset($_SESSION['verify_phone']);
+        $name=(string)($_SESSION['verify_name'] ?? '');
+        if (!$u) { q('INSERT INTO users(phone,name) VALUES (?,?)',[$phone,$name]); $u=q('SELECT id FROM users WHERE phone=?',[$phone])->fetch(); }
+        else q('UPDATE users SET name=? WHERE id=?',[$name,$u['id']]);
+        session_regenerate_id(true); $_SESSION['uid']=(int)$u['id']; unset($_SESSION['verify_phone'],$_SESSION['verify_name'],$_SESSION['admin_verified_uid']);
+        if ($phone!=='' && $phone===(getenv('ADMIN_PHONE') ?: '')) redirect('admin-login');
         flash('خوش آمدید!'); redirect('dashboard');
+    }
+    if ($path==='auth/admin') {
+        $u=user();
+        if (!$u || $u['phone']!==getenv('ADMIN_PHONE')) { http_response_code(403); exit('دسترسی مجاز نیست.'); }
+        $attempts=(int)($_SESSION['admin_attempts'] ?? 0);
+        $hash=getenv('ADMIN_PASSWORD_HASH') ?: '';
+        if ($attempts>=5) { http_response_code(429); exit('تعداد تلاش‌ها بیش از حد مجاز است. دوباره وارد شوید.'); }
+        $_SESSION['admin_attempts']=$attempts+1;
+        if ($hash==='' || !password_verify((string)($_POST['password'] ?? ''),$hash)) { flash('رمز مدیریت صحیح نیست.','error'); redirect('admin-login'); }
+        q("UPDATE users SET role='admin' WHERE id=?",[$u['id']]);
+        session_regenerate_id(true); $_SESSION['admin_verified_uid']=(int)$u['id']; unset($_SESSION['admin_attempts']);
+        redirect('dashboard');
     }
     if ($path==='logout') { $_SESSION=[]; session_regenerate_id(true); flash('از حساب خود خارج شدید.'); redirect(''); }
     if ($path==='contact/send') {

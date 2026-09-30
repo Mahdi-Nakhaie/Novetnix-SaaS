@@ -684,7 +684,7 @@ def notifications_view():
 def student_payments():
     out = panel_head("پرداخت‌ها", "تاریخچه پرداخت و وضعیت اشتراک شما.")
     out += ('<div class="panel-card narrow-left"><h2>وضعیت پرداخت</h2>'
-            '<p class="muted">تراکنش واقعی انجام نمی‌شود؛ سوابق زیر مربوط به فعال‌سازی آزمایشی پلن هستند.</p></div>'
+            '<p class="muted">سوابق فعال‌سازی پلن در این حساب.</p></div>'
             '<div class="panel-card table-wrap"><table><thead><tr><th>پلن</th><th>مبلغ ماهانه</th>'
             "<th>وضعیت</th><th>پایان</th></tr></thead><tbody data-student-payments>"
             '<tr><td colspan="4" class="muted">هنوز پرداختی ثبت نشده است.</td></tr></tbody></table></div>')
@@ -712,41 +712,14 @@ def student_subscription():
             '<div class="usage-row"><span>ظرفیت پروژه</span><strong data-plan-projects>۰</strong></div></section>'
             '<section class="plan-tile"><span class="eyebrow">پلن فعلی</span>'
             '<h2 data-current-plan>رایگان</h2><p data-plan-expiry>اشتراک پولی فعالی ثبت نشده است.</p></section></div>')
-    out += '<div class="panel-card"><h2>پلن‌های قابل بررسی</h2><p class="muted">انتخاب پلن فقط دسترسی آزمایشی در این دستگاه را فعال می‌کند؛ اشتراک واقعی ایجاد نمی‌شود.</p><div class="pricing-grid demo-plan-grid">'
-    for p in PLANS[1:]:
-        out += (f'<article class="price-card"><h3>{h(p["name"])}</h3><p>{money(p["price"])} / ماه</p>'
-                f'<p class="muted">{h(p["summary"])}</p>'
-                f'<button type="button" class="btn btn-primary" data-demo-plan="{h(p["id"])}">آزمون پلن</button></article>')
-    out += '</div><p class="form-note" data-plan-note hidden></p></div>'
-    out += checkout_form()
-    out += ('<div class="panel-card"><h2>تاریخچه فعال‌سازی</h2>'
+    out += ('<div class="panel-card"><h2>فعال‌سازی اشتراک</h2>'
+            '<p class="muted">برای فعال‌سازی پلن، پس از هماهنگی پرداخت با پشتیبانی تماس بگیرید.</p>'
+            + linkto("contact", "تماس با پشتیبانی ←", "btn btn-primary") + '</div>')
+    out += ('<div class="panel-card"><h2>سوابق اشتراک</h2>'
             '<div class="table-wrap"><table><thead><tr><th>پلن</th><th>مبلغ</th><th>وضعیت</th>'
             '<th>تاریخ</th></tr></thead><tbody data-subscription-payments>'
             '<tr><td colspan="4" class="muted">هنوز پرداختی ثبت نشده است.</td></tr></tbody></table></div></div>')
     return out
-
-
-def checkout_form():
-    return ('<div id="checkout" class="panel-card narrow checkout-card" hidden>'
-            '<div class="code-bar"><h2>فعال‌سازی آزمایشی</h2><span class="pill" data-checkout-plan>—</span></div>'
-            '<p class="muted">این درگاه واقعی نیست و هیچ مبلغی دریافت نمی‌شود. شماره کارت نمونه را وارد کنید '
-            'تا مسیر خرید را ببینید؛ شماره کارت واقعی وارد نکنید.</p>'
-            '<form class="stack-form" data-form="checkout">'
-            '<input type="hidden" name="plan" value="">'
-            '<label>شماره کارت نمونه<input dir="ltr" inputmode="numeric" name="card" required '
-            'pattern="[0-9۰-۹ -]{16,19}" placeholder="6037 9977 0000 0000" autocomplete="off"></label>'
-            '<label>نام روی کارت<input name="holder" required minlength="2" maxlength="60" placeholder="نام نمونه"></label>'
-            '<div class="checkout-grid">'
-            '<label>ماه<input dir="ltr" inputmode="numeric" name="month" required pattern="0[1-9]|1[0-2]" placeholder="۰۵"></label>'
-            '<label>سال<input dir="ltr" inputmode="numeric" name="year" required pattern="[0-9۰-۹]{2}" placeholder="۰۷"></label>'
-            '<label>CVV<input dir="ltr" inputmode="numeric" name="cvv" required pattern="[0-9۰-۹]{3,4}" placeholder="۱۲۳" autocomplete="off"></label>'
-            '</div>'
-            '<label class="check-row"><input type="checkbox" name="agree" required> '
-            'می‌دانم این فعال‌سازی آزمایشی است و مبلغی پرداخت نمی‌شود.</label>'
-            '<div class="code-actions"><button class="btn btn-primary" type="submit" data-checkout-pay>فعال‌سازی آزمایشی</button>'
-            '<button class="btn btn-outline" type="button" data-checkout-cancel>انصراف</button></div>'
-            '</form><p class="form-note" hidden></p>'
-            '<div class="receipt" data-receipt hidden></div></div>')
 
 
 def student_section(sub):
@@ -1070,6 +1043,10 @@ def render_page(route):
         + f'<script src="{h(asset("python-runner.js"))}" defer></script>'
         + f'<script src="{h(asset("demo.js"))}" defer></script></head><body{guard}>'
     )
+    if view == "panel" and route["role"] == "admin":
+        return out + header_html("") + ('<main class="auth-page"><div class="auth-card"><h1>پنل مدیریت</h1>'
+                                      '<p class="muted">ورود مدیر فقط از طریق نسخهٔ سروری و پس از تأیید هویت انجام می‌شود.</p>'
+                                      + linkto("login", "ورود به حساب ←", "btn btn-primary") + '</div></main>') + footer_html() + "</body></html>"
     if view == "panel":
         return out.replace('<body', '<body class="is-panel"', 1) + body + "</body></html>"
     return out + code_glow() + header_html(route.get("nav", "")) + body + footer_html() + "</body></html>"
@@ -1138,10 +1115,7 @@ def panel_shell(role, sub):
             f'<span>Noventix <span class="muted">/ {"مدیریت" if role == "admin" else "دانش‌آموز"}</span></span>'
             '<span class="panel-avatar" data-avatar>ک</span></div>')
     section = admin_section(sub) if role == "admin" else student_section(sub)
-    switch = ('<div class="demo-switch"><span>نمایش پنل‌ها</span>'
-              + linkto("panel/student", "دانشجو", "selected" if role == "student" else "")
-              + linkto("panel/admin", "مدیر", "selected" if role == "admin" else "") + "</div>")
-    return out + f'<main class="panel-content">{switch}{section}</main></div>'
+    return out + f'<main class="panel-content">{section}</main></div>'
 
 
 def build_routes():

@@ -16,8 +16,10 @@ function route(): void {
     if ($path==='community') { page_community(); return; }
     if ($path==='login') { page_login(); return; }
     if ($path==='verify') { page_verify(); return; }
+    if ($path==='admin-login') { page_admin_login(); return; }
     if ($path==='dashboard' || str_starts_with($path,'dashboard/')) {
         $u=require_user();
+        if ($u['phone']===(getenv('ADMIN_PHONE') ?: '') && $u['role']!=='admin') redirect('admin-login');
         $allowed=['profile','learning','projects','community','subscription','users','users-new','courses','catalog','subscriptions','messages','analytics','challenges','payments','support','announcements','gamification','content','settings'];
         if (str_starts_with($path,'dashboard/') && !in_array(substr($path,10),$allowed,true)) { http_response_code(404); head_page('یافت نشد',''); notice(); echo '<main class="container section"><h1>این صفحه پیدا نشد.</h1>'; linkto('dashboard','بازگشت به پنل ←','inline-link'); echo '</main>'; foot_page(); return; }
         head_page('پنل', '', true); notice(); panel(str_starts_with($path,'dashboard/') ? substr($path,10) : ''); foot_page(true); return;
@@ -67,10 +69,20 @@ function page_community(): void {
     foreach ($posts as $p) { echo '<article class="post-card"><div class="meta-row"><span class="pill">'.h($p['created_at']).'</span><span>'.h($p['name'] ?: mb_substr($p['phone'],0,4).'****').'</span></div><h2>'.h($p['title']).'</h2><p>'.nl2br(h($p['body'])).'</p>'; $replies=q('SELECT r.body,r.created_at,u.name,u.phone FROM community_replies r JOIN users u ON u.id=r.user_id WHERE r.post_id=? ORDER BY r.id',[$p['id']])->fetchAll(); if ($replies) { echo '<div class="replies">'; foreach ($replies as $r) echo '<div class="reply"><strong>'.h($r['name'] ?: mb_substr($r['phone'],0,4).'****').'</strong><p>'.nl2br(h($r['body'])).'</p></div>'; echo '</div>'; } if ($me) { form_start('community/reply','reply-form'); echo '<input type="hidden" name="post_id" value="'.(int)$p['id'].'"><textarea name="body" required minlength="10" maxlength="5000" rows="3" placeholder="پاسخ شما"></textarea><button class="btn btn-outline">ارسال پاسخ</button></form>'; } echo '</article>'; } echo '</div></section></main>'; foot_page();
 }
 function page_login(): void {
-    if (user()) redirect('dashboard');
-    head_page('ورود','ورود یا ثبت‌نام با شماره موبایل در Noventix.'); notice(); echo '<main class="auth-page"><div class="auth-card"><img src="/assets/nova.png" alt="مسکات Nova" width="70" height="70"><h1>ورود یا ثبت‌نام</h1><p class="muted">شماره موبایل خود را وارد کنید تا کد تأیید برایتان ارسال شود.</p>'; form_start('auth/request','stack-form'); echo '<label>شماره موبایل<input type="tel" dir="ltr" name="phone" required pattern="0?9[0-9]{9}" placeholder="09123456789" autocomplete="tel"></label><button class="btn btn-primary">ارسال کد تأیید</button></form><p class="fine-print">کد تأیید فقط از طریق سرویس پیامک تنظیم‌شده ارسال می‌شود؛ تا زمان تنظیم سرویس، ورود فعال نیست.</p></div></main>'; foot_page();
+    if (user() && trim((string)user()['name'])!=='') redirect('dashboard');
+    head_page('ورود','ورود یا ثبت‌نام با شماره موبایل در Noventix.'); notice(); echo '<main class="auth-page"><div class="auth-card"><img src="/assets/nova.png" alt="مسکات Nova" width="70" height="70"><h1>ورود یا ثبت‌نام</h1><p class="muted">برای ادامه اطلاعات خود را وارد کنید.</p>'; form_start('auth/request','stack-form'); echo '<label>نام<input name="first_name" required minlength="2" maxlength="50" autocomplete="given-name"></label><label>نام خانوادگی<input name="last_name" required minlength="2" maxlength="50" autocomplete="family-name"></label><label>شماره موبایل<input type="tel" dir="ltr" name="phone" required pattern="0?9[0-9]{9}" placeholder="09123456789" autocomplete="tel"></label><button class="btn btn-primary">ارسال کد تأیید</button></form><p class="fine-print">کد تأیید فقط از طریق سرویس پیامک تنظیم‌شده ارسال می‌شود؛ تا زمان تنظیم سرویس، ورود فعال نیست.</p></div></main>'; foot_page();
 }
-function page_verify(): void {
+function page_admin_login(): void {
+    $u=require_user();
+    if ($u['phone']!==(getenv('ADMIN_PHONE') ?: '')) { http_response_code(403); exit('دسترسی مجاز نیست.'); }
+    if ($u['role']==='admin') redirect('dashboard');
+    head_page('ورود مدیر','تأیید ورود به پنل مدیریت.'); notice();
+    echo '<main class="auth-page"><div class="auth-card"><h1>ورود به مدیریت</h1><p class="muted">برای ادامه، رمز مدیریت را وارد کنید.</p>';
+    form_start('auth/admin','stack-form');
+    echo '<label>رمز مدیریت<input type="password" name="password" required autocomplete="current-password"></label><button class="btn btn-primary">ورود به پنل مدیریت</button></form></div></main>';
+    foot_page();
+}
+
     $phone=$_SESSION['verify_phone'] ?? ''; if (!$phone) redirect('login');
     head_page('تأیید شماره','تأیید کد پیامک‌شده.'); notice(); echo '<main class="auth-page"><div class="auth-card"><h1>کد تأیید را وارد کنید</h1><p class="muted" dir="ltr">'.h($phone).'</p>'; form_start('auth/verify','stack-form'); echo '<label>کد ۶ رقمی<input inputmode="numeric" dir="ltr" name="code" required pattern="[0-9۰-۹]{6}" autocomplete="one-time-code"></label><button class="btn btn-primary">تأیید و ورود</button></form>'; linkto('login','ویرایش شماره ←','inline-link'); echo '</div></main>'; foot_page();
 }
