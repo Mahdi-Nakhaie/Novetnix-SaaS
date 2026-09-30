@@ -552,9 +552,10 @@ def code_workspace(starter="", challenge=None):
     return (f'<div class="code-layout"><section class="panel-card code-col">{form_open}'
             '<div class="code-bar"><span class="pill" data-file-name>main.py</span>'
             '<span class="muted">میزکار چندفایلی Python · اجرای مستقل با سقف ۱۰ ثانیه</span></div>'
-            '<div class="workspace-files"><div class="file-tree" data-file-tree role="listbox" aria-label="فایل‌های میزکار"></div>'
-            '<div class="file-actions"><input class="file-name-input" data-file-name-input dir="ltr" placeholder="نام فایل جدید" aria-label="نام فایل جدید">'
+            '<div class="workspace-files"><div class="workspace-files-head"><strong>فایل‌های پروژه</strong><label class="btn btn-small btn-outline file-upload-label">بارگذاری فایل<input type="file" data-file-upload multiple hidden></label></div><div class="file-tree" data-file-tree role="listbox" aria-label="فایل‌های میزکار"></div>'
+            '<div class="file-actions"><input class="file-name-input" data-file-name-input dir="ltr" placeholder="src/analysis.py" aria-label="نام فایل جدید">'
             '<button type="button" class="btn btn-small btn-outline" data-file-create>فایل جدید</button></div></div>'
+            '<div class="editor-tabs"><span class="editor-tab is-active" data-file-name>main.py</span><span class="editor-shortcut">Ctrl/⌘ + S برای ذخیره</span></div>'
             '<label class="sr-only" for="code-input">کد فایل</label>'
             '<textarea id="code-input" name="code" class="code-input" dir="ltr" spellcheck="false" rows="14" '
             f'data-code-input placeholder="print(2 + 3)">{h(starter)}</textarea>'
@@ -602,6 +603,11 @@ def workspace_view():
                       ("قطعه کد ذخیره‌شده", "۰", "snippets"), ("زبان پیشنهادی", "Python", None)])
     out += code_workspace()
     out += terminal_view()
+    out += ('<section class="panel-card github-workspace-card"><div class="code-bar"><div><span class="eyebrow">کنترل نسخه</span><h2>اتصال امن به GitHub</h2></div><span class="pill">Git</span></div>'
+            '<p class="muted">مخزن را متصل کنید، تغییرات را مرور کنید و پس از تأیید به شاخهٔ انتخابی ارسال کنید. برای امنیت، توکن هرگز در localStorage یا کد مرورگر ذخیره نمی‌شود.</p>'
+            '<div class="github-fields"><label>نشانی مخزن<input data-github-repo dir="ltr" placeholder="https://github.com/owner/repository"></label><label>شاخه<input data-github-branch dir="ltr" value="main"></label></div>'
+            '<div class="code-actions"><button type="button" class="btn btn-primary" data-github-connect>اتصال به GitHub</button><button type="button" class="btn btn-outline" data-github-push disabled>Push تغییرات</button><span class="muted" data-github-status>هنوز مخزنی متصل نشده است.</span></div>'
+            '<p class="form-note" data-github-note hidden></p></section>')
     out += nova_review_card()
     out += ('<div class="panel-columns"><section class="panel-card"><h2>قطعه‌های ذخیره‌شده</h2>'
             '<div class="panel-list" data-snippets>'

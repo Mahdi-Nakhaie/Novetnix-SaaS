@@ -807,7 +807,41 @@
     if (handler) handler(form);
   });
 
+  document.addEventListener("change", function (event) {
+    if (!event.target.matches || !event.target.matches("[data-file-upload]")) return;
+    Array.prototype.slice.call(event.target.files || []).slice(0, 20).forEach(function (file) {
+      var name = String(file.name || "").replace(/[^A-Za-z0-9._/-]/g, "_").replace(/^\/+/, "");
+      if (!validVirtualPath(name) || name.length > 120 || file.size > 1024 * 1024) return;
+      var reader = new FileReader();
+      reader.onload = function () { workspaceFiles()[name] = String(reader.result || ""); activeFile = name; store(); paintFiles(); var editor = el("[data-code-input]"); if (editor) editor.value = workspaceFiles()[name]; };
+      reader.readAsText(file);
+    });
+    event.target.value = "";
+  });
+
+  document.addEventListener("keydown", function (event) {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+      var editor = el("[data-code-input]");
+      if (editor) { event.preventDefault(); saveCurrentFile(document); store(); var status = el("[data-code-status]"); if (status) status.textContent = "فایل ذخیره شد"; }
+    }
+  });
+
   document.addEventListener("click", function (event) {
+    var githubConnect = event.target.closest("[data-github-connect]");
+    if (githubConnect) {
+      var repo = el("[data-github-repo]");
+      var branch = el("[data-github-branch]");
+      var noteBox = el("[data-github-note]");
+      var value = repo ? String(repo.value || "").trim() : "";
+      if (!/^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+(?:\.git)?$/.test(value)) {
+        if (noteBox) { noteBox.hidden = false; noteBox.className = "form-note notice error"; noteBox.textContent = "نشانی معتبر مخزن GitHub را وارد کنید."; }
+        return;
+      }
+      if (noteBox) { noteBox.hidden = false; noteBox.className = "form-note notice info"; noteBox.textContent = "اتصال واقعی GitHub به OAuth سمت سرور و مجوز مخزن نیاز دارد؛ این محیط هنوز اعتبارنامه‌ای دریافت نکرده است."; }
+      var status = el("[data-github-status]");
+      if (status) status.textContent = "در انتظار اتصال امن سمت سرور";
+      return;
+    }
     var fileSelect = event.target.closest("[data-file-select]");
     if (fileSelect) {
       saveCurrentFile(document);
