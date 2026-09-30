@@ -70,19 +70,24 @@ function page_community(): void {
 }
 function page_login(): void {
     if (user() && trim((string)user()['name'])!=='') redirect('dashboard');
-    head_page('ورود','ورود یا ثبت‌نام با شماره موبایل در Noventix.'); notice(); echo '<main class="auth-page"><div class="auth-card"><img src="/assets/nova.png" alt="مسکات Nova" width="70" height="70"><h1>ورود یا ثبت‌نام</h1><p class="muted">برای ادامه اطلاعات خود را وارد کنید.</p>'; form_start('auth/request','stack-form'); echo '<label>نام<input name="first_name" required minlength="2" maxlength="50" autocomplete="given-name"></label><label>نام خانوادگی<input name="last_name" required minlength="2" maxlength="50" autocomplete="family-name"></label><label>شماره موبایل<input type="tel" dir="ltr" name="phone" required pattern="0?9[0-9]{9}" placeholder="09123456789" autocomplete="tel"></label><button class="btn btn-primary">ارسال کد تأیید</button></form><p class="fine-print">کد تأیید فقط از طریق سرویس پیامک تنظیم‌شده ارسال می‌شود؛ تا زمان تنظیم سرویس، ورود فعال نیست.</p></div></main>'; foot_page();
+    $captcha=captcha_code();
+    head_page('ورود','ورود یا ثبت‌نام با شماره موبایل در Noventix.'); notice();
+    echo '<main class="auth-page"><div class="auth-card"><img src="/assets/nova.png" alt="مسکات Nova" width="70" height="70"><h1>ورود یا ثبت‌نام</h1><p class="muted">برای ساخت حساب، فرم ثبت‌نام را کامل کنید. ورودهای بعدی با شماره، رمز و کپچا انجام می‌شود.</p>';
+    form_start('auth/request','stack-form'); echo '<h2>ثبت‌نام</h2><label>نام<input name="first_name" required minlength="2" maxlength="50" autocomplete="given-name"></label><label>نام خانوادگی<input name="last_name" required minlength="2" maxlength="50" autocomplete="family-name"></label><label>شماره موبایل<input type="tel" dir="ltr" name="phone" required pattern="0?9[0-9]{9}" placeholder="09123456789" autocomplete="tel"></label><label>رمز عبور<input type="password" name="password" required minlength="8" maxlength="72" autocomplete="new-password"></label><p class="fine-print">رمز باید دست‌کم ۸ نویسه و شامل حرف انگلیسی و عدد باشد.</p><button class="btn btn-primary">ارسال کد تأیید</button></form>';
+    echo '<hr><h2>ورود به حساب</h2>'; form_start('auth/login','stack-form'); echo '<label>شماره موبایل<input type="tel" dir="ltr" name="phone" required pattern="0?9[0-9]{9}" autocomplete="username"></label><label>رمز عبور<input type="password" name="password" required autocomplete="current-password"></label><div class="captcha-box"><strong dir="ltr">'.h($captcha).'</strong><span>کد امنیتی را وارد کنید</span></div><label>کپچا<input name="captcha" required maxlength="5" pattern="[A-Za-z0-9]{5}" dir="ltr" autocomplete="off"></label><button class="btn btn-outline">ورود به پنل</button></form><p class="fine-print">کپچا با هر بار بارگذاری صفحه تغییر می‌کند.</p></div></main>'; foot_page();
 }
 function page_admin_login(): void {
     $u=require_user();
     if ($u['phone']!==(getenv('ADMIN_PHONE') ?: '')) { http_response_code(403); exit('دسترسی مجاز نیست.'); }
     if ($u['role']==='admin') redirect('dashboard');
     head_page('ورود مدیر','تأیید ورود به پنل مدیریت.'); notice();
-    echo '<main class="auth-page"><div class="auth-card"><h1>ورود به مدیریت</h1><p class="muted">برای ادامه، رمز مدیریت را وارد کنید.</p>';
+    $captcha=captcha_code();
+    echo '<main class="auth-page"><div class="auth-card"><h1>ورود به مدیریت</h1><p class="muted">برای ادامه، رمز مدیریت و کد امنیتی را وارد کنید.</p>';
     form_start('auth/admin','stack-form');
-    echo '<label>رمز مدیریت<input type="password" name="password" required autocomplete="current-password"></label><button class="btn btn-primary">ورود به پنل مدیریت</button></form></div></main>';
+    echo '<label>رمز مدیریت<input type="password" name="password" required autocomplete="current-password"></label><div class="captcha-box"><strong dir="ltr">'.h($captcha).'</strong><span>کد امنیتی را وارد کنید</span></div><label>کپچا<input name="captcha" required maxlength="5" pattern="[A-Za-z0-9]{5}" dir="ltr" autocomplete="off"></label><button class="btn btn-primary">ورود به پنل مدیریت</button></form></div></main>';
     foot_page();
 }
-
+function page_verify(): void {
     $phone=$_SESSION['verify_phone'] ?? ''; if (!$phone) redirect('login');
     head_page('تأیید شماره','تأیید کد پیامک‌شده.'); notice(); echo '<main class="auth-page"><div class="auth-card"><h1>کد تأیید را وارد کنید</h1><p class="muted" dir="ltr">'.h($phone).'</p>'; form_start('auth/verify','stack-form'); echo '<label>کد ۶ رقمی<input inputmode="numeric" dir="ltr" name="code" required pattern="[0-9۰-۹]{6}" autocomplete="one-time-code"></label><button class="btn btn-primary">تأیید و ورود</button></form>'; linkto('login','ویرایش شماره ←','inline-link'); echo '</div></main>'; foot_page();
 }

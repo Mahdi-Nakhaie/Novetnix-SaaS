@@ -455,14 +455,21 @@ def view_login():
     return ('<main class="auth-page"><div class="auth-card">'
             f'<img src="{h(asset("nova.png"))}" alt="مسکات Nova" width="70" height="70">'
             "<h1>ورود یا ثبت‌نام</h1>"
-            "<p class=\"muted\">نام، نام خانوادگی و شماره موبایل خود را برای شروع وارد کنید.</p>"
+            '<p class="muted">برای ثبت‌نام رمز بسازید؛ ورودهای بعدی با شماره، رمز و کپچا انجام می‌شود.</p>'
             '<form class="stack-form" data-form="login">'
-            '<label>نام<input name="first_name" required minlength="2" maxlength="50" autocomplete="given-name" placeholder="نام"></label>'
+            '<h2>ثبت‌نام</h2><label>نام<input name="first_name" required minlength="2" maxlength="50" autocomplete="given-name" placeholder="نام"></label>'
             '<label>نام خانوادگی<input name="last_name" required minlength="2" maxlength="50" autocomplete="family-name" placeholder="نام خانوادگی"></label>'
             '<label>شماره موبایل<input type="tel" dir="ltr" name="phone" required pattern="0?9[0-9]{9}" placeholder="09123456789" autocomplete="tel"></label>'
-            '<button class="btn btn-primary">ارسال کد تأیید</button></form>'
-            '<p class="form-note" hidden></p>'
-            '<p class="fine-print">کد تأیید روی همین صفحه نمایش داده می‌شود؛ پیامک ارسال نمی‌شود.</p></div></main>')
+            '<label>رمز عبور<input type="password" name="password" required minlength="8" maxlength="72" autocomplete="new-password"></label>'
+            '<p class="fine-print">رمز باید حداقل ۸ نویسه و شامل حرف انگلیسی و عدد باشد.</p>'
+            '<button class="btn btn-primary">ارسال کد تأیید</button></form><p class="form-note" hidden></p><hr>'
+            '<form class="stack-form" data-form="signin"><h2>ورود به پنل</h2>'
+            '<label>شماره موبایل<input type="tel" dir="ltr" name="phone" required pattern="0?9[0-9]{9}" autocomplete="username"></label>'
+            '<label>رمز عبور<input type="password" name="password" required autocomplete="current-password"></label>'
+            '<div class="captcha-box"><strong data-login-captcha dir="ltr"></strong><span>کد امنیتی</span></div>'
+            '<label>کپچا<input name="captcha" required maxlength="5" pattern="[A-Za-z0-9]{5}" dir="ltr" autocomplete="off"></label>'
+            '<button class="btn btn-outline">ورود</button></form><p class="form-note" hidden></p>'
+            '<p class="fine-print">در نسخهٔ استاتیک، اطلاعات فقط در همین مرورگر ذخیره می‌شود.</p></div></main>')
 
 
 def view_verify():

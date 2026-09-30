@@ -332,12 +332,30 @@
       var phone = (form.elements.namedItem("phone").value || "").replace(/[۰-۹٠-٩]/g, function (d) { return "۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩".indexOf(d) % 10; })
         .replace(/[\s-]/g, "").replace(/^(\+98|98)/, "0");
       if (!/^09[0-9]{9}$/.test(phone)) { note(form, "شماره موبایل معتبر وارد کنید.", "error"); return; }
+      var passwordField = form.elements.namedItem("password");
+      var password = passwordField ? String(passwordField.value || "") : "";
+      if (passwordField && (!/^[\s\S]{8,72}$/.test(password) || !/[A-Za-z]/.test(password) || !/[0-9]/.test(password))) {
+        note(form, "رمز باید ۸ تا ۷۲ نویسه و شامل حرف انگلیسی و عدد باشد.", "error"); return;
+      }
       lastCode = String(Math.floor(100000 + Math.random() * 900000));
       state.pending_phone = phone;
       state.pending_name = { first: first, last: last };
+      state.pending_password = password;
       sessionStorage.setItem("noventix.demo.code", lastCode);
       store();
       location.href = join("verify/");
+    },
+
+    signin: function (form) {
+      var phone = (form.elements.namedItem("phone").value || "").replace(/[۰-۹٠-٩]/g, function (d) { return "۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩".indexOf(d) % 10; }).replace(/[\\s-]/g, "").replace(/^(\\+98|98)/, "0");
+      var password = form.elements.namedItem("password").value || "";
+      var captcha = form.elements.namedItem("captcha").value || "";
+      var expected = sessionStorage.getItem("noventix.demo.captcha") || "";
+      var found = state.users.filter(function (u) { return u.phone === phone; })[0];
+      if (!found || found.password !== password) { note(form, "شماره موبایل یا رمز عبور صحیح نیست.", "error"); return; }
+      if (captcha.toUpperCase() !== expected) { note(form, "کد کپچا صحیح نیست.", "error"); return; }
+      state.user = found; store(); sessionStorage.removeItem("noventix.demo.captcha");
+      location.href = join(found.role === "admin" ? "panel/admin/" : "panel/student/");
     },
 
     verify: function (form) {
@@ -347,10 +365,12 @@
       user.first_name = state.pending_name.first;
       user.last_name = state.pending_name.last;
       user.name = user.first_name + " " + user.last_name;
+      if (state.pending_password) user.password = state.pending_password;
       sessionStorage.removeItem("noventix.demo.code");
       lastCode = null;
       delete state.pending_phone;
       delete state.pending_name;
+      delete state.pending_password;
       store();
       note(form, user.role === "admin" ? "خوش آمدید؛ ورود به پنل مدیریت…" : "خوش آمدید!", "success");
       var target = sessionStorage.getItem("noventix.demo.return") || (user.role === "admin" ? "panel/admin" : "panel/student");
@@ -966,8 +986,17 @@
     }
   }
 
+  function paintCaptcha() {
+    var slot = el("[data-login-captcha]");
+    if (!slot) return;
+    var code = sessionStorage.getItem("noventix.demo.captcha");
+    if (!code) { code = Math.random().toString(36).slice(2, 7).toUpperCase(); sessionStorage.setItem("noventix.demo.captcha", code); }
+    slot.textContent = code;
+  }
+
   window.NOVENTIX = { state: state, save: store, fa: fa, join: join, repaint: paintAll };
   guardPage();
   paintAll();
   paintFiles();
+  paintCaptcha();
 })();

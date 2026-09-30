@@ -12,6 +12,7 @@ function db(): PDO {
     }
     $db = new PDO($dsn, getenv('DB_USER') ?: null, getenv('DB_PASSWORD') ?: null, [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES=>false]);
     $db->exec(file_get_contents(__DIR__.($db->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql' ? '/schema.mysql.sql' : '/schema.sqlite.sql')));
+    try { $db->exec('ALTER TABLE users ADD COLUMN password_hash '.($db->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql' ? "VARCHAR(255) NOT NULL DEFAULT ''" : "TEXT NOT NULL DEFAULT ''")); } catch (Throwable $e) { }
     return $db;
 }
 function q(string $sql, array $params=[]): PDOStatement { $s=db()->prepare($sql); $s->execute($params); return $s; }
@@ -20,6 +21,16 @@ function fa(int|string $v): string { return strtr((string)$v,'0123456789','۰۱�
 function money(int $v): string { return $v ? fa(number_format($v)).' تومان' : 'رایگان'; }
 function url(string $path=''): string { return '/'.ltrim($path,'/'); }
 function csrf(): string { return $_SESSION['csrf'] ??= bin2hex(random_bytes(32)); }
+function captcha_code(): string {
+    if (empty($_SESSION['captcha'])) $_SESSION['captcha']=strtoupper(substr(str_shuffle('ABCDEFGHJKLMNPQRSTUVWXYZ23456789'),0,5));
+    return $_SESSION['captcha'];
+}
+function validate_captcha(): bool {
+    $given=strtoupper(trim((string)($_POST['captcha'] ?? '')));
+    $expected=(string)($_SESSION['captcha'] ?? '');
+    unset($_SESSION['captcha']);
+    return $expected!=='' && hash_equals($expected,$given);
+}
 function validate_csrf(): void { if (!hash_equals(csrf(), (string)($_POST['csrf'] ?? ''))) { http_response_code(419); exit('درخواست نامعتبر است. صفحه را دوباره بارگذاری کنید.'); } }
 function redirect(string $path): never { header('Location: '.url($path),true,303); exit; }
 function flash(string $message, string $kind='success'): void { $_SESSION['flash']=['text'=>$message,'kind'=>$kind]; }
@@ -67,8 +78,11 @@ function handle_post(string $path): void {
         $phone=normalized_phone((string)($_POST['phone'] ?? ''));
         $first=trim((string)($_POST['first_name'] ?? ''));
         $last=trim((string)($_POST['last_name'] ?? ''));
+        $password=(string)($_POST['password'] ?? '');
         if (mb_strlen($first)<2 || mb_strlen($first)>50 || mb_strlen($last)<2 || mb_strlen($last)>50) { flash('نام و نام خانوادگی معتبر وارد کنید.','error'); redirect('login'); }
         if (!$phone) { flash('شماره موبایل معتبر وارد کنید.','error'); redirect('login'); }
+        if (strlen($password)<8 || strlen($password)>72) { flash('رمز عبور باید بین ۸ تا ۷۲ نویسه باشد.','error'); redirect('login'); }
+        if (!preg_match('/[A-Za-z]/',$password) || !preg_match('/[0-9]/',$password)) { flash('رمز عبور باید دست‌کم یک حرف انگلیسی و یک عدد داشته باشد.','error'); redirect('login'); }
         $count=(int)($_SESSION['otp_requests'] ?? 0);
         if ($count>=8) { flash('تعداد درخواست‌ها بیش از حد مجاز است. بعداً دوباره تلاش کنید.','error'); redirect('login'); }
         $previous=q('SELECT sent_at FROM otp_codes WHERE phone=?',[$phone])->fetch();
@@ -80,9 +94,20 @@ function handle_post(string $path): void {
         $_SESSION['otp_requests']=$count+1;
         $_SESSION['verify_phone']=$phone;
         $_SESSION['verify_name']=$first.' '.$last;
+        $_SESSION['verify_password_hash']=password_hash($password,PASSWORD_DEFAULT);
         flash('کد تأیید ارسال شد. کد تا ۵ دقیقه معتبر است.'); redirect('verify');
     }
-    if ($path==='auth/verify') {
+    if ($path==='auth/login') {
+        if (!validate_captcha()) { flash('کد کپچا صحیح نیست.','error'); redirect('login'); }
+        $phone=normalized_phone((string)($_POST['phone'] ?? ''));
+        $password=(string)($_POST['password'] ?? '');
+        $u=$phone ? q('SELECT id,password_hash FROM users WHERE phone=?',[$phone])->fetch() : false;
+        if (!$u || !password_verify($password,(string)$u['password_hash'])) { flash('شماره موبایل یا رمز عبور صحیح نیست.','error'); redirect('login'); }
+        session_regenerate_id(true); $_SESSION['uid']=(int)$u['id']; unset($_SESSION['admin_verified_uid']);
+        if ($phone===(getenv('ADMIN_PHONE') ?: '')) redirect('admin-login');
+        flash('خوش آمدید!'); redirect('dashboard');
+    }
+
         $phone=$_SESSION['verify_phone'] ?? '';
         $code=strtr((string)($_POST['code'] ?? ''),'۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩','01234567890123456789');
         $entry=q('SELECT * FROM otp_codes WHERE phone=?',[$phone])->fetch();
@@ -92,15 +117,17 @@ function handle_post(string $path): void {
         q('DELETE FROM otp_codes WHERE phone=?',[$phone]);
         $u=q('SELECT id FROM users WHERE phone=?',[$phone])->fetch();
         $name=(string)($_SESSION['verify_name'] ?? '');
-        if (!$u) { q('INSERT INTO users(phone,name) VALUES (?,?)',[$phone,$name]); $u=q('SELECT id FROM users WHERE phone=?',[$phone])->fetch(); }
-        else q('UPDATE users SET name=? WHERE id=?',[$name,$u['id']]);
-        session_regenerate_id(true); $_SESSION['uid']=(int)$u['id']; unset($_SESSION['verify_phone'],$_SESSION['verify_name'],$_SESSION['admin_verified_uid']);
+        $passwordHash=(string)($_SESSION['verify_password_hash'] ?? '');
+        if (!$u) { q('INSERT INTO users(phone,name,password_hash) VALUES (?,?,?)',[$phone,$name,$passwordHash]); $u=q('SELECT id FROM users WHERE phone=?',[$phone])->fetch(); }
+        else q('UPDATE users SET name=?, password_hash=CASE WHEN password_hash=\'\' THEN ? ELSE password_hash END WHERE id=?',[$name,$passwordHash,$u['id']]);
+        session_regenerate_id(true); $_SESSION['uid']=(int)$u['id']; unset($_SESSION['verify_phone'],$_SESSION['verify_name'],$_SESSION['verify_password_hash'],$_SESSION['admin_verified_uid']);
         if ($phone!=='' && $phone===(getenv('ADMIN_PHONE') ?: '')) redirect('admin-login');
         flash('خوش آمدید!'); redirect('dashboard');
     }
     if ($path==='auth/admin') {
         $u=user();
         if (!$u || $u['phone']!==getenv('ADMIN_PHONE')) { http_response_code(403); exit('دسترسی مجاز نیست.'); }
+        if (!validate_captcha()) { flash('کد کپچا صحیح نیست.','error'); redirect('admin-login'); }
         $attempts=(int)($_SESSION['admin_attempts'] ?? 0);
         $hash=getenv('ADMIN_PASSWORD_HASH') ?: '';
         if ($attempts>=5) { http_response_code(429); exit('تعداد تلاش‌ها بیش از حد مجاز است. دوباره وارد شوید.'); }
