@@ -552,8 +552,7 @@ def code_workspace(starter="", challenge=None):
     form_open = (f'<form class="stack-form" data-form="solution"><input type="hidden" name="challenge" value="{challenge}">' if challenge is not None else '')
     form_close = ('<button class="btn btn-primary" type="submit">ذخیره پاسخ من</button></form><p class="form-note" hidden></p>' if challenge is not None else '')
     return (f'<div class="code-layout"><section class="panel-card code-col">{form_open}'
-            '<div class="code-bar"><span class="pill" data-file-name>main.py</span>'
-            '<span class="muted">میزکار چندفایلی Python · اجرای مستقل با سقف ۱۰ ثانیه</span></div>'
+            '<div class="code-bar"><span class="muted">میزکار چندفایلی Python · اجرای مستقل با سقف ۱۰ ثانیه</span></div>'
             '<div class="workspace-files"><div class="workspace-files-head"><strong>فایل‌های پروژه</strong><label class="btn btn-small btn-outline file-upload-label">بارگذاری فایل<input type="file" data-file-upload multiple hidden></label></div><div class="file-tree" data-file-tree role="listbox" aria-label="فایل‌های میزکار"></div>'
             '<div class="file-actions"><input class="file-name-input" data-file-name-input dir="ltr" placeholder="src/analysis.py" aria-label="نام فایل جدید">'
             '<button type="button" class="btn btn-small btn-outline" data-file-create>فایل جدید</button></div></div>'
