@@ -1,3 +1,10 @@
+@font-face{font-family:Estedad;src:url(Estedad-Thin.ttf) format('truetype');font-weight:100;font-style:normal;font-display:swap}
+@font-face{font-family:Estedad;src:url(Estedad-ExtraLight.ttf) format('truetype');font-weight:200;font-style:normal;font-display:swap}
+@font-face{font-family:Estedad;src:url(Estedad-Light.ttf) format('truetype');font-weight:300;font-style:normal;font-display:swap}
+@font-face{font-family:Estedad;src:url(Estedad-Regular.ttf) format('truetype');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:Estedad;src:url(Estedad-SemiBold.ttf) format('truetype');font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:Estedad;src:url(Estedad-Bold.ttf) format('truetype');font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:Estedad;src:url(Estedad-ExtraBold.ttf) format('truetype');font-weight:800;font-style:normal;font-display:swap}
 @font-face{font-family:Vazirmatn;src:url(vazirmatn.ttf) format('truetype');font-weight:400;font-display:swap}
 :root{
   --brand:#7c1fd1; --brand-2:#5a12a0; --brand-soft:#f3ebfd; --brand-line:#e4d4f8;
@@ -13,7 +20,7 @@
 }
 *,*::before,*::after{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,system-ui,-apple-system,'Segoe UI',sans-serif;line-height:1.85;font-size:16px;-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Estedad,Vazirmatn,system-ui,-apple-system,'Segoe UI',sans-serif;line-height:1.85;font-size:16px;-webkit-font-smoothing:antialiased}
 h1,h2,h3,h4{line-height:1.45;margin:0 0 .5rem;font-weight:800;letter-spacing:-.01em}
 h1{font-size:clamp(1.9rem,4.4vw,3.2rem)}
 h2{font-size:clamp(1.4rem,2.6vw,2.1rem)}
