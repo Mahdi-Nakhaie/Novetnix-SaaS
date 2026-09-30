@@ -199,6 +199,8 @@ def footer_html():
         + linkto("courses", "مقاله‌ها") + linkto("projects", "پروژه‌ها") + linkto("community", "انجمن")
         + "</div><div><h3>Noventix</h3>"
         + linkto("pricing", "پلن‌ها") + linkto("about", "درباره ما") + linkto("contact", "تماس با ما")
+        + linkto("help", "مرکز راهنما") + linkto("support", "پشتیبانی") + linkto("terms", "قوانین و مقررات")
+        + linkto("privacy", "حریم خصوصی")
         + "</div><div><h3>همراه ما باشید</h3>"
         + "".join(f'<a href="{u}" rel="noopener noreferrer" target="_blank">{n} ↗</a>' for u, n, _ in SOCIALS)
         + f'</div></div><div class="footer-end"><span>© {YEAR} Noventix. همه حقوق محفوظ است.</span>'
@@ -217,6 +219,8 @@ def view_home():
         '<div class="hero-buttons">' + linkto("courses", "شروع مسیر یادگیری ←", "btn btn-primary")
         + linkto("projects", "دیدن پروژه‌ها", "btn btn-outline") + "</div>"
         '<div class="hero-proof"><span>✦ مسیر پروژه‌محور</span><span>✦ یادگیری به زبان فارسی</span><span>✦ شروع رایگان</span></div></div>'
+        '<div><span class="code-float code-float-a" aria-hidden="true"><code>import numpy as np</code></span>'
+        '<span class="code-float code-float-b" aria-hidden="true"><code>model.fit(X, y)</code></span></div>'
         '<div class="hero-display"><div class="hero-window"><div class="window-top">'
         '<span class="window-dots">● ● ●</span><span dir="ltr">noventix / your-next-project</span>'
         '<span class="code-label">PYTHON</span></div>'
@@ -414,6 +418,39 @@ def view_contact():
             + "</div></div></section></main>")
 
 
+def view_help():
+    return ('<main>' + page_hero("مرکز راهنما", "پاسخ‌های روشن برای شروع سریع", "راهنمای استفاده از مسیر یادگیری، میزکار کد و حساب کاربری.")
+            + '<section class="section container"><div class="help-grid">'
+            + '<article class="panel-card"><h2>شروع کار</h2><p>برای ورود به پنل، نام، نام خانوادگی و شماره موبایل خود را وارد کنید و کد تأیید را ثبت کنید.</p></article>'
+            + '<article class="panel-card"><h2>میزکار کد</h2><p>کد Python را در میزکار اجرا کنید. خروجی متنی، ماتریس و نمودار در همان صفحه نمایش داده می‌شود.</p></article>'
+            + '<article class="panel-card"><h2>نیاز به کمک دارید؟</h2><p>موضوع را از مسیر پشتیبانی ثبت کنید یا از صفحه تماس با ما پیام بفرستید.</p>'
+            + linkto("support", "رفتن به پشتیبانی ←", "btn btn-outline") + '</article></div></section></main>')
+
+
+def view_support():
+    return ('<main>' + page_hero("پشتیبانی", "کنارتان هستیم", "برای مشکل حساب، مسیر یادگیری یا پرداخت، درخواست خود را ثبت کنید.")
+            + '<section class="section container"><div class="panel-card narrow"><h2>ارسال درخواست</h2>'
+            + '<form class="stack-form" data-form="contact"><label>نام<input name="name" required minlength="2" maxlength="100"></label>'
+            + '<label>ایمیل<input type="email" dir="ltr" name="email" required maxlength="255"></label>'
+            + '<label>شرح درخواست<textarea name="message" required minlength="10" maxlength="3000" rows="6"></textarea></label>'
+            + '<button class="btn btn-primary">ارسال درخواست</button></form><p class="form-note" hidden></p></div></section></main>')
+
+
+def view_legal(title, intro, sections):
+    out = '<main>' + page_hero(title, intro, '') + '<section class="section container"><div class="article-section">'
+    for heading, body in sections:
+        out += f'<h2>{h(heading)}</h2><p>{h(body)}</p>'
+    return out + '</div></section></main>'
+
+
+def view_terms():
+    return view_legal("قوانین و مقررات", "چارچوب استفاده از Noventix", [("حساب کاربری", "اطلاعات ورود باید متعلق به خود شما باشد و مسئولیت حفظ آن بر عهده شماست."), ("محتوا", "مطالب برای یادگیری ارائه شده‌اند و استفاده از آن‌ها باید مطابق قوانین مالکیت فکری باشد."), ("رفتار در انجمن", "ارسال محتوای توهین‌آمیز، مخرب یا ناقض حریم خصوصی دیگران مجاز نیست.")])
+
+
+def view_privacy():
+    return view_legal("حریم خصوصی", "نحوه نگهداری و استفاده از اطلاعات شما", [("اطلاعات حساب", "شماره موبایل و نام برای ایجاد حساب و ارائه خدمات استفاده می‌شود."), ("داده‌های آموزشی", "پیشرفت، ثبت‌نام‌ها و فعالیت‌های آموزشی برای نمایش داشبورد شما نگهداری می‌شوند."), ("امنیت", "اطلاعات حساس نباید در پیام‌ها یا کدهای آموزشی وارد شوند.")])
+
+
 def view_login():
     return ('<main class="auth-page"><div class="auth-card">'
             f'<img src="{h(asset("nova.png"))}" alt="مسکات Nova" width="70" height="70">'
@@ -422,11 +459,10 @@ def view_login():
             '<form class="stack-form" data-form="login">'
             '<label>نام<input name="first_name" required minlength="2" maxlength="50" autocomplete="given-name" placeholder="نام"></label>'
             '<label>نام خانوادگی<input name="last_name" required minlength="2" maxlength="50" autocomplete="family-name" placeholder="نام خانوادگی"></label>'
-            '<label>شماره موبایل<input type="tel" dir="ltr" name="phone" required pattern="0?9[0-9]{9}" '
-            'placeholder="09123456789" autocomplete="tel"></label>'
+            '<label>شماره موبایل<input type="tel" dir="ltr" name="phone" required pattern="0?9[0-9]{9}" placeholder="09123456789" autocomplete="tel"></label>'
             '<button class="btn btn-primary">ارسال کد تأیید</button></form>'
             '<p class="form-note" hidden></p>'
-            "<p class=\"fine-print\">کد تأیید روی همین صفحه نمایش داده می‌شود؛ پیامک ارسال نمی‌شود.</p></div></main>")
+            '<p class="fine-print">کد تأیید روی همین صفحه نمایش داده می‌شود؛ پیامک ارسال نمی‌شود.</p></div></main>')
 
 
 def view_verify():
@@ -1072,6 +1108,14 @@ def view_body(route):
         return view_contact()
     if view == "community":
         return view_community()
+    if view == "help":
+        return view_help()
+    if view == "support":
+        return view_support()
+    if view == "terms":
+        return view_terms()
+    if view == "privacy":
+        return view_privacy()
     if view == "login":
         return view_login()
     if view == "verify":
@@ -1134,8 +1178,17 @@ def build_routes():
          "description": "راه‌های ارتباط با تیم Noventix و شبکه‌های اجتماعی."},
         {"path": "community", "title": "انجمن", "view": "community", "nav": "community",
          "description": "پرسش، تجربه و گفت‌وگو میان یادگیرندگان و متخصصان Noventix."},
+        {"path": "help", "title": "مرکز راهنما", "view": "help", "nav": "",
+         "description": "راهنمای استفاده از Noventix."},
+        {"path": "support", "title": "پشتیبانی", "view": "support", "nav": "",
+         "description": "پشتیبانی حساب و مسیر یادگیری Noventix."},
+        {"path": "terms", "title": "قوانین و مقررات", "view": "terms", "nav": "",
+         "description": "قوانین استفاده از Noventix."},
+        {"path": "privacy", "title": "حریم خصوصی", "view": "privacy", "nav": "",
+         "description": "سیاست حریم خصوصی Noventix."},
         {"path": "login", "title": "ورود", "view": "login", "nav": "",
          "description": "ورود یا ثبت‌نام با شماره موبایل در Noventix."},
+
         {"path": "verify", "title": "تأیید شماره", "view": "verify", "nav": "",
          "description": "تأیید کد پیامک‌شده."},
     ]

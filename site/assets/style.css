@@ -521,7 +521,15 @@ body.is-panel{background:linear-gradient(180deg,var(--bg),#f4f0fa)}
 .code-input:focus,.terminal{box-shadow:0 0 0 3px var(--brand-soft),0 20px 44px -28px rgba(90,18,160,.45)}
 .btn{transform-style:preserve-3d}
 .btn:active{transform:translateY(1px)}
-.btn.is-done{background:#eefaf3;border-color:#bfe7d1;color:#146b41}
+.hero{position:relative;overflow:visible}
+.code-float{position:absolute;z-index:0;display:block;padding:.7rem 1rem;border:1px solid rgba(124,31,209,.22);border-radius:12px;background:rgba(255,255,255,.88);box-shadow:0 20px 45px -24px rgba(90,18,160,.55);color:var(--brand-2);font:700 .75rem/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;direction:ltr;animation:codeSlide 8s ease-in-out infinite alternate}
+.code-float-a{inset-block-start:16%;inset-inline-start:42%}
+.code-float-b{inset-block-end:8%;inset-inline-start:4%;animation-delay:-3s}
+@keyframes codeSlide{from{transform:translate3d(0,0,0) rotate(-2deg)}to{transform:translate3d(-2rem,1.2rem,0) rotate(2deg)}}
+.help-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem}
+@media (max-width:900px){.help-grid{grid-template-columns:1fr}.code-float{display:none}}
+@media (prefers-reduced-motion:reduce){.code-float{animation:none}}
+
 .btn[disabled]{opacity:.55;cursor:not-allowed;transform:none}
 @media (hover:none){
   .card-3d:hover,.challenge-card:hover,.stat-card:hover,.hero-window:hover{transform:none}
