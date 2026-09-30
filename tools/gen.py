@@ -367,7 +367,7 @@ def view_pricing():
         out += "</tr>"
     out += ('</tbody></table></div></section><section class="section container"><div class="cta-panel">'
             '<span class="eyebrow">مسیر یادگیری</span><h2>پلن‌ها و امکانات</h2>'
-            '<p>در پنل اشتراک، پلن را به‌صورت آزمایشی فعال کنید. هیچ پرداخت یا اشتراک واقعی انجام نمی‌شود.</p>'
+            '<p>برای فعال‌سازی پلن و دریافت راهنمای پرداخت با پشتیبانی تماس بگیرید.</p>'
             + linkto("panel/student/subscription", "مشاهده پلن‌ها ←", "btn btn-light") + "</div></section></main>")
     return out
 
