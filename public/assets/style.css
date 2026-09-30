@@ -547,14 +547,13 @@ body.is-panel{background:linear-gradient(180deg,var(--bg),#f4f0fa)}
 @media (max-width:900px){.help-grid{grid-template-columns:1fr}.code-float{display:none}}
 @media (prefers-reduced-motion:reduce){.code-float{animation:none}}
 
+.hero h1 em{background:linear-gradient(100deg,var(--brand-2),#a855f7 45%,var(--brand-2) 75%);background-size:220% auto;background-clip:text;-webkit-background-clip:text;color:transparent;animation:textShimmer 5s ease-in-out infinite}.hero-copy .eyebrow{animation:eyebrowLift .8s ease both}.hero-copy .eyebrow .dot{animation:dotPulse 1.8s ease-in-out infinite}.panel-heading h1,.page-hero h1{animation:titleRise .7s cubic-bezier(.2,.75,.25,1) both}.panel-heading p,.page-hero p{animation:copyRise .8s .1s ease both}.cta-panel h2{background:linear-gradient(100deg,#fff,#e3c8ff,#fff);background-size:200% auto;background-clip:text;-webkit-background-clip:text;color:transparent;animation:textShimmer 6s ease-in-out infinite}@keyframes textShimmer{0%,100%{background-position:0 50%}50%{background-position:100% 50%}}@keyframes eyebrowLift{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}@keyframes dotPulse{0%,100%{box-shadow:0 0 0 0 rgba(124,31,209,.3)}50%{box-shadow:0 0 0 7px rgba(124,31,209,0)}}@keyframes titleRise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}@keyframes copyRise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
 .btn[disabled]{opacity:.55;cursor:not-allowed;transform:none}
 @media (hover:none){
   .card-3d:hover,.challenge-card:hover,.stat-card:hover,.hero-window:hover{transform:none}
 }
-@media (prefers-reduced-motion:reduce){
-  .orbit-chip{animation:none}
-  .card-3d:hover,.challenge-card:hover,.stat-card:hover,.hero-window:hover{transform:none}
-}
+@media (prefers-reduced-motion:reduce){.orbit-chip,.hero h1 em,.hero-copy .eyebrow,.hero-copy .eyebrow .dot,.panel-heading h1,.page-hero h1,.panel-heading p,.page-hero p,.cta-panel h2{animation:none}.card-3d:hover,.challenge-card:hover,.stat-card:hover,.hero-window:hover{transform:none}}
 
 @media (max-width:1080px){
   .pricing-grid{grid-template-columns:repeat(3,1fr)}
