@@ -70,7 +70,9 @@ def section_header(eyebrow, title, body=""):
 
 
 def panel_head(title, sub):
-    return f'<div class="panel-heading"><h1>{h(title)}</h1><p>{h(sub)}</p></div>'
+    return ('<div class="dashboard-code-floats" aria-hidden="true"><span class="dashboard-code-a">import numpy as np</span>'
+            '<span class="dashboard-code-b">model.fit(X_train, y_train)</span><span class="dashboard-code-c">print(result.score())</span></div>'
+            f'<div class="panel-heading"><h1>{h(title)}</h1><p>{h(sub)}</p></div>')
 
 
 def progress_bar(percent):
@@ -764,9 +766,11 @@ def student_subscription():
             '<div class="usage-row"><span>ظرفیت پروژه</span><strong data-plan-projects>۰</strong></div></section>'
             '<section class="plan-tile"><span class="eyebrow">پلن فعلی</span>'
             '<h2 data-current-plan>رایگان</h2><p data-plan-expiry>اشتراک پولی فعالی ثبت نشده است.</p></section></div>')
-    out += ('<div class="panel-card"><h2>فعال‌سازی اشتراک</h2>'
-            '<p class="muted">برای فعال‌سازی پلن، پس از هماهنگی پرداخت با پشتیبانی تماس بگیرید.</p>'
-            + linkto("contact", "تماس با پشتیبانی ←", "btn btn-primary") + '</div>')
+    out += ('<div class="panel-card"><h2>فعال‌سازی آزمایشی اشتراک</h2>'
+            '<p class="muted">برای آزمون دسترسی‌ها، یک پلن را بدون پرداخت فعال کنید. این قابلیت فقط برای محیط آزمایشی است.</p>'
+            '<form class="subscription-form" data-form="subscription"><label>پلن<select name="plan">'
+            + ''.join(f'<option value="{h(p["id"])}">{h(p["name"])} · {money(p["price"])}</option>' for p in PLANS if p["id"] != "free")
+            + '</select></label><button class="btn btn-primary">فعال‌سازی پلن</button></form><p class="form-note" hidden></p></div>')
     out += ('<div class="panel-card"><h2>سوابق اشتراک</h2>'
             '<div class="table-wrap"><table><thead><tr><th>پلن</th><th>مبلغ</th><th>وضعیت</th>'
             '<th>تاریخ</th></tr></thead><tbody data-subscription-payments>'

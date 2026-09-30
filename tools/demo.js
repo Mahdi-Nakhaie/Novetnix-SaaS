@@ -94,7 +94,7 @@
   function isAdmin() { return state.user && state.user.role === "admin"; }
 
   function accountReady() { return !!(state.user && state.user.phone && state.user.first_name && state.user.last_name); }
-  function currentPlan() { return "free"; }
+  function currentPlan() { return state.user && state.user.plan && planOrder.indexOf(state.user.plan) >= 0 ? state.user.plan : "free"; }
   function canProject(index) {
     var item = seed.projects[index];
     return accountReady() && item && planOrder.indexOf(currentPlan()) >= planOrder.indexOf(item.plan);
@@ -489,6 +489,17 @@
       if (input) input.focus();
     },
 
+    subscription: function (form) {
+      if (!accountReady()) { location.href = join("login/"); return; }
+      var plan = form.elements.namedItem("plan").value;
+      if (planOrder.indexOf(plan) < 1) { note(form, "پلن انتخاب‌شده معتبر نیست.", "error"); return; }
+      state.user.plan = plan;
+      state.user.plan_expires = new Date(Date.now() + 30 * 86400000).toISOString();
+      store();
+      note(form, "پلن " + planById(plan).name + " برای ۳۰ روز فعال شد.", "success");
+      paintPlan(); paintStats();
+    },
+
     review: function (form) {
       var code = (form.elements.namedItem("code").value || "").trim();
       if (code.length < 20) { note(form, "کد باید دست‌کم ۲۰ نویسه باشد.", "error"); return; }
@@ -813,8 +824,14 @@
       var name = String(file.name || "").replace(/[^A-Za-z0-9._/-]/g, "_").replace(/^\/+/, "");
       if (!validVirtualPath(name) || name.length > 120 || file.size > 1024 * 1024) return;
       var reader = new FileReader();
-      reader.onload = function () { workspaceFiles()[name] = String(reader.result || ""); activeFile = name; store(); paintFiles(); var editor = el("[data-code-input]"); if (editor) editor.value = workspaceFiles()[name]; };
-      reader.readAsText(file);
+      reader.onload = function () {
+        var bytes = reader.result;
+        var text;
+        try { text = new TextDecoder("utf-8", { fatal: true }).decode(bytes); }
+        catch (error) { text = new TextDecoder("windows-1256").decode(bytes); }
+        workspaceFiles()[name] = text; activeFile = name; store(); paintFiles(); var editor = el("[data-code-input]"); if (editor) editor.value = text;
+      };
+      reader.readAsArrayBuffer(file);
     });
     event.target.value = "";
   });
