@@ -234,6 +234,9 @@ main{display:block;min-height:60vh}
 .code-input::placeholder{color:#8d81ad}
 .code-input:focus{outline:2px solid var(--brand);outline-offset:1px;border-color:transparent}
 .code-output{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.82rem;line-height:1.8;background:#f6f3fb;border:1px dashed var(--brand-line);border-radius:var(--r-md);padding:.9rem 1rem;margin:0;white-space:pre-wrap;word-break:break-word;min-height:120px;color:var(--ink-2)}
+.code-plots{display:grid;gap:1rem}
+.code-plots:empty{display:none}
+.code-plot{display:block;max-width:100%;height:auto;border:1px solid var(--brand-line);border-radius:var(--r-md);background:#fff}
 .code-block{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.82rem;line-height:1.8;background:#1e1832;color:#e8e2f7;border-radius:var(--r-md);padding:1rem;margin:0;overflow-x:auto;white-space:pre;direction:ltr;text-align:left}
 .code-actions{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap}
 .code-actions .muted{font-size:.78rem;margin-inline-start:auto}
@@ -316,8 +319,8 @@ main{display:block;min-height:60vh}
 /* panel cards & forms */
 .panel-card,.stat-card{background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:1.5rem;box-shadow:var(--shadow-sm)}
 .panel-card.soft{background:var(--brand-soft);border-color:var(--brand-line)}
-.panel-card.narrow{max-width:560px}
-.panel-card.narrow-left{max-width:640px;margin-bottom:1.6rem}
+.panel-card.narrow{max-width:560px;margin-inline:auto}
+.panel-card.narrow-left{max-width:640px;margin:0 auto 1.6rem}
 .panel-heading{margin-bottom:1.5rem}
 .panel-heading p{color:var(--muted);margin:0}
 .panel-welcome{background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:1.6rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;box-shadow:var(--shadow-sm);margin-bottom:1.4rem}
@@ -482,6 +485,51 @@ body.is-panel{display:grid;grid-template-columns:264px 1fr;background:#f7f5fb}
 .profile-head img{width:56px;height:56px;flex-shrink:0}
 .profile-head h2{margin:0 0 .2rem;font-size:1.15rem}
 .profile-head p{margin:0;font-size:.84rem}
+
+/* 3d depth + ambient code background */
+body.is-panel{background:linear-gradient(180deg,var(--bg),#f4f0fa)}
+.code-glow{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+.code-glow::before,.code-glow::after{content:"";position:absolute;border-radius:50%;filter:blur(70px);opacity:.5}
+.code-glow::before{width:420px;height:420px;inset-block-start:-90px;inset-inline-end:-80px;background:radial-gradient(circle,#c9a9f7,#7c1fd1 60%,transparent 72%)}
+.code-glow::after{width:380px;height:380px;inset-block-end:-120px;inset-inline-start:-90px;background:radial-gradient(circle,#9fd8ff,#0f766e 62%,transparent 74%)}
+.glow-grid{position:absolute;inset:0;opacity:.5;background-image:linear-gradient(rgba(124,31,209,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(124,31,209,.07) 1px,transparent 1px);background-size:86px 86px;mask-image:radial-gradient(circle at 50% 25%,#000 15%,transparent 72%);-webkit-mask-image:radial-gradient(circle at 50% 25%,#000 15%,transparent 72%)}
+.glow-orbit{position:absolute;inset:0}
+.orbit-chip{position:absolute;background:rgba(255,255,255,.86);border:1px solid var(--brand-line);border-radius:999px;padding:.4rem .8rem;box-shadow:var(--shadow);font-size:.74rem;color:var(--brand-2);font-weight:700;direction:ltr;animation:orbitDrift 13s ease-in-out infinite alternate}
+.orbit-chip:nth-child(1){inset-block-start:13%;inset-inline-end:10%}
+.orbit-chip:nth-child(2){inset-block-start:70%;inset-inline-end:17%;animation-duration:17s}
+.orbit-chip:nth-child(3){inset-block-start:26%;inset-inline-start:7%;animation-duration:15s}
+.orbit-chip:nth-child(4){inset-block-start:78%;inset-inline-start:13%;animation-duration:19s}
+@keyframes orbitDrift{
+  from{transform:translate3d(0,0,0) rotate(-1.5deg)}
+  to{transform:translate3d(.4rem,-1.3rem,0) rotate(1.5deg)}
+}
+/* 3d surface + hover depth */
+.card-3d{transform-style:preserve-3d;transition:transform .3s ease,box-shadow .3s ease}
+.card-3d:hover{transform:perspective(1100px) rotateX(4deg) rotateY(-5deg) translateY(-6px);box-shadow:0 36px 70px -30px rgba(90,18,160,.42),0 0 0 1px var(--brand-line)}
+.section-3d{position:relative;border-radius:var(--r-xl)}
+.section-3d::after{content:"";position:absolute;inset:auto 8% -26px;height:52px;background:linear-gradient(180deg,rgba(124,31,209,.22),transparent);filter:blur(22px);z-index:-1}
+.panel-card,.course-card,.project-card,.feature,.challenge-card,.plan-tile,.stat-card{transform-style:preserve-3d}
+.panel-card{box-shadow:0 2px 4px rgba(28,20,48,.04),0 18px 40px -26px rgba(90,18,160,.4)}
+.panel-card:hover{box-shadow:0 4px 8px rgba(28,20,48,.05),0 30px 56px -30px rgba(90,18,160,.46)}
+.panel-card h2{position:relative;padding-inline-start:.7rem}
+.panel-card h2::before{content:"";position:absolute;inset-inline-start:0;inset-block:16% 16%;width:4px;border-radius:999px;background:linear-gradient(180deg,var(--brand),#a855f7)}
+.challenge-card,.stat-card{transition:transform .3s ease,box-shadow .3s ease}
+.challenge-card:hover,.stat-card:hover{transform:perspective(1000px) rotateX(3deg) translateY(-5px);box-shadow:0 30px 60px -28px rgba(90,18,160,.4)}
+.hero-window{position:relative;transform-style:preserve-3d;transition:transform .35s ease,box-shadow .35s ease}
+.hero-window:hover{transform:perspective(1200px) rotateX(3.5deg) rotateY(4deg) translateY(-6px)}
+.hero-window::after{content:"";position:absolute;inset:auto 10% -30px;height:60px;background:linear-gradient(180deg,rgba(124,31,209,.5),transparent);filter:blur(26px);z-index:-1}
+.code-input:focus,.terminal{box-shadow:0 0 0 3px var(--brand-soft),0 20px 44px -28px rgba(90,18,160,.45)}
+.btn{transform-style:preserve-3d}
+.btn:active{transform:translateY(1px)}
+.btn.is-done{background:#eefaf3;border-color:#bfe7d1;color:#146b41}
+.btn[disabled]{opacity:.55;cursor:not-allowed;transform:none}
+@media (hover:none){
+  .card-3d:hover,.challenge-card:hover,.stat-card:hover,.hero-window:hover{transform:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .orbit-chip{animation:none}
+  .card-3d:hover,.challenge-card:hover,.stat-card:hover,.hero-window:hover{transform:none}
+}
 
 @media (max-width:1080px){
   .pricing-grid{grid-template-columns:repeat(3,1fr)}

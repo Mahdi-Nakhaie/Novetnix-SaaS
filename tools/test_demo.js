@@ -3,6 +3,29 @@ const fs = require("node:fs");
 const vm = require("node:vm");
 
 const source = fs.readFileSync(__dirname + "/demo.js", "utf8");
+const runnerSource = fs.readFileSync(__dirname + "/../public/assets/python-runner.js", "utf8");
+let activeWorker;
+let completed;
+const receivedPlots = [];
+const runnerContext = {
+  window: { NOVENTIX_BASE: "/Novetnix-SaaS/site" },
+  Worker: class {
+    constructor(path) { assert.equal(path, "/Novetnix-SaaS/site/assets/python-worker.js"); activeWorker = this; }
+    postMessage(message) { assert.equal(message.code, "print(1)"); }
+    terminate() { this.terminated = true; }
+  },
+  setTimeout: () => 1,
+  clearTimeout: () => {},
+};
+vm.runInNewContext(runnerSource, runnerContext);
+runnerContext.window.NOVENTIX_RUN_PYTHON("print(1)", () => {}, (result) => { completed = result; }, (png) => receivedPlots.push(png));
+activeWorker.onmessage({ data: { type: "plot", png: "aGVsbG8=" } });
+activeWorker.onmessage({ data: { type: "done", ok: true, output: "1" } });
+activeWorker.onmessage({ data: { type: "plot", png: "late" } });
+assert.deepEqual(receivedPlots, ["aGVsbG8="]);
+assert.equal(completed.output, "1");
+assert.equal(activeWorker.terminated, true);
+
 const memory = new Map();
 const session = new Map();
 const storage = (map) => ({
@@ -29,6 +52,8 @@ function load(protectedPath) {
   const handlers = {};
   const location = { href: "" };
   const swaps = [];
+  const timers = [];
+  const flush = () => { while (timers.length) timers.shift()(); };
   const terminalLines = [];
   const terminalHost = {
     innerHTML: "",
@@ -54,10 +79,10 @@ function load(protectedPath) {
       addEventListener: () => {}, innerHeight: 800, pageYOffset: 0,
     },
     localStorage: storage(memory), sessionStorage: storage(session),
-    document, location, setTimeout: (callback) => callback(), Math, Date, String,
+    document, location, setTimeout: (callback) => { timers.push(callback); }, Math, Date, String,
   };
   vm.runInNewContext(source, context);
-  return { handlers, location, context, swaps, terminalLines, nodes };
+  return { handlers, location, context, swaps, terminalLines, nodes, flush };
 }
 
 function submit(app, action, values) {
@@ -85,6 +110,7 @@ const code = session.get("noventix.demo.code");
 assert.match(code, /^\d{6}$/);
 page = load();
 submit(page, "verify", { code });
+page.flush();
 assert.equal(page.location.href, "/Novetnix-SaaS/site/panel/student/");
 assert.equal(session.has("noventix.demo.code"), false);
 submit(page, "profile", { first_name: "کاربر", last_name: "نمونه", email: "user@example.com" });
@@ -150,7 +176,7 @@ state = JSON.parse(memory.get("noventix.demo.v1"));
 assert.equal(state.user.plan, "bronze");
 assert.equal(state.payments.length, 1);
 assert.equal(state.payments[0].last4, "5678");
-assert.equal(state.payments[0].status, "نمایشی");
+assert.equal(state.payments[0].status, "آزمایشی");
 assert.equal(state.payments[0].card, undefined);
 const upgraded = load("project/1");
 assert.equal(upgraded.location.href, "");
@@ -165,26 +191,83 @@ workspace.context.document.querySelector = (selector) => {
   return workspace.nodes[selector] || null;
 };
 const codeStatus = { textContent: "" };
+const figures = [];
+const plotGallery = {
+  get childElementCount() { return figures.length; },
+  replaceChildren() { figures.length = 0; },
+  appendChild(node) { figures.push({ src: node.src, alt: node.alt }); },
+};
+const codeRun = { disabled: false };
+const codeStop = { disabled: true };
+const codeClear = { disabled: false };
 const inputColumn = { querySelector: (selector) => selector === "[data-code-input]" ? codeField : null };
 const codeLayout = {
   querySelector: (selector) => ({
     "[data-code-input]": codeField,
     "[data-code-output]": outputField,
+    "[data-code-plots]": plotGallery,
     "[data-code-status]": codeStatus,
+    "[data-code-run]": codeRun,
+    "[data-code-stop]": codeStop,
+    "[data-code-reset]": codeClear,
   })[selector] || null,
 };
+const codeControls = {
+  "[data-code-run]": codeRun,
+  "[data-code-stop]": codeStop,
+  "[data-code-reset]": codeClear,
+};
 function workspaceClick(action) {
-  workspace.handlers.click({
-    target: { closest: (selector) => selector === action ? {
-      closest: (parent) => parent === ".code-layout" ? codeLayout : inputColumn,
-    } : null },
-  });
+  const button = codeControls[action] || { disabled: false };
+  button.closest = (parent) => (parent === ".code-layout" ? codeLayout : inputColumn);
+  button.getAttribute = () => null;
+  workspace.handlers.click({ target: { closest: (selector) => selector === action ? button : null } });
+  return button;
 }
+
+// the runner is injected; the click path must render its result and count the run
+workspace.context.window.NOVENTIX_RUN_PYTHON = (code, status, done, plot) => {
+  status("در حال اجرای کد…");
+  plot("aGVsbG8=");
+  done({ ok: true, output: "۱۵\n" });
+  return () => {};
+};
 workspaceClick("[data-code-run]");
-assert.match(outputField.textContent, /تعریف تابع/);
-assert.match(outputField.textContent, /اجرا نمی‌کند/);
+assert.match(outputField.textContent, /۱۵/);
+assert.equal(figures[0].src, "data:image/png;base64,aGVsbG8=");
+assert.equal(figures[0].alt, "نمودار خروجی پایتون");
+assert.equal(codeStatus.textContent, "اجرا پایان یافت");
+assert.equal(codeRun.disabled, false);
+assert.equal(codeStop.disabled, true);
 state = JSON.parse(memory.get("noventix.demo.v1"));
 assert.equal(state.runs, 1);
+
+// a failing run keeps the log, counts the attempt and reports the failure
+let result;
+workspace.context.window.NOVENTIX_RUN_PYTHON = (_code, _status, done) => {
+  result = done;
+  return () => { done({ ok: false, output: "اجرا متوقف شد" }); };
+};
+workspaceClick("[data-code-run]");
+assert.equal(figures.length, 0);
+assert.equal(codeRun.disabled, true);
+assert.equal(codeStop.disabled, false);
+result({ ok: false, output: "ValueError: bad input" });
+assert.equal(codeRun.disabled, false);
+assert.equal(codeStop.disabled, true);
+assert.match(outputField.textContent, /ValueError/);
+assert.equal(JSON.parse(memory.get("noventix.demo.v1")).runs, 2);
+
+// without a runner the page reports the failure instead of failing silently
+delete workspace.context.window.NOVENTIX_RUN_PYTHON;
+workspaceClick("[data-code-run]");
+assert.equal(codeRun.disabled, true);
+workspace.flush();
+assert.match(outputField.textContent, /بارگیری نشد/);
+assert.equal(codeRun.disabled, false);
+assert.equal(codeStop.disabled, true);
+assert.equal(JSON.parse(memory.get("noventix.demo.v1")).runs, 3);
+workspace.context.window.NOVENTIX_RUN_PYTHON = (code, status, done) => { done({ ok: true, output: "۱۵\n" }); return () => {}; };
 
 submit(workspace, "solution", { code: "def solve(data):\n    return sum(data)", challenge: 0 });
 state = JSON.parse(memory.get("noventix.demo.v1"));
@@ -197,12 +280,16 @@ state = JSON.parse(memory.get("noventix.demo.v1"));
 assert.equal(state.nova.length, 1);
 assert.match(state.nova[0].answer, /ورودی خالی/);
 
-// simulated terminal answers known commands and refuses the rest
+// terminal forwards python main.py to the editor's run control
 workspace.terminalLines.length = 0;
+let terminalRuns = 0;
+workspace.nodes["[data-code-run]"] = { disabled: false, click() { terminalRuns++; } };
 submit(workspace, "terminal", { command: "python main.py" });
-assert.ok(workspace.terminalLines.some((line) => line.includes("شبیه‌سازی")));
+assert.equal(terminalRuns, 1);
+assert.ok(workspace.terminalLines.some((line) => line.includes("بخش خروجی میزکار")));
+delete workspace.nodes["[data-code-run]"];
 submit(workspace, "terminal", { command: "rm -rf /" });
-assert.ok(workspace.terminalLines.some((line) => line.includes("شناخته نشد")));
+assert.ok(workspace.terminalLines.some((line) => line.includes("پشتیبانی نمی‌شود")));
 state = JSON.parse(memory.get("noventix.demo.v1"));
 assert.equal(state.terminal.length, 2);
 
@@ -227,7 +314,17 @@ assert.equal(codeField.value, "");
 assert.match(outputField.textContent, /هنوز/);
 workspaceClick("[data-code-run]");
 assert.match(outputField.textContent, /ابتدا کدی/);
-assert.equal(JSON.parse(memory.get("noventix.demo.v1")).runs, 2);
+assert.equal(JSON.parse(memory.get("noventix.demo.v1")).runs, 3);
+
+codeField.value = "import matplotlib.pyplot as plt\nplt.plot([1, 2])";
+workspace.context.window.NOVENTIX_RUN_PYTHON = (_code, _status, done, plot) => {
+  plot("aGVsbG8=");
+  done({ ok: true, output: "" });
+  return () => {};
+};
+workspaceClick("[data-code-run]");
+assert.match(outputField.textContent, /نمودارها/);
+assert.equal(figures.length, 1);
 
 const legacy = {
   user: state.user, users: [state.user], enrollments: [], projects: [], challenges: [],
@@ -257,19 +354,27 @@ click(returning, "[data-terminal-run]");
 assert.ok(returning.terminalLines.some((line) => line.includes("main.py")));
 assert.equal(returning.nodes["#term-input"].value, "");
 codeField.value = "def solve(data):\n    return data";
+returning.context.window.NOVENTIX_RUN_PYTHON = (code, status, done) => { done({ ok: true, output: "۱۵\n" }); return () => {}; };
 returning.handlers.click({
   target: { closest: (selector) => selector === "[data-code-run]" ? {
     closest: () => codeLayout,
   } : null },
 });
-assert.match(outputField.textContent, /تعریف تابع/);
+assert.match(outputField.textContent, /۱۵/);
 submit(returning, "content", { title: "مقاله آزمایشی تازه", kind: "مقاله" });
+const articles = load("panel/admin/course-new");
+const articleList = { dataset: {}, innerHTML: "" };
+articles.nodes["[data-content-list]"] = articleList;
+submit(articles, "content", { title: "مقاله تازه من", topic: "Python", kind: "مقدماتی" });
+assert.match(articleList.innerHTML, /مقاله تازه من/);
+assert.match(articleList.innerHTML, /پیش‌نویس/);
 const reloaded = load("panel/student/workspace").context.window.NOVENTIX.state;
 assert.equal(reloaded.user.phone, legacy.user.phone);
 assert.equal(reloaded.posts[0].title, legacy.posts[0].title);
-assert.equal(reloaded.content[0].title, "مقاله آزمایشی تازه");
+assert.equal(reloaded.content[0].title, "مقاله تازه من");
+assert.equal(reloaded.content[1].title, "مقاله آزمایشی تازه");
 assert.equal(reloaded.terminal.length, 2);
 assert.equal(reloaded.runs, 1);
 assert.equal(reloaded.reviews.length, 0);
 
-console.log("Demo interactions, legacy storage, sibling code output, terminal and persistence passed");
+console.log("Demo interactions, legacy storage, Python runner, terminal and persistence passed");

@@ -93,12 +93,6 @@ def bars(values, gold=False):
     return out + "</div>"
 
 
-def demo_notice():
-    return ('<div class="container"><div role="status" class="notice success demo-notice">'
-            'این نسخه نمایشی روی GitHub Pages اجرا می‌شود؛ داده‌ها فقط در مرورگر خود شما ذخیره می‌شوند '
-            'و به سرور ارسال نمی‌شوند.</div></div>')
-
-
 # ------------------------------------------------------------ components
 
 def plan_cards(short=False):
@@ -372,9 +366,9 @@ def view_pricing():
             out += f"<td>{h(v)}</td>"
         out += "</tr>"
     out += ('</tbody></table></div></section><section class="section container"><div class="cta-panel">'
-            '<span class="eyebrow">نسخه نمایشی</span><h2>پلن‌ها را بدون پرداخت تجربه کن</h2>'
+            '<span class="eyebrow">مسیر یادگیری</span><h2>پلن‌ها و امکانات</h2>'
             '<p>در پنل اشتراک، پلن را به‌صورت آزمایشی فعال کنید. هیچ پرداخت یا اشتراک واقعی انجام نمی‌شود.</p>'
-            + linkto("panel/student/subscription", "مشاهده پلن‌های نمایشی ←", "btn btn-light") + "</div></section></main>")
+            + linkto("panel/student/subscription", "مشاهده پلن‌ها ←", "btn btn-light") + "</div></section></main>")
     return out
 
 
@@ -432,8 +426,7 @@ def view_login():
             'placeholder="09123456789" autocomplete="tel"></label>'
             '<button class="btn btn-primary">ارسال کد تأیید</button></form>'
             '<p class="form-note" hidden></p>'
-            "<p class=\"fine-print\">در این نسخه نمایشی هیچ پیامکی ارسال نمی‌شود؛ کد تأیید همان‌جا "
-            "نمایش داده می‌شود تا بتوانید پنل را ببینید.</p></div></main>")
+            "<p class=\"fine-print\">کد تأیید روی همین صفحه نمایش داده می‌شود؛ پیامک ارسال نمی‌شود.</p></div></main>")
 
 
 def view_verify():
@@ -462,8 +455,8 @@ def view_community():
 
 def live_chat():
     return ('<div class="panel-card chat-card"><div class="code-bar"><h2>گفت‌وگوی زنده</h2>'
-            '<span class="live-badge"><span class="live-dot"></span> Live</span></div>'
-            '<p class="muted">پیام‌ها بی‌درنگ در همین صفحه نمایش داده می‌شوند و در مرورگر شما ذخیره می‌مانند.</p>'
+            '</div>'
+            '<p class="muted">پیام‌ها در همین دستگاه نمایش داده می‌شوند؛ گفت‌وگو بین کاربران همگام‌سازی نمی‌شود.</p>'
             '<div class="chat-log" data-chat-log role="log" aria-live="polite">'
             '<div class="chat-empty" data-chat-empty>هنوز پیامی در گفت‌وگوی زنده نیست. اولین نفر باشید.</div></div>'
             '<form class="chat-form" data-form="chat">'
@@ -510,18 +503,24 @@ CHALLENGE_SOLUTIONS = [
 ]
 
 
-def code_workspace():
-    return ('<div class="code-layout"><section class="panel-card code-col">'
+def code_workspace(starter="", challenge=None):
+    form_open = (f'<form class="stack-form" data-form="solution"><input type="hidden" name="challenge" value="{challenge}">' if challenge is not None else '')
+    form_close = ('<button class="btn btn-primary" type="submit">ذخیره پاسخ من</button></form><p class="form-note" hidden></p>' if challenge is not None else '')
+    return (f'<div class="code-layout"><section class="panel-card code-col">{form_open}'
             '<div class="code-bar"><span class="pill">main.py</span>'
-            '<span class="muted">ویرایشگر تمرین · اجرا در نسخه نمایشی شبیه‌سازی می‌شود</span></div>'
+            '<span class="muted">Python در مرورگر · اجرای مستقل با سقف ۱۰ ثانیه</span></div>'
             '<label class="sr-only" for="code-input">کد تمرین</label>'
-            '<textarea id="code-input" class="code-input" dir="ltr" spellcheck="false" rows="14" '
-            'data-code-input placeholder="def solve(data):&#10;    return data"></textarea>'
+            '<textarea id="code-input" name="code" class="code-input" dir="ltr" spellcheck="false" rows="14" '
+            f'data-code-input placeholder="print(2 + 3)">{h(starter)}</textarea>'
             '<div class="code-actions"><button type="button" class="btn btn-primary" data-code-run>اجرای کد</button>'
+            '<button type="button" class="btn btn-outline" data-code-stop disabled>توقف اجرا</button>'
             '<button type="button" class="btn btn-outline" data-code-reset>پاک‌کردن</button>'
-            '<span class="muted">آخرین اجرا: <span data-code-status>—</span></span></div></section>'
+            '<span class="muted" data-code-status role="status">آماده اجرا</span></div>'
+            f'{form_close}</section>'
             '<section class="panel-card code-col"><h2>خروجی</h2>'
-            '<pre class="code-output" dir="ltr" data-code-output>هنوز کدی اجرا نشده است.</pre>'
+            '<pre class="code-output" dir="ltr" data-code-output aria-live="polite">هنوز کدی اجرا نشده است.</pre>'
+            '<div class="code-plots" data-code-plots aria-label="نمودارهای خروجی"></div>'
+            '<p class="muted">برای دیدن ماتریس از print و برای نمودار و هیت‌مپ از matplotlib استفاده کنید. اجرای کد به اینترنت برای دریافت موتور پایتون نیاز دارد؛ ورودی تعاملی و دسترسی به فایل‌های دستگاه پشتیبانی نمی‌شود.</p>'
             '<h2>راهنمای تمرین</h2>'
             '<ul class="check-list"><li>ورودی و خروجی تابع را قبل از نوشتن مشخص کن.</li>'
             '<li>حالت مرزی مثل ورودی خالی را فراموش نکن.</li>'
@@ -540,15 +539,9 @@ def challenge_detail(index):
     out += ('<div class="panel-card narrow-left"><h2>آزمون‌های پذیرش</h2><ul class="check-list">')
     for case in tests:
         out += f"<li>{h(case)}</li>"
-    out += '</ul><p class="muted">کدی که همه این حالت‌ها را پوشش دهد، به‌عنوان راه‌حل قابل قبول ثبت می‌شود.</p></div>'
+    out += '</ul><p class="muted">این‌ها معیارهای پیشنهادی ارزیابی‌اند؛ ذخیره پاسخ به معنای قبولی در آزمون خودکار نیست.</p></div>'
     out += '<div class="panel-card"><h2>نمونه راه‌حل</h2>' + code_block(starter) + "</div>"
-    out += ('<div class="panel-card"><h2>فضای تمرین</h2>'
-            '<form class="stack-form" data-form="solution">'
-            f'<input type="hidden" name="challenge" value="{h(index)}">'
-            '<label>راه‌حل شما<textarea class="code-input" dir="ltr" name="code" rows="12" spellcheck="false" '
-            f'required minlength="20" placeholder="{h(starter[:60])}"></textarea></label>'
-            '<button class="btn btn-primary">ثبت راه‌حل</button></form>'
-            '<p class="form-note" hidden></p></div>')
+    out += code_workspace(starter, index)
     out += ('<div class="article-footer">' + linkto("panel/student/challenges", "بازگشت به چالش‌ها ←", "btn btn-outline")
             + linkto("panel/student/workspace", "تمرین آزاد در میزکار ←", "btn btn-outline") + "</div>")
     return out
@@ -578,7 +571,7 @@ def workspace_view():
 
 def terminal_view():
     return ('<section class="panel-card code-col"><div class="code-bar"><span class="pill">Terminal</span>'
-            '<span class="muted">فرمان‌های مجاز در نسخه نمایشی: python، pip، git، ls، help</span></div>'
+            '<span class="muted">python main.py · ls · clear · help</span></div>'
             '<div class="terminal" data-terminal-log dir="ltr" role="log" aria-live="polite">'
             '<span class="term-line term-hint">$ help</span></div>'
             '<form class="terminal-form" data-form="terminal">'
@@ -587,15 +580,14 @@ def terminal_view():
             '<input id="term-input" class="term-input" dir="ltr" name="command" autocomplete="off" '
             'spellcheck="false" placeholder="python main.py">'
             '<button class="btn btn-small btn-primary" type="button" data-terminal-run>اجرا</button></form>'
-            '<p class="muted">این ترمینال شبیه‌سازی‌شده است؛ هیچ فرمانی روی سیستم اجرا نمی‌شود و خروجی '
-            'فقط برای تمرین نوشتن فرمان درست است.</p></section>')
+            '<p class="muted">python main.py کد ویرایشگر را اجرا می‌کند و نتیجه را در خروجی میزکار نشان می‌دهد. این بخش پوسته سیستم‌عامل نیست.</p></section>')
 
 
 def nova_review_card():
     return ('<section class="panel-card"><div class="code-bar"><h2>بررسی کد با Nova</h2>'
             '<span class="pill">Nova Review</span></div>'
             '<p class="muted">کد خود را برای بازبینی بفرستید؛ Nova نکته‌های ساختاری، خوانایی و آزمون‌های '
-            'پیشنهادی را فهرست می‌کند. در نسخه نمایشی بررسی به‌صورت قاعده‌محور و داخل مرورگر انجام می‌شود.</p>'
+            'پیشنهادی را فهرست می‌کند.</p>'
             '<form class="stack-form" data-form="review">'
             '<label>کد برای بررسی<textarea class="code-input" dir="ltr" name="code" rows="10" '
             'spellcheck="false" required minlength="20" placeholder="def solve(data):&#10;    return data"></textarea></label>'
@@ -670,7 +662,7 @@ def nova_view():
     out += stat_grid([("گفت‌وگوهای امروز", "۰", "nova_today"), ("اعتبار پلن", "۰", "plan_credits"),
                       ("پرسش بی‌پاسخ", "۰", "nova_open"), ("وضعیت Nova", "آماده", None)])
     out += ('<div class="panel-card narrow-left"><h2>پرسش تازه</h2>'
-            '<p class="muted">سؤال فنی خود را بنویسید. در نسخه نمایشی پاسخ Nova الگویی و بدون هوش مصنوعی واقعی است.</p>'
+            '<p class="muted">پاسخ‌ها بر اساس الگوهای ازپیش‌تعریف‌شده تولید می‌شوند؛ برای بازبینی دقیق‌تر، ورودی و خروجی موردانتظار را بنویسید.</p>'
             '<form class="stack-form" data-form="nova">'
             '<label>سؤال شما<textarea name="question" required minlength="10" maxlength="2000" rows="4" '
             'placeholder="چطور ورودی خالی را در تابع مدیریت کنم؟"></textarea></label>'
@@ -692,8 +684,7 @@ def notifications_view():
 def student_payments():
     out = panel_head("پرداخت‌ها", "تاریخچه پرداخت و وضعیت اشتراک شما.")
     out += ('<div class="panel-card narrow-left"><h2>وضعیت پرداخت</h2>'
-            '<p class="muted">در نسخه نمایشی هیچ پرداختی انجام نمی‌شود؛ ردیف‌های زیر فقط نتیجه '
-            'فعال‌سازی آزمایشی پلن هستند.</p></div>'
+            '<p class="muted">تراکنش واقعی انجام نمی‌شود؛ سوابق زیر مربوط به فعال‌سازی آزمایشی پلن هستند.</p></div>'
             '<div class="panel-card table-wrap"><table><thead><tr><th>پلن</th><th>مبلغ ماهانه</th>'
             "<th>وضعیت</th><th>پایان</th></tr></thead><tbody data-student-payments>"
             '<tr><td colspan="4" class="muted">هنوز پرداختی ثبت نشده است.</td></tr></tbody></table></div>')
@@ -721,14 +712,14 @@ def student_subscription():
             '<div class="usage-row"><span>ظرفیت پروژه</span><strong data-plan-projects>۰</strong></div></section>'
             '<section class="plan-tile"><span class="eyebrow">پلن فعلی</span>'
             '<h2 data-current-plan>رایگان</h2><p data-plan-expiry>اشتراک پولی فعالی ثبت نشده است.</p></section></div>')
-    out += '<div class="panel-card"><h2>انتخاب پلن نمایشی</h2><p class="muted">این فعال‌سازی فقط برای پیش‌نمایش است؛ هزینه‌ای دریافت نمی‌شود و اشتراک واقعی ایجاد نمی‌کند.</p><div class="pricing-grid demo-plan-grid">'
+    out += '<div class="panel-card"><h2>پلن‌های قابل بررسی</h2><p class="muted">انتخاب پلن فقط دسترسی آزمایشی در این دستگاه را فعال می‌کند؛ اشتراک واقعی ایجاد نمی‌شود.</p><div class="pricing-grid demo-plan-grid">'
     for p in PLANS[1:]:
         out += (f'<article class="price-card"><h3>{h(p["name"])}</h3><p>{money(p["price"])} / ماه</p>'
                 f'<p class="muted">{h(p["summary"])}</p>'
-                f'<button type="button" class="btn btn-primary" data-demo-plan="{h(p["id"])}">خرید نمادین</button></article>')
+                f'<button type="button" class="btn btn-primary" data-demo-plan="{h(p["id"])}">آزمون پلن</button></article>')
     out += '</div><p class="form-note" data-plan-note hidden></p></div>'
     out += checkout_form()
-    out += ('<div class="panel-card"><h2>تاریخچه پرداخت نمادین</h2>'
+    out += ('<div class="panel-card"><h2>تاریخچه فعال‌سازی</h2>'
             '<div class="table-wrap"><table><thead><tr><th>پلن</th><th>مبلغ</th><th>وضعیت</th>'
             '<th>تاریخ</th></tr></thead><tbody data-subscription-payments>'
             '<tr><td colspan="4" class="muted">هنوز پرداختی ثبت نشده است.</td></tr></tbody></table></div></div>')
@@ -737,7 +728,7 @@ def student_subscription():
 
 def checkout_form():
     return ('<div id="checkout" class="panel-card narrow checkout-card" hidden>'
-            '<div class="code-bar"><h2>پرداخت نمادین</h2><span class="pill" data-checkout-plan>—</span></div>'
+            '<div class="code-bar"><h2>فعال‌سازی آزمایشی</h2><span class="pill" data-checkout-plan>—</span></div>'
             '<p class="muted">این درگاه واقعی نیست و هیچ مبلغی دریافت نمی‌شود. شماره کارت نمونه را وارد کنید '
             'تا مسیر خرید را ببینید؛ شماره کارت واقعی وارد نکنید.</p>'
             '<form class="stack-form" data-form="checkout">'
@@ -751,8 +742,8 @@ def checkout_form():
             '<label>CVV<input dir="ltr" inputmode="numeric" name="cvv" required pattern="[0-9۰-۹]{3,4}" placeholder="۱۲۳" autocomplete="off"></label>'
             '</div>'
             '<label class="check-row"><input type="checkbox" name="agree" required> '
-            'می‌دانم این یک پرداخت نمایشی است و مبلغی پرداخت نمی‌شود.</label>'
-            '<div class="code-actions"><button class="btn btn-primary" type="submit" data-checkout-pay>پرداخت نمادین</button>'
+            'می‌دانم این فعال‌سازی آزمایشی است و مبلغی پرداخت نمی‌شود.</label>'
+            '<div class="code-actions"><button class="btn btn-primary" type="submit" data-checkout-pay>فعال‌سازی آزمایشی</button>'
             '<button class="btn btn-outline" type="button" data-checkout-cancel>انصراف</button></div>'
             '</form><p class="form-note" hidden></p>'
             '<div class="receipt" data-receipt hidden></div></div>')
@@ -838,6 +829,11 @@ def student_section(sub):
                   f'<a href="{h(href("projects"))}">پروژه‌ها را ببین ←</a></div></div>')
     if sub == "challenges":
         return panel_head("چالش‌ها", "مسئله‌های کوتاه برای تمرین روزانه و هفتگی.") + challenge_grid()
+    if sub == "my-challenges":
+        return (panel_head("چالش‌های من", "چالش‌هایی که برای تمرین انتخاب کرده‌ای.")
+                + '<div class="panel-list" data-my-challenges>'
+                  '<div class="empty-state">هنوز چالشی اضافه نکردی. '
+                  f'<a href="{h(href("panel/student/challenges"))}">چالش‌ها را ببین ←</a></div></div>')
     if sub.startswith("challenge/"):
         index = int(sub.split("/")[1])
         return challenge_detail(index)
@@ -911,6 +907,7 @@ def admin_section(sub):
                   '<tr><td colspan="3" class="muted">هنوز کاربری ثبت نشده است.</td></tr></tbody></table></div>')
     if sub == "courses":
         return (panel_head("دوره‌ها", "مدیریت کاتالوگ آموزش.")
+                + '<div class="panel-card"><h2>مقاله‌های من</h2><div class="content-list" data-content-list></div></div>'
                 + f'<div class="panel-card"><p class="muted">{fa(len(COURSES))} مقاله فعال در کاتالوگ.</p>'
                 + linkto("courses", "مشاهده کاتالوگ ←", "btn btn-outline") + "</div>" + course_cards())
     if sub == "course-new":
@@ -922,7 +919,7 @@ def admin_section(sub):
                   '<option value="متوسط">متوسط</option><option value="پیشرفته">پیشرفته</option></select></label>'
                   '<button class="btn btn-primary">ذخیره پیش‌نویس</button></form>'
                   '<p class="form-note" hidden></p></div>'
-                + '<div class="panel-card"><p class="muted">مقاله‌های ثبت‌شده در این مرورگر:</p>'
+                + '<div class="panel-card"><p class="muted">مقاله‌های ثبت‌شده:</p>'
                   '<div class="content-list" data-content-list></div></div>')
     if sub == "catalog":
         return (panel_head("پروژه‌ها", "کاتالوگ پروژه‌های فعال پلتفرم.")
@@ -1044,6 +1041,14 @@ def seed_script():
             + ";window.NOVENTIX_SEED=" + json.dumps(payload, ensure_ascii=False) + ";</script>")
 
 
+def code_glow():
+    return ('<div class="code-glow" aria-hidden="true"><div class="glow-grid"></div>'
+            '<div class="glow-orbit"><span class="orbit-chip"><code>import pandas as pd</code></span>'
+            '<span class="orbit-chip"><code>model.fit(X_train, y_train)</code></span>'
+            '<span class="orbit-chip"><code>@app.post("/orders")</code></span>'
+            '<span class="orbit-chip"><code>return recall_score(y_test, pred)</code></span></div></div>')
+
+
 def render_page(route):
     title, desc, view = route["title"], route.get("description", ""), route["view"]
     full = "Noventix | از یادگیری تا ساختن" if title == "خانه" else f"{h(title)} | Noventix"
@@ -1062,11 +1067,12 @@ def render_page(route):
         f'<link rel="stylesheet" href="{h(asset("style.css"))}">'
         + seed_script()
         + f'<script src="{h(asset("app.js"))}" defer></script>'
+        + f'<script src="{h(asset("python-runner.js"))}" defer></script>'
         + f'<script src="{h(asset("demo.js"))}" defer></script></head><body{guard}>'
     )
     if view == "panel":
         return out.replace('<body', '<body class="is-panel"', 1) + body + "</body></html>"
-    return out + header_html(route.get("nav", "")) + demo_notice() + body + footer_html() + "</body></html>"
+    return out + code_glow() + header_html(route.get("nav", "")) + body + footer_html() + "</body></html>"
 
 
 def view_body(route):
@@ -1101,7 +1107,8 @@ def view_body(route):
 
 
 STUDENT_ITEMS = [("", "نمای کلی"), ("learning", "مسیر یادگیری"), ("projects", "پروژه‌ها"),
-                 ("workspace", "میزکار کد"), ("challenges", "چالش‌ها"), ("nova", "Nova AI"),
+                 ("workspace", "میزکار کد"), ("challenges", "چالش‌ها"), ("my-challenges", "چالش‌های من"),
+                 ("nova", "Nova AI"),
                  ("community", "Community"), ("notifications", "اعلان‌ها"), ("subscription", "اشتراک"),
                  ("payments", "پرداخت‌ها"), ("support", "پشتیبانی"), ("gamification", "Gamification"),
                  ("profile", "پروفایل"), ("settings", "تنظیمات")]
@@ -1131,7 +1138,7 @@ def panel_shell(role, sub):
             f'<span>Noventix <span class="muted">/ {"مدیریت" if role == "admin" else "دانش‌آموز"}</span></span>'
             '<span class="panel-avatar" data-avatar>ک</span></div>')
     section = admin_section(sub) if role == "admin" else student_section(sub)
-    switch = ('<div class="demo-switch"><span>پیش‌نمایش پنل‌ها · اطلاعات فقط در همین مرورگر</span>'
+    switch = ('<div class="demo-switch"><span>نمایش پنل‌ها</span>'
               + linkto("panel/student", "دانشجو", "selected" if role == "student" else "")
               + linkto("panel/admin", "مدیر", "selected" if role == "admin" else "") + "</div>")
     return out + f'<main class="panel-content">{switch}{section}</main></div>'

@@ -143,28 +143,17 @@
     return "مسئله را به گام‌های کوچک بشکن: ورودی، خروجی و معیار موفقیت را بنویس، ساده‌ترین راه‌حل را پیاده کن و سپس آن را با یک حالت مرزی آزمون کن.";
   }
 
-  /* The demo never evaluates code; it reports what the browser can check statically. */
-  function simulateRun(code) {
-    var lines = code.split("\n");
-    var issues = [];
-    if (/print\s*\(/.test(code)) issues.push("✓ فراخوانی print پیدا شد؛ خروجی در اجرای واقعی نمایش داده می‌شود.");
-    if (/\bdef\s+\w+\s*\(/.test(code)) issues.push("✓ تعریف تابع پیدا شد.");
-    if (!/\breturn\b/.test(code) && /\bdef\s+\w+\s*\(/.test(code)) issues.push("! تابع بدون return تعریف شده است.");
-    if (/\bTODO\b|\n\s*pass\s*\n|\n\s*pass$/.test(code)) issues.push("! بخش ناتمام (TODO/pass) در کد باقی مانده است.");
-    if (/\bexcept\s*:/.test(code)) issues.push("! except بدون نوع خطا، خطاهای واقعی را پنهان می‌کند.");
-    issues.push("— " + fa(lines.length) + " خط بررسی شد.");
-    issues.push("این نسخه نمایشی کد را اجرا نمی‌کند؛ خروجی بالا فقط بررسی ساختاری است.");
-    return issues.join("\n");
+  /* Without a worker or network the browser runs nothing, so the click still reports progress. */
+  function runnerMissing() {
+    return { ok: false, output: "موتور Python بارگیری نشد؛ اتصال اینترنت را بررسی و صفحه را دوباره باز کنید." };
   }
 
-  /* A simulated shell: only a few commands are answered, nothing is executed. */
   var TERMINAL_HELP = [
     "فرمان‌های پشتیبانی‌شده:",
-    "  python <file>   اجرای فایل پایتون (شبیه‌سازی‌شده)",
-    "  pip install <p> نصب بسته (شبیه‌سازی‌شده)",
-    "  git status      وضعیت مخزن نمونه",
-    "  ls              فهرست فایل‌های نمونه",
-    "  clear           پاک‌کردن ترمینال",
+    "  python main.py   اجرای کد و نمودارهای ویرایشگر",
+    "  ls               فهرست فایل‌های میزکار",
+    "  clear            پاک‌کردن ترمینال",
+    "  help             راهنمای فرمان‌ها",
   ].join("\n");
 
   function runCommand(raw) {
@@ -173,20 +162,23 @@
     var command = String(raw || "").trim();
     var body;
     if (!command) return;
-    if (command === "help" || command === "--help") body = TERMINAL_HELP;
-    else if (command === "clear") { host.innerHTML = ""; return; }
-    else if (command === "ls") body = "main.py  data/\nnotebooks/\nrequirements.txt";
-    else if (command === "git status") body = "On branch main\nnothing to commit, working tree clean";
-    else if (/^pip\s+install\s+\S+/.test(command)) body = "Successfully installed " + command.split(/\s+/)[2] + "-0.0.0 (demo)";
-    else if (/^python\s+\S+/.test(command)) body = "اجرای فایل در نسخه نمایشی شبیه‌سازی می‌شود.\nخروجی: 42";
-    else if (/^python$/.test(command)) body = "Python 3.12 (demo shell)\n>>> برای خروج Ctrl+D را بزنید";
-    else body = "فرمان شناخته نشد: " + command + "\nبرای دیدن فرمان‌های مجاز «help» را اجرا کنید.";
-
+    if (command === "clear") { host.replaceChildren(); return; }
     appendTerminal("$ " + command, "term-cmd");
-    appendTerminal(body, "term-out");
-    state.terminal = (state.terminal || []).concat([{ command: command, at: new Date().toISOString() }]).slice(-40);
+    state.terminal = state.terminal.concat([{ command: command, at: new Date().toISOString() }]).slice(-40);
     store();
     paintStats();
+    if (command === "python main.py") {
+      var run = el("[data-code-run]");
+      if (run && !run.disabled) {
+        appendTerminal("خروجی کد و نمودارها در بخش خروجی میزکار نمایش داده می‌شوند.", "term-out");
+        run.click();
+      } else appendTerminal("اجرای کد در حال انجام است؛ پس از پایان دوباره تلاش کنید.", "term-out");
+      return;
+    }
+    if (command === "help" || command === "--help") body = TERMINAL_HELP;
+    else if (command === "ls") body = "main.py";
+    else body = "فرمان پشتیبانی نمی‌شود: " + command + "\nبرای راهنما help را اجرا کنید.";
+    appendTerminal(body, "term-out");
   }
 
   function appendTerminal(text, css) {
@@ -289,12 +281,12 @@
   function receiptHtml(planId) {
     var plan = planById(planId);
     var ref = "NVX-" + String(Date.now()).slice(-8);
-    return '<h3>رسید پرداخت نمادین</h3>' +
+    return '<h3>نتیجه فعال‌سازی آزمایشی</h3>' +
       '<ul class="receipt-list">' +
       '<li><span>پلن</span><strong>' + esc(plan.name) + '</strong></li>' +
       '<li><span>مبلغ</span><strong>' + fa(plan.price.toLocaleString("en-US")) + ' تومان</strong></li>' +
       '<li><span>شماره پیگیری</span><strong dir="ltr">' + esc(ref) + '</strong></li>' +
-      '<li><span>وضعیت</span><strong>پرداخت نشده — نمایشی</strong></li>' +
+      '<li><span>وضعیت</span><strong>بدون تراکنش واقعی</strong></li>' +
       '</ul><p class="muted">هیچ مبلغی از حساب شما کم نشد و اطلاعات کارت ذخیره نشد.</p>';
   }
 
@@ -406,10 +398,13 @@
     content: function (form) {
       var title = (form.elements.namedItem("title").value || "").trim();
       if (title.length < 3 || title.length > 180) { note(form, "عنوان باید بین ۳ تا ۱۸۰ نویسه باشد.", "error"); return; }
-      state.content.unshift({ title: title, kind: form.elements.namedItem("kind").value, status: "منتشرشده", created_at: new Date().toISOString() });
+      var draft = !!form.elements.namedItem("topic");
+      state.content.unshift({ title: title, kind: form.elements.namedItem("kind").value,
+        topic: draft ? form.elements.namedItem("topic").value.trim() : "",
+        status: draft ? "پیش‌نویس" : "منتشرشده", created_at: new Date().toISOString() });
       store();
       form.reset();
-      note(form, "محتوا ذخیره و منتشر شد.", "success");
+      note(form, draft ? "مقاله به فهرست مقاله‌های من اضافه شد." : "محتوا ذخیره و منتشر شد.", "success");
       paintContent();
     },
 
@@ -431,7 +426,6 @@
       var index = Number(form.elements.namedItem("challenge").value);
       if (state.solutions.indexOf(index) < 0) state.solutions.push(index);
       if (state.challenges.indexOf(index) < 0) state.challenges.push(index);
-      state.runs++;
       state.snippets.unshift({ challenge: index, code: code, created_at: new Date().toISOString() });
       store();
       note(form, "راه‌حل ثبت شد؛ چالش به فهرست شما اضافه شد.", "success");
@@ -488,19 +482,19 @@
       if (!/^(0[1-9]|1[0-2])$/.test(month)) { note(form, "ماه انقضا نامعتبر است.", "error"); return; }
       if (!/^[0-9]{2}$/.test(year)) { note(form, "سال انقضا نامعتبر است.", "error"); return; }
       if (!/^[0-9]{3,4}$/.test(cvv)) { note(form, "CVV نامعتبر است.", "error"); return; }
-      if (!form.elements.namedItem("agree").checked) { note(form, "تأیید نمایشی‌بودن پرداخت لازم است.", "error"); return; }
+      if (!form.elements.namedItem("agree").checked) { note(form, "تأیید آزمایشی‌بودن فعال‌سازی لازم است.", "error"); return; }
 
       var now = new Date();
       var expires = new Date(now.getTime() + 30 * 864e5);
       state.user.plan = planId;
       state.user.plan_expires = expires.toISOString();
       state.subscriptions.unshift({
-        phone: state.user.phone, plan: planId, status: "فعال‌شده (نمایشی)",
+        phone: state.user.phone, plan: planId, status: "فعال‌شده (آزمایشی)",
         starts_at: now.toISOString(), expires_at: expires.toISOString(),
         holder: holder, last4: card.slice(-4)
       });
       state.payments.unshift({
-        plan: planId, amount: planById(planId).price, status: "نمایشی",
+        plan: planId, amount: planById(planId).price, status: "آزمایشی",
         reference: "NVX-" + String(Date.now()).slice(-8),
         last4: card.slice(-4), created_at: now.toISOString()
       });
@@ -509,7 +503,7 @@
       var box = el("#checkout");
       var receipt = box ? el("[data-receipt]", box) : null;
       if (receipt) { receipt.innerHTML = receiptHtml(planId); receipt.hidden = false; }
-      note(form, "پلن " + planById(planId).name + " به‌صورت نمادین فعال شد.", "success");
+      note(form, "پلن " + planById(planId).name + " به‌صورت آزمایشی فعال شد.", "success");
       paintAll();
     },
 
@@ -598,6 +592,23 @@
       if (!c) return "";
       return '<div class="list-item"><div><span class="pill">' + esc(c.topic) + '</span><h3>' + esc(c.title) +
         '</h3></div><a href="' + join("course/" + slug + "/") + '">ادامه مطالعه ←</a></div>';
+    }).join("");
+  }
+
+  function paintMyChallenges() {
+    var host = el("[data-my-challenges]");
+    if (!host) return;
+    if (!state.challenges.length) {
+      host.innerHTML = '<div class="empty-state">هنوز چالشی اضافه نکردی. <a href="' + join("panel/student/challenges/") + '">چالش‌ها را ببین ←</a></div>';
+      return;
+    }
+    host.innerHTML = state.challenges.map(function (i) {
+      var title = seed.challenges ? seed.challenges[i] : null;
+      if (!title) return "";
+      var solved = state.solutions.indexOf(i) >= 0;
+      return '<div class="list-item"><div><span class="pill">' + (solved ? "حل‌شده" : "در انتظار") + '</span><h3>' +
+        esc(title) + '</h3></div><a href="' + join("panel/student/challenge/" + i + "/") + '">' +
+        (solved ? "مشاهده راه‌حل ←" : "ادامه چالش ←") + '</a></div>';
     }).join("");
   }
 
@@ -780,7 +791,7 @@
   }
 
   function paintAll() {
-    paintProfile(); paintStats(); paintEnrollments(); paintMyProjects();
+    paintProfile(); paintStats(); paintEnrollments(); paintMyProjects(); paintMyChallenges();
     paintPosts(); paintTickets(); paintAnnouncements(); paintContent();
     paintUsers(); paintSubscriptions(); paintChallenges(); paintPlan();
     paintNova(); paintSnippets(); paintChat(); paintReview(); paintChallengeNotes();
@@ -821,11 +832,48 @@
         if (output) output.textContent = "برای اجرا، ابتدا کدی بنویس.";
         return;
       }
-      state.runs++;
-      store();
-      paintStats();
-      if (output) output.textContent = simulateRun(code);
-      if (status) status.textContent = jalali(new Date().toISOString());
+      var plots = el("[data-code-plots]", card);
+      if (plots) plots.replaceChildren();
+      card.codeRunning = true;
+      run.disabled = true;
+      if (output) output.textContent = "";
+      if (status) status.textContent = "در حال آماده‌سازی…";
+      var stop = el("[data-code-stop]", card);
+      var clear = el("[data-code-reset]", card);
+      var stamp = (card.querySelector && card.querySelector("[data-code-status]")) || status;
+      if (stop) stop.disabled = false;
+      if (clear) clear.disabled = true;
+      var runner = window.NOVENTIX_RUN_PYTHON || function (_code, _status, done) {
+        setTimeout(function () { done(runnerMissing()); }, 0);
+        return function () {};
+      };
+      card.cancelRun = runner(code, function (message) {
+        if (stamp) stamp.textContent = message;
+      }, function (result) {
+        card.codeRunning = false;
+        run.disabled = false;
+        if (stop) stop.disabled = true;
+        if (clear) clear.disabled = false;
+        if (output) output.textContent = result.output || (plots && plots.childElementCount ? "نمودارها در پایین نمایش داده شدند." : "کد بدون خطا پایان یافت؛ برای نمایش نتیجه از print استفاده کنید.");
+        if (stamp) stamp.textContent = result.ok ? "اجرا پایان یافت" : "اجرا متوقف شد یا خطا داشت";
+        state.runs++;
+        store();
+        paintStats();
+      }, function (png) {
+        if (!plots) return;
+        var image = document.createElement("img");
+        image.src = "data:image/png;base64," + png;
+        image.alt = "نمودار خروجی پایتون";
+        image.className = "code-plot";
+        plots.appendChild(image);
+      });
+      return;
+    }
+
+    var stopRun = event.target.closest("[data-code-stop]");
+    if (stopRun) {
+      var activeCard = stopRun.closest(".code-layout");
+      if (activeCard && activeCard.codeRunning && activeCard.cancelRun) activeCard.cancelRun();
       return;
     }
 
@@ -834,6 +882,8 @@
       var rcard = reset.closest(".code-layout") || document;
       var rinput = el("[data-code-input]", rcard);
       var routput = el("[data-code-output]", rcard);
+      var rplots = el("[data-code-plots]", rcard);
+      if (rplots) rplots.replaceChildren();
       if (rinput) rinput.value = "";
       if (routput) routput.textContent = "هنوز کدی اجرا نشده است.";
       return;
@@ -859,8 +909,9 @@
       var slug = enroll.getAttribute("data-enroll");
       if (!canCourse(slug)) { location.href = join(accountReady() ? "panel/student/subscription/" : "login/"); return; }
       if (state.enrollments.indexOf(slug) < 0) state.enrollments.push(slug);
-      store(); paintStats();
+      store(); paintStats(); paintEnrollments();
       enroll.outerHTML = '<span class="btn btn-primary is-done">در مسیر یادگیری شما ✓</span>';
+      location.href = join("panel/student/learning/");
       return;
     }
 
@@ -878,8 +929,9 @@
     if (challenge) {
       var ci = Number(challenge.getAttribute("data-challenge"));
       if (state.challenges.indexOf(ci) < 0) state.challenges.push(ci);
-      store(); paintStats();
-      challenge.outerHTML = '<span class="btn btn-outline full is-done">در فهرست شما ✓</span>';
+      store(); paintStats(); paintMyChallenges();
+      challenge.outerHTML = '<span class="btn btn-outline full is-done">در چالش‌های من ✓</span>';
+      location.href = join("panel/student/my-challenges/");
       return;
     }
 
@@ -922,7 +974,7 @@
     if (lastCode) {
       var codeHint = document.createElement("p");
       codeHint.className = "notice success";
-      codeHint.textContent = "کد تأیید نمایشی: " + fa(lastCode);
+      codeHint.textContent = "کد تأیید: " + fa(lastCode);
       phoneSlot.insertAdjacentElement("afterend", codeHint);
     }
   }
