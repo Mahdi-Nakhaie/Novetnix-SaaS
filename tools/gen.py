@@ -219,8 +219,8 @@ def view_home():
         '<div class="hero-buttons">' + linkto("courses", "شروع مسیر یادگیری ←", "btn btn-primary")
         + linkto("projects", "دیدن پروژه‌ها", "btn btn-outline") + "</div>"
         '<div class="hero-proof"><span>✦ مسیر پروژه‌محور</span><span>✦ یادگیری به زبان فارسی</span><span>✦ شروع رایگان</span></div></div>'
-        '<div><span class="code-float code-float-a" aria-hidden="true"><code>import numpy as np</code></span>'
-        '<span class="code-float code-float-b" aria-hidden="true"><code>model.fit(X, y)</code></span></div>'
+        '<div class="hero-code-floats" aria-hidden="true"><span class="code-float code-float-a"><code>import numpy as np</code></span>'
+        '<span class="code-float code-float-b"><code>model.fit(X, y)</code></span></div>'
         '<div class="hero-display"><div class="hero-window"><div class="window-top">'
         '<span class="window-dots">● ● ●</span><span dir="ltr">noventix / your-next-project</span>'
         '<span class="code-label">PYTHON</span></div>'
