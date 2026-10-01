@@ -35,7 +35,7 @@ function panel_nav(): void {
     $role=$me['role'];
     $items=$role==='admin'
         ? ['dashboard'=>'Overview','dashboard/users'=>'کاربران','dashboard/users-new'=>'کاربران جدید','dashboard/courses'=>'دوره‌ها','dashboard/catalog'=>'پروژه‌ها','dashboard/challenges'=>'چالش‌ها','dashboard/subscriptions'=>'اشتراک‌ها','dashboard/payments'=>'پرداخت‌ها','dashboard/community'=>'Community','dashboard/support'=>'پشتیبانی','dashboard/announcements'=>'اعلان‌ها','dashboard/gamification'=>'Gamification','dashboard/analytics'=>'Analytics','dashboard/content'=>'Content','dashboard/profile'=>'پروفایل','dashboard/settings'=>'System Settings']
-        : ['dashboard'=>'نمای کلی','dashboard/learning'=>'مسیر یادگیری','dashboard/projects'=>'پروژه‌ها','dashboard/challenges'=>'چالش‌ها','dashboard/community'=>'Community','dashboard/subscription'=>'اشتراک','dashboard/support'=>'پشتیبانی','dashboard/gamification'=>'Gamification','dashboard/profile'=>'پروفایل','dashboard/settings'=>'تنظیمات'];
+        : ['dashboard'=>'نمای کلی','dashboard/learning'=>'مسیر یادگیری','dashboard/projects'=>'پروژه‌ها','dashboard/challenges'=>'چالش‌ها','dashboard/community'=>'Community','dashboard/nova'=>'Nova AI','dashboard/subscription'=>'اشتراک','dashboard/support'=>'پشتیبانی','dashboard/gamification'=>'Gamification','dashboard/profile'=>'پروفایل','dashboard/settings'=>'تنظیمات'];
     echo '<aside class="sidebar"><a class="panel-brand" href="/"><img src="/assets/favicon.png" alt="" width="42" height="42"><span>Noventix</span></a><div class="sidebar-caption">'.($role==='admin'?'مدیریت پلتفرم':($role==='owner'?'پنل مالک':'فضای یادگیری')).'</div><nav aria-label="ناوبری پنل">';
     foreach ($items as $href=>$label) linkto($href,$label,$path===$href?'selected':'');
     echo '</nav><div class="sidebar-bottom"><a href="/">بازگشت به سایت ↗</a>';
@@ -135,6 +135,16 @@ function panel(string $sub): void {
         panel_head('پروفایل من','اطلاعات نمایش داده‌شده در حساب کاربری.');
         echo '<div class="profile-head"><div><img src="/assets/nova.png" alt="" width="56" height="56" aria-hidden="true"><div><h2>'.h($me['name'] ?: 'کاربر Noventix').'</h2><p class="muted">'.h($me['phone']).' · Level '.fa('12').' · XP '.fa('۲۴۸۰').'</p><p class="muted">'.h($role==='admin'?'مدیر پلتفرم':($role==='owner'?'مالک پلتفرم':'سازنده‌ای در مسیر یادگیری هوش مصنوعی')).'</p></div></div>'.linkto('dashboard/settings','ویرایش پروفایل','btn btn-outline').'</div>';
         echo '<div class="panel-card narrow">'; form_start('profile/account','stack-form'); echo '<label>نام نمایشی<input name="name" maxlength="100" minlength="2" required value="'.h($me['name']).'" placeholder="نام شما"></label><label>ایمیل (اختیاری)<input type="email" dir="ltr" name="email" maxlength="255" placeholder="you@example.com"></label><label>شماره موبایل<input dir="ltr" disabled value="'.h($me['phone']).'"></label><button class="btn btn-primary">ذخیره تغییرات</button></form><p class="fine-print">شماره موبایل شناسه ورود شماست و از این صفحه قابل تغییر نیست.</p></div>';
+    } elseif ($sub==='nova' && $role!=='admin') {
+        panel_head('Nova AI','دستیار آموزشی برای پرسش‌های شما.');
+        $limit=PLANS[$plan]['nova'];
+        $used=(int)q('SELECT used FROM nova_usage WHERE user_id=? AND month=?',[$me['id'],gmdate('Y-m')])->fetchColumn();
+        echo '<div class="panel-card narrow-left"><h2>از Nova بپرسید</h2><p class="muted">پاسخ‌ها با هوش مصنوعی تولید می‌شوند و ممکن است اشتباه باشند. اطلاعات محرمانه را در سؤال وارد نکنید.</p><p>اعتبار این ماه: '.fa(max(0,$limit-$used)).' از '.fa($limit).'</p>';
+        if ($limit>$used) { form_start('nova/ask','stack-form'); echo '<label>سؤال شما<textarea name="question" required minlength="10" maxlength="2000" rows="4" placeholder="سؤالتان را با جزئیات بنویسید"></textarea></label><button class="btn btn-primary">پرسیدن از Nova</button></form>'; }
+        else linkto('pricing','مشاهده پلن‌ها ←','btn btn-outline');
+        echo '</div><div class="panel-list" aria-label="گفت‌وگوهای Nova">';
+        foreach (array_reverse(q('SELECT question,answer,created_at FROM nova_messages WHERE user_id=? ORDER BY id DESC LIMIT 20',[$me['id']])->fetchAll()) as $turn) echo '<div class="panel-card"><div class="chat-bubble is-user"><p>'.nl2br(h($turn['question'])).'</p><small>'.h(jdate($turn['created_at'])).'</small></div><div class="chat-bubble is-nova"><span class="chip">Nova</span><p>'.nl2br(h($turn['answer'])).'</p></div></div>';
+        echo '</div>';
     } elseif ($sub==='subscription' && $role!=='admin') {
         $active=(int)q("SELECT COUNT(*) FROM subscriptions WHERE user_id=? AND status='active' AND expires_at>?",[$me['id'],gmdate('Y-m-d H:i:s')])->fetchColumn()?1:0;
         $expires=q("SELECT expires_at FROM subscriptions WHERE user_id=? AND status='active' ORDER BY expires_at DESC LIMIT 1",[$me['id']])->fetchColumn();

@@ -134,21 +134,6 @@
     if (slot) slot.textContent = planLimits[id][0] < 0 ? "نامحدود" : fa(planLimits[id][0]);
   }
 
-  /* Demo-only canned replies; no model call leaves the browser. */
-  function sampleAnswer(question) {
-    var text = question.toLowerCase();
-    if (text.indexOf("خالی") >= 0 || text.indexOf("empty") >= 0) {
-      return "برای ورودی خالی پیش از محاسبه شرط بگذار و خروجی مشخص برگردان؛ مثلاً اگر فهرست خالی است مقدار پیش‌فرض برگردان یا خطای روشن بده. سپس همین حالت را در آزمون بنویس.";
-    }
-    if (text.indexOf("خطا") >= 0 || text.indexOf("error") >= 0 || text.indexOf("debug") >= 0) {
-      return "پیام خطا را کامل بخوان، خط مربوطه را پیدا کن و مقدار متغیرها را در همان نقطه چاپ کن. کوچک‌ترین ورودی‌ای که خطا را بازتولید می‌کند بساز و سپس اصلاح کن.";
-    }
-    if (text.indexOf("pandas") >= 0 || text.indexOf("داده") >= 0) {
-      return "پیش از تحلیل نوع ستون‌ها را بررسی کن، مقادیر گمشده و ردیف‌های تکراری را بشمار و تصمیم پاک‌سازی را در گزارش ثبت کن. نمونه کوچک بساز تا نتیجه قابل بازتولید بماند.";
-    }
-    return "مسئله را به گام‌های کوچک بشکن: ورودی، خروجی و معیار موفقیت را بنویس، ساده‌ترین راه‌حل را پیاده کن و سپس آن را با یک حالت مرزی آزمون کن.";
-  }
-
   /* Without a worker or network the browser runs nothing, so the click still reports progress. */
   function runnerMissing() {
     return { ok: false, output: "موتور Python بارگیری نشد؛ اتصال اینترنت را بررسی و صفحه را دوباره باز کنید." };
@@ -459,15 +444,7 @@
     },
 
     nova: function (form) {
-      var question = (form.elements.namedItem("question").value || "").trim();
-      if (question.length < 10) { note(form, "سؤال باید دست‌کم ۱۰ نویسه باشد.", "error"); return; }
-      var guess = sampleAnswer(question);
-      state.nova.push({ question: question, answer: guess, created_at: new Date().toISOString() });
-      store();
-      form.reset();
-      note(form, "پاسخ Nova ثبت شد.", "success");
-      paintNova();
-      paintStats();
+      note(form, "Nova فقط در نسخهٔ سروری فعال است؛ در این نسخه پاسخی تولید نمی‌شود.", "error");
     },
 
     solution: function (form) {

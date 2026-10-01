@@ -32,6 +32,10 @@ activeWorker.onmessage({ data: { type: "running" } });
 assert.equal(deadlines.at(-1), 10000);
 activeWorker.onmessage({ data: { type: "done", ok: true, output: "1" } });
 
+const novaPage = fs.readFileSync(__dirname + "/../site/panel/student/nova/index.html", "utf8");
+assert.match(novaPage, /این نسخهٔ ایستا امکان اتصال امن/);
+assert.doesNotMatch(novaPage, /data-form="nova"/);
+
 const memory = new Map();
 const session = new Map();
 const storage = (map) => ({
@@ -284,11 +288,10 @@ state = JSON.parse(memory.get("noventix.demo.v1"));
 assert.deepEqual(state.solutions, [0]);
 assert.equal(state.snippets[0].challenge, 0);
 
-// Nova replies stay local and are stored with the question
+// The static preview does not manufacture AI responses.
 submit(workspace, "nova", { question: "چطور ورودی خالی را مدیریت کنم؟" });
 state = JSON.parse(memory.get("noventix.demo.v1"));
-assert.equal(state.nova.length, 1);
-assert.match(state.nova[0].answer, /ورودی خالی/);
+assert.equal(state.nova.length, 0);
 
 // terminal forwards python main.py to the editor's run control
 workspace.terminalLines.length = 0;

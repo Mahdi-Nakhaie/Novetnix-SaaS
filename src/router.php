@@ -21,7 +21,7 @@ function route(): void {
     if ($path==='dashboard' || str_starts_with($path,'dashboard/')) {
         $u=require_user();
         if ($u['phone']===(getenv('ADMIN_PHONE') ?: '') && $u['role']!=='admin') redirect('admin-login');
-        $allowed=['profile','learning','projects','community','subscription','users','users-new','courses','catalog','subscriptions','messages','analytics','challenges','payments','support','announcements','gamification','content','settings'];
+        $allowed=['profile','learning','projects','community','nova','subscription','users','users-new','courses','catalog','subscriptions','messages','analytics','challenges','payments','support','announcements','gamification','content','settings'];
         if (str_starts_with($path,'dashboard/') && !in_array(substr($path,10),$allowed,true)) { http_response_code(404); head_page('یافت نشد',''); notice(); echo '<main class="container section"><h1>این صفحه پیدا نشد.</h1>'; linkto('dashboard','بازگشت به پنل ←','inline-link'); echo '</main>'; foot_page(); return; }
         head_page('پنل', '', true); notice(); panel(str_starts_with($path,'dashboard/') ? substr($path,10) : ''); foot_page(true); return;
     }

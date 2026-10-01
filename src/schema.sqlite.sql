@@ -6,6 +6,8 @@ CREATE TABLE IF NOT EXISTS community_replies (id INTEGER PRIMARY KEY AUTOINCREME
 CREATE TABLE IF NOT EXISTS contact_messages (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT NOT NULL, message TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
 CREATE TABLE IF NOT EXISTS enrollments (user_id INTEGER NOT NULL, course_slug TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(user_id,course_slug), FOREIGN KEY(user_id) REFERENCES users(id));
 CREATE TABLE IF NOT EXISTS projects (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, catalog_index INTEGER NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, UNIQUE(user_id,catalog_index), FOREIGN KEY(user_id) REFERENCES users(id));
+CREATE TABLE IF NOT EXISTS nova_messages (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, question TEXT NOT NULL, answer TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(user_id) REFERENCES users(id));
+CREATE INDEX IF NOT EXISTS idx_nova_messages_user ON nova_messages(user_id,id);
 CREATE TABLE IF NOT EXISTS nova_usage (user_id INTEGER NOT NULL, month TEXT NOT NULL, used INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(user_id,month), FOREIGN KEY(user_id) REFERENCES users(id));
 CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id,status,expires_at);
 CREATE INDEX IF NOT EXISTS idx_posts_created ON community_posts(created_at);

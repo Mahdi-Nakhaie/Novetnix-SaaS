@@ -735,14 +735,9 @@ def profile_view():
 def nova_view():
     out = panel_head("Nova AI", "مربی همراه شما در مسیر یادگیری.")
     out += stat_grid([("گفت‌وگوهای امروز", "۰", "nova_today"), ("اعتبار پلن", "۰", "plan_credits"),
-                      ("پرسش بی‌پاسخ", "۰", "nova_open"), ("وضعیت Nova", "آماده", None)])
-    out += ('<div class="panel-card narrow-left"><h2>پرسش تازه</h2>'
-            '<p class="muted">پاسخ‌ها بر اساس الگوهای ازپیش‌تعریف‌شده تولید می‌شوند؛ برای بازبینی دقیق‌تر، ورودی و خروجی موردانتظار را بنویسید.</p>'
-            '<form class="stack-form" data-form="nova">'
-            '<label>سؤال شما<textarea name="question" required minlength="10" maxlength="2000" rows="4" '
-            'placeholder="چطور ورودی خالی را در تابع مدیریت کنم؟"></textarea></label>'
-            '<button class="btn btn-primary">پرسیدن از Nova</button></form>'
-            '<p class="form-note" hidden></p></div>')
+                      ("پرسش بی‌پاسخ", "۰", "nova_open"), ("وضعیت Nova", "نیازمند سرور", None)])
+    out += ('<div class="panel-card narrow-left"><h2>Nova AI</h2>'
+            '<p class="muted">این نسخهٔ ایستا امکان اتصال امن به سرویس هوش مصنوعی را ندارد. برای دریافت پاسخ واقعی Nova، نسخهٔ سروری Noventix با کلید تنظیم‌شده روی سرور لازم است؛ در این صفحه پاسخی تولید یا ارسال نمی‌شود.</p></div>')
     out += '<div class="panel-list" data-nova-thread></div>'
     return out
 

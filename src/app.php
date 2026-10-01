@@ -72,6 +72,24 @@ function send_sms(string $phone, string $code): bool {
     curl_close($ch);
     return $result!==false && $status>=200 && $status<300;
 }
+function nova_answer(array $messages): ?string {
+    $key=getenv('AVALAI_API_KEY');
+    if (!$key || !function_exists('curl_init')) return null;
+    $ch=curl_init('https://api.avalai.ir/v1/chat/completions');
+    curl_setopt_array($ch,[
+        CURLOPT_POST=>true, CURLOPT_RETURNTRANSFER=>true, CURLOPT_FOLLOWLOCATION=>false,
+        CURLOPT_CONNECTTIMEOUT=>5, CURLOPT_TIMEOUT=>35,
+        CURLOPT_HTTPHEADER=>['Content-Type: application/json','Authorization: Bearer '.$key],
+        CURLOPT_POSTFIELDS=>json_encode(['model'=>getenv('AVALAI_MODEL') ?: 'gpt-6-astra','messages'=>$messages,'max_tokens'=>700],JSON_THROW_ON_ERROR),
+    ]);
+    $body=curl_exec($ch);
+    $status=curl_getinfo($ch,CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    if ($body===false || $status<200 || $status>=300 || strlen($body)>1048576) return null;
+    $data=json_decode($body,true);
+    $answer=$data['choices'][0]['message']['content'] ?? null;
+    return is_string($answer) && trim($answer)!=='' ? mb_substr(trim($answer),0,6000) : null;
+}
 function handle_post(string $path): void {
     validate_csrf();
     if ($path==='auth/request') {
@@ -144,6 +162,26 @@ function handle_post(string $path): void {
         q('INSERT INTO contact_messages(name,email,message) VALUES (?,?,?)',[$name,$email,$message]); flash('پیام شما ثبت شد.'); redirect('contact');
     }
     $u=require_user(); $plan=plan_for($u);
+    if ($path==='nova/ask') {
+        $question=trim((string)($_POST['question'] ?? ''));
+        if (mb_strlen($question)<10 || mb_strlen($question)>2000) { flash('سؤال باید بین ۱۰ تا ۲۰۰۰ نویسه باشد.','error'); redirect('dashboard/nova'); }
+        $limit=PLANS[$plan]['nova'];
+        $month=gmdate('Y-m');
+        $used=(int)q('SELECT used FROM nova_usage WHERE user_id=? AND month=?',[$u['id'],$month])->fetchColumn();
+        if ($used >= $limit) { flash('اعتبار Nova در این ماه تمام شده است.','error'); redirect('dashboard/nova'); }
+        if (time()-(int)($_SESSION['nova_last'] ?? 0)<5) { flash('چند ثانیه دیگر دوباره تلاش کنید.','error'); redirect('dashboard/nova'); }
+        $_SESSION['nova_last']=time();
+        $history=array_reverse(q('SELECT question,answer FROM nova_messages WHERE user_id=? ORDER BY id DESC LIMIT 5',[$u['id']])->fetchAll());
+        $messages=[['role'=>'system','content'=>'تو Nova، دستیار آموزشی فارسی Noventix هستی. پاسخ دقیق و روشن بده، اگر مطمئن نیستی صادقانه بگو و از ادعای اجرای کد یا دسترسی به حساب کاربر خودداری کن.']];
+        foreach ($history as $turn) { $messages[]=['role'=>'user','content'=>$turn['question']]; $messages[]=['role'=>'assistant','content'=>$turn['answer']]; }
+        $messages[]=['role'=>'user','content'=>$question];
+        $answer=nova_answer($messages);
+        if ($answer===null) { flash('ارتباط با Nova برقرار نشد. کمی بعد دوباره تلاش کنید؛ اعتباری کم نشد.','error'); redirect('dashboard/nova'); }
+        q('INSERT INTO nova_messages(user_id,question,answer) VALUES (?,?,?)',[$u['id'],$question,$answer]);
+        if (db()->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql') q('INSERT INTO nova_usage(user_id,month,used) VALUES (?,?,1) ON DUPLICATE KEY UPDATE used=used+1',[$u['id'],$month]);
+        else q('INSERT INTO nova_usage(user_id,month,used) VALUES (?,?,1) ON CONFLICT(user_id,month) DO UPDATE SET used=used+1',[$u['id'],$month]);
+        redirect('dashboard/nova');
+    }
     if ($path==='profile/save') {
         $name=trim((string)($_POST['name'] ?? ''));
         if (mb_strlen($name)<2 || mb_strlen($name)>100) { flash('نام باید بین ۲ تا ۱۰۰ نویسه باشد.','error'); redirect('dashboard/profile'); }
