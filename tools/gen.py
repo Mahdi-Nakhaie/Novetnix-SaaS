@@ -403,21 +403,26 @@ def view_about():
 
 
 def view_contact():
-    return ('<main>' + page_hero("تماس با ما", "با Noventix در ارتباط باشید",
-                                 "برای دریافت آموزش‌ها، اخبار و پروژه‌ها همراه ما باشید و پرسش‌های خود را در انجمن مطرح کنید.")
-            + '<section class="section container"><div class="contact-layout">'
-              '<div class="panel-card"><h2>ارسال پیام</h2>'
-              '<p class="muted">پیام شما در سیستم ثبت می‌شود و در اولین فرصت بررسی خواهد شد.</p>'
+    return ('<main><section class="contact-hero"><div class="container"><span class="eyebrow">راه‌های ارتباطی Noventix</span>'
+            '<h1>از اینجا با ما در ارتباط باشید</h1><p>برای پیگیری سؤال‌ها و پیشنهادها، راه ارتباطی مناسب خود را انتخاب کنید.</p>'
+            '<div class="contact-quick-links">'
+            + linkto("support", "مرکز پشتیبانی ←", "btn btn-primary")
+            + linkto("community", "پرسش در انجمن ←", "btn btn-outline")
+            + '</div></div></section><section class="section container"><div class="contact-layout contact-page-layout">'
+              '<div class="panel-card contact-form-card"><span class="eyebrow">پیام مستقیم</span><h2>برای ما پیام بفرستید</h2>'
+              '<p class="muted">درخواست خود را با جزئیات بنویسید. در نسخه نمایشی، پیام به‌صورت محلی ثبت می‌شود.</p>'
               '<form class="stack-form" data-form="contact">'
-              '<label>نام و نام خانوادگی<input name="name" required minlength="2" maxlength="100"></label>'
-              '<label>ایمیل<input type="email" dir="ltr" name="email" required maxlength="255" placeholder="you@example.com"></label>'
-              '<label>پیام<textarea name="message" required minlength="10" maxlength="3000" rows="6"></textarea></label>'
-              '<button class="btn btn-primary">ارسال پیام</button></form>'
-              '<p class="form-note" hidden></p></div><div class="social-column">'
-            + "".join(
-                f'<a href="{u}" target="_blank" rel="noopener noreferrer"><strong>{n}</strong><span>{s}</span></a>'
-                for u, n, s in SOCIALS)
-            + "</div></div></section></main>")
+              '<label>نام و نام خانوادگی<input name="name" autocomplete="name" required minlength="2" maxlength="100"></label>'
+              '<label>ایمیل برای پاسخ<input type="email" dir="ltr" name="email" autocomplete="email" required maxlength="255" placeholder="you@example.com"></label>'
+              '<label>متن پیام<textarea name="message" required minlength="10" maxlength="3000" rows="6" placeholder="موضوع درخواست و جزئیات آن را بنویسید"></textarea></label>'
+              '<button class="btn btn-primary">ثبت پیام</button></form>'
+              '<p class="form-note" hidden></p><p class="contact-footnote">در نسخه نمایشی، پیام فقط در همین مرورگر ذخیره می‌شود و به تیم پشتیبانی ارسال نمی‌شود.</p></div>'
+              '<div class="contact-side"><div class="contact-info-card"><span class="eyebrow">راهنمای ارتباط</span>'
+              '<h2>کدام مسیر مناسب شماست؟</h2><p>برای مشکلات حساب یا خدمات، از مرکز پشتیبانی استفاده کنید؛ برای گفت‌وگوی آموزشی و تجربه‌ها به انجمن سر بزنید.</p>'
+              + linkto("support", "رفتن به پشتیبانی ←", "inline-link")
+              + '</div><div class="contact-social"><h2>ما را دنبال کنید</h2><p>آموزش‌ها و تازه‌های Noventix را در شبکه‌های اجتماعی دنبال کنید.</p><div class="social-column">'
+              + "".join(f'<a href="{h(u)}" target="_blank" rel="noopener noreferrer" aria-label="{h(n)}، {h(s)}"><strong>{h(n)}</strong><span dir="ltr">{h(s)} ↗</span></a>' for u, n, s in SOCIALS)
+              + '</div></div></div></div></section></main>')
 
 
 def view_help():
