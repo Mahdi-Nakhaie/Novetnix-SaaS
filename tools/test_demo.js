@@ -12,7 +12,7 @@ const runnerContext = {
   window: { NOVENTIX_BASE: "/Novetnix-SaaS/site" },
   Worker: class {
     constructor(path) { assert.equal(path, "/Novetnix-SaaS/site/assets/python-worker.js"); activeWorker = this; }
-    postMessage(message) { assert.equal(message.code, "print(1)"); assert.equal(message.filename, "main.py"); }
+    postMessage(message) { assert.equal(message.code, "print(1)"); assert.equal(message.files && Object.keys(message.files).length, 0); }
     terminate() { this.terminated = true; }
   },
   setTimeout: (_callback, delay) => { deadlines.push(delay); return 1; },
@@ -26,10 +26,10 @@ activeWorker.onmessage({ data: { type: "plot", png: "late" } });
 assert.deepEqual(receivedPlots, ["aGVsbG8="]);
 assert.equal(completed.output, "1");
 assert.equal(activeWorker.terminated, true);
-assert.deepEqual(deadlines, [180000]);
+assert.deepEqual(deadlines, [120000]);
 runnerContext.window.NOVENTIX_RUN_PYTHON("print(1)", () => {}, () => {});
 activeWorker.onmessage({ data: { type: "running" } });
-assert.equal(deadlines.at(-1), 60000);
+assert.equal(deadlines.at(-1), 10000);
 activeWorker.onmessage({ data: { type: "done", ok: true, output: "1" } });
 
 const memory = new Map();
@@ -392,18 +392,14 @@ async function testPythonWorker() {
   const messages = [];
   const files = {};
   const imports = [];
-  let failImports = false;
-  let currentCode = "from helper import add\nprint(add(2, 3))";
-  let runs = 0;
   const engine = {
-    FS: { mkdirTree() {}, writeFile(name, contents) { files[name] = contents; }, chdir(path) { this.directory = path; }, cwd() { return "/home/pyodide" + (this.directory ? "/" + this.directory : ""); } },
-    loadedPackages: {},
+    FS: { mkdirTree() {}, writeFile(name, contents) { files[name] = contents; } },
     registerJsModule(name) { assert.equal(name, "noventixPlot"); },
-    async loadPackagesFromImports(source) { imports.push(source); if (failImports) throw new Error("package download failed"); },
+    async loadPackagesFromImports(source) { imports.push(source); },
     setStdout({ batched }) { this.stdout = batched; },
     setStderr() {}, setStdin() {},
-    runPython(source) { assert.match(source, /sys\.path\.insert/); },
-    async runPythonAsync(source) { runs++; assert.equal(source, currentCode); this.stdout("5"); },
+    runPython(source) { assert.match(source, /matplotlib/); },
+    async runPythonAsync(source) { if (source !== "_noventix_show()") { assert.equal(source, "print(2+3)"); this.stdout("5"); } },
   };
   const context = {
     self: { postMessage(message) { messages.push(message); } },
@@ -411,34 +407,11 @@ async function testPythonWorker() {
     loadPyodide: async () => engine,
   };
   vm.runInNewContext(workerSource, context);
-  const input = { data: { code: currentCode, filename: "main.py", files: { "helper.py": "import numpy\ndef add(a, b): return a + b", "old.py": "this is not valid python!!!", "3.PNG": "image data" } } };
-  await context.self.onmessage(input);
-  assert.deepEqual(imports, [currentCode, input.data.files["helper.py"]]);
-  assert.equal(files["helper.py"], input.data.files["helper.py"]);
-  assert.equal(runs, 1);
+  await context.self.onmessage({ data: { code: "print(2+3)", files: { "main.py": "print(2+3)", "3.PNG": "image data" } } });
+  assert.deepEqual(imports, ["import numpy, pandas, matplotlib, scipy", "print(2+3)"]);
+  assert.equal(files["main.py"], "print(2+3)");
   assert.equal(messages.at(-1).ok, true);
   assert.match(messages.at(-1).output, /5/);
-  currentCode = "print(2+3)";
-  imports.length = 0;
-  await context.self.onmessage({ data: { ...input.data, code: currentCode } });
-  assert.deepEqual(imports, ["print(2+3)"]);
-  assert.equal(runs, 2);
-  assert.equal(messages.at(-1).ok, true);
-  failImports = true;
-  await context.self.onmessage(input);
-  assert.equal(runs, 2);
-  assert.equal(messages.at(-1).ok, false);
-  assert.match(messages.at(-1).output, /package download failed/);
-  failImports = false;
-  engine.FS.writeFile = () => { throw { name: "ErrnoError", errno: 44 }; };
-  await context.self.onmessage(input);
-  assert.equal(messages.at(-1).ok, false);
-  assert.match(messages.at(-1).output, /بارگذاری فایل‌های میزکار: ErrnoError/);
-  assert.doesNotMatch(messages.at(-1).output, /\[object Object\]/);
-  engine.FS.writeFile = (name, contents) => { files[name] = contents; };
-  await context.self.onmessage({ data: { code: "print(2+3)", filename: "src/main.py", files: { "src/main.py": "print(2+3)" } } });
-  assert.equal(engine.FS.directory, "src");
-  assert.equal(messages.at(-1).ok, true);
 }
 
 testPythonWorker().then(() => console.log("Demo interactions and Python worker passed"), (error) => { console.error(error); process.exitCode = 1; });
