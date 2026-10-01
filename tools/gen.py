@@ -167,7 +167,7 @@ def header_html(active):
     out = (
         f'<header class="site-header"><div class="container header-inner">'
         f'<a href="{h(href(""))}" class="brand" aria-label="Noventix، صفحه اصلی">'
-        f'<img src="{h(asset("logo.png"))}" alt="Noventix" width="171" height="55"></a>'
+        f'<img src="{h(asset("favicon.png"))}" alt="" width="48" height="48"><span class="brand-name">Noventix</span></a>'
         '<nav class="main-nav" aria-label="ناوبری اصلی">'
     )
     for path, label in NAV_ITEMS:
@@ -458,20 +458,20 @@ def view_login():
             f'<img src="{h(asset("nova.png"))}" alt="مسکات Nova" width="70" height="70">'
             "<h1>ورود یا ثبت‌نام</h1>"
             '<p class="muted">برای ثبت‌نام رمز بسازید؛ ورودهای بعدی با شماره، رمز و کپچا انجام می‌شود.</p>'
-            '<form class="stack-form" data-form="login">'
+            '<form class="stack-form" data-form="login" data-register-form>'
             '<h2>ثبت‌نام</h2><label>نام<input name="first_name" required minlength="2" maxlength="50" autocomplete="given-name" placeholder="نام"></label>'
             '<label>نام خانوادگی<input name="last_name" required minlength="2" maxlength="50" autocomplete="family-name" placeholder="نام خانوادگی"></label>'
             '<label>شماره موبایل<input type="tel" dir="ltr" name="phone" required pattern="0?9[0-9]{9}" placeholder="09123456789" autocomplete="tel"></label>'
             '<label>رمز عبور<input type="password" name="password" required minlength="8" maxlength="72" autocomplete="new-password"></label>'
             '<p class="fine-print">رمز باید حداقل ۸ نویسه و شامل حرف انگلیسی و عدد باشد.</p>'
             '<button class="btn btn-primary">ارسال کد تأیید</button></form><p class="form-note" hidden></p><hr>'
-            '<form class="stack-form" data-form="signin"><h2>ورود به پنل</h2>'
+            '<form class="stack-form" data-form="signin" data-signin-form><h2>ورود به پنل</h2>'
             '<label>شماره موبایل<input type="tel" dir="ltr" name="phone" required pattern="0?9[0-9]{9}" autocomplete="username"></label>'
             '<label>رمز عبور<input type="password" name="password" required autocomplete="current-password"></label>'
             '<div class="captcha-box"><strong data-login-captcha dir="ltr"></strong><span>کد امنیتی</span></div>'
             '<label>کپچا<input name="captcha" required maxlength="5" pattern="[A-Za-z0-9]{5}" dir="ltr" autocomplete="off"></label>'
             '<button class="btn btn-outline">ورود</button></form><p class="form-note" hidden></p>'
-            '<p class="fine-print">در نسخهٔ استاتیک، اطلاعات فقط در همین مرورگر ذخیره می‌شود.</p></div></main>')
+            '</div></main>')
 
 
 def view_verify():
@@ -1160,7 +1160,7 @@ def panel_shell(role, sub):
     items = ADMIN_ITEMS if role == "admin" else STUDENT_ITEMS
     base = f"panel/{role}"
     out = ('<aside class="sidebar">'
-           f'<a class="panel-brand" href="{h(href(""))}">Noventix <span>N</span></a>'
+           f'<a class="panel-brand" href="{h(href(""))}"><img src="{h(asset("favicon.png"))}" alt="" width="42" height="42"><span>Noventix</span></a>'
            f'<div class="sidebar-caption">{"مدیریت پلتفرم" if role == "admin" else "فضای یادگیری"}</div>'
            '<nav aria-label="ناوبری پنل">')
     for key, label in items:
@@ -1225,9 +1225,12 @@ def build_routes():
 
 
 def main():
+    preserved_fonts = {p.name: p.read_bytes() for p in OUT.glob("Estedad-*.ttf")} if OUT.exists() else {}
     if OUT.exists():
         shutil.rmtree(OUT)
     OUT.mkdir(parents=True)
+    for name, data in preserved_fonts.items():
+        (OUT / name).write_bytes(data)
     routes = build_routes()
     written = 0
     for route in routes:

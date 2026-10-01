@@ -33,9 +33,9 @@
       posts: [], tickets: [], notifications: [], content: [],
       settings: {}, subscriptions: [], messages: [], users: [],
       nova: [], solutions: [], snippets: [], runs: 0,
-      chat: [], reviews: [], terminal: [], payments: [],
+      chat: [], reviews: [], terminal: [], payments: [], replies: [], follows: [],
       workspaceFiles: { "main.py": "", "README.md": "# Noventix workspace" },
-      packages: ["numpy", "pandas", "matplotlib", "scipy"]
+      packages: []
     };
   }
 
@@ -347,7 +347,7 @@
     },
 
     signin: function (form) {
-      var phone = (form.elements.namedItem("phone").value || "").replace(/[۰-۹٠-٩]/g, function (d) { return "۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩".indexOf(d) % 10; }).replace(/[\\s-]/g, "").replace(/^(\\+98|98)/, "0");
+      var phone = (form.elements.namedItem("phone").value || "").replace(/[۰-۹٠-٩]/g, function (d) { return "۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩".indexOf(d) % 10; }).replace(/[\s-]/g, "").replace(/^(\+98|98)/, "0");
       var password = form.elements.namedItem("password").value || "";
       var captcha = form.elements.namedItem("captcha").value || "";
       var expected = sessionStorage.getItem("noventix.demo.captcha") || "";
@@ -427,7 +427,7 @@
       if (subject.length < 5 || subject.length > 180 || body.length < 10) {
         note(form, "موضوع، متن و اولویت معتبر وارد کنید.", "error"); return;
       }
-      state.tickets.unshift({ subject: subject, body: body, priority: form.elements.namedItem("priority").value, status: "open", created_at: new Date().toISOString() });
+      state.tickets.unshift({ id: Date.now(), subject: subject, body: body, replies: [], priority: form.elements.namedItem("priority").value, status: "open", created_at: new Date().toISOString() });
       store();
       form.reset();
       note(form, "تیکت شما ثبت شد.", "success");
@@ -634,11 +634,14 @@
   }
 
   function postCard(p, withActions) {
-    var out = '<article class="post-card"><div class="meta-row"><span class="pill">' + esc(p.author) + '</span><span>' + jalali(p.created_at) + '</span></div><h2>' + esc(p.title) + '</h2><p>' + esc(p.body).replace(/\n/g, "<br>") + '</p>';
+    var replies = p.replies || [];
+    var author = p.author || "کاربر";
+    var out = '<article class="post-card"><div class="meta-row"><button type="button" class="profile-link" data-member-profile="' + esc(author) + '">' + esc(author) + '</button><span>' + jalali(p.created_at) + '</span></div><div class="member-preview" data-member-card="' + esc(author) + '" hidden><strong>' + esc(author) + '</strong><span>' + fa(state.posts.filter(function (item) { return item.author === author; }).length) + ' پست در انجمن</span>' + (state.user && state.user.name !== author ? '<button type="button" class="btn btn-small btn-outline" data-follow-user="' + esc(author) + '">' + (state.follows.indexOf(author) >= 0 ? 'دنبال می‌کنید' : 'دنبال کردن') + '</button>' : '') + '</div><h2>' + esc(p.title) + '</h2><p>' + esc(p.body).replace(/\n/g, "<br>") + '</p>';
     if (withActions) {
-      out += '<div class="react-row"><button type="button" class="text-button" data-like="' + p.id + '">Like ' + fa(p.likes) + '</button>' +
-        '<button type="button" class="text-button" data-save="' + p.id + '">Save ' + fa(p.saves) + '</button>' +
-        '<span class="text-button">Comment ' + fa(p.replies.length) + '</span></div>';
+      out += '<div class="react-row"><button type="button" class="text-button" data-like="' + p.id + '">پسندیدن ' + fa(p.likes) + '</button>' +
+        '<button type="button" class="text-button" data-save="' + p.id + '">ذخیره ' + fa(p.saves) + '</button>' +
+        '<button type="button" class="text-button" data-comment-toggle="' + p.id + '">نظر ' + fa(replies.length) + '</button></div><form class="comment-form" data-comment-form="' + p.id + '" hidden><textarea name="body" minlength="2" maxlength="2000" required placeholder="نظر خود را بنویسید…"></textarea><button type="submit" class="btn btn-small btn-outline">ارسال نظر</button></form>';
+      if (replies.length) out += '<div class="comment-list">' + replies.map(function (r) { return '<div class="comment"><strong>' + esc(r.author) + '</strong><p>' + esc(r.body) + '</p></div>'; }).join("") + '</div>';
     }
     return out + '</article>';
   }
@@ -662,8 +665,8 @@
       return;
     }
     host.innerHTML = state.tickets.map(function (t) {
-      return '<div class="list-item"><div><div class="meta-row"><span class="pill">' + esc(t.priority) + '</span><span>' +
-        (t.status === "open" ? "باز" : "بسته") + '</span><span>' + jalali(t.created_at) + '</span></div><h3>' + esc(t.subject) + '</h3><p>' + esc(t.body) + '</p></div></div>';
+      return '<div class="ticket-card"><div class="meta-row"><span class="pill">' + esc(t.priority) + '</span><span>' +
+        (t.status === "open" ? "باز" : "بسته") + '</span><span>' + jalali(t.created_at) + '</span></div><h3>' + esc(t.subject) + '</h3><div class="ticket-thread"><div class="ticket-message is-user"><strong>شما</strong><p>' + esc(t.body) + '</p></div>' + (t.replies || []).map(function (r) { return '<div class="ticket-message"><strong>' + esc(r.author) + '</strong><p>' + esc(r.body) + '</p></div>'; }).join("") + '</div><form class="ticket-reply-form" data-ticket-reply="' + t.id + '"><textarea name="body" required minlength="2" maxlength="5000" placeholder="پاسخ خود را بنویسید…"></textarea><button type="submit" class="btn btn-small btn-outline">ارسال پاسخ</button></form></div>';
     }).join("");
   }
 
@@ -811,6 +814,22 @@
   }
 
   document.addEventListener("submit", function (event) {
+    var ticketReply = event.target.closest("[data-ticket-reply]");
+    if (ticketReply && ticketReply.getAttribute("data-ticket-reply") !== null) {
+      event.preventDefault();
+      var ticket = state.tickets.filter(function (item) { return String(item.id) === ticketReply.getAttribute("data-ticket-reply"); })[0];
+      var answer = (ticketReply.elements.namedItem("body").value || "").trim();
+      if (ticket && answer.length >= 2 && answer.length <= 5000) { (ticket.replies || (ticket.replies = [])).push({ author: state.user.name, body: answer }); store(); paintTickets(); }
+      return;
+    }
+    var commentForm = event.target.closest("[data-comment-form]");
+    if (commentForm && commentForm.getAttribute("data-comment-form") !== null) {
+      event.preventDefault();
+      var post = state.posts.filter(function (item) { return String(item.id) === commentForm.getAttribute("data-comment-form"); })[0];
+      var body = (commentForm.elements.namedItem("body").value || "").trim();
+      if (post && body.length >= 2 && body.length <= 2000) { (post.replies || (post.replies = [])).push({ author: state.user ? state.user.name : "کاربر", body: body, created_at: new Date().toISOString() }); store(); paintPosts(); }
+      return;
+    }
     var form = event.target.closest("[data-form]");
     if (!form) return;
     event.preventDefault();
@@ -837,6 +856,13 @@
   });
 
   document.addEventListener("click", function (event) {
+    var profile = event.target.closest("[data-member-profile]");
+    if (profile) { var card = profile.closest(".post-card").querySelector("[data-member-card]"); card.hidden = !card.hidden; return; }
+    var follow = event.target.closest("[data-follow-user]");
+    if (follow) { var name = follow.getAttribute("data-follow-user"); if (state.follows.indexOf(name) < 0) state.follows.push(name); store(); follow.textContent = "دنبال می‌کنید"; return; }
+
+    var commentToggle = event.target.closest("[data-comment-toggle]");
+    if (commentToggle) { var commentForm = el('[data-comment-form="' + commentToggle.getAttribute("data-comment-toggle") + '"]'); if (commentForm) commentForm.hidden = !commentForm.hidden; return; }
     var fileSelect = event.target.closest("[data-file-select]");
     if (fileSelect) {
       saveCurrentFile(document);
@@ -917,7 +943,7 @@
         image.alt = "نمودار خروجی پایتون";
         image.className = "code-plot";
         plots.appendChild(image);
-      }, workspaceFiles(), state.packages);
+      }, workspaceFiles(), state.packages.filter(function (name) { return ["numpy", "pandas", "matplotlib", "scipy"].indexOf(name) < 0; }));
       return;
     }
 
@@ -1018,6 +1044,11 @@
   function paintCaptcha() {
     var slot = el("[data-login-captcha]");
     if (!slot) return;
+    var known = state.users.length > 0 && !accountReady();
+    var register = el("[data-register-form]");
+    var signin = el("[data-signin-form]");
+    if (register) register.hidden = known;
+    if (signin) signin.hidden = !known;
     var code = sessionStorage.getItem("noventix.demo.captcha");
     if (!code) { code = Math.random().toString(36).slice(2, 7).toUpperCase(); sessionStorage.setItem("noventix.demo.captcha", code); }
     slot.textContent = code;

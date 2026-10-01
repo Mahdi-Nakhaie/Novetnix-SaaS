@@ -95,7 +95,7 @@ function submit(app, action, values) {
     })
   );
   const form = {
-    getAttribute: () => action,
+    getAttribute: (key) => key === "data-form" ? action : null,
     elements: { namedItem: (key) => fields[key] },
     parentNode: { querySelector: () => null },
     reset: () => {},
@@ -104,7 +104,7 @@ function submit(app, action, values) {
 }
 
 let page = load();
-submit(page, "login", { first_name: "کاربر", last_name: "نمونه", phone: "09123456789" });
+submit(page, "login", { first_name: "کاربر", last_name: "نمونه", phone: "09123456789", password: "StrongPass123" });
 assert.equal(page.location.href, "/Novetnix-SaaS/site/verify/");
 const code = session.get("noventix.demo.code");
 assert.match(code, /^\d{6}$/);
@@ -120,6 +120,37 @@ let state = JSON.parse(memory.get("noventix.demo.v1"));
 assert.equal(state.user.name, "کاربر نمونه");
 assert.equal(state.posts[0].title, "پرسش درباره پایتون");
 assert.equal(state.messages.length, 1);
+state.user = null;
+memory.set("noventix.demo.v1", JSON.stringify(state));
+const signInPage = load();
+session.set("noventix.demo.captcha", "HX94V");
+submit(signInPage, "signin", { phone: "09123456789", password: "StrongPass123", captcha: "HX94V" });
+assert.equal(signInPage.location.href, "/Novetnix-SaaS/site/panel/student/");
+assert.equal(load("panel/student/workspace").location.href, "");
+const forum = load("community");
+forum.nodes["[data-community-list]"] = { innerHTML: "" };
+const postId = JSON.parse(memory.get("noventix.demo.v1")).posts[0].id;
+const commentForm = {
+  getAttribute: () => String(postId),
+  elements: { namedItem: () => ({ value: "نظر تازه درباره پایتون" }) },
+};
+forum.handlers.submit({ target: { closest: (selector) => selector === "[data-comment-form]" ? commentForm : null }, preventDefault() {} });
+assert.match(forum.nodes["[data-community-list]"].innerHTML, /نظر تازه درباره پایتون/);
+assert.match(forum.nodes["[data-community-list]"].innerHTML, /data-member-profile/);
+assert.equal(JSON.parse(memory.get("noventix.demo.v1")).posts[0].replies.length, 1);
+const support = load("panel/student/support");
+support.nodes["[data-tickets]"] = { innerHTML: "" };
+submit(support, "ticket", { subject: "پرسش پشتیبانی", body: "جزئیات مشکل در حساب من", priority: "متوسط" });
+const ticketId = JSON.parse(memory.get("noventix.demo.v1")).tickets[0].id;
+const replyForm = { getAttribute: () => String(ticketId), elements: { namedItem: () => ({ value: "پاسخ من به تیکت" }) } };
+support.handlers.submit({ target: { closest: (selector) => selector === "[data-ticket-reply]" ? replyForm : null }, preventDefault() {} });
+assert.match(support.nodes["[data-tickets]"].innerHTML, /پاسخ من به تیکت/);
+assert.equal(JSON.parse(memory.get("noventix.demo.v1")).tickets[0].replies.length, 1);
+const followButton = { getAttribute: () => "عضو دیگر", textContent: "" };
+forum.handlers.click({ target: { closest: (selector) => selector === "[data-follow-user]" ? followButton : null } });
+assert.equal(followButton.textContent, "دنبال می‌کنید");
+assert.ok(JSON.parse(memory.get("noventix.demo.v1")).follows.includes("عضو دیگر"));
+state = JSON.parse(memory.get("noventix.demo.v1"));
 
 // a signed-in account without a full name must still be sent to the gate
 state = JSON.parse(memory.get("noventix.demo.v1"));

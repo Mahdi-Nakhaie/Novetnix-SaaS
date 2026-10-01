@@ -200,6 +200,24 @@ function handle_post(string $path): void {
         else q("INSERT INTO challenge_progress(user_id,challenge_index,status) VALUES (?,?,'started') ON CONFLICT(user_id,challenge_index) DO UPDATE SET status='started'",[$u['id'],$index]);
         flash('چالش به فهرست شما اضافه شد.'); redirect('dashboard/challenges');
     }
+    if ($path==='community/comment') {
+        $id=filter_var($_POST['post_id'] ?? '',FILTER_VALIDATE_INT); $body=trim((string)($_POST['body'] ?? ''));
+        if (!$id || mb_strlen($body)<2 || mb_strlen($body)>2000 || !q('SELECT id FROM community_posts WHERE id=?',[$id])->fetch()) { flash('نظر معتبر وارد کنید.','error'); redirect('dashboard/community'); }
+        q('INSERT INTO community_replies(post_id,user_id,body) VALUES (?,?,?)',[$id,$u['id'],$body]); flash('نظر شما ثبت شد.'); redirect('dashboard/community');
+    }
+    if ($path==='community/follow') {
+        $target=filter_var($_POST['user_id'] ?? '',FILTER_VALIDATE_INT);
+        if (!$target || $target===$u['id'] || !q('SELECT id FROM users WHERE id=?',[$target])->fetch()) { http_response_code(404); exit; }
+        if (db()->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql') q('INSERT IGNORE INTO user_follows(follower_id,followed_id) VALUES (?,?)',[$u['id'],$target]);
+        else q('INSERT OR IGNORE INTO user_follows(follower_id,followed_id) VALUES (?,?)',[$u['id'],$target]);
+        flash('این کاربر به فهرست دنبال‌شده‌ها اضافه شد.'); redirect('dashboard/community');
+    }
+    if ($path==='tickets/reply') {
+        $ticket=filter_var($_POST['ticket_id'] ?? '',FILTER_VALIDATE_INT); $body=trim((string)($_POST['body'] ?? ''));
+        $owned=$ticket ? q('SELECT id FROM tickets WHERE id=? AND user_id=?',[$ticket,$u['id']])->fetch() : false;
+        if (!$owned || mb_strlen($body)<2 || mb_strlen($body)>5000) { flash('پاسخ معتبر وارد کنید.','error'); redirect('dashboard/support'); }
+        q('INSERT INTO ticket_replies(ticket_id,user_id,body) VALUES (?,?,?)',[$ticket,$u['id'],$body]); q("UPDATE tickets SET status='open' WHERE id=?",[$ticket]); flash('پاسخ شما به تیکت اضافه شد.'); redirect('dashboard/support');
+    }
     if ($path==='community/react') {
         $id=filter_var($_POST['post_id'] ?? '',FILTER_VALIDATE_INT); $kind=(string)($_POST['kind'] ?? '');
         if (!$id || !in_array($kind,['like','save'],true) || !q('SELECT id FROM community_posts WHERE id=?',[$id])->fetch()) { http_response_code(404); exit; }
@@ -210,7 +228,12 @@ function handle_post(string $path): void {
     if ($path==='tickets/create') {
         $subject=trim((string)($_POST['subject'] ?? '')); $body=trim((string)($_POST['body'] ?? '')); $priority=(string)($_POST['priority'] ?? 'متوسط');
         if (mb_strlen($subject)<5 || mb_strlen($subject)>180 || mb_strlen($body)<10 || mb_strlen($body)>5000 || !in_array($priority,TICKET_PRIORITIES,true)) { flash('موضوع، متن و اولویت معتبر وارد کنید.','error'); redirect('dashboard/support'); }
-        q('INSERT INTO tickets(user_id,subject,priority) VALUES (?,?,?)',[$u['id'],$subject,$priority]);
+        $pdo=db(); $pdo->beginTransaction();
+        try {
+            q('INSERT INTO tickets(user_id,subject,priority) VALUES (?,?,?)',[$u['id'],$subject,$priority]);
+            q('INSERT INTO ticket_replies(ticket_id,user_id,body) VALUES (?,?,?)',[$pdo->lastInsertId(),$u['id'],$body]);
+            $pdo->commit();
+        } catch (Throwable $e) { $pdo->rollBack(); throw $e; }
         flash('تیکت شما ثبت شد.'); redirect('dashboard/support');
     }
     if ($path==='profile/account') {
