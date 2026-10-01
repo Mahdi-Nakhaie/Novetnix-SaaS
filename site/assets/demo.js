@@ -943,7 +943,7 @@
         image.alt = "نمودار خروجی پایتون";
         image.className = "code-plot";
         plots.appendChild(image);
-      }, workspaceFiles(), state.packages.filter(function (name) { return ["numpy", "pandas", "matplotlib", "scipy"].indexOf(name) < 0; }));
+      }, workspaceFiles(), state.packages.filter(function (name) { return ["numpy", "pandas", "matplotlib", "scipy"].indexOf(name) < 0; }), activeFile);
       return;
     }
 

@@ -1,6 +1,6 @@
 (function () {
   "use strict";
-  window.NOVENTIX_RUN_PYTHON = function (code, status, done, plot, files, packages) {
+  window.NOVENTIX_RUN_PYTHON = function (code, status, done, plot, files, packages, filename) {
     var worker;
     var timer;
     var finished = false;
@@ -33,7 +33,7 @@
       worker.onerror = function () {
         finish({ ok: false, output: "موتور Python بارگیری نشد؛ اتصال اینترنت و دسترسی مرورگر به Web Worker را بررسی کنید." });
       };
-      worker.postMessage({ code: code, files: files || {}, packages: packages || [] });
+      worker.postMessage({ code: code, files: files || {}, packages: packages || [], filename: filename || "main.py" });
     } catch (error) {
       finish({ ok: false, output: "اجرای Python در این مرورگر در دسترس نیست: " + error.message });
     }

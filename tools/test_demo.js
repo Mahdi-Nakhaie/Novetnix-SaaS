@@ -12,7 +12,7 @@ const runnerContext = {
   window: { NOVENTIX_BASE: "/Novetnix-SaaS/site" },
   Worker: class {
     constructor(path) { assert.equal(path, "/Novetnix-SaaS/site/assets/python-worker.js"); activeWorker = this; }
-    postMessage(message) { assert.equal(message.code, "print(1)"); }
+    postMessage(message) { assert.equal(message.code, "print(1)"); assert.equal(message.filename, "main.py"); }
     terminate() { this.terminated = true; }
   },
   setTimeout: (_callback, delay) => { deadlines.push(delay); return 1; },
@@ -391,17 +391,19 @@ async function testPythonWorker() {
   const workerSource = fs.readFileSync(__dirname + "/../public/assets/python-worker.js", "utf8");
   const messages = [];
   const files = {};
-  let imports;
+  const imports = [];
   let failImports = false;
+  let currentCode = "from helper import add\nprint(add(2, 3))";
   let runs = 0;
   const engine = {
-    FS: { mkdirTree() {}, writeFile(name, contents) { files[name] = contents; } },
+    FS: { mkdirTree() {}, writeFile(name, contents) { files[name] = contents; }, chdir(path) { this.directory = path; }, cwd() { return "/home/pyodide" + (this.directory ? "/" + this.directory : ""); } },
     loadedPackages: {},
     registerJsModule(name) { assert.equal(name, "noventixPlot"); },
-    async loadPackagesFromImports(source) { imports = source; if (failImports) throw new Error("package download failed"); },
+    async loadPackagesFromImports(source) { imports.push(source); if (failImports) throw new Error("package download failed"); },
     setStdout({ batched }) { this.stdout = batched; },
     setStderr() {}, setStdin() {},
-    async runPythonAsync(source) { runs++; assert.equal(source, "from helper import add\nprint(add(2, 3))"); this.stdout("5"); },
+    runPython(source) { assert.match(source, /sys\.path\.insert/); },
+    async runPythonAsync(source) { runs++; assert.equal(source, currentCode); this.stdout("5"); },
   };
   const context = {
     self: { postMessage(message) { messages.push(message); } },
@@ -409,18 +411,34 @@ async function testPythonWorker() {
     loadPyodide: async () => engine,
   };
   vm.runInNewContext(workerSource, context);
-  const input = { data: { code: "from helper import add\nprint(add(2, 3))", files: { "helper.py": "import numpy\ndef add(a, b): return a + b" } } };
+  const input = { data: { code: currentCode, filename: "main.py", files: { "helper.py": "import numpy\ndef add(a, b): return a + b", "old.py": "this is not valid python!!!", "3.PNG": "image data" } } };
   await context.self.onmessage(input);
-  assert.match(imports, /import numpy/);
+  assert.deepEqual(imports, [currentCode, input.data.files["helper.py"]]);
   assert.equal(files["helper.py"], input.data.files["helper.py"]);
   assert.equal(runs, 1);
   assert.equal(messages.at(-1).ok, true);
   assert.match(messages.at(-1).output, /5/);
+  currentCode = "print(2+3)";
+  imports.length = 0;
+  await context.self.onmessage({ data: { ...input.data, code: currentCode } });
+  assert.deepEqual(imports, ["print(2+3)"]);
+  assert.equal(runs, 2);
+  assert.equal(messages.at(-1).ok, true);
   failImports = true;
   await context.self.onmessage(input);
-  assert.equal(runs, 1);
+  assert.equal(runs, 2);
   assert.equal(messages.at(-1).ok, false);
   assert.match(messages.at(-1).output, /package download failed/);
+  failImports = false;
+  engine.FS.writeFile = () => { throw { name: "ErrnoError", errno: 44 }; };
+  await context.self.onmessage(input);
+  assert.equal(messages.at(-1).ok, false);
+  assert.match(messages.at(-1).output, /بارگذاری فایل‌های میزکار: ErrnoError/);
+  assert.doesNotMatch(messages.at(-1).output, /\[object Object\]/);
+  engine.FS.writeFile = (name, contents) => { files[name] = contents; };
+  await context.self.onmessage({ data: { code: "print(2+3)", filename: "src/main.py", files: { "src/main.py": "print(2+3)" } } });
+  assert.equal(engine.FS.directory, "src");
+  assert.equal(messages.at(-1).ok, true);
 }
 
 testPythonWorker().then(() => console.log("Demo interactions and Python worker passed"), (error) => { console.error(error); process.exitCode = 1; });
