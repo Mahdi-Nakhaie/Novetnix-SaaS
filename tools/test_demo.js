@@ -7,6 +7,7 @@ const runnerSource = fs.readFileSync(__dirname + "/../public/assets/python-runne
 let activeWorker;
 let completed;
 const receivedPlots = [];
+const deadlines = [];
 const runnerContext = {
   window: { NOVENTIX_BASE: "/Novetnix-SaaS/site" },
   Worker: class {
@@ -14,7 +15,7 @@ const runnerContext = {
     postMessage(message) { assert.equal(message.code, "print(1)"); }
     terminate() { this.terminated = true; }
   },
-  setTimeout: () => 1,
+  setTimeout: (_callback, delay) => { deadlines.push(delay); return 1; },
   clearTimeout: () => {},
 };
 vm.runInNewContext(runnerSource, runnerContext);
@@ -25,6 +26,11 @@ activeWorker.onmessage({ data: { type: "plot", png: "late" } });
 assert.deepEqual(receivedPlots, ["aGVsbG8="]);
 assert.equal(completed.output, "1");
 assert.equal(activeWorker.terminated, true);
+assert.deepEqual(deadlines, [180000]);
+runnerContext.window.NOVENTIX_RUN_PYTHON("print(1)", () => {}, () => {});
+activeWorker.onmessage({ data: { type: "running" } });
+assert.equal(deadlines.at(-1), 60000);
+activeWorker.onmessage({ data: { type: "done", ok: true, output: "1" } });
 
 const memory = new Map();
 const session = new Map();
@@ -381,4 +387,40 @@ assert.equal(reloaded.terminal.length, 2);
 assert.equal(reloaded.runs, 1);
 assert.equal(reloaded.reviews.length, 0);
 
-console.log("Demo interactions, legacy storage, Python runner, terminal and persistence passed");
+async function testPythonWorker() {
+  const workerSource = fs.readFileSync(__dirname + "/../public/assets/python-worker.js", "utf8");
+  const messages = [];
+  const files = {};
+  let imports;
+  let failImports = false;
+  let runs = 0;
+  const engine = {
+    FS: { mkdirTree() {}, writeFile(name, contents) { files[name] = contents; } },
+    loadedPackages: {},
+    registerJsModule(name) { assert.equal(name, "noventixPlot"); },
+    async loadPackagesFromImports(source) { imports = source; if (failImports) throw new Error("package download failed"); },
+    setStdout({ batched }) { this.stdout = batched; },
+    setStderr() {}, setStdin() {},
+    async runPythonAsync(source) { runs++; assert.equal(source, "from helper import add\nprint(add(2, 3))"); this.stdout("5"); },
+  };
+  const context = {
+    self: { postMessage(message) { messages.push(message); } },
+    importScripts(url) { assert.match(url, /pyodide\.js$/); },
+    loadPyodide: async () => engine,
+  };
+  vm.runInNewContext(workerSource, context);
+  const input = { data: { code: "from helper import add\nprint(add(2, 3))", files: { "helper.py": "import numpy\ndef add(a, b): return a + b" } } };
+  await context.self.onmessage(input);
+  assert.match(imports, /import numpy/);
+  assert.equal(files["helper.py"], input.data.files["helper.py"]);
+  assert.equal(runs, 1);
+  assert.equal(messages.at(-1).ok, true);
+  assert.match(messages.at(-1).output, /5/);
+  failImports = true;
+  await context.self.onmessage(input);
+  assert.equal(runs, 1);
+  assert.equal(messages.at(-1).ok, false);
+  assert.match(messages.at(-1).output, /package download failed/);
+}
+
+testPythonWorker().then(() => console.log("Demo interactions and Python worker passed"), (error) => { console.error(error); process.exitCode = 1; });

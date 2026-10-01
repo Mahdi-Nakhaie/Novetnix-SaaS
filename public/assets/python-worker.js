@@ -40,7 +40,10 @@ self.onmessage = async function (event) {
     engine.setStderr({ batched: append });
     engine.setStdin({ stdin: () => { throw new Error("input() در این محیط پشتیبانی نمی‌شود؛ داده را داخل کد بسازید."); } });
     self.postMessage({ type: "status", text: "در حال بارگذاری وابستگی‌های کد…" });
-    try { await engine.loadPackagesFromImports(code); } catch (error) { append(String(error)); }
+    const sources = [code, ...Object.entries(event.data.files || {})
+      .filter(([name]) => name.endsWith(".py"))
+      .map(([, source]) => String(source))].join("\n");
+    await engine.loadPackagesFromImports(sources);
     if (engine.loadedPackages.matplotlib) engine.runPython(`
 import base64 as _base64
 import io as _io

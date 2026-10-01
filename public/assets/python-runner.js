@@ -18,7 +18,7 @@
     try {
       worker = new Worker((window.NOVENTIX_BASE || "") + "/assets/python-worker.js");
       status("در حال دریافت Python؛ بار اول به اینترنت نیاز دارد…");
-      deadline(120000, "بارگیری Python یا کتابخانه‌ها طول کشید؛ اتصال اینترنت را بررسی و دوباره اجرا کنید.");
+      deadline(180000, "بارگیری Python یا کتابخانه‌ها طول کشید؛ اتصال اینترنت را بررسی و دوباره اجرا کنید.");
       worker.onmessage = function (event) {
         var data = event.data;
         if (finished) return;
@@ -26,7 +26,7 @@
         if (data.type === "plot" && plot && /^[A-Za-z0-9+/=]+$/.test(data.png)) plot(data.png);
         if (data.type === "running") {
           status("در حال اجرای کد…");
-          deadline(10000, "اجرا پس از ۱۰ ثانیه متوقف شد؛ حلقه‌ها و حجم محاسبات را بررسی کنید.");
+          deadline(60000, "اجرا پس از ۶۰ ثانیه متوقف شد؛ حلقه‌ها و حجم محاسبات را بررسی کنید.");
         }
         if (data.type === "done") finish(data);
       };
