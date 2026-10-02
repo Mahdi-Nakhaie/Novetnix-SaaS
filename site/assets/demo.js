@@ -140,21 +140,18 @@
   }
 
   var TERMINAL_HELP = [
-    "فرمان‌های پشتیبانی‌شده در میزکار مجازی:",
+    "فرمان‌های ترمینال (روی همان مفسر Python میزکار اجرا می‌شوند):",
     "  ls [مسیر]                 فهرست فایل‌ها",
-    "  pwd                       نمایش مسیر مجازی",
-    "  tree                      نمایش درخت فایل‌ها",
+    "  pwd · cd <مسیر>           نمایش و تغییر مسیر جاری",
     "  cat <فایل>                خواندن فایل",
-    "  touch <فایل>              ساخت فایل خالی",
-    "  write <فایل> <متن>        نوشتن متن در فایل",
-    "  mkdir <پوشه>              ساخت پوشه مجازی",
-    "  rm <فایل>                 حذف فایل مجازی",
-    "  python <فایل.py>          اجرای فایل Python",
-    "  pip list                  فهرست بسته‌های فعال",
-    "  pip install <بسته>        افزودن بسته سازگار با Pyodide",
+    "  mkdir <پوشه>              ساخت پوشه",
+    "  rm <فایل>                 حذف فایل",
+    "  python <فایل.py>          اجرای یک فایل Python",
+    "  python -c \"<کد>\"          اجرای کد کوتاه",
+    "  pip list                  فهرست بسته‌های بارگیری‌شده",
+    "  pip install <بسته>        نصب بسته سازگار با Pyodide",
     "  clear · help              پاک‌کردن و راهنما"
-  ].join("\\n");
-  var PYODIDE_PACKAGES = ["numpy", "pandas", "matplotlib", "scipy", "sympy", "scikit-learn", "micropip", "pytest", "pyyaml"];
+  ].join("\n");
 
   function workspaceFiles() { return state.workspaceFiles || (state.workspaceFiles = {}); }
   function fileNames() { return Object.keys(workspaceFiles()).sort(); }
@@ -184,76 +181,97 @@
   function validVirtualPath(path) {
     return !!path && /^(?!\.)(?:[A-Za-z0-9_./-])+$/.test(path) && path.indexOf("..") < 0 && path[0] !== "/";
   }
-  function installPackage(name) {
-    name = String(name || "").toLowerCase();
-    if (!/^[a-z0-9][a-z0-9._-]*$/.test(name)) return "نام بسته معتبر نیست.";
-    if (PYODIDE_PACKAGES.indexOf(name) < 0) return "این بسته در محیط Pyodide این میزکار پشتیبانی نمی‌شود. بسته‌های پیشنهادی: " + PYODIDE_PACKAGES.join(", ");
-    if (state.packages.indexOf(name) < 0) state.packages.push(name);
-    saveWorkspace();
-    return "بسته «" + name + "» برای اجرای بعدی آماده شد.";
-  }
-  function runFile(name) {
-    var source = el("[data-code-input]");
-    var run = el("[data-code-run]");
-    if (!validVirtualPath(name) || !/\.py$/i.test(name)) return "فقط فایل Python معتبر قابل اجراست.";
-    if (source && run && name !== activeFile) {
-      workspaceFiles()[activeFile] = source.value;
-      activeFile = name;
-      source.value = workspaceFiles()[name] || "";
-      paintFiles();
-    }
-    if (run && !run.disabled) { appendTerminal("خروجی " + name + " در بخش خروجی میزکار نمایش داده می‌شود.", "term-out"); run.click(); return null; }
-    return "اجرای کد در حال انجام است؛ پس از پایان دوباره تلاش کنید.";
-  }
-
+  /* The terminal talks to the same Pyodide engine as the editor, so a command
+     sees the student's real files and imported modules. */
   function runCommand(raw) {
     var host = el("[data-terminal-log]");
     if (!host) return;
     var command = String(raw || "").trim();
-    var body;
     if (!command) return;
     if (command === "clear") { host.replaceChildren(); return; }
     appendTerminal("$ " + command, "term-cmd");
     state.terminal = state.terminal.concat([{ command: command, at: new Date().toISOString() }]).slice(-40);
     store(); paintStats();
-    var parts = command.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
-    var verb = parts[0] || "";
-    if (verb === "help" || verb === "--help") body = TERMINAL_HELP;
-    else if (verb === "pwd") body = "/workspace";
-    else if (verb === "ls") body = fileNames().join("\\n") || "میزکار خالی است.";
-    else if (verb === "tree") body = fileNames().map(function (name) { return "├── " + name; }).join("\\n") || "میزکار خالی است.";
-    else if (verb === "cat") body = validVirtualPath(parts[1]) && Object.prototype.hasOwnProperty.call(workspaceFiles(), parts[1]) ? workspaceFiles()[parts[1]] : "فایل پیدا نشد.";
-    else if (verb === "touch") {
-      var touch = parts[1];
-      body = validVirtualPath(touch) ? (workspaceFiles()[touch] = workspaceFiles()[touch] || "", saveWorkspace(), "فایل ساخته شد: " + touch) : "نام فایل مجازی معتبر نیست.";
-    } else if (verb === "mkdir") {
-      var folder = parts[1]; body = validVirtualPath(folder) ? "پوشه مجازی آماده شد: " + folder : "نام پوشه مجازی معتبر نیست.";
-    } else if (verb === "rm" && /^rm\s+-/.test(command)) body = "این فرمان پشتیبانی نمی‌شود؛ فقط حذف فایل مجازی مجاز است.";
-    else if (verb === "rm") {
-      var remove = parts[1]; body = validVirtualPath(remove) && Object.prototype.hasOwnProperty.call(workspaceFiles(), remove) ? (delete workspaceFiles()[remove], activeFile === remove && (activeFile = "main.py"), saveWorkspace(), "فایل حذف شد: " + remove) : "فایل پیدا نشد.";
-    } else if (verb === "write") {
-      var target = parts[1]; var text = parts.slice(2).join(" ").replace(/^"|"$/g, "");
-      body = validVirtualPath(target) ? (workspaceFiles()[target] = text, saveWorkspace(), "فایل ذخیره شد: " + target) : "نام فایل مجازی معتبر نیست.";
-    } else if (verb === "python" && parts[1]) body = runFile(parts[1]);
-    else if (verb === "pip" && parts[1] === "list") body = state.packages.join("\\n");
-    else if (verb === "pip" && parts[1] === "install" && parts[2]) body = installPackage(parts[2]);
-    else if (verb === "python" && parts[1] === "-m" && parts[2] === "pip" && parts[3] === "install" && parts[4]) body = installPackage(parts[4]);
-    else body = "فرمان پشتیبانی نمی‌شود: " + command + "\\nبرای راهنما help را اجرا کنید.";
-    if (body) appendTerminal(body, "term-out");
+
+    if (command === "help" || command === "--help") { appendTerminal(TERMINAL_HELP, "term-out"); return; }
+
+    saveCurrentFile(document);
+    var running = false;
+    var stop = el("[data-terminal-stop]");
+    setTerminalBusy(true);
+    var cancel = window.NOVENTIX_RUN_COMMAND ? window.NOVENTIX_RUN_COMMAND(
+      command,
+      workspaceFiles(),
+      function (text) { appendTerminal(text, "term-out"); },
+      function (result) {
+        running = false;
+        setTerminalBusy(false);
+        adoptFiles(result.files);
+        if (!result.ok && result.output) appendTerminal(result.output, "term-error");
+        if (stop) stop.disabled = true;
+      },
+      function (message) { appendTerminal(message, "term-hint"); },
+      function (png) { paintPlot(png); }
+    ) : function () {};
+    if (stop) { stop.disabled = false; stop.onclick = function () { if (running) cancel(); }; }
+    running = true;
   }
+
+  function setTerminalBusy(busy) {
+    var run = el("[data-terminal-run]");
+    var input = el("#term-input") || el('[data-form="terminal"] [name="command"]');
+    if (run) run.disabled = busy;
+    if (input) input.disabled = busy;
+    if (busy) {
+      var host = el("[data-terminal-log]");
+      if (host) {
+        var placeholder = document.createElement("span");
+        placeholder.className = "term-line term-hint";
+        placeholder.setAttribute("data-term-placeholder", "");
+        placeholder.textContent = "…";
+        host.appendChild(placeholder);
+        host.scrollTop = host.scrollHeight;
+      }
+    }
+  }
+
+  /* Files created or edited inside Python are mirrored back into the workspace. */
+  function adoptFiles(files) {
+    if (!files) return;
+    var changed = false;
+    Object.keys(files).forEach(function (name) {
+      if (!validVirtualPath(name)) return;
+      if (workspaceFiles()[name] !== files[name]) { workspaceFiles()[name] = files[name]; changed = true; }
+    });
+    if (!changed) return;
+    saveWorkspace();
+    var editor = el("[data-code-input]");
+    if (editor && Object.prototype.hasOwnProperty.call(workspaceFiles(), activeFile)) editor.value = workspaceFiles()[activeFile];
+  }
+
 
   function appendTerminal(text, css) {
     var host = el("[data-terminal-log]");
     if (!host) return;
-    var hint = el(".term-hint", host);
-    if (hint) hint.remove();
-    text.split("\n").forEach(function (line) {
+    var placeholder = el("[data-term-placeholder]", host);
+    if (placeholder) placeholder.remove();
+    String(text).split("\n").forEach(function (line) {
       var span = document.createElement("span");
       span.className = "term-line " + css;
       span.textContent = line;
       host.appendChild(span);
     });
     host.scrollTop = host.scrollHeight;
+  }
+
+  function paintPlot(png) {
+    var host = el("[data-code-plots]");
+    if (!host) return;
+    var image = document.createElement("img");
+    image.src = "data:image/png;base64," + png;
+    image.alt = "نمودار خروجی پایتون";
+    image.className = "code-plot";
+    host.appendChild(image);
   }
 
   /* Rule-based review: no model runs, the checks are deterministic. */

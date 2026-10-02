@@ -579,7 +579,7 @@ def code_workspace(starter="", challenge=None):
     form_open = (f'<form class="stack-form" data-form="solution"><input type="hidden" name="challenge" value="{challenge}">' if challenge is not None else '')
     form_close = ('<button class="btn btn-primary" type="submit">ذخیره پاسخ من</button></form><p class="form-note" hidden></p>' if challenge is not None else '')
     return (f'<div class="code-layout"><section class="panel-card code-col">{form_open}'
-            '<div class="code-bar"><span class="muted">میزکار چندفایلی Python · اجرای مستقل با سقف ۱۰ ثانیه</span></div>'
+            '<div class="code-bar"><span class="muted">میزکار چندفایلی Python · مفسر مشترک با ترمینال · سقف اجرا ۱۵ ثانیه</span></div>'
             '<div class="workspace-files"><div class="workspace-files-head"><strong>فایل‌های پروژه</strong><label class="btn btn-small btn-outline file-upload-label">بارگذاری فایل<input type="file" data-file-upload multiple hidden></label></div><div class="file-tree" data-file-tree role="listbox" aria-label="فایل‌های میزکار"></div>'
             '<div class="file-actions"><input class="file-name-input" data-file-name-input dir="ltr" placeholder="src/analysis.py" aria-label="نام فایل جدید">'
             '<button type="button" class="btn btn-small btn-outline" data-file-create>فایل جدید</button></div></div>'
@@ -595,7 +595,7 @@ def code_workspace(starter="", challenge=None):
             '<section class="panel-card code-col"><h2>خروجی</h2>'
             '<pre class="code-output" dir="ltr" data-code-output aria-live="polite">هنوز کدی اجرا نشده است.</pre>'
             '<div class="code-plots" data-code-plots aria-label="نمودارهای خروجی"></div>'
-            '<p class="muted">فایل‌ها و بسته‌ها در میزکار مجازی همین مرورگر نگهداری می‌شوند. بسته‌های سازگار با Pyodide هنگام اجرا بارگیری می‌شوند؛ دسترسی به فایل واقعی دستگاه و پوسته سیستم‌عامل پشتیبانی نمی‌شود.</p>'
+            '<p class="muted">کد شما با مفسر واقعی Python (Pyodide) در مرورگر اجرا می‌شود و فایل‌های پروژه بین اجراها و بین ادیتور و ترمینال مشترک‌اند. بسته‌های سازگار با Pyodide هنگام اجرا بارگیری می‌شوند؛ دسترسی به فایل واقعی دستگاه، شبکه و پوسته سیستم‌عامل وجود ندارد.</p>'
             '<h2>راهنمای تمرین</h2><ul class="check-list"><li>فایل‌های داده را با نام نسبی مثل <code>data.csv</code> بخوان.</li>'
             '<li>برای بسته‌ها از <code>pip install numpy</code> در ترمینال استفاده کن.</li>'
             '<li>حالت‌های مرزی و خطاها را در فایل جداگانه آزمون کن.</li></ul></section></div>')
@@ -645,17 +645,21 @@ def workspace_view():
 
 def terminal_view():
     return ('<section class="panel-card code-col"><div class="code-bar"><span class="pill">Terminal</span>'
-            '<span class="muted">فایل مجازی · pip · python · ls</span></div>'
+            '<span class="muted">همان مفسر Python میزکار · ls · cat · pip · python</span></div>'
             '<div class="terminal" data-terminal-log dir="ltr" role="log" aria-live="polite">'
             '<span class="term-line term-hint">$ help</span></div>'
             '<form class="terminal-form" data-form="terminal">'
             '<label class="sr-only" for="term-input">فرمان ترمینال</label>'
             '<span class="term-prompt" aria-hidden="true">$</span>'
             '<input id="term-input" class="term-input" dir="ltr" name="command" autocomplete="off" '
-            'spellcheck="false" placeholder="pip install numpy یا python main.py">'
+            'spellcheck="false" placeholder="python main.py یا pip install numpy">'
             '<button class="btn btn-small btn-primary" type="button" data-terminal-run>اجرا</button></form>'
+            '<div class="code-actions"><button type="button" class="btn btn-small btn-outline" '
+            'data-terminal-stop disabled>توقف فرمان</button>'
+            '<span class="muted" data-terminal-status role="status">آماده</span></div>'
             '<div class="package-status" data-package-status>بسته‌های پایه: numpy، pandas، matplotlib، scipy</div>'
-            '<p class="muted">این ترمینال فقط فرمان‌های مجازی میزکار را اجرا می‌کند و به سیستم‌عامل، شبکه یا فایل‌های واقعی دسترسی ندارد.</p></section>')
+            '<p class="muted">فرمان‌ها روی همان مفسر Python میزکار اجرا می‌شوند؛ فایل‌ها و بسته‌ها در حافظهٔ مرورگر '
+            'شما می‌مانند و این ترمینال به سیستم‌عامل، شبکه یا فایل‌های واقعی دستگاه دسترسی ندارد.</p></section>')
 
 
 def nova_review_card():

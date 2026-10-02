@@ -303,6 +303,7 @@ main{display:block;min-height:60vh}
 .term-line{display:block;white-space:pre-wrap;word-break:break-word}
 .term-cmd{color:#b79df5}
 .term-out{color:#cfc7e6}
+.term-error{color:#ff9c9c}
 .term-hint{color:#7d719c}
 .terminal-form{display:flex;align-items:center;gap:.5rem;background:#120e22;border:1px solid #2c2444;border-radius:var(--r-md);padding:.5rem .7rem}
 .term-prompt{color:#8ee6a8;font-family:ui-monospace,Menlo,monospace;font-weight:700}

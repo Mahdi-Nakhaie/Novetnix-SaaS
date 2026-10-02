@@ -8,29 +8,42 @@ let activeWorker;
 let completed;
 const receivedPlots = [];
 const deadlines = [];
+const workers = [];
 const runnerContext = {
   window: { NOVENTIX_BASE: "/Novetnix-SaaS/site" },
   Worker: class {
-    constructor(path) { assert.equal(path, "/Novetnix-SaaS/site/assets/python-worker.js"); activeWorker = this; }
-    postMessage(message) { assert.equal(message.code, "print(1)"); assert.equal(message.files && Object.keys(message.files).length, 0); }
+    constructor(path) { assert.equal(path, "/Novetnix-SaaS/site/assets/python-worker.js"); workers.push(this); activeWorker = this; }
+    postMessage(message) { this.posted = message; }
     terminate() { this.terminated = true; }
   },
   setTimeout: (_callback, delay) => { deadlines.push(delay); return 1; },
   clearTimeout: () => {},
 };
 vm.runInNewContext(runnerSource, runnerContext);
-runnerContext.window.NOVENTIX_RUN_PYTHON("print(1)", () => {}, (result) => { completed = result; }, (png) => receivedPlots.push(png));
+
+// One shared engine: the editor run and the terminal command reuse the worker.
+runnerContext.window.NOVENTIX_RUN_PYTHON("print(1)", () => {}, (result) => { completed = result; }, (png) => receivedPlots.push(png), { "main.py": "print(1)" }, []);
+assert.equal(workers.length, 1);
+assert.deepEqual(activeWorker.posted.files, { "main.py": "print(1)" });
 activeWorker.onmessage({ data: { type: "plot", png: "aGVsbG8=" } });
-activeWorker.onmessage({ data: { type: "done", ok: true, output: "1" } });
+activeWorker.onmessage({ data: { type: "done", ok: true, output: "1", files: { "main.py": "print(1)" } } });
 activeWorker.onmessage({ data: { type: "plot", png: "late" } });
 assert.deepEqual(receivedPlots, ["aGVsbG8="]);
 assert.equal(completed.output, "1");
-assert.equal(activeWorker.terminated, true);
-assert.deepEqual(deadlines, [120000]);
-runnerContext.window.NOVENTIX_RUN_PYTHON("print(1)", () => {}, () => {});
+assert.deepEqual(deadlines, [180000]);
+
+let terminalOutput = "";
+let commandResult = null;
+runnerContext.window.NOVENTIX_RUN_COMMAND("python main.py", { "main.py": "print(1)" }, (text) => { terminalOutput += text; }, (result) => { commandResult = result; }, () => {}, () => {});
+assert.equal(workers.length, 1, "a successful run keeps the engine alive for the next command");
+assert.equal(activeWorker.posted.type, "command");
+assert.equal(activeWorker.posted.command, "python main.py");
+activeWorker.onmessage({ data: { type: "stream", text: "5\n" } });
+assert.equal(terminalOutput, "5\n");
 activeWorker.onmessage({ data: { type: "running" } });
-assert.equal(deadlines.at(-1), 10000);
-activeWorker.onmessage({ data: { type: "done", ok: true, output: "1" } });
+assert.equal(deadlines.at(-1), 15000);
+activeWorker.onmessage({ data: { type: "done", ok: true, output: "5\n", files: { "main.py": "print(1)", "out.txt": "5" } } });
+assert.deepEqual(commandResult.files, { "main.py": "print(1)", "out.txt": "5" });
 
 const novaPage = fs.readFileSync(__dirname + "/../site/panel/student/nova/index.html", "utf8");
 assert.match(novaPage, /این نسخهٔ ایستا امکان اتصال امن/);
@@ -80,6 +93,9 @@ function load(protectedPath) {
     addEventListener: (event, handler) => { handlers[event] = handler; },
     createElement: () => ({
       style: {}, className: "", textContent: "", insertAdjacentElement: () => {},
+      attributes: {},
+      setAttribute(name, value) { this.attributes[name] = value; },
+      getAttribute(name) { return this.attributes[name] ?? null; },
       remove: () => {},
     }),
   };
@@ -293,18 +309,28 @@ submit(workspace, "nova", { question: "چطور ورودی خالی را مدی�
 state = JSON.parse(memory.get("noventix.demo.v1"));
 assert.equal(state.nova.length, 0);
 
-// terminal forwards python main.py to the editor's run control
+// the terminal runs real commands on the shared engine and streams output back
 workspace.terminalLines.length = 0;
-let terminalRuns = 0;
-workspace.nodes["[data-code-run]"] = { disabled: false, click() { terminalRuns++; } };
+let terminalCommand = null;
+workspace.context.window.NOVENTIX_RUN_COMMAND = (command, files, stream, done) => {
+  terminalCommand = { command, files };
+  stream("5\n");
+  done({ ok: true, output: "5\n", files: { "main.py": "print(2+3)", "result.txt": "5" } });
+  return () => {};
+};
 submit(workspace, "terminal", { command: "python main.py" });
-assert.equal(terminalRuns, 1);
-assert.ok(workspace.terminalLines.some((line) => line.includes("بخش خروجی میزکار")));
-delete workspace.nodes["[data-code-run]"];
-submit(workspace, "terminal", { command: "rm -rf /" });
-assert.ok(workspace.terminalLines.some((line) => line.includes("پشتیبانی نمی‌شود")));
+assert.equal(terminalCommand.command, "python main.py");
+assert.ok(Object.prototype.hasOwnProperty.call(terminalCommand.files, "main.py"));
+assert.ok(workspace.terminalLines.some((line) => line.includes("5")));
 state = JSON.parse(memory.get("noventix.demo.v1"));
-assert.equal(state.terminal.length, 2);
+assert.equal(state.workspaceFiles["result.txt"], "5", "files written by Python are mirrored into the workspace");
+assert.equal(state.terminal.length, 1);
+
+workspace.terminalLines.length = 0;
+submit(workspace, "terminal", { command: "help" });
+assert.ok(workspace.terminalLines.some((line) => line.includes("فرمان‌های ترمینال")));
+state = JSON.parse(memory.get("noventix.demo.v1"));
+assert.equal(state.terminal.length, 2, "every command is recorded in the history");
 
 // Nova code review flags missing return and silent except
 submit(workspace, "review", { code: "def solve(data):\n    try:\n        print(data)\n    except:\n        pass" });
@@ -363,6 +389,11 @@ for (const [selector, value, field] of [
 submit(returning, "terminal", { command: "help" });
 assert.ok(returning.terminalLines.some((line) => line.includes("فرمان‌های")));
 returning.nodes["#term-input"] = { value: "ls", focus() {} };
+returning.context.window.NOVENTIX_RUN_COMMAND = (command, files, stream, done) => {
+  stream("main.py  README.md");
+  done({ ok: true, output: "", files: {} });
+  return () => {};
+};
 click(returning, "[data-terminal-run]");
 assert.ok(returning.terminalLines.some((line) => line.includes("main.py")));
 assert.equal(returning.nodes["#term-input"].value, "");
@@ -393,16 +424,37 @@ assert.equal(reloaded.reviews.length, 0);
 async function testPythonWorker() {
   const workerSource = fs.readFileSync(__dirname + "/../public/assets/python-worker.js", "utf8");
   const messages = [];
-  const files = {};
+  const filesystem = { "main.py": "print(2+3)" };
   const imports = [];
+  const loaded = [];
+  let failure = null;
   const engine = {
-    FS: { mkdirTree() {}, writeFile(name, contents) { files[name] = contents; } },
+    FS: {
+      mkdirTree() {},
+      writeFile(name, contents) { filesystem[name] = contents; },
+      readFile(name) {
+        if (!(name in filesystem)) { const error = new Error("No such file or directory"); error.name = "ErrnoError"; throw error; }
+        return filesystem[name];
+      },
+      readdir() { return [".", "..", "main.py"]; },
+      cwd() { return "/workspace"; },
+      chdir() {},
+      unlink() {},
+      analyzePath(name) { return { exists: name in filesystem }; },
+    },
+    loadedPackages: [],
     registerJsModule(name) { assert.equal(name, "noventixPlot"); },
+    async loadPackage(names) { loaded.push(...[].concat(names)); },
     async loadPackagesFromImports(source) { imports.push(source); },
-    setStdout({ batched }) { this.stdout = batched; },
-    setStderr() {}, setStdin() {},
+    setStdout({ batched }) { const previous = { stdout: this.previousWriter }; this.previousWriter = batched; return previous; },
+    setStderr() {},
+    setStdin() {},
     runPython(source) { assert.match(source, /matplotlib/); },
-    async runPythonAsync(source) { if (source !== "_noventix_show()") { assert.equal(source, "print(2+3)"); this.stdout("5"); } },
+    async runPythonAsync(source) {
+      if (source === "_noventix_show()") return;
+      if (failure) throw failure;
+      if (!/^open\(/.test(source)) this.previousWriter("5\n");
+    },
   };
   const context = {
     self: { postMessage(message) { messages.push(message); } },
@@ -410,11 +462,45 @@ async function testPythonWorker() {
     loadPyodide: async () => engine,
   };
   vm.runInNewContext(workerSource, context);
-  await context.self.onmessage({ data: { code: "print(2+3)", files: { "main.py": "print(2+3)", "3.PNG": "image data" } } });
-  assert.deepEqual(imports, ["import numpy, pandas, matplotlib, scipy", "print(2+3)"]);
-  assert.equal(files["main.py"], "print(2+3)");
+
+  await context.self.onmessage({ data: { type: "execute", code: "print(2+3)", files: { "main.py": "print(2+3)", "3.PNG": "image data" } } });
+  assert.deepEqual(imports, ["print(2+3)"]);
+  assert.deepEqual(loaded, ["numpy", "pandas", "matplotlib", "scipy"]);
   assert.equal(messages.at(-1).ok, true);
   assert.match(messages.at(-1).output, /5/);
+  assert.deepEqual(Object.entries(messages.at(-1).files).sort(), [["3.PNG", "image data"], ["main.py", "print(2+3)"]]);
+  assert.equal(filesystem["main.py"], "print(2+3)", "workspace files are mounted into the engine");
+
+  await context.self.onmessage({ data: { type: "execute", code: "print(1)", files: { "../escape.py": "x", ".env": "secret" } } });
+  assert.equal(filesystem["../escape.py"], undefined, "parent-directory paths are never mounted");
+  assert.equal(filesystem[".env"], undefined, "dotfiles are never mounted");
+
+  // Pyodide error objects must never surface as "[object Object]".
+  failure = { name: "ErrnoError", message: "No such file or directory", errno: 44 };
+  await context.self.onmessage({ data: { type: "execute", code: "open('x')", files: {} } });
+  assert.equal(messages.at(-1).ok, false);
+  assert.doesNotMatch(messages.at(-1).output, /\[object Object\]/);
+  assert.match(messages.at(-1).output, /No such file or directory/);
+  failure = null;
+
+  // Terminal commands run against the same interpreter.
+  await context.self.onmessage({ data: { type: "command", command: "ls", files: {} } });
+  assert.equal(messages.at(-1).ok, true);
+  assert.ok(messages.some((m) => m.type === "stream" && /main\.py/.test(m.text)));
+
+  await context.self.onmessage({ data: { type: "command", command: "python main.py", files: { "main.py": "print(2+3)" } } });
+  assert.equal(messages.at(-1).ok, true);
+  assert.equal(messages.at(-1).files["main.py"], "print(2+3)");
+
+  // Flags are refused outright: "rm -rf /" must not be read as deleting "-rf".
+  let unlinked = null;
+  engine.FS.unlink = (name) => { unlinked = name; };
+  await context.self.onmessage({ data: { type: "command", command: "rm -rf /", files: {} } });
+  assert.equal(unlinked, null, "a flagged rm never reaches the filesystem");
+  assert.ok(messages.some((m) => m.type === "stream" && /گزینه‌های خط فرمان/.test(m.text)));
+
+  await context.self.onmessage({ data: { type: "command", command: "rm main.py", files: {} } });
+  assert.equal(unlinked, "main.py");
 }
 
 testPythonWorker().then(() => console.log("Demo interactions and Python worker passed"), (error) => { console.error(error); process.exitCode = 1; });
