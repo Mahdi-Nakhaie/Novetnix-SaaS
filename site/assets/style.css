@@ -292,7 +292,18 @@ main{display:block;min-height:60vh}
 .week-bar{width:100%;max-width:26px;background:var(--brand);border-radius:6px;min-height:4px}
 .week-cell small{font-size:.7rem;color:var(--muted)}
 .quick-links{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.9rem}
+.activity-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:.6rem;align-items:end;min-height:160px;margin:1.1rem 0 .4rem}
+.activity-day{display:grid;justify-items:center;align-content:end;gap:.45rem;height:100%}
+.activity-bar{width:100%;max-width:34px;min-height:6px;border-radius:7px;background:linear-gradient(180deg,var(--brand) 0%,var(--brand-2) 100%)}
+.activity-day small{font-size:.7rem;color:var(--muted);white-space:nowrap}
+.activity-day .activity-bar[style*="height:0%"]{min-height:6px;background:var(--line)}
+.plan-limits{margin-top:.9rem;padding-top:.8rem;border-top:1px dashed var(--brand-line)}
+.plan-limits table{width:100%;border-collapse:collapse;margin-top:.5rem}
+.plan-limits th,.plan-limits td{text-align:start;padding:.32rem 0;font-size:.8rem;border:0}
+.plan-limits th{color:var(--muted);font-weight:600}
+.plan-limits td{color:var(--ink-2);font-weight:800;text-align:end}
 @media (max-width:900px){.code-layout{grid-template-columns:1fr}}
+@media(max-width:640px){.activity-strip{gap:.35rem}.activity-day small{font-size:.6rem}}
 
 .workspace-files{display:grid;gap:.65rem;padding:.7rem;background:#f8f6fc;border:1px solid var(--brand-line);border-radius:var(--r-md)}
 .file-tree{display:flex;gap:.4rem;flex-wrap:wrap;min-height:2rem}

@@ -35,7 +35,7 @@ function panel_nav(): void {
     $role=$me['role'];
     $items=$role==='admin'
         ? ['dashboard'=>'Overview','dashboard/users'=>'کاربران','dashboard/users-new'=>'کاربران جدید','dashboard/courses'=>'دوره‌ها','dashboard/catalog'=>'پروژه‌ها','dashboard/challenges'=>'چالش‌ها','dashboard/subscriptions'=>'اشتراک‌ها','dashboard/payments'=>'پرداخت‌ها','dashboard/community'=>'Community','dashboard/support'=>'پشتیبانی','dashboard/announcements'=>'اعلان‌ها','dashboard/gamification'=>'Gamification','dashboard/analytics'=>'Analytics','dashboard/content'=>'Content','dashboard/profile'=>'پروفایل','dashboard/settings'=>'System Settings']
-        : ['dashboard'=>'نمای کلی','dashboard/learning'=>'مسیر یادگیری','dashboard/projects'=>'پروژه‌ها','dashboard/challenges'=>'چالش‌ها','dashboard/community'=>'Community','dashboard/nova'=>'Nova AI','dashboard/subscription'=>'اشتراک','dashboard/support'=>'پشتیبانی','dashboard/gamification'=>'Gamification','dashboard/profile'=>'پروفایل','dashboard/settings'=>'تنظیمات'];
+        : ['dashboard'=>'نمای کلی','dashboard/learning'=>'مسیر یادگیری','dashboard/projects'=>'پروژه‌ها','dashboard/challenges'=>'چالش‌ها','dashboard/community'=>'Community','dashboard/nova'=>'Nova AI','dashboard/subscription'=>'اشتراک','dashboard/support'=>'پشتیبانی','dashboard/gamification'=>'Gamification','dashboard/activity'=>'فعالیت و Streak','dashboard/profile'=>'پروفایل','dashboard/settings'=>'تنظیمات'];
     echo '<aside class="sidebar"><a class="panel-brand" href="/"><img src="/assets/favicon.png" alt="" width="42" height="42"><span>Noventix</span></a><div class="sidebar-caption">'.($role==='admin'?'مدیریت پلتفرم':($role==='owner'?'پنل مالک':'فضای یادگیری')).'</div><nav aria-label="ناوبری پنل">';
     foreach ($items as $href=>$label) linkto($href,$label,$path===$href?'selected':'');
     echo '</nav><div class="sidebar-bottom"><a href="/">بازگشت به سایت ↗</a>';
@@ -62,7 +62,9 @@ function plan_cards(bool $short=false): void {
     foreach (PLANS as $id=>$p) {
         echo '<article class="price-card '.($id==='gold'?'featured':'').'"><div class="card-top"><span class="pill">'.h($p['tag']).'</span>'.($id==='gold'?'<span class="popular">پیشنهاد ما</span>':'').'</div><h3>'.h($p['name']).'</h3><p class="muted">'.h($p['summary']).'</p><div class="price">'.($p['price']?money($p['price']):'رایگان').'<small>'.($p['price']?'/ ماه':'برای همیشه').'</small></div><div class="card-divider"></div><ul class="check-list">';
         foreach (array_slice($p['features'],0,$short?3:5) as $feature) echo '<li>'.h($feature).'</li>';
-        echo '</ul><a class="btn '.($id==='gold'?'btn-gold':'btn-outline').' full" href="'.h(url($id==='free'?'login':'dashboard/subscription')).'">'.($id==='free'?'شروع رایگان':'انتخاب پلن').'</a></article>';
+        echo '</ul>';
+        if (!$short && !empty($p['limits'])) { echo '<div class="plan-limits"><span class="eyebrow">سقف دقیق این پلن</span><table><tbody>'; foreach ($p['limits'] as [$label,$value]) echo '<tr><th scope="row">'.h($label).'</th><td>'.h($value).'</td></tr>'; echo '</tbody></table></div>'; }
+        echo '<a class="btn '.($id==='gold'?'btn-gold':'btn-outline').' full" href="'.h(url($id==='free'?'login':'dashboard/subscription')).'">'.($id==='free'?'شروع رایگان':'انتخاب پلن').'</a></article>';
     }
     echo '</div>';
 }
@@ -196,6 +198,33 @@ function panel(string $sub): void {
         panel_head('Gamification','سطح، امتیاز و نشان‌های یادگیری.');
         echo '<div class="stat-grid">'; foreach ([['Level','۱۲'],['XP',fa($xp)],['Streak',fa($streak).' روز'],['Missions',fa(count(CHALLENGES)).' فعال']] as [$l,$v]) echo '<div class="stat-card"><span>'.h($l).'</span><strong>'.h($v).'</strong></div>'; echo '</div>';
         echo '<div class="panel-columns"><section class="panel-card"><h2>Skill Tree</h2>'; foreach (TRACKS as $t) echo '<div class="skill-row"><div class="usage-row"><span>'.h($t['name']).'</span><strong>'.fa($t['percent']).'٪</strong></div><div class="progress"><span style="width:'.$t['percent'].'%"></span></div></div>'; echo '</section><section class="panel-card"><h2>Achievements &amp; Badges</h2><div class="badge-grid">'; foreach (BADGES as $b) echo '<div class="badge" title="'.h($b['need']).'"><span>'.h($b['icon']).'</span>'.h($b['title']).'</div>'; echo '</div></section></div>';
+    } elseif ($sub==='activity' && $role!=='admin') {
+        panel_head('فعالیت و Streak','هر روزی که واقعاً کار کرده باشی، در این تقویم ثبت می‌شود.');
+        $kinds=[['projects','پروژه فعال','پروژه‌هایی که به فهرست خود اضافه کرده‌ای'],['challenges','چالش حل‌شده','چالش‌هایی که راه‌حل برایشان ثبت شده'],['enrollments','مقاله ذخیره‌شده','مقاله‌هایی که در مسیر یادگیری ذخیره کرده‌ای'],['posts','گفت‌وگوی انجمن','پست‌هایی که در انجمن منتشر کرده‌ای']];
+        $counts=[]; foreach ($kinds as [$table]) $counts[$table]=(int)q("SELECT COUNT(*) FROM $table WHERE user_id=?",[$me['id']])->fetchColumn();
+        // A day is active when at least one timestamped action happened on it.
+        $days=q('SELECT day,SUM(hits) AS hits FROM ('
+            .'SELECT substr(created_at,1,10) AS day,1 AS hits FROM projects WHERE user_id=? '
+            .'UNION ALL SELECT substr(created_at,1,10),1 FROM enrollments WHERE user_id=? '
+            .'UNION ALL SELECT substr(created_at,1,10),1 FROM challenge_progress WHERE user_id=? '
+            .'UNION ALL SELECT substr(created_at,1,10),1 FROM community_posts WHERE user_id=? '
+            .') GROUP BY day ORDER BY day DESC LIMIT 60',[$me['id'],$me['id'],$me['id'],$me['id']])->fetchAll();
+        $active=array_column($days,'day');
+        $run=0; $cursor=new DateTimeImmutable('today',new DateTimeZone('UTC'));
+        // Today without activity yet should not break yesterday's streak.
+        if (!in_array($cursor->format('Y-m-d'),$active,true)) $cursor=$cursor->modify('-1 day');
+        while (in_array($cursor->format('Y-m-d'),$active,true)) { $run++; $cursor=$cursor->modify('-1 day'); }
+        $activeMonth=count(array_filter($active,fn($d)=>str_starts_with($d,gmdate('Y-m'))));
+        $week=array_fill(0,7,0);
+        foreach ($days as $row) { $delta=(int)floor((time()-strtotime($row['day'].' UTC'))/86400); if ($delta>=0 && $delta<7) $week[6-$delta]+=(int)$row['hits']; }
+        echo '<div class="stat-grid"><div class="stat-card"><span>Streak فعلی</span><strong>'.fa($run).' روز</strong></div><div class="stat-card"><span>روزهای فعال این ماه</span><strong>'.fa($activeMonth).'</strong></div><div class="stat-card"><span>روزهای ثبت‌شده</span><strong>'.fa(count($days)).'</strong></div><div class="stat-card"><span>کارهای این هفته</span><strong>'.fa(array_sum($week)).'</strong></div></div>';
+        echo '<div class="panel-card"><h2>فعالیت هفته</h2><p class="muted">اندازه هر ستون نشان می‌دهد آن روز چقدر درگیر تمرین بوده‌ای.</p><div class="activity-strip">';
+        $labels=['شنبه','یک‌شنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنج‌شنبه','جمعه']; $top=max(1,max($week));
+        foreach ($week as $i=>$value) echo '<div class="activity-day"><span class="activity-bar" style="height:'.round($value/$top*100).'%" title="'.h($labels[$i]).' · '.fa($value).' فعالیت"></span><small>'.h($labels[$i]).'</small></div>';
+        echo '</div><p class="muted">یک روز فقط وقتی فعال شمرده می‌شود که دست‌کم یک کار واقعی در آن ثبت شده باشد؛ بازدید صفحه حساب نمی‌شود.</p></div>';
+        echo '<div class="panel-columns"><section class="panel-card"><h2>شکست فعالیت</h2><div class="panel-list">';
+        foreach ($kinds as [$table,$label,$hint]) echo '<div class="usage-row"><span>'.h($label).'<small class="muted"> · '.h($hint).'</small></span><strong>'.fa($counts[$table]).'</strong></div>';
+        echo '</div></section><section class="panel-card"><h2>Streak چطور محاسبه می‌شود؟</h2><ul class="check-list"><li>هر روزی که دست‌کم یک کار واقعی ثبت کنی، برای آن روز شمرده می‌شود.</li><li>اگر یک روز کامل بی‌فعالیت بماند، شمارنده به صفر برمی‌گردد؛ روزهای قبلی حفظ می‌شوند.</li><li>فعالیت امروز که هنوز ثبت نشده، Streak دیروز را از بین نمی‌برد.</li></ul></section></div>';
     } elseif ($sub==='settings') {
         panel_head('تنظیمات','تنظیمات حساب و اعلان‌های شما.');
         echo '<div class="settings-grid"><article class="setting-card"><div><h3>اعلان‌های ایمیلی</h3><span class="muted">خبر پروژه‌ها و پاسخ‌های انجمن</span></div><span class="pill">فعال</span></article><article class="setting-card"><div><h3>اعلان‌های پیامکی</h3><span class="muted">یادآور مسیر یادگیری</span></div><span class="pill">غیرفعال</span></article><article class="setting-card"><div><h3>نمایش پروفایل در انجمن</h3><span class="muted">نمایش نام در گفت‌وگوها</span></div><span class="pill">فعال</span></article><article class="setting-card"><div><h3>ویرایش پروفایل</h3><span class="muted">نام و ایمیل حساب</span></div>'.linkto('dashboard/profile','ویرایش','btn btn-small btn-outline').'</article></div>';

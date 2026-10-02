@@ -34,6 +34,7 @@
       settings: {}, subscriptions: [], messages: [], users: [],
       nova: [], solutions: [], snippets: [], runs: 0,
       chat: [], reviews: [], terminal: [], payments: [], replies: [], follows: [],
+      activity: [],
       workspaceFiles: { "main.py": "", "README.md": "# Noventix workspace" },
       packages: []
     };
@@ -42,7 +43,63 @@
   var state = Object.assign(blank(), read() || {});
   if (!state.workspaceFiles || typeof state.workspaceFiles !== "object") state.workspaceFiles = blank().workspaceFiles;
   if (!Array.isArray(state.packages)) state.packages = blank().packages.slice();
+  if (!Array.isArray(state.activity)) state.activity = blank().activity.slice();
   var activeFile = "main.py";
+
+  /* A day counts as active only when something real happened on it, so the
+     streak reflects work rather than page visits. */
+  function dayKey(date) { return (date || new Date()).toISOString().slice(0, 10); }
+
+  function recordActivity(kind) {
+    var today = dayKey();
+    var last = state.activity[state.activity.length - 1];
+    if (last && last.day === today) { last.count++; last.kind = kind; }
+    else state.activity.push({ day: today, count: 1, kind: kind });
+    if (state.activity.length > 400) state.activity = state.activity.slice(-400);
+  }
+
+  function streak() {
+    if (!state.activity.length) return 0;
+    var days = {};
+    state.activity.forEach(function (entry) { days[entry.day] = true; });
+    var run = 0;
+    var cursor = new Date();
+    // Today without activity yet should not break yesterday's streak.
+    if (!days[dayKey(cursor)]) cursor.setDate(cursor.getDate() - 1);
+    while (days[dayKey(cursor)]) { run++; cursor.setDate(cursor.getDate() - 1); }
+    return run;
+  }
+
+  function bestStreak() {
+    var days = state.activity.map(function (entry) { return entry.day; }).sort();
+    var best = 0; var run = 0; var previous = null;
+    days.forEach(function (day) {
+      if (previous) {
+        var gap = (new Date(day) - new Date(previous)) / 86400000;
+        run = gap === 1 ? run + 1 : 1;
+      } else run = 1;
+      if (run > best) best = run;
+      previous = day;
+    });
+    return best;
+  }
+
+  function activeDaysThisMonth() {
+    var month = dayKey().slice(0, 7);
+    var seen = {};
+    state.activity.forEach(function (entry) { if (entry.day.indexOf(month) === 0) seen[entry.day] = true; });
+    return Object.keys(seen).length;
+  }
+
+  function activityThisWeek() {
+    var out = [0, 0, 0, 0, 0, 0, 0];
+    var now = new Date();
+    state.activity.forEach(function (entry) {
+      var delta = Math.floor((now - new Date(entry.day)) / 86400000);
+      if (delta >= 0 && delta < 7) out[6 - delta] += entry.count;
+    });
+    return out;
+  }
 
   function store() {
     try { localStorage.setItem(KEY, JSON.stringify(state)); }
@@ -207,6 +264,7 @@
         running = false;
         setTerminalBusy(false);
         adoptFiles(result.files);
+        if (result.ok && command !== "help" && command !== "--help") { recordActivity("terminal_runs"); store(); }
         if (!result.ok && result.output) appendTerminal(result.output, "term-error");
         if (stop) stop.disabled = true;
       },
@@ -472,6 +530,7 @@
       if (state.solutions.indexOf(index) < 0) state.solutions.push(index);
       if (state.challenges.indexOf(index) < 0) state.challenges.push(index);
       state.snippets.unshift({ challenge: index, code: code, created_at: new Date().toISOString() });
+      recordActivity("solved");
       store();
       note(form, "راه‌حل ثبت شد؛ چالش به فهرست شما اضافه شد.", "success");
       paintStats(); paintChallenges(); paintSnippets();
@@ -500,6 +559,7 @@
       if (code.length < 20) { note(form, "کد باید دست‌کم ۲۰ نویسه باشد.", "error"); return; }
       var findings = reviewCode(code);
       state.reviews.unshift({ code: code, findings: findings, created_at: new Date().toISOString() });
+      recordActivity("reviews");
       store();
       note(form, "بررسی انجام شد.", "success");
       paintReview(findings);
@@ -556,7 +616,9 @@
       projects_all: state.projects.length,
       enroll_all: state.enrollments.length,
       xp: 2480 + state.challenges.length * 120,
-      streak: 7 + state.projects.length,
+      streak: streak(),
+      streak_best: Math.max(bestStreak(), streak()),
+      active_days: activeDaysThisMonth(),
       runs: state.runs,
       terminal_runs: (state.terminal || []).length,
       chat_messages: state.chat.length,
@@ -579,6 +641,37 @@
       var plan = n.getAttribute("data-plan-count");
       n.textContent = fa(state.subscriptions.filter(function (s) { return planById(s.plan).name === plan; }).length);
     });
+    paintActivityStrip();
+  }
+
+  /* The strip is rebuilt from the recorded days, so an empty week shows flat
+     columns instead of invented numbers. */
+  function paintActivityStrip() {
+    var host = el("[data-activity-strip]");
+    if (!host) return;
+    var counts = activityThisWeek();
+    var top = Math.max.apply(null, [1].concat(counts));
+    var labels = ["شنبه", "یک‌شنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه"];
+    host.replaceChildren();
+    counts.forEach(function (count, index) {
+      var cell = document.createElement("div");
+      cell.className = "activity-day";
+      var bar = document.createElement("span");
+      bar.className = "activity-bar";
+      bar.style.height = Math.round(count / top * 100) + "%";
+      bar.title = labels[index] + " · " + fa(count) + " فعالیت";
+      var caption = document.createElement("small");
+      caption.textContent = labels[index];
+      cell.appendChild(bar);
+      cell.appendChild(caption);
+      host.appendChild(cell);
+    });
+    if (!state.activity.length) {
+      var empty = document.createElement("p");
+      empty.className = "muted";
+      empty.textContent = "هنوز فعالیتی ثبت نشده؛ با اجرای اولین کد، تقویم شروع می‌شود.";
+      host.appendChild(empty);
+    }
   }
 
   function paintEnrollments() {
@@ -929,6 +1022,7 @@
         if (output) output.textContent = result.output || (plots && plots.childElementCount ? "نمودارها در پایین نمایش داده شدند." : "کد بدون خطا پایان یافت؛ برای نمایش نتیجه از print استفاده کنید.");
         if (stamp) stamp.textContent = result.ok ? "اجرا پایان یافت" : "اجرا متوقف شد یا خطا داشت";
         state.runs++;
+        recordActivity("runs");
         store();
         paintStats();
       }, function (png) {

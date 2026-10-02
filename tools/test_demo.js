@@ -176,7 +176,16 @@ const followButton = { getAttribute: () => "عضو دیگر", textContent: "" };
 forum.handlers.click({ target: { closest: (selector) => selector === "[data-follow-user]" ? followButton : null } });
 assert.equal(followButton.textContent, "دنبال می‌کنید");
 assert.ok(JSON.parse(memory.get("noventix.demo.v1")).follows.includes("عضو دیگر"));
-state = JSON.parse(memory.get("noventix.demo.v1"));
+
+// Streak counts real work and survives an inactive today, but a full missed
+// day ends it. Dates are seeded directly so the boundary is deterministic.
+function seedActivity(days) {
+  const snapshot = JSON.parse(memory.get("noventix.demo.v1"));
+  snapshot.activity = days.map((day) => ({ day, count: 1, kind: "runs" }));
+  memory.set("noventix.demo.v1", JSON.stringify(snapshot));
+}
+function activityPage() { return load("panel/student/activity"); }
+const daysAgo = (n) => new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
 
 // a signed-in account without a full name must still be sent to the gate
 state = JSON.parse(memory.get("noventix.demo.v1"));
@@ -420,6 +429,28 @@ assert.equal(reloaded.content[1].title, "مقاله آزمایشی تازه");
 assert.equal(reloaded.terminal.length, 2);
 assert.equal(reloaded.runs, 1);
 assert.equal(reloaded.reviews.length, 0);
+
+// Streak counts real work on real days: an inactive today keeps yesterday's
+// run alive, a fully missed day ends it, and a busy day still counts once.
+function streakAfter(days) {
+  seedActivity(days);
+  const app = activityPage();
+  const node = { getAttribute: () => "streak", textContent: "" };
+  app.context.document.querySelectorAll = (selector) => (selector === "[data-stat]" ? [node] : []);
+  submit(app, "review", { code: "def add(a, b):\n    return a + b" });
+  return node.textContent;
+}
+assert.equal(streakAfter([daysAgo(1), daysAgo(2), daysAgo(3)]), "۴", "an inactive today does not break yesterday's streak");
+assert.equal(streakAfter([daysAgo(2), daysAgo(3), daysAgo(4)]), "۱", "a missed day resets the streak to today");
+assert.equal(streakAfter([daysAgo(1)]), "۲", "activity today joins yesterday's run");
+
+const repeatedDay = activityPage();
+repeatedDay.context.document.querySelectorAll = () => [];
+submit(repeatedDay, "review", { code: "def add(a, b):\n    return a + b" });
+submit(repeatedDay, "review", { code: "def mul(a, b):\n    return a * b" });
+const days = JSON.parse(memory.get("noventix.demo.v1")).activity;
+assert.equal(days.length, 2, "two actions on one day are stored as one entry per day");
+assert.ok(days.every((entry) => /^\d{4}-\d{2}-\d{2}$/.test(entry.day)), "activity days are plain calendar dates");
 
 async function testPythonWorker() {
   const workerSource = fs.readFileSync(__dirname + "/../public/assets/python-worker.js", "utf8");

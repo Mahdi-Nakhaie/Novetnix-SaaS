@@ -17,6 +17,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from catalog import (  # noqa: E402
     PLANS, COMPARISON, COURSES, PROJECTS, CHALLENGES, BADGES,
     TRACKS, ANNOUNCEMENTS, CONTENT_ITEMS, SETTINGS_GROUPS, TICKET_PRIORITIES,
+    ACTIVITY_WEEKS, ACTIVITY_LABELS, ACTIVITY_KINDS,
 )
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -113,9 +114,15 @@ def plan_cards(short=False):
         )
         for feature in p["features"][:limit]:
             out += f"<li>{h(feature)}</li>"
+        out += "</ul>"
+        if not short and p.get("limits"):
+            out += '<div class="plan-limits"><span class="eyebrow">سقف دقیق این پلن</span><table><tbody>'
+            for label, value in p["limits"]:
+                out += f'<tr><th scope="row">{h(label)}</th><td>{h(value)}</td></tr>'
+            out += "</tbody></table></div>"
         target = "login" if p["id"] == "free" else "panel/student/subscription"
         label = "شروع رایگان" if p["id"] == "free" else "انتخاب پلن"
-        out += (f'</ul><a class="btn {"btn-gold" if featured else "btn-outline"} full" '
+        out += (f'<a class="btn {"btn-gold" if featured else "btn-outline"} full" '
                 f'href="{h(href(target))}">{label}</a></article>')
     return out + "</div>"
 
@@ -371,7 +378,23 @@ def view_pricing():
         for v in values:
             out += f"<td>{h(v)}</td>"
         out += "</tr>"
-    out += ('</tbody></table></div></section><section class="section container"><div class="cta-panel">'
+    out += ('</tbody></table></div>'
+            '<div class="table-wrap compare-wrap"><table class="compare-table">'
+            '<caption class="sr-only">سقف دقیق امکانات هر پلن</caption>'
+            '<thead><tr><th scope="col">سقف دقیق</th>')
+    for p in PLANS:
+        out += f'<th scope="col">{h(p["name"])}</th>'
+    out += "</tr></thead><tbody>"
+    for index in range(len(PLANS[0]["limits"])):
+        label = PLANS[0]["limits"][index][0]
+        out += f'<tr><th scope="row">{h(label)}</th>'
+        for p in PLANS:
+            out += f'<td>{h(p["limits"][index][1])}</td>'
+        out += "</tr>"
+    out += ('</tbody></table></div>'
+            '<p class="fine-print">سقف‌ها ماهانه شمرده می‌شوند و در ابتدای هر دوره بازنشانی می‌شوند. '
+            'اگر به سقف برسی، دسترسی‌ات قطع نمی‌شود؛ فقط تا دورهٔ بعد امکان استفادهٔ بیشتر از آن مورد را نداری.</p>'
+            '</section><section class="section container"><div class="cta-panel">'
             '<span class="eyebrow">مسیر یادگیری</span><h2>پلن‌ها و امکانات</h2>'
             '<p>برای فعال‌سازی پلن و دریافت راهنمای پرداخت با پشتیبانی تماس بگیرید.</p>'
             + linkto("panel/student/subscription", "مشاهده پلن‌ها ←", "btn btn-light") + "</div></section></main>")
@@ -798,6 +821,34 @@ def gamification_view():
     return out + "</div></section></div>"
 
 
+def activity_view():
+    out = panel_head("فعالیت و Streak", "هر روزی که کد زدی، در این تقویم ثبت می‌شود.")
+    out += stat_grid([("Streak فعلی", "۰ روز", "streak"), ("بلندترین Streak", "۰ روز", "streak_best"),
+                      ("روزهای فعال این ماه", "۰", "active_days"), ("XP این هفته", "۰", "week_now")])
+    out += ('<div class="panel-card"><h2>فعالیت هفته</h2>'
+            '<p class="muted">اندازه‌های هر ستون نشان می‌دهد آن روز چقدر درگیر کد و تمرین بودی.</p>'
+            '<div class="activity-strip" data-activity-strip>')
+    for label, value in zip(ACTIVITY_LABELS, ACTIVITY_WEEKS[-7:]):
+        out += (f'<div class="activity-day"><span class="activity-bar" style="height:{value * 10}%" '
+                f'title="{h(label)} · {h(fa(value))} فعالیت"></span><small>{h(label)}</small></div>')
+    out += ('</div><p class="muted">ستون‌ها بر اساس تعداد اجرای کد، چالش حل‌شده و بازبینی محاسبه می‌شوند؛ '
+            'یک روز فقط وقتی فعال شمرده می‌شود که حداقل یک کار واقعی ثبت شده باشد.</p></div>')
+    out += '<div class="panel-columns"><section class="panel-card"><h2>شکست فعالیت</h2><div class="panel-list">'
+    for key, title, hint in ACTIVITY_KINDS:
+        out += (f'<div class="usage-row"><span>{h(title)}<small class="muted"> · {h(hint)}</small></span>'
+                f'<strong data-stat="{h(key)}">۰</strong></div>')
+    out += ('</div></section><section class="panel-card"><h2>Streak چطور محاسبه می‌شود؟</h2>'
+            '<ul class="check-list">'
+            '<li>هر روزی که دست‌کم یک کد اجرا کنی یا یک چالش حل کنی، برای آن روز ثبت می‌شود.</li>'
+            '<li>اگر یک روز کامل بی‌فعالیت بماند، شمارنده به صفر برمی‌گردد؛ روزهای فعال قبلی حفظ می‌شوند.</li>'
+            '<li>ستون‌های کم‌ارتفاع هم روز فعال حساب می‌شوند؛ فقط حجم کار را نشان می‌دهند.</li>'
+            '</ul></section></div>')
+    out += ('<div class="panel-card"><h2>هفته‌های اخیر</h2>'
+            '<p class="muted">دوازده هفته گذشته، از قدیم به جدید.</p>'
+            + bars(ACTIVITY_WEEKS, True) + '</div>')
+    return out
+
+
 def profile_view():
     out = panel_head("پروفایل من", "اطلاعات نمایش داده‌شده در حساب کاربری.")
     out += ('<div class="profile-head"><div>'
@@ -983,6 +1034,8 @@ def student_section(sub):
         return panel_head("پشتیبانی", "تیکت‌های باز و اولویت‌بندی آن‌ها.") + ticket_tools()
     if sub == "gamification":
         return gamification_view()
+    if sub == "activity":
+        return activity_view()
     if sub == "profile":
         return profile_view()
     if sub == "settings":
@@ -1253,6 +1306,7 @@ STUDENT_ITEMS = [("", "نمای کلی"), ("learning", "مسیر یادگیری"
                  ("nova", "Nova AI"),
                  ("community", "Community"), ("notifications", "اعلان‌ها"), ("subscription", "اشتراک"),
                  ("payments", "پرداخت‌ها"), ("support", "پشتیبانی"), ("gamification", "Gamification"),
+                 ("activity", "فعالیت و Streak"),
                  ("profile", "پروفایل"), ("settings", "تنظیمات")]
 
 ADMIN_ITEMS = [("", "Overview"), ("users", "کاربران"), ("users-new", "کاربران جدید"),
