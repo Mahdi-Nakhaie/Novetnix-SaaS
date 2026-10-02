@@ -155,23 +155,27 @@ PROJECTS = [
 ]
 
 CHALLENGES = [
-    ("Daily Challenge", "یک function برای محاسبه تخفیف بنویس", 40, "Python"),
-    ("Weekly Challenge", "API سفارش‌های فروشگاه را کامل کن", 200, "FastAPI"),
-    ("Learning Quest", "سه درس FastAPI را کامل کن", 120, "Web"),
-    ("Daily Challenge", "داده گم‌شده را با Pandas پاک‌سازی کن", 50, "Data"),
-    ("Weekly Challenge", "مدل دسته‌بندی ریزش مشتری را آموزش بده", 250, "ML"),
+    ("Daily Challenge", "یک تابع برای محاسبه تخفیف با مدیریت ورودی خالی بنویس", 40, "Python"),
+    ("Daily Challenge", "داده گم‌شده را با Pandas پاک‌سازی و مستند کن", 50, "Data Science"),
+    ("Daily Challenge", "میانگین متحرک یک سری زمانی را با NumPy حساب کن", 60, "Data Science"),
+    ("Weekly Challenge", "مدل دسته‌بندی ریزش مشتری را با داده نامتوازن آموزش بده", 250, "Machine Learning"),
+    ("Weekly Challenge", "معیار ارزیابی مدل را متناسب با هزینه خطا انتخاب کن", 200, "Machine Learning"),
+    ("Weekly Challenge", "یک شبکه عصبی ساده برای داده جدولی بساز و آموزش بده", 260, "Deep Learning"),
+    ("Weekly Challenge", "بیش‌برازش را با تنظیم و اعتبارسنجی کاهش بده", 240, "Deep Learning"),
+    ("Learning Quest", "متن فارسی را نرمال‌سازی و یک دسته‌بند احساسات بساز", 150, "NLP"),
+    ("Learning Quest", "یک مدل یادگیری عمیق را با معیار روشن ارزیابی کن", 180, "AI"),
 ]
 
 BADGES = [
     ("Python Explorer", "🐍", "۶۸٪ مسیر پایتون"),
     ("Day Streak ۷", "🔥", "۷ روز پیوسته"),
-    ("API Starter", "🚀", "اولین سرویس FastAPI"),
+    ("Data Cleaner", "🧹", "اولین پاک‌سازی داده"),
     ("AI Curious", "🤖", "شروع مسیر هوش مصنوعی"),
     ("First Project", "⭐", "تحویل اولین پروژه"),
-    ("FastAPI Learner", "🏅", "۳ درس FastAPI"),
+    ("Model Trainer", "🏅", "آموزش اولین مدل یادگیری ماشین"),
 ]
 
-TRACKS = [("Python", 68), ("Web", 32), ("AI", 24), ("Data", 18)]
+TRACKS = [("Python", 68), ("Data Science", 46), ("Machine Learning", 34), ("Deep Learning", 24), ("AI", 18)]
 
 ANNOUNCEMENTS = [
     ("تست‌های API تو آماده بررسی است.",

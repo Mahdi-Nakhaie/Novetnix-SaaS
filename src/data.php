@@ -76,24 +76,28 @@ const PROJECTS = [
 ];
 
 const CHALLENGES = [
-    ['kind'=>'Daily Challenge','title'=>'یک function برای محاسبه تخفیف بنویس','xp'=>40,'topic'=>'Python'],
-    ['kind'=>'Weekly Challenge','title'=>'API سفارش‌های فروشگاه را کامل کن','xp'=>200,'topic'=>'FastAPI'],
-    ['kind'=>'Learning Quest','title'=>'سه درس FastAPI را کامل کن','xp'=>120,'topic'=>'Web'],
-    ['kind'=>'Daily Challenge','title'=>'داده گم‌شده را با Pandas پاک‌سازی کن','xp'=>50,'topic'=>'Data'],
-    ['kind'=>'Weekly Challenge','title'=>'مدل دسته‌بندی ریزش مشتری را آموزش بده','xp'=>250,'topic'=>'ML'],
+    ['kind'=>'Daily Challenge','title'=>'یک تابع برای محاسبه تخفیف با مدیریت ورودی خالی بنویس','xp'=>40,'topic'=>'Python'],
+    ['kind'=>'Daily Challenge','title'=>'داده گم‌شده را با Pandas پاک‌سازی و مستند کن','xp'=>50,'topic'=>'Data Science'],
+    ['kind'=>'Daily Challenge','title'=>'میانگین متحرک یک سری زمانی را با NumPy حساب کن','xp'=>60,'topic'=>'Data Science'],
+    ['kind'=>'Weekly Challenge','title'=>'مدل دسته‌بندی ریزش مشتری را با داده نامتوازن آموزش بده','xp'=>250,'topic'=>'Machine Learning'],
+    ['kind'=>'Weekly Challenge','title'=>'معیار ارزیابی مدل را متناسب با هزینه خطا انتخاب کن','xp'=>200,'topic'=>'Machine Learning'],
+    ['kind'=>'Weekly Challenge','title'=>'یک شبکه عصبی ساده برای داده جدولی بساز و آموزش بده','xp'=>260,'topic'=>'Deep Learning'],
+    ['kind'=>'Weekly Challenge','title'=>'بیش‌برازش را با تنظیم و اعتبارسنجی کاهش بده','xp'=>240,'topic'=>'Deep Learning'],
+    ['kind'=>'Learning Quest','title'=>'متن فارسی را نرمال‌سازی و یک دسته‌بند احساسات بساز','xp'=>150,'topic'=>'NLP'],
+    ['kind'=>'Learning Quest','title'=>'یک مدل یادگیری عمیق را با معیار روشن ارزیابی کن','xp'=>180,'topic'=>'AI'],
 ];
 
 const BADGES = [
     ['title'=>'Python Explorer','icon'=>'🐍','need'=>'۶۸٪ مسیر پایتون'],
     ['title'=>'Day Streak ۷','icon'=>'🔥','need'=>'۷ روز پیوسته'],
-    ['title'=>'API Starter','icon'=>'🚀','need'=>'اولین سرویس FastAPI'],
+    ['title'=>'Data Cleaner','icon'=>'🧹','need'=>'اولین پاک‌سازی داده'],
     ['title'=>'AI Curious','icon'=>'🤖','need'=>'شروع مسیر هوش مصنوعی'],
     ['title'=>'First Project','icon'=>'⭐','need'=>'تحویل اولین پروژه'],
-    ['title'=>'FastAPI Learner','icon'=>'🏅','need'=>'۳ درس FastAPI'],
+    ['title'=>'Model Trainer','icon'=>'🏅','need'=>'آموزش اولین مدل یادگیری ماشین'],
 ];
 
 const TRACKS = [
-    ['name'=>'Python','percent'=>68],['name'=>'Web','percent'=>32],['name'=>'AI','percent'=>24],['name'=>'Data','percent'=>18],
+    ['name'=>'Python','percent'=>68],['name'=>'Data Science','percent'=>46],['name'=>'Machine Learning','percent'=>34],['name'=>'Deep Learning','percent'=>24],['name'=>'AI','percent'=>18],
 ];
 
 const ANNOUNCEMENTS = [
