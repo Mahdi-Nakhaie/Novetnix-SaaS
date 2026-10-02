@@ -7,6 +7,27 @@
 const BASE = "https://cdn.jsdelivr.net/pyodide/v0.27.7/full/";
 const DEFAULT_PACKAGES = ["numpy", "pandas", "matplotlib", "scipy"];
 
+/* Everything that touches numpy, pandas or matplotlib has to run after the
+   packages land; importing them at boot raised ModuleNotFoundError instead. */
+const MATPLOTLIB_HOOK = `
+import base64 as _base64
+import io as _io
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import noventixPlot
+
+def _noventix_show(*_args, **_kwargs):
+    for number in plt.get_fignums():
+        figure = plt.figure(number)
+        buffer = _io.BytesIO()
+        figure.savefig(buffer, format="png", dpi=110, bbox_inches="tight", facecolor="white")
+        noventixPlot.emit(_base64.b64encode(buffer.getvalue()).decode("ascii"))
+        plt.close(figure)
+
+plt.show = _noventix_show
+`;
+
 let enginePromise = null;
 
 /* Pyodide failures arrive as Error, ErrnoError or plain objects; String() on
@@ -34,25 +55,9 @@ function boot() {
     importScripts(BASE + "pyodide.js");
     const engine = await loadPyodide({ indexURL: BASE });
     engine.registerJsModule("noventixPlot", { emit: (png) => self.postMessage({ type: "plot", png }) });
-    engine.runPython(`
-import base64 as _base64
-import io as _io
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import noventixPlot
-
-def _noventix_show(*_args, **_kwargs):
-    for number in plt.get_fignums():
-        figure = plt.figure(number)
-        buffer = _io.BytesIO()
-        figure.savefig(buffer, format="png", dpi=110, bbox_inches="tight", facecolor="white")
-        noventixPlot.emit(_base64.b64encode(buffer.getvalue()).decode("ascii"))
-        plt.close(figure)
-
-plt.show = _noventix_show
-`);
+    self.postMessage({ type: "status", text: "در حال آماده‌سازی کتابخانه‌ها…" });
     await engine.loadPackage(DEFAULT_PACKAGES);
+    engine.runPython(MATPLOTLIB_HOOK);
     return engine;
   })();
   enginePromise.catch(() => { enginePromise = null; });

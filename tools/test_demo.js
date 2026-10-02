@@ -427,6 +427,7 @@ async function testPythonWorker() {
   const filesystem = { "main.py": "print(2+3)" };
   const imports = [];
   const loaded = [];
+  const bootOrder = [];
   let failure = null;
   const engine = {
     FS: {
@@ -444,12 +445,12 @@ async function testPythonWorker() {
     },
     loadedPackages: [],
     registerJsModule(name) { assert.equal(name, "noventixPlot"); },
-    async loadPackage(names) { loaded.push(...[].concat(names)); },
+    async loadPackage(names) { bootOrder.push("packages"); loaded.push(...[].concat(names)); },
     async loadPackagesFromImports(source) { imports.push(source); },
     setStdout({ batched }) { const previous = { stdout: this.previousWriter }; this.previousWriter = batched; return previous; },
     setStderr() {},
     setStdin() {},
-    runPython(source) { assert.match(source, /matplotlib/); },
+    runPython(source) { bootOrder.push("hook"); assert.match(source, /matplotlib/); },
     async runPythonAsync(source) {
       if (source === "_noventix_show()") return;
       if (failure) throw failure;
@@ -466,6 +467,9 @@ async function testPythonWorker() {
   await context.self.onmessage({ data: { type: "execute", code: "print(2+3)", files: { "main.py": "print(2+3)", "3.PNG": "image data" } } });
   assert.deepEqual(imports, ["print(2+3)"]);
   assert.deepEqual(loaded, ["numpy", "pandas", "matplotlib", "scipy"]);
+  // The matplotlib hook imports numpy/matplotlib, so it must run only after
+  // those packages are in the engine.
+  assert.deepEqual(bootOrder, ["packages", "hook"]);
   assert.equal(messages.at(-1).ok, true);
   assert.match(messages.at(-1).output, /5/);
   assert.deepEqual(Object.entries(messages.at(-1).files).sort(), [["3.PNG", "image data"], ["main.py", "print(2+3)"]]);
