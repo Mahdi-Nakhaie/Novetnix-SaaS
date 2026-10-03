@@ -126,6 +126,10 @@ class CoreSchemaTest(unittest.TestCase):
             "INSERT INTO leads(name,source) VALUES ('C','contact')",
             "INSERT INTO leads(name,email,source,status) VALUES ('D','d@example.com','contact','invalid')",
             "INSERT INTO leads(email,source) VALUES ('e@example.com','contact')",
+            "INSERT INTO leads(name,email,source) VALUES ('E','   ','contact')",
+            "INSERT INTO leads(name,phone,source) VALUES ('F','   ','contact')",
+            "INSERT INTO leads(name,email,source) VALUES (' ','f@example.com','contact')",
+            "INSERT INTO leads(name,email,source) VALUES ('G','g@example.com',' ')",
         ):
             with self.subTest(sql=sql), self.assertRaises(sqlite3.IntegrityError):
                 self.db.execute(sql)
@@ -142,6 +146,12 @@ class CoreSchemaTest(unittest.TestCase):
             self.db.execute("INSERT INTO otp_codes(phone,otp_hash,expires_at,created_at) VALUES ('09123456789','other-hash',200,100)")
         with self.assertRaises(sqlite3.IntegrityError):
             self.db.execute("UPDATE otp_codes SET attempts=-1 WHERE phone='09123456789'")
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute("UPDATE otp_codes SET attempts=6 WHERE phone='09123456789'")
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute("UPDATE otp_codes SET expires_at=100 WHERE phone='09123456789'")
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute("UPDATE otp_codes SET used_at=201 WHERE phone='09123456789'")
         self.assertEqual(self.db.execute("UPDATE otp_codes SET used_at=150 WHERE phone='09123456789' AND used_at IS NULL AND expires_at>=150").rowcount, 1)
         self.assertEqual(self.db.execute("UPDATE otp_codes SET used_at=151 WHERE phone='09123456789' AND used_at IS NULL AND expires_at>=151").rowcount, 0)
         self.assertEqual(self.db.execute("SELECT otp_hash,used_at,attempts FROM otp_codes").fetchone(), ('hashed-value', 150, 0))
