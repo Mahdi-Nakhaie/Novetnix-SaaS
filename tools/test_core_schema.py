@@ -22,7 +22,7 @@ class CoreSchemaTest(unittest.TestCase):
         tables = lambda schema: set(re.findall(r"CREATE TABLE IF NOT EXISTS (\w+)", schema))
         self.assertEqual(tables(SQLITE_SCHEMA), tables(MYSQL_SCHEMA))
         self.assertTrue({"users", "courses", "lessons"} <= tables(SQLITE_SCHEMA))
-        self.assertEqual(len(tables(SQLITE_SCHEMA)), 21)
+        self.assertEqual(len(tables(SQLITE_SCHEMA)), 23)
 
     def test_multiple_users_courses_and_lessons(self):
         self.db.executemany("INSERT INTO users(phone) VALUES (?)", [("09123456789",), ("09987654321",)])
@@ -108,6 +108,29 @@ class CoreSchemaTest(unittest.TestCase):
         with self.assertRaises(sqlite3.IntegrityError):
             self.db.execute("DELETE FROM users WHERE id=1")
         self.assertEqual(self.db.execute("PRAGMA foreign_key_check").fetchall(), [])
+
+    def test_activities_require_user_and_support_history_lookup(self):
+        self.db.execute("INSERT INTO users(phone) VALUES ('09123456789')")
+        self.db.executemany("INSERT INTO activities(user_id,kind) VALUES (1,?)", [('lesson_completed',), ('code_run',)])
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute("INSERT INTO activities(user_id,kind) VALUES (999,'code_run')")
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute('DELETE FROM users WHERE id=1')
+        self.assertEqual(self.db.execute('SELECT kind FROM activities WHERE user_id=1 ORDER BY created_at,id').fetchall(), [('lesson_completed',), ('code_run',)])
+        self.assertTrue(any(row[1] == 'idx_activities_user_created' for row in self.db.execute('PRAGMA index_list(activities)')))
+
+    def test_leads_require_contact_and_track_status(self):
+        self.db.execute("INSERT INTO leads(name,email,source) VALUES ('A','a@example.com','contact')")
+        self.db.execute("INSERT INTO leads(name,phone,source,status) VALUES ('B','09123456789','signup','contacted')")
+        for sql in (
+            "INSERT INTO leads(name,source) VALUES ('C','contact')",
+            "INSERT INTO leads(name,email,source,status) VALUES ('D','d@example.com','contact','invalid')",
+            "INSERT INTO leads(email,source) VALUES ('e@example.com','contact')",
+        ):
+            with self.subTest(sql=sql), self.assertRaises(sqlite3.IntegrityError):
+                self.db.execute(sql)
+        self.assertEqual(self.db.execute('SELECT status,COUNT(*) FROM leads GROUP BY status ORDER BY status').fetchall(), [('contacted', 1), ('new', 1)])
+        self.assertTrue(any(row[1] == 'idx_leads_status_created' for row in self.db.execute('PRAGMA index_list(leads)')))
 
     def test_otp_stores_only_hash_and_prevents_reuse(self):
         columns = {row[1] for row in self.db.execute('PRAGMA table_info(otp_codes)')}
