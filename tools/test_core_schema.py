@@ -22,7 +22,7 @@ class CoreSchemaTest(unittest.TestCase):
         tables = lambda schema: set(re.findall(r"CREATE TABLE IF NOT EXISTS (\w+)", schema))
         self.assertEqual(tables(SQLITE_SCHEMA), tables(MYSQL_SCHEMA))
         self.assertTrue({"users", "courses", "lessons"} <= tables(SQLITE_SCHEMA))
-        self.assertEqual(len(tables(SQLITE_SCHEMA)), 20)
+        self.assertEqual(len(tables(SQLITE_SCHEMA)), 21)
 
     def test_multiple_users_courses_and_lessons(self):
         self.db.executemany("INSERT INTO users(phone) VALUES (?)", [("09123456789",), ("09987654321",)])
@@ -64,6 +64,51 @@ class CoreSchemaTest(unittest.TestCase):
             self.db.execute("DELETE FROM courses WHERE id=1")
         self.assertEqual(self.db.execute("PRAGMA foreign_key_check").fetchall(), [])
 
+    def test_lesson_progress_is_unique_per_user_and_lesson(self):
+        self.db.executemany("INSERT INTO users(phone) VALUES (?)", [("09123456789",), ("09987654321",)])
+        self.db.execute("INSERT INTO courses(slug,title,description) VALUES ('python','Python','Intro')")
+        self.db.executemany(
+            "INSERT INTO lessons(course_id,title,content,position) VALUES (1,?,?,?)",
+            [("Intro", "Text", 1), ("Functions", "Text", 2)],
+        )
+        self.db.executemany(
+            "INSERT INTO lesson_progress(user_id,lesson_id) VALUES (?,?)",
+            [(1, 1), (1, 2), (2, 1)],
+        )
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM lesson_progress").fetchone()[0], 3)
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute("INSERT INTO lesson_progress(user_id,lesson_id) VALUES (1,1)")
+        self.assertEqual(
+            self.db.execute("SELECT c.slug FROM lesson_progress p JOIN lessons l ON l.id=p.lesson_id JOIN courses c ON c.id=l.course_id WHERE p.user_id=1 AND p.lesson_id=1").fetchone()[0],
+            "python",
+        )
+        self.assertNotIn("course_id", [row[1] for row in self.db.execute("PRAGMA table_info(lesson_progress)")])
+        indexes = self.db.execute("PRAGMA index_list(lesson_progress)").fetchall()
+        self.assertTrue(any(index[1] == "idx_lesson_progress_lesson" for index in indexes))
+        self.assertTrue(any(index[2] for index in indexes))
+
+    def test_progress_requires_valid_parents_and_consistent_completion(self):
+        self.db.execute("INSERT INTO users(phone) VALUES ('09123456789')")
+        self.db.execute("INSERT INTO courses(slug,title,description) VALUES ('python','Python','Intro')")
+        self.db.execute("INSERT INTO lessons(course_id,title,content,position) VALUES (1,'Intro','Text',1)")
+        for sql in (
+            "INSERT INTO lesson_progress(user_id,lesson_id) VALUES (999,1)",
+            "INSERT INTO lesson_progress(user_id,lesson_id) VALUES (1,999)",
+            "INSERT INTO lesson_progress(user_id,lesson_id) VALUES (NULL,1)",
+            "INSERT INTO lesson_progress(user_id,lesson_id) VALUES (1,NULL)",
+            "INSERT INTO lesson_progress(user_id,lesson_id,status) VALUES (1,1,'unknown')",
+            "INSERT INTO lesson_progress(user_id,lesson_id,status) VALUES (1,1,'completed')",
+            "INSERT INTO lesson_progress(user_id,lesson_id,completed_at) VALUES (1,1,'2026-10-03 12:00:00')",
+        ):
+            with self.subTest(sql=sql), self.assertRaises(sqlite3.IntegrityError):
+                self.db.execute(sql)
+        self.db.execute("INSERT INTO lesson_progress(user_id,lesson_id,status,completed_at) VALUES (1,1,'completed','2026-10-03 12:00:00')")
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute("DELETE FROM lessons WHERE id=1")
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute("DELETE FROM users WHERE id=1")
+        self.assertEqual(self.db.execute("PRAGMA foreign_key_check").fetchall(), [])
+
     def test_existing_database_keeps_users_and_adds_core_tables(self):
         self.db.close()
         self.db = sqlite3.connect(":memory:")
@@ -75,6 +120,9 @@ class CoreSchemaTest(unittest.TestCase):
         self.db.executescript(SQLITE_SCHEMA)
         self.assertEqual(self.db.execute("SELECT phone FROM users").fetchall(), [("09123456789",)])
         self.assertEqual(self.db.execute("SELECT slug FROM courses").fetchall(), [("python",)])
+        self.db.execute("INSERT INTO lessons(course_id,title,content,position) VALUES (1,'Intro','Text',1)")
+        self.db.execute("INSERT INTO lesson_progress(user_id,lesson_id) VALUES (1,1)")
+        self.assertEqual(self.db.execute("SELECT status FROM lesson_progress").fetchone()[0], "started")
 
 
 if __name__ == "__main__":
