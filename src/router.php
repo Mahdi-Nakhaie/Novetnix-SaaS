@@ -22,7 +22,7 @@ function route(): void {
     if ($path==='admin-login') { page_admin_login(); return; }
     if ($path==='dashboard' || str_starts_with($path,'dashboard/')) {
         $u=require_user();
-        if ($u['phone']===(getenv('ADMIN_PHONE') ?: '') && $u['role']!=='admin') redirect('admin-login');
+        if ($u['phone']===(config_value('ADMIN_PHONE') ?: '') && $u['role']!=='admin') redirect('admin-login');
         $allowed=['profile','learning','projects','community','nova','subscription','users','users-new','courses','catalog','subscriptions','messages','analytics','challenges','payments','support','announcements','gamification','activity','content','settings'];
         if (str_starts_with($path,'dashboard/') && !in_array(substr($path,10),$allowed,true)) { http_response_code(404); head_page('یافت نشد',''); notice(); echo '<main class="container section"><h1>این صفحه پیدا نشد.</h1>'; linkto('dashboard','بازگشت به پنل ←','inline-link'); echo '</main>'; foot_page(); return; }
         head_page('پنل', '', true); notice(); panel(str_starts_with($path,'dashboard/') ? substr($path,10) : ''); foot_page(true); return;
@@ -155,7 +155,7 @@ function page_login(): void {
 }
 function page_admin_login(): void {
     $u=require_user();
-    if ($u['phone']!==(getenv('ADMIN_PHONE') ?: '')) { http_response_code(403); exit('دسترسی مجاز نیست.'); }
+    if ($u['phone']!==(config_value('ADMIN_PHONE') ?: '')) { http_response_code(403); exit('دسترسی مجاز نیست.'); }
     if ($u['role']==='admin') redirect('dashboard');
     head_page('ورود مدیر','تأیید ورود به پنل مدیریت.'); notice();
     $captcha=captcha_code();

@@ -23,7 +23,7 @@ function flash(string $message, string $kind='success'): void { $_SESSION['flash
 function user(): ?array {
     if (empty($_SESSION['uid'])) return null;
     $u=q('SELECT id,phone,name,role FROM users WHERE id=?',[(int)$_SESSION['uid']])->fetch();
-    if ($u && $u['role']==='admin' && (!hash_equals((string)getenv('ADMIN_PHONE'), $u['phone']) || ($_SESSION['admin_verified_uid'] ?? null)!==(int)$u['id'])) $u['role']='student';
+    if ($u && $u['role']==='admin' && (!hash_equals((string)config_value('ADMIN_PHONE'), $u['phone']) || ($_SESSION['admin_verified_uid'] ?? null)!==(int)$u['id'])) $u['role']='student';
     return $u ?: null;
 }
 function require_user(): array {
@@ -49,24 +49,24 @@ function normalized_phone(string $raw): ?string {
     return preg_match('/^09[0-9]{9}$/D',$raw) ? $raw : null;
 }
 function send_sms(string $phone, string $code): bool {
-    $endpoint=getenv('SMS_API_URL');
-    if (!$endpoint || !getenv('SMS_API_TOKEN') || !preg_match('~^https://~i',$endpoint)) return false;
+    $endpoint=config_value('SMS_API_URL');
+    if (!$endpoint || !config_value('SMS_API_TOKEN') || !preg_match('~^https://~i',$endpoint)) return false;
     $ch=curl_init($endpoint);
-    curl_setopt_array($ch,[CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>json_encode(['phone'=>$phone,'code'=>$code],JSON_THROW_ON_ERROR),CURLOPT_HTTPHEADER=>['Content-Type: application/json','Authorization: Bearer '.getenv('SMS_API_TOKEN')],CURLOPT_RETURNTRANSFER=>true,CURLOPT_TIMEOUT=>8,CURLOPT_CONNECTTIMEOUT=>3,CURLOPT_FOLLOWLOCATION=>false]);
+    curl_setopt_array($ch,[CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>json_encode(['phone'=>$phone,'code'=>$code],JSON_THROW_ON_ERROR),CURLOPT_HTTPHEADER=>['Content-Type: application/json','Authorization: Bearer '.config_value('SMS_API_TOKEN')],CURLOPT_RETURNTRANSFER=>true,CURLOPT_TIMEOUT=>8,CURLOPT_CONNECTTIMEOUT=>3,CURLOPT_FOLLOWLOCATION=>false]);
     $result=curl_exec($ch);
     $status=curl_getinfo($ch,CURLINFO_HTTP_CODE);
     curl_close($ch);
     return $result!==false && $status>=200 && $status<300;
 }
 function nova_answer(array $messages): ?string {
-    $key=getenv('AVALAI_API_KEY');
+    $key=config_value('AVALAI_API_KEY');
     if (!$key || !function_exists('curl_init')) return null;
     $ch=curl_init('https://api.avalai.ir/v1/chat/completions');
     curl_setopt_array($ch,[
         CURLOPT_POST=>true, CURLOPT_RETURNTRANSFER=>true, CURLOPT_FOLLOWLOCATION=>false,
         CURLOPT_CONNECTTIMEOUT=>5, CURLOPT_TIMEOUT=>35,
         CURLOPT_HTTPHEADER=>['Content-Type: application/json','Authorization: Bearer '.$key],
-        CURLOPT_POSTFIELDS=>json_encode(['model'=>getenv('AVALAI_MODEL') ?: 'gpt-6-astra','messages'=>$messages,'max_tokens'=>700],JSON_THROW_ON_ERROR),
+        CURLOPT_POSTFIELDS=>json_encode(['model'=>config_value('AVALAI_MODEL') ?: 'gpt-6-astra','messages'=>$messages,'max_tokens'=>700],JSON_THROW_ON_ERROR),
     ]);
     $body=curl_exec($ch);
     $status=curl_getinfo($ch,CURLINFO_HTTP_CODE);
@@ -108,7 +108,7 @@ function handle_post(string $path): void {
         $u=$phone ? q('SELECT id,password_hash FROM users WHERE phone=?',[$phone])->fetch() : false;
         if (!$u || !password_verify($password,(string)$u['password_hash'])) { flash('شماره موبایل یا رمز عبور صحیح نیست.','error'); redirect('login'); }
         session_regenerate_id(true); $_SESSION['uid']=(int)$u['id']; unset($_SESSION['admin_verified_uid']);
-        if ($phone===(getenv('ADMIN_PHONE') ?: '')) redirect('admin-login');
+        if ($phone===(config_value('ADMIN_PHONE') ?: '')) redirect('admin-login');
         flash('خوش آمدید!'); redirect('dashboard');
     }
     if ($path==='auth/verify') {
@@ -126,15 +126,15 @@ function handle_post(string $path): void {
         if (!$u) { q('INSERT INTO users(phone,name,password_hash) VALUES (?,?,?)',[$phone,$name,$passwordHash]); $u=q('SELECT id FROM users WHERE phone=?',[$phone])->fetch(); }
         else q('UPDATE users SET name=?, password_hash=CASE WHEN password_hash=\'\' THEN ? ELSE password_hash END WHERE id=?',[$name,$passwordHash,$u['id']]);
         session_regenerate_id(true); $_SESSION['uid']=(int)$u['id']; unset($_SESSION['verify_phone'],$_SESSION['verify_name'],$_SESSION['verify_password_hash'],$_SESSION['admin_verified_uid']);
-        if ($phone!=='' && $phone===(getenv('ADMIN_PHONE') ?: '')) redirect('admin-login');
+        if ($phone!=='' && $phone===(config_value('ADMIN_PHONE') ?: '')) redirect('admin-login');
         flash('خوش آمدید!'); redirect('dashboard');
     }
     if ($path==='auth/admin') {
         $u=user();
-        if (!$u || $u['phone']!==getenv('ADMIN_PHONE')) { http_response_code(403); exit('دسترسی مجاز نیست.'); }
+        if (!$u || $u['phone']!==config_value('ADMIN_PHONE')) { http_response_code(403); exit('دسترسی مجاز نیست.'); }
         if (!validate_captcha()) { flash('کد کپچا صحیح نیست.','error'); redirect('admin-login'); }
         $attempts=(int)($_SESSION['admin_attempts'] ?? 0);
-        $hash=getenv('ADMIN_PASSWORD_HASH') ?: '';
+        $hash=config_value('ADMIN_PASSWORD_HASH') ?: '';
         if ($attempts>=5) { http_response_code(429); exit('تعداد تلاش‌ها بیش از حد مجاز است. دوباره وارد شوید.'); }
         $_SESSION['admin_attempts']=$attempts+1;
         if ($hash==='' || !password_verify((string)($_POST['password'] ?? ''),$hash)) { flash('رمز مدیریت صحیح نیست.','error'); redirect('admin-login'); }
