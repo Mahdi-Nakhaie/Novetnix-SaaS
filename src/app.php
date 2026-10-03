@@ -12,8 +12,15 @@ function db(): PDO {
     }
     $db = new PDO($dsn, getenv('DB_USER') ?: null, getenv('DB_PASSWORD') ?: null, [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES=>false]);
     if ($db->getAttribute(PDO::ATTR_DRIVER_NAME)==='sqlite') $db->exec('PRAGMA foreign_keys=ON');
-    $db->exec(file_get_contents(__DIR__.($db->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql' ? '/schema.mysql.sql' : '/schema.sqlite.sql')));
-    try { $db->exec('ALTER TABLE users ADD COLUMN password_hash '.($db->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql' ? "VARCHAR(255) NOT NULL DEFAULT ''" : "TEXT NOT NULL DEFAULT ''")); } catch (Throwable $e) { }
+    $driver=$db->getAttribute(PDO::ATTR_DRIVER_NAME);
+    $db->exec(file_get_contents(__DIR__.($driver==='mysql' ? '/schema.mysql.sql' : '/schema.sqlite.sql')));
+    $columns=$db->query('SELECT * FROM otp_codes LIMIT 0');
+    $names=[];
+    for ($i=0; $i<$columns->columnCount(); $i++) $names[]=$columns->getColumnMeta($i)['name'];
+    if (in_array('code_hash',$names,true)) $db->exec('ALTER TABLE otp_codes RENAME COLUMN code_hash TO otp_hash');
+    if (in_array('sent_at',$names,true)) $db->exec('ALTER TABLE otp_codes RENAME COLUMN sent_at TO created_at');
+    if (!in_array('used_at',$names,true)) $db->exec('ALTER TABLE otp_codes ADD COLUMN used_at '.($driver==='mysql' ? 'BIGINT NULL' : 'INTEGER'));
+    try { $db->exec('ALTER TABLE users ADD COLUMN password_hash '.($driver==='mysql' ? "VARCHAR(255) NOT NULL DEFAULT ''" : "TEXT NOT NULL DEFAULT ''")); } catch (Throwable $e) { }
     return $db;
 }
 function q(string $sql, array $params=[]): PDOStatement { $s=db()->prepare($sql); $s->execute($params); return $s; }
@@ -104,12 +111,12 @@ function handle_post(string $path): void {
         if (!preg_match('/[A-Za-z]/',$password) || !preg_match('/[0-9]/',$password)) { flash('رمز عبور باید دست‌کم یک حرف انگلیسی و یک عدد داشته باشد.','error'); redirect('login'); }
         $count=(int)($_SESSION['otp_requests'] ?? 0);
         if ($count>=8) { flash('تعداد درخواست‌ها بیش از حد مجاز است. بعداً دوباره تلاش کنید.','error'); redirect('login'); }
-        $previous=q('SELECT sent_at FROM otp_codes WHERE phone=?',[$phone])->fetch();
-        if ($previous && time()-(int)$previous['sent_at']<90) { flash('برای درخواست دوباره کمی صبر کنید.','error'); redirect('login'); }
+        $previous=q('SELECT created_at FROM otp_codes WHERE phone=?',[$phone])->fetch();
+        if ($previous && time()-(int)$previous['created_at']<90) { flash('برای درخواست دوباره کمی صبر کنید.','error'); redirect('login'); }
         $code=(string)random_int(100000,999999);
         if (!send_sms($phone,$code)) { flash('ارسال پیامک فعلاً فعال نیست. تنظیمات سرویس پیامک باید توسط مدیر تکمیل شود.','error'); redirect('login'); }
         q('DELETE FROM otp_codes WHERE phone=?',[$phone]);
-        q('INSERT INTO otp_codes(phone,code_hash,expires_at,attempts,sent_at) VALUES (?,?,?,?,?)',[$phone,password_hash($code,PASSWORD_DEFAULT),time()+300,0,time()]);
+        q('INSERT INTO otp_codes(phone,otp_hash,expires_at,attempts,created_at) VALUES (?,?,?,?,?)',[$phone,password_hash($code,PASSWORD_DEFAULT),time()+300,0,time()]);
         $_SESSION['otp_requests']=$count+1;
         $_SESSION['verify_phone']=$phone;
         $_SESSION['verify_name']=$first.' '.$last;
@@ -126,14 +133,15 @@ function handle_post(string $path): void {
         if ($phone===(getenv('ADMIN_PHONE') ?: '')) redirect('admin-login');
         flash('خوش آمدید!'); redirect('dashboard');
     }
-
+    if ($path==='auth/verify') {
         $phone=$_SESSION['verify_phone'] ?? '';
         $code=strtr((string)($_POST['code'] ?? ''),'۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩','01234567890123456789');
         $entry=q('SELECT * FROM otp_codes WHERE phone=?',[$phone])->fetch();
-        if (!$entry || time()>(int)$entry['expires_at'] || (int)$entry['attempts']>=5) { flash('کد منقضی شده است؛ دوباره درخواست دهید.','error'); redirect('login'); }
+        if (!$entry || $entry['used_at']!==null || time()>(int)$entry['expires_at'] || (int)$entry['attempts']>=5) { flash('کد منقضی شده است؛ دوباره درخواست دهید.','error'); redirect('login'); }
         q('UPDATE otp_codes SET attempts=attempts+1 WHERE phone=?',[$phone]);
-        if (!preg_match('/^[0-9]{6}$/D',$code) || !password_verify($code,$entry['code_hash'])) { flash('کد واردشده صحیح نیست.','error'); redirect('verify'); }
-        q('DELETE FROM otp_codes WHERE phone=?',[$phone]);
+        if (!preg_match('/^[0-9]{6}$/D',$code) || !password_verify($code,$entry['otp_hash'])) { flash('کد واردشده صحیح نیست.','error'); redirect('verify'); }
+        $used=q('UPDATE otp_codes SET used_at=? WHERE phone=? AND used_at IS NULL AND expires_at>=? AND attempts<=5', [time(),$phone,time()]);
+        if ($used->rowCount()!==1) { flash('کد منقضی شده است؛ دوباره درخواست دهید.','error'); redirect('login'); }
         $u=q('SELECT id FROM users WHERE phone=?',[$phone])->fetch();
         $name=(string)($_SESSION['verify_name'] ?? '');
         $passwordHash=(string)($_SESSION['verify_password_hash'] ?? '');

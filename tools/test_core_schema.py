@@ -109,6 +109,32 @@ class CoreSchemaTest(unittest.TestCase):
             self.db.execute("DELETE FROM users WHERE id=1")
         self.assertEqual(self.db.execute("PRAGMA foreign_key_check").fetchall(), [])
 
+    def test_otp_stores_only_hash_and_prevents_reuse(self):
+        columns = {row[1] for row in self.db.execute('PRAGMA table_info(otp_codes)')}
+        self.assertTrue({'phone', 'otp_hash', 'expires_at', 'used_at', 'attempts', 'created_at'} <= columns)
+        self.assertNotIn('code', columns)
+        self.assertNotIn('code_hash', columns)
+        self.db.execute("INSERT INTO otp_codes(phone,otp_hash,expires_at,created_at) VALUES ('09123456789','hashed-value',200,100)")
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute("INSERT INTO otp_codes(phone,otp_hash,expires_at,created_at) VALUES ('09123456789','other-hash',200,100)")
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute("UPDATE otp_codes SET attempts=-1 WHERE phone='09123456789'")
+        self.assertEqual(self.db.execute("UPDATE otp_codes SET used_at=150 WHERE phone='09123456789' AND used_at IS NULL AND expires_at>=150").rowcount, 1)
+        self.assertEqual(self.db.execute("UPDATE otp_codes SET used_at=151 WHERE phone='09123456789' AND used_at IS NULL AND expires_at>=151").rowcount, 0)
+        self.assertEqual(self.db.execute("SELECT otp_hash,used_at,attempts FROM otp_codes").fetchone(), ('hashed-value', 150, 0))
+
+    def test_legacy_otp_columns_preserve_hash_and_timestamps(self):
+        db = sqlite3.connect(':memory:')
+        try:
+            db.execute('CREATE TABLE otp_codes (phone TEXT PRIMARY KEY, code_hash TEXT NOT NULL, expires_at INTEGER NOT NULL, attempts INTEGER NOT NULL DEFAULT 0, sent_at INTEGER NOT NULL)')
+            db.execute("INSERT INTO otp_codes VALUES ('09123456789','existing-hash',200,2,100)")
+            db.execute('ALTER TABLE otp_codes RENAME COLUMN code_hash TO otp_hash')
+            db.execute('ALTER TABLE otp_codes RENAME COLUMN sent_at TO created_at')
+            db.execute('ALTER TABLE otp_codes ADD COLUMN used_at INTEGER')
+            self.assertEqual(db.execute('SELECT otp_hash,created_at,attempts,used_at FROM otp_codes').fetchone(), ('existing-hash', 100, 2, None))
+        finally:
+            db.close()
+
     def test_existing_database_keeps_users_and_adds_core_tables(self):
         self.db.close()
         self.db = sqlite3.connect(":memory:")
