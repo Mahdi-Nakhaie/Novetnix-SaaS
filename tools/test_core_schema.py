@@ -5,8 +5,8 @@ import unittest
 
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-SQLITE_SCHEMA = (ROOT / "src/schema.sqlite.sql").read_text(encoding="utf-8")
-MYSQL_SCHEMA = (ROOT / "src/schema.mysql.sql").read_text(encoding="utf-8")
+SQLITE_SCHEMA = (ROOT / "database/schema.sqlite.sql").read_text(encoding="utf-8")
+MYSQL_SCHEMA = (ROOT / "database/schema.mysql.sql").read_text(encoding="utf-8")
 
 
 class CoreSchemaTest(unittest.TestCase):

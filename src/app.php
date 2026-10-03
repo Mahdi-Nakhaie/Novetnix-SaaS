@@ -1,29 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__.'/data.php';
-
-function db(): PDO {
-    static $db;
-    if ($db instanceof PDO) return $db;
-    $dsn = getenv('DB_DSN') ?: 'sqlite:'.dirname(__DIR__).'/storage/noventix.sqlite';
-    if (str_starts_with($dsn,'sqlite:')) {
-        $dir=dirname(substr($dsn,7));
-        if (!is_dir($dir)) mkdir($dir,0750,true);
-    }
-    $db = new PDO($dsn, getenv('DB_USER') ?: null, getenv('DB_PASSWORD') ?: null, [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES=>false]);
-    if ($db->getAttribute(PDO::ATTR_DRIVER_NAME)==='sqlite') $db->exec('PRAGMA foreign_keys=ON');
-    $driver=$db->getAttribute(PDO::ATTR_DRIVER_NAME);
-    $db->exec(file_get_contents(__DIR__.($driver==='mysql' ? '/schema.mysql.sql' : '/schema.sqlite.sql')));
-    $columns=$db->query('SELECT * FROM otp_codes LIMIT 0');
-    $names=[];
-    for ($i=0; $i<$columns->columnCount(); $i++) $names[]=$columns->getColumnMeta($i)['name'];
-    if (in_array('code_hash',$names,true)) $db->exec('ALTER TABLE otp_codes RENAME COLUMN code_hash TO otp_hash');
-    if (in_array('sent_at',$names,true)) $db->exec('ALTER TABLE otp_codes RENAME COLUMN sent_at TO created_at');
-    if (!in_array('used_at',$names,true)) $db->exec('ALTER TABLE otp_codes ADD COLUMN used_at '.($driver==='mysql' ? 'BIGINT NULL' : 'INTEGER'));
-    try { $db->exec('ALTER TABLE users ADD COLUMN password_hash '.($driver==='mysql' ? "VARCHAR(255) NOT NULL DEFAULT ''" : "TEXT NOT NULL DEFAULT ''")); } catch (Throwable $e) { }
-    return $db;
-}
-function q(string $sql, array $params=[]): PDOStatement { $s=db()->prepare($sql); $s->execute($params); return $s; }
+require_once dirname(__DIR__).'/database/connection.php';
 function h(mixed $value): string { return htmlspecialchars((string)$value, ENT_QUOTES|ENT_SUBSTITUTE, 'UTF-8'); }
 function fa(int|string $v): string { return strtr((string)$v,'0123456789','۰۱۲۳۴۵۶۷۸۹'); }
 function money(int $v): string { return $v ? fa(number_format($v)).' تومان' : 'رایگان'; }

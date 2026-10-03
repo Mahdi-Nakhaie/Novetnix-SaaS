@@ -43,13 +43,15 @@ export SMS_API_URL="https://sms.example.ir/api/send"
 export SMS_API_TOKEN="..."
 ```
 
-طرح جداول در `src/schema.sqlite.sql` و `src/schema.mysql.sql` قرار دارد و در اولین اجرا خودکار ساخته می‌شود. برای اتصال به جدول موجود `database_Saas`، ساختار جدول‌ها را با اسکیمای MySQL تطبیق دهید یا با `DB_DSN` به همان پایگاه‌داده وصل شوید.
+طرح جداول در `database/schema.sqlite.sql` و `database/schema.mysql.sql` قرار دارد و در اولین اجرا خودکار ساخته می‌شود. برای اتصال به جدول موجود `database_Saas`، ساختار جدول‌ها را با اسکیمای MySQL تطبیق دهید یا با `DB_DSN` به همان پایگاه‌داده وصل شوید.
 
 ## ساختار
 
 ```
 public/          ریشه وب — index.php تنها نقطه ورود و فایل‌های ایستا
-src/app.php      پایگاه‌داده، احراز هویت با کد یک‌بارمصرف، مدیریت درخواست‌های POST
+config/          تنظیمات مبتنی بر متغیرهای محیطی
+database/        اتصال PDO و schemaهای SQLite/MySQL
+src/app.php      احراز هویت، منطق برنامه و مدیریت درخواست‌های POST
 src/router.php   مسیرها و صفحات
 src/data.php     کاتالوگ پلن‌ها، جدول مقایسه، مقاله‌ها و پروژه‌ها
 storage/         پایگاه‌داده SQLite (خارج از دسترس وب)
