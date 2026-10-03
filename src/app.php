@@ -11,6 +11,7 @@ function db(): PDO {
         if (!is_dir($dir)) mkdir($dir,0750,true);
     }
     $db = new PDO($dsn, getenv('DB_USER') ?: null, getenv('DB_PASSWORD') ?: null, [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES=>false]);
+    if ($db->getAttribute(PDO::ATTR_DRIVER_NAME)==='sqlite') $db->exec('PRAGMA foreign_keys=ON');
     $db->exec(file_get_contents(__DIR__.($db->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql' ? '/schema.mysql.sql' : '/schema.sqlite.sql')));
     try { $db->exec('ALTER TABLE users ADD COLUMN password_hash '.($db->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql' ? "VARCHAR(255) NOT NULL DEFAULT ''" : "TEXT NOT NULL DEFAULT ''")); } catch (Throwable $e) { }
     return $db;
