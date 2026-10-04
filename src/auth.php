@@ -70,6 +70,7 @@ function handle_auth_post(string $path): bool {
         if ($phoneRaw===null || !$phone) registration_error('شماره موبایل معتبر وارد کنید.',$first,$last,$preservedPhone);
         if ($password===null || strlen($password)<8 || strlen($password)>72) registration_error('رمز عبور باید بین ۸ تا ۷۲ نویسه باشد.',$first,$last,$phone);
         if (!preg_match('/[A-Za-z]/',$password) || !preg_match('/[0-9]/',$password)) registration_error('رمز عبور باید دست‌کم یک حرف انگلیسی و یک عدد داشته باشد.',$first,$last,$phone);
+        if (q('SELECT 1 FROM users WHERE phone=?',[$phone])->fetchColumn()) registration_error('این شماره موبایل قبلاً ثبت شده است. برای ورود از فرم ورود استفاده کنید.',$first,$last,$phone);
         $count=(int)($_SESSION['otp_requests'] ?? 0);
         if ($count>=8) { flash('تعداد درخواست‌ها بیش از حد مجاز است. بعداً دوباره تلاش کنید.','error'); redirect('login'); }
         $previous=q('SELECT created_at FROM otp_codes WHERE phone=?',[$phone])->fetch();
@@ -104,10 +105,23 @@ function handle_auth_post(string $path): bool {
         $used=q('UPDATE otp_codes SET used_at=? WHERE phone=? AND used_at IS NULL AND expires_at>=? AND attempts<=5', [time(),$phone,time()]);
         if ($used->rowCount()!==1) { flash('کد منقضی شده است؛ دوباره درخواست دهید.','error'); redirect('login'); }
         $u=q('SELECT id FROM users WHERE phone=?',[$phone])->fetch();
+        if ($u) {
+            unset($_SESSION['verify_phone'],$_SESSION['verify_name'],$_SESSION['verify_password_hash']);
+            flash('این شماره موبایل قبلاً ثبت شده است. برای ورود از فرم ورود استفاده کنید.','error');
+            redirect('login');
+        }
         $name=(string)($_SESSION['verify_name'] ?? '');
         $passwordHash=(string)($_SESSION['verify_password_hash'] ?? '');
-        if (!$u) { q('INSERT INTO users(phone,name,password_hash) VALUES (?,?,?)',[$phone,$name,$passwordHash]); $u=q('SELECT id FROM users WHERE phone=?',[$phone])->fetch(); }
-        else q('UPDATE users SET name=?, password_hash=CASE WHEN password_hash=\'\' THEN ? ELSE password_hash END WHERE id=?',[$name,$passwordHash,$u['id']]);
+        try {
+            q('INSERT INTO users(phone,name,password_hash) VALUES (?,?,?)',[$phone,$name,$passwordHash]);
+        } catch (PDOException $e) {
+            if ($e->getCode()!=='23000') throw $e;
+            unset($_SESSION['verify_phone'],$_SESSION['verify_name'],$_SESSION['verify_password_hash']);
+            flash('این شماره موبایل قبلاً ثبت شده است. برای ورود از فرم ورود استفاده کنید.','error');
+            redirect('login');
+        }
+        $u=q('SELECT id FROM users WHERE phone=?',[$phone]);
+        $u=$u->fetch();
         session_regenerate_id(true); $_SESSION['uid']=(int)$u['id']; unset($_SESSION['verify_phone'],$_SESSION['verify_name'],$_SESSION['verify_password_hash'],$_SESSION['admin_verified_uid']);
         if ($phone!=='' && $phone===(config_value('ADMIN_PHONE') ?: '')) redirect('admin-login');
         flash('خوش آمدید!'); redirect('dashboard');
