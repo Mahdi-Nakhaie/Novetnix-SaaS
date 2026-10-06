@@ -62,6 +62,8 @@ main{display:block;min-height:60vh}
 .notice{border-radius:var(--r-md);padding:.8rem 1.1rem;margin:1rem 0;font-weight:700;font-size:.9rem;border:1.5px solid}
 .notice.success{background:#eefaf3;border-color:#bfe7d1;color:#146b41}
 .notice.error{background:#fdeef1;border-color:#f5c6d0;color:#9a1f33}
+.field-error{display:block;color:#9a1f33;font-size:.78rem;font-weight:700;margin-top:.35rem}
+input[aria-invalid="true"],textarea[aria-invalid="true"],select[aria-invalid="true"]{border-color:#c92f49;box-shadow:0 0 0 3px rgba(201,47,73,.1)}
 
 /* header */
 .site-header{background:rgba(255,255,255,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:60}

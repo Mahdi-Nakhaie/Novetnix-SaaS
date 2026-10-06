@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 function linkto(string $path,string $label,string $class=''): void { echo '<a class="'.($class?h($class):'').'" href="'.h(url($path)).'">'.h($label).'</a>'; }
-function form_start(string $action,string $class=''): void { echo '<form action="'.h(url($action)).'" method="post" class="'.($class?h($class):'').'"><input type="hidden" name="csrf" value="'.h(csrf()).'">'; }
+function form_start(string $action,string $class='',bool $customValidation=false): void { echo '<form action="'.h(url($action)).'" method="post" class="'.($class?h($class):'').($customValidation?' custom-validation':'').($customValidation?'" novalidate':'"').'><input type="hidden" name="csrf" value="'.h(csrf()).'">'; }
 function head_page(string $title,string $description='',bool $panel=false): void {
     global $me,$path;
     $full=($title==='خانه' ? 'Noventix | از یادگیری تا ساختن' : h($title).' | Noventix');
