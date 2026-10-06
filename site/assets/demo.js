@@ -1122,12 +1122,6 @@
   var phoneSlot = el("[data-demo-phone]");
   if (phoneSlot && state.pending_phone) {
     phoneSlot.textContent = state.pending_phone;
-    if (lastCode) {
-      var codeHint = document.createElement("p");
-      codeHint.className = "notice success";
-      codeHint.textContent = "کد تأیید: " + fa(lastCode);
-      phoneSlot.insertAdjacentElement("afterend", codeHint);
-    }
   }
 
   function paintCaptcha() {

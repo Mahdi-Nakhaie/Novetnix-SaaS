@@ -95,6 +95,41 @@ class OtpFlowTest(unittest.TestCase):
         finally:
             db.close()
 
+    def test_verify_checks_code_server_side_for_session_phone(self):
+        verify = AUTH[AUTH.index("if ($path==='auth/verify')"):AUTH.index("if ($path==='auth/admin')")]
+        self.assertIn("$phone=$_SESSION['verify_phone'] ?? ''", verify)
+        self.assertIn("$_POST['code']", verify)
+        self.assertNotIn("$_GET", verify)
+        wrong = verify.index("password_verify($code,$entry['otp_hash'])")
+        self.assertLess(wrong, verify.index("SET used_at=?"))
+        self.assertLess(wrong, verify.index("INSERT INTO users"))
+        self.assertIn("flash('کد واردشده صحیح نیست.','error'); redirect('verify');", verify)
+        self.assertIn("$entry['used_at']!==null || time()>(int)$entry['expires_at'] || (int)$entry['attempts']>=5", verify)
+        self.assertIn("flash('کد منقضی شده است؛ دوباره درخواست دهید.','error'); redirect('login');", verify)
+        self.assertIn("session_regenerate_id(true); $_SESSION['uid']=(int)$u['id'];", verify)
+        self.assertIn("redirect('dashboard')", verify)
+
+    def test_used_code_and_other_phone_are_rejected(self):
+        db = sqlite3.connect(":memory:")
+        try:
+            db.executescript(SCHEMA)
+            db.execute("INSERT INTO otp_codes(phone,otp_hash,expires_at,created_at) VALUES ('09120000001','hash-a',500,100)")
+            consume = "UPDATE otp_codes SET used_at=? WHERE phone=? AND otp_hash=? AND used_at IS NULL AND expires_at>=?"
+            self.assertEqual(db.execute(consume, (200, "09120000002", "hash-a", 200)).rowcount, 0)
+            self.assertEqual(db.execute(consume, (200, "09120000001", "hash-a", 200)).rowcount, 1)
+            self.assertEqual(db.execute(consume, (210, "09120000001", "hash-a", 210)).rowcount, 0)
+        finally:
+            db.close()
+
+    def test_otp_is_not_displayed_in_ui(self):
+        page = ROUTER[ROUTER.index("function page_verify"):]
+        page = page[:page.index("\n}\n")]
+        self.assertNotIn("otp", page.lower())
+        for path in ("tools/demo.js", "site/assets/demo.js"):
+            demo = (ROOT / path).read_text(encoding="utf-8")
+            self.assertNotRegex(demo, r"textContent\s*=[^;]*lastCode")
+            self.assertNotIn("کد تأیید: ", demo)
+
 
 if __name__ == "__main__":
     unittest.main()
