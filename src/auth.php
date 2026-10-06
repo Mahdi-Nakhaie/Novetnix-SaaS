@@ -74,13 +74,13 @@ function reserve_otp_send(string $phone, int $now): ?string {
 }
 function generate_otp(): string { return str_pad((string)random_int(0,999999),6,'0',STR_PAD_LEFT); }
 // One row per phone: issuing a new code replaces the previous one, so only the latest code can verify.
-function store_otp(string $phone, string $code, int $now): string {
+function store_otp(string $phone, string $code, int $now, ?string $passwordHash=null): string {
     $hash=password_hash($code,PASSWORD_DEFAULT);
     $db=db();
     $db->beginTransaction();
     try {
         q('DELETE FROM otp_codes WHERE phone=?',[$phone]);
-        q('INSERT INTO otp_codes(phone,otp_hash,expires_at,attempts,created_at) VALUES (?,?,?,?,?)',[$phone,$hash,$now+otp_ttl_seconds(),0,$now]);
+        q('INSERT INTO otp_codes(phone,otp_hash,pending_password_hash,expires_at,attempts,created_at) VALUES (?,?,?,?,?,?)',[$phone,$hash,$passwordHash,$now+otp_ttl_seconds(),0,$now]);
         $db->commit();
         return $hash;
     } catch (Throwable $e) {
@@ -123,21 +123,22 @@ function handle_auth_post(string $path): bool {
         $wait=reserve_otp_send($phone,time());
         if ($wait!==null) registration_error($wait,$first,$last,$phone);
         $code=generate_otp();
-        $hash=store_otp($phone,$code,time());
+        $hash=store_otp($phone,$code,time(),password_hash($password,PASSWORD_DEFAULT));
         if (!send_verification_code($phone,$code)) { q('DELETE FROM otp_codes WHERE phone=? AND otp_hash=?',[$phone,$hash]); flash('ارسال پیامک فعلاً امکان‌پذیر نیست. کمی بعد دوباره تلاش کنید.','error'); redirect('login'); }
         $_SESSION['verify_phone']=$phone;
         $_SESSION['verify_name']=$first.' '.$last;
-        $_SESSION['verify_password_hash']=password_hash($password,PASSWORD_DEFAULT);
         flash('کد تأیید ارسال شد. کد تا '.fa((int)ceil(otp_ttl_seconds()/60)).' دقیقه معتبر است.'); redirect('verify');
     }
     if ($path==='auth/resend') {
         $phone=(string)($_SESSION['verify_phone'] ?? '');
         if ($phone==='') { flash('درخواست تأییدی در جریان نیست؛ ابتدا ثبت‌نام کنید.','error'); redirect('login'); }
+        $passwordHash=q('SELECT pending_password_hash FROM otp_codes WHERE phone=?',[$phone])->fetchColumn();
+        if (!$passwordHash) { flash('درخواست تأییدی در جریان نیست؛ ابتدا ثبت‌نام کنید.','error'); redirect('login'); }
         $wait=reserve_otp_send($phone,time());
         if ($wait!==null) { flash($wait,'error'); redirect('verify'); }
         $code=generate_otp();
-        $hash=store_otp($phone,$code,time());
-        if (!send_verification_code($phone,$code)) { q('DELETE FROM otp_codes WHERE phone=? AND otp_hash=?',[$phone,$hash]); flash('ارسال پیامک فعلاً امکان‌پذیر نیست. کمی بعد دوباره تلاش کنید.','error'); redirect('verify'); }
+        $hash=store_otp($phone,$code,time(),(string)$passwordHash);
+        if (!send_verification_code($phone,$code)) { q('UPDATE otp_codes SET attempts=5 WHERE phone=? AND otp_hash=? AND used_at IS NULL', [$phone,$hash]); flash('ارسال پیامک فعلاً امکان‌پذیر نیست. کمی بعد دوباره تلاش کنید.','error'); redirect('verify'); }
         flash('کد جدید ارسال شد و کد قبلی باطل شد. کد تا '.fa((int)ceil(otp_ttl_seconds()/60)).' دقیقه معتبر است.'); redirect('verify');
     }
     if ($path==='auth/login') {
@@ -162,6 +163,7 @@ function handle_auth_post(string $path): bool {
         if (!$entry) { flash('کد تأییدی برای این شماره وجود ندارد؛ دوباره درخواست دهید.','error'); redirect('login'); }
         if ($entry['used_at']!==null) { flash('این کد قبلاً استفاده شده است؛ دوباره درخواست دهید.','error'); redirect('login'); }
         if (time()>(int)$entry['expires_at']) { flash('کد منقضی شده است؛ دوباره درخواست دهید.','error'); redirect('login'); }
+        if (empty($entry['pending_password_hash'])) { flash('درخواست ثبت‌نام معتبر نیست؛ دوباره درخواست دهید.','error'); redirect('login'); }
         $maxAttempts=otp_max_attempts();
         $blocked='تعداد تلاش‌های ناموفق بیش از حد مجاز است و این کد غیرفعال شد. با «ارسال دوباره کد» کد جدید دریافت کنید.';
         if ((int)$entry['attempts']>=$maxAttempts) { flash($blocked,'error'); redirect('verify'); }
@@ -177,19 +179,19 @@ function handle_auth_post(string $path): bool {
         $db->beginTransaction();
         try {
             $now=time();
-            $used=q('UPDATE otp_codes SET used_at=? WHERE phone=? AND otp_hash=? AND used_at IS NULL AND expires_at>=? AND attempts<=?', [$now,$phone,$entry['otp_hash'],$now,$maxAttempts]);
+            $used=q('UPDATE otp_codes SET used_at=?, pending_password_hash=NULL WHERE phone=? AND otp_hash=? AND used_at IS NULL AND expires_at>=? AND attempts<=?', [$now,$phone,$entry['otp_hash'],$now,$maxAttempts]);
             if ($used->rowCount()!==1) { $db->rollBack(); flash('این کد قبلاً استفاده شده یا منقضی شده است؛ دوباره درخواست دهید.','error'); redirect('login'); }
-            q('INSERT INTO users(phone,name,password_hash,phone_verified_at) VALUES (?,?,?,?)',[$phone,(string)($_SESSION['verify_name'] ?? ''),(string)($_SESSION['verify_password_hash'] ?? ''),$now]);
+            q('INSERT INTO users(phone,name,password_hash,phone_verified_at) VALUES (?,?,?,?)',[$phone,(string)($_SESSION['verify_name'] ?? ''),(string)$entry['pending_password_hash'],$now]);
             $userId=(int)$db->lastInsertId();
             $db->commit();
         } catch (PDOException $e) {
             if ($db->inTransaction()) $db->rollBack();
             if ($e->getCode()!=='23000') throw $e;
-            unset($_SESSION['verify_phone'],$_SESSION['verify_name'],$_SESSION['verify_password_hash']);
+            unset($_SESSION['verify_phone'],$_SESSION['verify_name']);
             flash('این شماره موبایل قبلاً ثبت شده است. برای ورود از فرم ورود استفاده کنید.','error');
             redirect('login');
         }
-        session_regenerate_id(true); $_SESSION['uid']=$userId; unset($_SESSION['verify_phone'],$_SESSION['verify_name'],$_SESSION['verify_password_hash'],$_SESSION['admin_verified_uid']);
+        session_regenerate_id(true); $_SESSION['uid']=$userId; unset($_SESSION['verify_phone'],$_SESSION['verify_name'],$_SESSION['admin_verified_uid']);
         if ($phone!=='' && $phone===(config_value('ADMIN_PHONE') ?: '')) redirect('admin-login');
         flash('خوش آمدید!'); redirect('dashboard');
     }

@@ -33,7 +33,7 @@ class OtpFlowTest(unittest.TestCase):
         self.assertIn("password_hash($code,PASSWORD_DEFAULT)", body)
         self.assertIn("beginTransaction", body)
         self.assertIn("DELETE FROM otp_codes WHERE phone=?", body)
-        self.assertIn("[$phone,$hash,$now+otp_ttl_seconds(),0,$now]", body)
+        self.assertIn("[$phone,$hash,$passwordHash,$now+otp_ttl_seconds(),0,$now]", body)
         self.assertNotIn("$code", body.split("INSERT INTO otp_codes")[1])
 
     def test_ttl_is_configurable(self):
@@ -69,7 +69,7 @@ class OtpFlowTest(unittest.TestCase):
     def test_registration_order_and_duplicate_mobile_are_preserved(self):
         request = AUTH[AUTH.index("if ($path==='auth/request')"):AUTH.index("if ($path==='auth/login')")]
         duplicate = request.index("SELECT 1 FROM users WHERE phone=?")
-        store = request.index("store_otp($phone,$code,time())")
+        store = request.index("store_otp($phone,$code,time(),password_hash($password,PASSWORD_DEFAULT))")
         send = request.index("send_verification_code($phone,$code)")
         self.assertLess(duplicate, store)
         self.assertLess(store, send)
@@ -110,6 +110,21 @@ class OtpFlowTest(unittest.TestCase):
         self.assertIn("attempts<?',[$phone,$entry['otp_hash'],time(),$maxAttempts]", verify)
         self.assertIn("session_regenerate_id(true); $_SESSION['uid']=$userId;", verify)
         self.assertIn("redirect('dashboard')", verify)
+
+    def test_session_contains_no_credentials_or_otp(self):
+        public = (ROOT / "public/index.php").read_text(encoding="utf-8")
+        self.assertIn("session.use_strict_mode", public)
+        self.assertIn("session.cookie_httponly", public)
+        self.assertIn("session.cookie_samesite", public)
+        self.assertIn("session.cookie_secure", public)
+        self.assertIn("unset($_SESSION['verify_password_hash'])", public)
+        self.assertNotIn("$_SESSION['verify_password_hash']", AUTH)
+        self.assertNotRegex(AUTH, r"\$_SESSION\['[^']*(password|otp|api_key)[^']*'\]")
+        self.assertIn("$_SESSION['uid']=(int)$u['id']", AUTH)
+        self.assertIn("$_SESSION=[]; session_regenerate_id(true)", AUTH)
+        self.assertIn("pending_password_hash", SCHEMA)
+        self.assertIn("pending_password_hash", (ROOT / "database/schema.mysql.sql").read_text(encoding="utf-8"))
+        self.assertIn("ADD COLUMN pending_password_hash", CONNECTION)
 
     def test_login_requires_verified_phone_and_checks_hash(self):
         login = AUTH[AUTH.index("if ($path==='auth/login')"):AUTH.index("if ($path==='auth/verify')")]

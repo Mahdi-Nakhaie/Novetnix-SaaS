@@ -25,6 +25,7 @@ function db(): PDO {
         if (in_array('code_hash',$names,true)) $db->exec('ALTER TABLE otp_codes RENAME COLUMN code_hash TO otp_hash');
         if (in_array('sent_at',$names,true)) $db->exec('ALTER TABLE otp_codes RENAME COLUMN sent_at TO created_at');
         if (!in_array('used_at',$names,true)) $db->exec('ALTER TABLE otp_codes ADD COLUMN used_at '.($driver==='mysql' ? 'BIGINT NULL' : 'INTEGER'));
+        if (!in_array('pending_password_hash',$names,true)) $db->exec('ALTER TABLE otp_codes ADD COLUMN pending_password_hash '.($driver==='mysql' ? 'VARCHAR(255) NULL' : 'TEXT'));
         try { $db->exec('ALTER TABLE users ADD COLUMN password_hash '.($driver==='mysql' ? "VARCHAR(255) NOT NULL DEFAULT ''" : "TEXT NOT NULL DEFAULT ''")); } catch (Throwable $e) { }
         $userColumns=$db->query('SELECT * FROM users LIMIT 0');
         $hasVerification=false;

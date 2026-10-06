@@ -4,6 +4,7 @@ Starts `php -S` with tools/otp_test_router.php when PHP is installed, or uses an
 already running server via OTP_TEST_BASE_URL + OTP_TEST_DB.
 """
 import http.cookiejar
+import json
 import os
 import pathlib
 import re
@@ -242,7 +243,8 @@ class OtpVerifyHttpTest(unittest.TestCase):
         self.assertIn("ارسال پیامک فعلاً امکان‌پذیر نیست", html)
         self.assertIn("ارسال دوباره کد", html)
         self.assertNotIn("131313", html)
-        self.assertEqual(b.verify("131313")[1], "/login")
+        self.assertEqual(b.verify("131313")[1], "/verify")
+        self.assertEqual(otp("09120000113"), (None, 5))
         self.assertEqual(resend(b), "/verify")
         self.assertIn("ثانیه دیگر صبر کنید", b.request("/verify")[2])
         self.assertEqual(requests_row("09120000113")[1], 1)
@@ -372,6 +374,32 @@ class OtpVerifyHttpTest(unittest.TestCase):
         self.assertEqual(b.verify("126126")[1], "/dashboard")
         db("UPDATE users SET phone_verified_at=NULL WHERE phone='09120000126'")
         self.assertTrue(b.request("/dashboard")[1].startswith("/login"))
+
+    def test_24_login_identity_session_and_logout(self):
+        owner = Browser()
+        owner.pending("09120000127", "127127")
+        self.assertFalse(auth_state(owner)["has_credentials"])
+        self.assertEqual(owner.verify("127127")[1], "/dashboard")
+        owner_id = db("SELECT id FROM users WHERE phone='09120000127'")[0][0]
+        self.assertIsNone(db("SELECT pending_password_hash FROM otp_codes WHERE phone='09120000127'")[0][0])
+        self.assertEqual(owner.request("/logout", {"csrf": owner.csrf})[1], "/")
+        b = Browser()
+        login(b, "09120000127", "wrong-password")
+        self.assertIsNone(auth_state(b)["uid"])
+        before = session_id(b)
+        self.assertEqual(login(b, "09120000127", "Passw0rd1")[1], "/dashboard")
+        self.assertNotEqual(before, session_id(b))
+        state = auth_state(b)
+        self.assertEqual((state["uid"], state["current_user_id"], state["has_credentials"]), (owner_id, owner_id, False))
+        self.assertEqual(b.request("/dashboard?user_id=9999")[0], 200)
+        self.assertEqual(auth_state(b)["current_user_id"], owner_id)
+        self.assertEqual(b.request("/logout", {"csrf": b.csrf})[1], "/")
+        self.assertIsNone(auth_state(b)["uid"])
+        self.assertTrue(b.request("/dashboard")[1].startswith("/login"))
+
+
+def auth_state(browser):
+    return json.loads(browser.request("/__test/auth-state")[2])
 
 
 def session_id(browser):
