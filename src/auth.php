@@ -39,7 +39,7 @@ function registration_error(string $message, string $first, string $last, string
     redirect('login');
 }
 function normalized_phone(string $raw): ?string {
-    $raw=strtr($raw,'۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩','01234567890123456789');
+    $raw=latin_digits($raw);
     $raw=preg_replace('/[\s-]+/u','',$raw);
     $raw=preg_replace('/^(\+98|98)/','0',$raw);
     return preg_match('/^09[0-9]{9}$/D',$raw) ? $raw : null;
@@ -134,7 +134,7 @@ function handle_auth_post(string $path): bool {
     }
     if ($path==='auth/verify') {
         $phone=(string)($_SESSION['verify_phone'] ?? '');
-        $code=strtr((string)($_POST['code'] ?? ''),'۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩','01234567890123456789');
+        $code=latin_digits((string)($_POST['code'] ?? ''));
         if ($phone==='') { flash('درخواست تأییدی در جریان نیست؛ ابتدا ثبت‌نام کنید.','error'); redirect('login'); }
         $entry=q('SELECT * FROM otp_codes WHERE phone=?',[$phone])->fetch();
         if (!$entry) { flash('کد تأییدی برای این شماره وجود ندارد؛ دوباره درخواست دهید.','error'); redirect('login'); }

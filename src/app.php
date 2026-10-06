@@ -4,7 +4,9 @@ require_once __DIR__.'/data.php';
 require_once dirname(__DIR__).'/database/connection.php';
 require_once __DIR__.'/auth.php';
 function h(mixed $value): string { return htmlspecialchars((string)$value, ENT_QUOTES|ENT_SUBSTITUTE, 'UTF-8'); }
-function fa(int|string $v): string { return strtr((string)$v,'0123456789','۰۱۲۳۴۵۶۷۸۹'); }
+// Array form is required: three-argument strtr() maps bytes, which corrupts multibyte Persian digits.
+function fa(int|string $v): string { return strtr((string)$v,['0'=>'۰','1'=>'۱','2'=>'۲','3'=>'۳','4'=>'۴','5'=>'۵','6'=>'۶','7'=>'۷','8'=>'۸','9'=>'۹']); }
+function latin_digits(string $v): string { return strtr($v,['۰'=>'0','۱'=>'1','۲'=>'2','۳'=>'3','۴'=>'4','۵'=>'5','۶'=>'6','۷'=>'7','۸'=>'8','۹'=>'9','٠'=>'0','١'=>'1','٢'=>'2','٣'=>'3','٤'=>'4','٥'=>'5','٦'=>'6','٧'=>'7','٨'=>'8','٩'=>'9']); }
 function money(int $v): string { return $v ? fa(number_format($v)).' تومان' : 'رایگان'; }
 function url(string $path=''): string { return '/'.ltrim($path,'/'); }
 function plan_for(array $u): string {
