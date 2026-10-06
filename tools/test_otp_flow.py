@@ -1,6 +1,7 @@
 import pathlib
 import re
 import sqlite3
+import tempfile
 import unittest
 
 
@@ -97,17 +98,41 @@ class OtpFlowTest(unittest.TestCase):
 
     def test_verify_checks_code_server_side_for_session_phone(self):
         verify = AUTH[AUTH.index("if ($path==='auth/verify')"):AUTH.index("if ($path==='auth/admin')")]
-        self.assertIn("$phone=$_SESSION['verify_phone'] ?? ''", verify)
+        self.assertIn("$phone=(string)($_SESSION['verify_phone'] ?? '')", verify)
         self.assertIn("$_POST['code']", verify)
         self.assertNotIn("$_GET", verify)
-        wrong = verify.index("password_verify($code,$entry['otp_hash'])")
-        self.assertLess(wrong, verify.index("SET used_at=?"))
-        self.assertLess(wrong, verify.index("INSERT INTO users"))
+        order = [verify.index(s) for s in ("if (!$entry)", "$entry['used_at']!==null", "time()>(int)$entry['expires_at']",
+                                           "password_verify($code,$entry['otp_hash'])", "SET used_at=?", "INSERT INTO users", "$db->commit()")]
+        self.assertEqual(order, sorted(order))
+        self.assertLess(verify.index("beginTransaction"), verify.index("SET used_at=?"))
         self.assertIn("flash('کد واردشده صحیح نیست.','error'); redirect('verify');", verify)
-        self.assertIn("$entry['used_at']!==null || time()>(int)$entry['expires_at'] || (int)$entry['attempts']>=5", verify)
-        self.assertIn("flash('کد منقضی شده است؛ دوباره درخواست دهید.','error'); redirect('login');", verify)
-        self.assertIn("session_regenerate_id(true); $_SESSION['uid']=(int)$u['id'];", verify)
+        self.assertIn("session_regenerate_id(true); $_SESSION['uid']=$userId;", verify)
         self.assertIn("redirect('dashboard')", verify)
+
+    def test_concurrent_consume_succeeds_only_once(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = pathlib.Path(tmp) / "race.sqlite"
+            setup = sqlite3.connect(path)
+            setup.executescript(SCHEMA)
+            setup.execute("INSERT INTO otp_codes(phone,otp_hash,expires_at,created_at) VALUES ('09120000001','h',500,100)")
+            setup.commit()
+            setup.close()
+            a = sqlite3.connect(path, timeout=0, isolation_level=None)
+            b = sqlite3.connect(path, timeout=0, isolation_level=None)
+            consume = "UPDATE otp_codes SET used_at=? WHERE phone=? AND otp_hash=? AND used_at IS NULL AND expires_at>=?"
+            try:
+                a.execute("BEGIN")
+                b.execute("BEGIN")
+                self.assertEqual(a.execute(consume, (200, "09120000001", "h", 200)).rowcount, 1)
+                with self.assertRaises(sqlite3.OperationalError):
+                    b.execute(consume, (200, "09120000001", "h", 200))
+                a.execute("COMMIT")
+                self.assertEqual(b.execute(consume, (201, "09120000001", "h", 201)).rowcount, 0)
+                b.execute("COMMIT")
+                self.assertEqual(a.execute("SELECT used_at FROM otp_codes").fetchall(), [(200,)])
+            finally:
+                a.close()
+                b.close()
 
     def test_used_code_and_other_phone_are_rejected(self):
         db = sqlite3.connect(":memory:")

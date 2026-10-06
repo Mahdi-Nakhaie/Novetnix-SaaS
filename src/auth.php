@@ -120,34 +120,35 @@ function handle_auth_post(string $path): bool {
         flash('خوش آمدید!'); redirect('dashboard');
     }
     if ($path==='auth/verify') {
-        $phone=$_SESSION['verify_phone'] ?? '';
+        $phone=(string)($_SESSION['verify_phone'] ?? '');
         $code=strtr((string)($_POST['code'] ?? ''),'۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩','01234567890123456789');
+        if ($phone==='') { flash('درخواست تأییدی در جریان نیست؛ ابتدا ثبت‌نام کنید.','error'); redirect('login'); }
         $entry=q('SELECT * FROM otp_codes WHERE phone=?',[$phone])->fetch();
-        if (!$entry || $entry['used_at']!==null || time()>(int)$entry['expires_at'] || (int)$entry['attempts']>=5) { flash('کد منقضی شده است؛ دوباره درخواست دهید.','error'); redirect('login'); }
+        if (!$entry) { flash('کد تأییدی برای این شماره وجود ندارد؛ دوباره درخواست دهید.','error'); redirect('login'); }
+        if ($entry['used_at']!==null) { flash('این کد قبلاً استفاده شده است؛ دوباره درخواست دهید.','error'); redirect('login'); }
+        if (time()>(int)$entry['expires_at']) { flash('کد منقضی شده است؛ دوباره درخواست دهید.','error'); redirect('login'); }
+        if ((int)$entry['attempts']>=5) { flash('تعداد تلاش‌های ناموفق بیش از حد مجاز است؛ دوباره درخواست دهید.','error'); redirect('login'); }
         $attempt=q('UPDATE otp_codes SET attempts=attempts+1 WHERE phone=? AND otp_hash=? AND used_at IS NULL AND expires_at>=? AND attempts<5',[$phone,$entry['otp_hash'],time()]);
-        if ($attempt->rowCount()!==1) { flash('کد منقضی شده است؛ دوباره درخواست دهید.','error'); redirect('login'); }
+        if ($attempt->rowCount()!==1) { flash('این کد دیگر معتبر نیست؛ دوباره درخواست دهید.','error'); redirect('login'); }
         if (!preg_match('/^[0-9]{6}$/D',$code) || !password_verify($code,$entry['otp_hash'])) { flash('کد واردشده صحیح نیست.','error'); redirect('verify'); }
-        $used=q('UPDATE otp_codes SET used_at=? WHERE phone=? AND otp_hash=? AND used_at IS NULL AND expires_at>=? AND attempts<=5', [time(),$phone,$entry['otp_hash'],time()]);
-        if ($used->rowCount()!==1) { flash('کد منقضی شده است؛ دوباره درخواست دهید.','error'); redirect('login'); }
-        $u=q('SELECT id FROM users WHERE phone=?',[$phone])->fetch();
-        if ($u) {
-            unset($_SESSION['verify_phone'],$_SESSION['verify_name'],$_SESSION['verify_password_hash']);
-            flash('این شماره موبایل قبلاً ثبت شده است. برای ورود از فرم ورود استفاده کنید.','error');
-            redirect('login');
-        }
-        $name=(string)($_SESSION['verify_name'] ?? '');
-        $passwordHash=(string)($_SESSION['verify_password_hash'] ?? '');
+        // Consuming the code and creating the account commit together; the guarded UPDATE lets only one concurrent request win.
+        $db=db();
+        $db->beginTransaction();
         try {
-            q('INSERT INTO users(phone,name,password_hash) VALUES (?,?,?)',[$phone,$name,$passwordHash]);
+            $now=time();
+            $used=q('UPDATE otp_codes SET used_at=? WHERE phone=? AND otp_hash=? AND used_at IS NULL AND expires_at>=? AND attempts<=5', [$now,$phone,$entry['otp_hash'],$now]);
+            if ($used->rowCount()!==1) { $db->rollBack(); flash('این کد قبلاً استفاده شده یا منقضی شده است؛ دوباره درخواست دهید.','error'); redirect('login'); }
+            q('INSERT INTO users(phone,name,password_hash) VALUES (?,?,?)',[$phone,(string)($_SESSION['verify_name'] ?? ''),(string)($_SESSION['verify_password_hash'] ?? '')]);
+            $userId=(int)$db->lastInsertId();
+            $db->commit();
         } catch (PDOException $e) {
+            if ($db->inTransaction()) $db->rollBack();
             if ($e->getCode()!=='23000') throw $e;
             unset($_SESSION['verify_phone'],$_SESSION['verify_name'],$_SESSION['verify_password_hash']);
             flash('این شماره موبایل قبلاً ثبت شده است. برای ورود از فرم ورود استفاده کنید.','error');
             redirect('login');
         }
-        $u=q('SELECT id FROM users WHERE phone=?',[$phone]);
-        $u=$u->fetch();
-        session_regenerate_id(true); $_SESSION['uid']=(int)$u['id']; unset($_SESSION['verify_phone'],$_SESSION['verify_name'],$_SESSION['verify_password_hash'],$_SESSION['admin_verified_uid']);
+        session_regenerate_id(true); $_SESSION['uid']=$userId; unset($_SESSION['verify_phone'],$_SESSION['verify_name'],$_SESSION['verify_password_hash'],$_SESSION['admin_verified_uid']);
         if ($phone!=='' && $phone===(config_value('ADMIN_PHONE') ?: '')) redirect('admin-login');
         flash('خوش آمدید!'); redirect('dashboard');
     }
