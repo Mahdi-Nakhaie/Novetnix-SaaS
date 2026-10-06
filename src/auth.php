@@ -44,15 +44,40 @@ function normalized_phone(string $raw): ?string {
     $raw=preg_replace('/^(\+98|98)/','0',$raw);
     return preg_match('/^09[0-9]{9}$/D',$raw) ? $raw : null;
 }
-function send_sms(string $phone, string $code): bool {
-    $endpoint=config_value('SMS_API_URL');
-    if (!$endpoint || !config_value('SMS_API_TOKEN') || !preg_match('~^https://~i',$endpoint)) return false;
-    $ch=curl_init($endpoint);
-    curl_setopt_array($ch,[CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>json_encode(['phone'=>$phone,'code'=>$code],JSON_THROW_ON_ERROR),CURLOPT_HTTPHEADER=>['Content-Type: application/json','Authorization: Bearer '.config_value('SMS_API_TOKEN')],CURLOPT_RETURNTRANSFER=>true,CURLOPT_TIMEOUT=>8,CURLOPT_CONNECTTIMEOUT=>3,CURLOPT_FOLLOWLOCATION=>false]);
+function otp_ttl_seconds(): int {
+    $ttl=filter_var(config_value('OTP_TTL_SECONDS'),FILTER_VALIDATE_INT,['options'=>['min_range'=>60,'max_range'=>900]]);
+    return $ttl===false ? 300 : $ttl;
+}
+function generate_otp(): string { return str_pad((string)random_int(0,999999),6,'0',STR_PAD_LEFT); }
+// One row per phone: issuing a new code replaces the previous one, so only the latest code can verify.
+function store_otp(string $phone, string $code, int $now): string {
+    $hash=password_hash($code,PASSWORD_DEFAULT);
+    $db=db();
+    $db->beginTransaction();
+    try {
+        q('DELETE FROM otp_codes WHERE phone=?',[$phone]);
+        q('INSERT INTO otp_codes(phone,otp_hash,expires_at,attempts,created_at) VALUES (?,?,?,?,?)',[$phone,$hash,$now+otp_ttl_seconds(),0,$now]);
+        $db->commit();
+        return $hash;
+    } catch (Throwable $e) {
+        $db->rollBack();
+        throw $e;
+    }
+}
+function send_verification_code(string $phone, string $code): bool {
+    $apiKey=(string)config_value('SMSIR_API_KEY','');
+    $templateId=filter_var(config_value('SMSIR_TEMPLATE_ID'),FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]);
+    $parameter=(string)(config_value('SMSIR_CODE_PARAMETER') ?: 'Code');
+    if ($apiKey==='' || $templateId===false || !function_exists('curl_init')) return false;
+    $ch=curl_init('https://api.sms.ir/v1/send/verify');
+    curl_setopt_array($ch,[CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>json_encode(['mobile'=>$phone,'templateId'=>$templateId,'parameters'=>[['name'=>$parameter,'value'=>$code]]],JSON_THROW_ON_ERROR),CURLOPT_HTTPHEADER=>['Content-Type: application/json','Accept: application/json','x-api-key: '.$apiKey],CURLOPT_RETURNTRANSFER=>true,CURLOPT_TIMEOUT=>10,CURLOPT_CONNECTTIMEOUT=>4,CURLOPT_FOLLOWLOCATION=>false]);
     $result=curl_exec($ch);
-    $status=curl_getinfo($ch,CURLINFO_HTTP_CODE);
+    $status=(int)curl_getinfo($ch,CURLINFO_HTTP_CODE);
     curl_close($ch);
-    return $result!==false && $status>=200 && $status<300;
+    $body=is_string($result) ? json_decode($result,true) : null;
+    if ($status===200 && is_array($body) && (int)($body['status'] ?? 0)===1) return true;
+    error_log('SMS.ir verify send failed: HTTP '.$status.', status '.(is_array($body) ? (string)($body['status'] ?? 'unknown') : 'invalid-response'));
+    return false;
 }
 function handle_auth_post(string $path): bool {
     if (!in_array($path,['auth/request','auth/login','auth/verify','auth/admin','logout'],true)) return false;
@@ -75,15 +100,14 @@ function handle_auth_post(string $path): bool {
         if ($count>=8) { flash('تعداد درخواست‌ها بیش از حد مجاز است. بعداً دوباره تلاش کنید.','error'); redirect('login'); }
         $previous=q('SELECT created_at FROM otp_codes WHERE phone=?',[$phone])->fetch();
         if ($previous && time()-(int)$previous['created_at']<90) { flash('برای درخواست دوباره کمی صبر کنید.','error'); redirect('login'); }
-        $code=(string)random_int(100000,999999);
-        if (!send_sms($phone,$code)) { flash('ارسال پیامک فعلاً فعال نیست. تنظیمات سرویس پیامک باید توسط مدیر تکمیل شود.','error'); redirect('login'); }
-        q('DELETE FROM otp_codes WHERE phone=?',[$phone]);
-        q('INSERT INTO otp_codes(phone,otp_hash,expires_at,attempts,created_at) VALUES (?,?,?,?,?)',[$phone,password_hash($code,PASSWORD_DEFAULT),time()+300,0,time()]);
+        $code=generate_otp();
+        $hash=store_otp($phone,$code,time());
+        if (!send_verification_code($phone,$code)) { q('DELETE FROM otp_codes WHERE phone=? AND otp_hash=?',[$phone,$hash]); flash('ارسال پیامک فعلاً امکان‌پذیر نیست. کمی بعد دوباره تلاش کنید.','error'); redirect('login'); }
         $_SESSION['otp_requests']=$count+1;
         $_SESSION['verify_phone']=$phone;
         $_SESSION['verify_name']=$first.' '.$last;
         $_SESSION['verify_password_hash']=password_hash($password,PASSWORD_DEFAULT);
-        flash('کد تأیید ارسال شد. کد تا ۵ دقیقه معتبر است.'); redirect('verify');
+        flash('کد تأیید ارسال شد. کد تا '.fa((int)ceil(otp_ttl_seconds()/60)).' دقیقه معتبر است.'); redirect('verify');
     }
     if ($path==='auth/login') {
         if (!validate_captcha()) { flash('کد کپچا صحیح نیست.','error'); redirect('login'); }
@@ -100,9 +124,10 @@ function handle_auth_post(string $path): bool {
         $code=strtr((string)($_POST['code'] ?? ''),'۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩','01234567890123456789');
         $entry=q('SELECT * FROM otp_codes WHERE phone=?',[$phone])->fetch();
         if (!$entry || $entry['used_at']!==null || time()>(int)$entry['expires_at'] || (int)$entry['attempts']>=5) { flash('کد منقضی شده است؛ دوباره درخواست دهید.','error'); redirect('login'); }
-        q('UPDATE otp_codes SET attempts=attempts+1 WHERE phone=?',[$phone]);
+        $attempt=q('UPDATE otp_codes SET attempts=attempts+1 WHERE phone=? AND otp_hash=? AND used_at IS NULL AND expires_at>=? AND attempts<5',[$phone,$entry['otp_hash'],time()]);
+        if ($attempt->rowCount()!==1) { flash('کد منقضی شده است؛ دوباره درخواست دهید.','error'); redirect('login'); }
         if (!preg_match('/^[0-9]{6}$/D',$code) || !password_verify($code,$entry['otp_hash'])) { flash('کد واردشده صحیح نیست.','error'); redirect('verify'); }
-        $used=q('UPDATE otp_codes SET used_at=? WHERE phone=? AND used_at IS NULL AND expires_at>=? AND attempts<=5', [time(),$phone,time()]);
+        $used=q('UPDATE otp_codes SET used_at=? WHERE phone=? AND otp_hash=? AND used_at IS NULL AND expires_at>=? AND attempts<=5', [time(),$phone,$entry['otp_hash'],time()]);
         if ($used->rowCount()!==1) { flash('کد منقضی شده است؛ دوباره درخواست دهید.','error'); redirect('login'); }
         $u=q('SELECT id FROM users WHERE phone=?',[$phone])->fetch();
         if ($u) {
