@@ -48,6 +48,29 @@ function otp_ttl_seconds(): int {
     $ttl=filter_var(config_value('OTP_TTL_SECONDS'),FILTER_VALIDATE_INT,['options'=>['min_range'=>60,'max_range'=>900]]);
     return $ttl===false ? 300 : $ttl;
 }
+function otp_setting(string $key, int $default, int $min, int $max): int {
+    $value=filter_var(config_value($key),FILTER_VALIDATE_INT,['options'=>['min_range'=>$min,'max_range'=>$max]]);
+    return $value===false ? $default : $value;
+}
+// Capped at 5 by the otp_codes.attempts CHECK constraint.
+function otp_max_attempts(): int { return otp_setting('OTP_MAX_ATTEMPTS',5,1,5); }
+function otp_resend_cooldown_seconds(): int { return otp_setting('OTP_RESEND_COOLDOWN_SECONDS',90,30,3600); }
+function otp_resend_limit(): int { return otp_setting('OTP_RESEND_LIMIT',5,1,20); }
+function otp_resend_window_seconds(): int { return otp_setting('OTP_RESEND_WINDOW_SECONDS',3600,300,86400); }
+// Records an issuance for $phone and returns null, or returns a wait message when the per-phone cooldown/limit applies.
+function reserve_otp_send(string $phone, int $now): ?string {
+    $cooldown=otp_resend_cooldown_seconds();
+    $limit=otp_resend_limit();
+    $window=otp_resend_window_seconds();
+    if (db()->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql') q('INSERT IGNORE INTO otp_requests(phone,window_start,request_count,last_requested) VALUES (?,?,0,0)',[$phone,$now]);
+    else q('INSERT OR IGNORE INTO otp_requests(phone,window_start,request_count,last_requested) VALUES (?,?,0,0)',[$phone,$now]);
+    // The conditional row update serializes reservations for the same phone on both SQLite and MySQL.
+    $reserved=q('UPDATE otp_requests SET request_count=CASE WHEN window_start<=? THEN 1 ELSE request_count+1 END, window_start=CASE WHEN window_start<=? THEN ? ELSE window_start END, last_requested=? WHERE phone=? AND last_requested<=? AND (window_start<=? OR request_count<?)',[$now-$window,$now-$window,$now,$now,$phone,$now-$cooldown,$now-$window,$limit]);
+    if ($reserved->rowCount()===1) return null;
+    $row=q('SELECT window_start,request_count,last_requested FROM otp_requests WHERE phone=?',[$phone])->fetch();
+    if ((int)$row['window_start']>$now-$window && (int)$row['request_count']>=$limit) return 'تعداد درخواست کد برای این شماره به سقف مجاز رسیده است. حدود '.fa(max(1,(int)ceil(((int)$row['window_start']+$window-$now)/60))).' دقیقه دیگر دوباره تلاش کنید.';
+    return 'برای دریافت کد جدید لطفاً '.fa(max(1,(int)$row['last_requested']+$cooldown-$now)).' ثانیه دیگر صبر کنید.';
+}
 function generate_otp(): string { return str_pad((string)random_int(0,999999),6,'0',STR_PAD_LEFT); }
 // One row per phone: issuing a new code replaces the previous one, so only the latest code can verify.
 function store_otp(string $phone, string $code, int $now): string {
@@ -96,14 +119,11 @@ function handle_auth_post(string $path): bool {
         if ($password===null || strlen($password)<8 || strlen($password)>72) registration_error('رمز عبور باید بین ۸ تا ۷۲ نویسه باشد.',$first,$last,$phone);
         if (!preg_match('/[A-Za-z]/',$password) || !preg_match('/[0-9]/',$password)) registration_error('رمز عبور باید دست‌کم یک حرف انگلیسی و یک عدد داشته باشد.',$first,$last,$phone);
         if (q('SELECT 1 FROM users WHERE phone=?',[$phone])->fetchColumn()) registration_error('این شماره موبایل قبلاً ثبت شده است. برای ورود از فرم ورود استفاده کنید.',$first,$last,$phone);
-        $count=(int)($_SESSION['otp_requests'] ?? 0);
-        if ($count>=8) { flash('تعداد درخواست‌ها بیش از حد مجاز است. بعداً دوباره تلاش کنید.','error'); redirect('login'); }
-        $previous=q('SELECT created_at FROM otp_codes WHERE phone=?',[$phone])->fetch();
-        if ($previous && time()-(int)$previous['created_at']<90) { flash('برای درخواست دوباره کمی صبر کنید.','error'); redirect('login'); }
+        $wait=reserve_otp_send($phone,time());
+        if ($wait!==null) registration_error($wait,$first,$last,$phone);
         $code=generate_otp();
         $hash=store_otp($phone,$code,time());
         if (!send_verification_code($phone,$code)) { q('DELETE FROM otp_codes WHERE phone=? AND otp_hash=?',[$phone,$hash]); flash('ارسال پیامک فعلاً امکان‌پذیر نیست. کمی بعد دوباره تلاش کنید.','error'); redirect('login'); }
-        $_SESSION['otp_requests']=$count+1;
         $_SESSION['verify_phone']=$phone;
         $_SESSION['verify_name']=$first.' '.$last;
         $_SESSION['verify_password_hash']=password_hash($password,PASSWORD_DEFAULT);
@@ -112,14 +132,11 @@ function handle_auth_post(string $path): bool {
     if ($path==='auth/resend') {
         $phone=(string)($_SESSION['verify_phone'] ?? '');
         if ($phone==='') { flash('درخواست تأییدی در جریان نیست؛ ابتدا ثبت‌نام کنید.','error'); redirect('login'); }
-        $count=(int)($_SESSION['otp_requests'] ?? 0);
-        if ($count>=8) { flash('تعداد درخواست‌ها بیش از حد مجاز است. بعداً دوباره تلاش کنید.','error'); redirect('verify'); }
-        $previous=q('SELECT created_at FROM otp_codes WHERE phone=?',[$phone])->fetch();
-        if ($previous && time()-(int)$previous['created_at']<90) { flash('برای درخواست دوباره کمی صبر کنید.','error'); redirect('verify'); }
+        $wait=reserve_otp_send($phone,time());
+        if ($wait!==null) { flash($wait,'error'); redirect('verify'); }
         $code=generate_otp();
         $hash=store_otp($phone,$code,time());
         if (!send_verification_code($phone,$code)) { q('DELETE FROM otp_codes WHERE phone=? AND otp_hash=?',[$phone,$hash]); flash('ارسال پیامک فعلاً امکان‌پذیر نیست. کمی بعد دوباره تلاش کنید.','error'); redirect('verify'); }
-        $_SESSION['otp_requests']=$count+1;
         flash('کد جدید ارسال شد و کد قبلی باطل شد. کد تا '.fa((int)ceil(otp_ttl_seconds()/60)).' دقیقه معتبر است.'); redirect('verify');
     }
     if ($path==='auth/login') {
@@ -140,16 +157,22 @@ function handle_auth_post(string $path): bool {
         if (!$entry) { flash('کد تأییدی برای این شماره وجود ندارد؛ دوباره درخواست دهید.','error'); redirect('login'); }
         if ($entry['used_at']!==null) { flash('این کد قبلاً استفاده شده است؛ دوباره درخواست دهید.','error'); redirect('login'); }
         if (time()>(int)$entry['expires_at']) { flash('کد منقضی شده است؛ دوباره درخواست دهید.','error'); redirect('login'); }
-        if ((int)$entry['attempts']>=5) { flash('تعداد تلاش‌های ناموفق بیش از حد مجاز است؛ دوباره درخواست دهید.','error'); redirect('login'); }
-        $attempt=q('UPDATE otp_codes SET attempts=attempts+1 WHERE phone=? AND otp_hash=? AND used_at IS NULL AND expires_at>=? AND attempts<5',[$phone,$entry['otp_hash'],time()]);
+        $maxAttempts=otp_max_attempts();
+        $blocked='تعداد تلاش‌های ناموفق بیش از حد مجاز است و این کد غیرفعال شد. با «ارسال دوباره کد» کد جدید دریافت کنید.';
+        if ((int)$entry['attempts']>=$maxAttempts) { flash($blocked,'error'); redirect('verify'); }
+        $attempt=q('UPDATE otp_codes SET attempts=attempts+1 WHERE phone=? AND otp_hash=? AND used_at IS NULL AND expires_at>=? AND attempts<?',[$phone,$entry['otp_hash'],time(),$maxAttempts]);
         if ($attempt->rowCount()!==1) { flash('این کد دیگر معتبر نیست؛ دوباره درخواست دهید.','error'); redirect('login'); }
-        if (!preg_match('/^[0-9]{6}$/D',$code) || !password_verify($code,$entry['otp_hash'])) { flash('کد واردشده صحیح نیست.','error'); redirect('verify'); }
+        if (!preg_match('/^[0-9]{6}$/D',$code) || !password_verify($code,$entry['otp_hash'])) {
+            $left=$maxAttempts-(int)q('SELECT attempts FROM otp_codes WHERE phone=? AND otp_hash=?',[$phone,$entry['otp_hash']])->fetchColumn();
+            flash($left>0 ? 'کد واردشده صحیح نیست. '.fa($left).' تلاش دیگر باقی مانده است.' : $blocked,'error');
+            redirect('verify');
+        }
         // Consuming the code and creating the account commit together; the guarded UPDATE lets only one concurrent request win.
         $db=db();
         $db->beginTransaction();
         try {
             $now=time();
-            $used=q('UPDATE otp_codes SET used_at=? WHERE phone=? AND otp_hash=? AND used_at IS NULL AND expires_at>=? AND attempts<=5', [$now,$phone,$entry['otp_hash'],$now]);
+            $used=q('UPDATE otp_codes SET used_at=? WHERE phone=? AND otp_hash=? AND used_at IS NULL AND expires_at>=? AND attempts<=?', [$now,$phone,$entry['otp_hash'],$now,$maxAttempts]);
             if ($used->rowCount()!==1) { $db->rollBack(); flash('این کد قبلاً استفاده شده یا منقضی شده است؛ دوباره درخواست دهید.','error'); redirect('login'); }
             q('INSERT INTO users(phone,name,password_hash) VALUES (?,?,?)',[$phone,(string)($_SESSION['verify_name'] ?? ''),(string)($_SESSION['verify_password_hash'] ?? '')]);
             $userId=(int)$db->lastInsertId();

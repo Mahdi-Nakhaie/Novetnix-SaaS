@@ -22,7 +22,7 @@ class CoreSchemaTest(unittest.TestCase):
         tables = lambda schema: set(re.findall(r"CREATE TABLE IF NOT EXISTS (\w+)", schema))
         self.assertEqual(tables(SQLITE_SCHEMA), tables(MYSQL_SCHEMA))
         self.assertTrue({"users", "courses", "lessons"} <= tables(SQLITE_SCHEMA))
-        self.assertEqual(len(tables(SQLITE_SCHEMA)), 23)
+        self.assertEqual(len(tables(SQLITE_SCHEMA)), 24)
 
     def test_multiple_users_courses_and_lessons(self):
         self.db.executemany("INSERT INTO users(phone) VALUES (?)", [("09123456789",), ("09987654321",)])

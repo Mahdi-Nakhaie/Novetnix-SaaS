@@ -236,19 +236,15 @@ class OtpVerifyHttpTest(unittest.TestCase):
     def test_13_resend_endpoint_respects_cooldown_and_never_creates_user(self):
         b = Browser()
         b.pending("09120000113", "131313")
-        status, location, _ = b.request("/auth/resend", {"csrf": b.csrf})
-        self.assertEqual((status, location), (303, "/verify"))
-        self.assertIn("کمی صبر کنید", b.request("/verify")[2])
-        self.assertEqual(user_count("09120000113"), 0)
-        now = int(time.time())
-        db("UPDATE otp_codes SET created_at=?, expires_at=? WHERE phone=?", (now - 200, now + 100, "09120000113"))
-        status, location, _ = b.request("/auth/resend", {"csrf": b.csrf})
-        self.assertEqual((status, location), (303, "/verify"))
+        self.assertEqual(resend(b), "/verify")
         html = b.request("/verify")[2]
+        self.assertIn("ارسال پیامک فعلاً امکان‌پذیر نیست", html)
         self.assertIn("ارسال دوباره کد", html)
         self.assertNotIn("131313", html)
-        self.assertEqual(user_count("09120000113"), 0)
         self.assertEqual(b.verify("131313")[1], "/login")
+        self.assertEqual(resend(b), "/verify")
+        self.assertIn("ثانیه دیگر صبر کنید", b.request("/verify")[2])
+        self.assertEqual(requests_row("09120000113")[1], 1)
         self.assertEqual(user_count("09120000113"), 0)
 
     def test_14_resend_without_pending_registration_is_rejected(self):
@@ -256,6 +252,104 @@ class OtpVerifyHttpTest(unittest.TestCase):
         csrf = b.request("/__test/pending", {"phone": ""})[2].strip()
         status, location, _ = b.request("/auth/resend", {"csrf": csrf})
         self.assertEqual((status, location), (303, "/login"))
+
+    def test_15_valid_code_within_attempt_limit_is_accepted(self):
+        b = Browser()
+        b.pending("09120000115", "151515")
+        for _ in range(4):
+            self.assertEqual(b.verify("000000")[1], "/verify")
+        self.assertEqual(otp("09120000115"), (None, 4))
+        self.assertEqual(b.verify("151515")[1], "/dashboard")
+        self.assertEqual(user_count("09120000115"), 1)
+
+    def test_16_wrong_codes_count_down_then_block_even_correct_code(self):
+        b = Browser()
+        b.pending("09120000116", "161616")
+        for left in (4, 3, 2, 1):
+            self.assertEqual(b.verify("000000")[1], "/verify")
+            self.assertIn(f"کد واردشده صحیح نیست. {fa(left)} تلاش دیگر باقی مانده است.", b.request("/verify")[2])
+        self.assertEqual(b.verify("000000")[1], "/verify")
+        self.assertIn("این کد غیرفعال شد", b.request("/verify")[2])
+        self.assertEqual(otp("09120000116"), (None, 5))
+        status, location, _ = b.verify("161616")
+        self.assertEqual((status, location), (303, "/verify"))
+        self.assertIn("این کد غیرفعال شد", b.request("/verify")[2])
+        self.assertEqual(otp("09120000116"), (None, 5))
+        self.assertEqual(user_count("09120000116"), 0)
+
+    def test_17_client_state_cannot_reset_attempts(self):
+        b = Browser()
+        b.pending("09120000117", "171717")
+        for _ in range(5):
+            b.request("/auth/verify", {"csrf": b.csrf, "code": "000000", "attempts": "0", "expires_at": "9999999999"})
+        fresh = Browser()
+        fresh.pending("09120000117")
+        status, location, _ = fresh.request("/auth/verify", {"csrf": fresh.csrf, "code": "171717", "attempts": "0"})
+        self.assertEqual((status, location), (303, "/verify"))
+        self.assertEqual(otp("09120000117"), (None, 5))
+        self.assertEqual(user_count("09120000117"), 0)
+
+    def test_18_registration_cooldown_applies_per_phone_across_sessions(self):
+        first = Browser()
+        self.assertEqual(register(first, "09120000118"), "/login")
+        self.assertIn("ارسال پیامک فعلاً امکان‌پذیر نیست", first.request("/login")[2])
+        second = Browser()
+        self.assertEqual(register(second, "09120000118", ignored_counter="0"), "/login")
+        html = second.request("/login")[2]
+        self.assertIn("ثانیه دیگر صبر کنید", html)
+        self.assertEqual(requests_row("09120000118")[1], 1)
+        self.assertEqual(db("SELECT COUNT(*) FROM otp_codes WHERE phone=?", ("09120000118",))[0][0], 0)
+        self.assertEqual(user_count("09120000118"), 0)
+
+    def test_19_resend_limit_per_window_then_allowed_after_window(self):
+        phone = "09120000119"
+        for _ in range(5):
+            b = Browser()
+            b.pending(phone)
+            age_requests(phone, last=100)
+            self.assertEqual(resend(b), "/verify")
+            self.assertIn("ارسال پیامک فعلاً امکان‌پذیر نیست", b.request("/verify")[2])
+        self.assertEqual(requests_row(phone)[1], 5)
+        age_requests(phone, last=100)
+        b = Browser()
+        b.pending(phone)
+        self.assertEqual(resend(b), "/verify")
+        self.assertIn("به سقف مجاز رسیده است", b.request("/verify")[2])
+        self.assertEqual(requests_row(phone)[1], 5)
+        age_requests(phone, last=100, window=3600)
+        self.assertEqual(resend(b), "/verify")
+        self.assertIn("ارسال پیامک فعلاً امکان‌پذیر نیست", b.request("/verify")[2])
+        self.assertEqual(requests_row(phone)[1], 1)
+        self.assertEqual(user_count(phone), 0)
+
+    def test_20_persian_and_arabic_digit_codes_are_accepted(self):
+        for phone, code, typed in (("09120000120", "120120", "۱۲۰۱۲۰"), ("09120000121", "121121", "١٢١١٢١")):
+            b = Browser()
+            b.pending(phone, code)
+            self.assertEqual(b.verify(typed)[1], "/dashboard")
+            self.assertEqual(user_count(phone), 1)
+
+
+def fa(n):
+    return str(n).translate(str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹"))
+
+
+def resend(browser):
+    return browser.request("/auth/resend", {"csrf": browser.csrf})[1]
+
+
+def register(browser, phone, **extra):
+    browser.csrf = browser.request("/__test/pending", {"phone": ""})[2].strip()
+    data = {"csrf": browser.csrf, "first_name": "علی", "last_name": "رضایی", "phone": phone, "password": "Passw0rd1", **extra}
+    return browser.request("/auth/request", data)[1]
+
+
+def requests_row(phone):
+    return db("SELECT window_start, request_count, last_requested FROM otp_requests WHERE phone=?", (phone,))[0]
+
+
+def age_requests(phone, last=0, window=0):
+    db("UPDATE otp_requests SET last_requested=last_requested-?, window_start=window_start-? WHERE phone=?", (last, window, phone))
 
 
 if __name__ == "__main__":

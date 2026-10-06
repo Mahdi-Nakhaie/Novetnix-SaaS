@@ -105,9 +105,18 @@ class OtpFlowTest(unittest.TestCase):
                                            "password_verify($code,$entry['otp_hash'])", "SET used_at=?", "INSERT INTO users", "$db->commit()")]
         self.assertEqual(order, sorted(order))
         self.assertLess(verify.index("beginTransaction"), verify.index("SET used_at=?"))
-        self.assertIn("flash('کد واردشده صحیح نیست.','error'); redirect('verify');", verify)
+        self.assertIn("'کد واردشده صحیح نیست. '.fa($left).' تلاش دیگر باقی مانده است.'", verify)
+        self.assertIn("attempts<?',[$phone,$entry['otp_hash'],time(),$maxAttempts]", verify)
         self.assertIn("session_regenerate_id(true); $_SESSION['uid']=$userId;", verify)
         self.assertIn("redirect('dashboard')", verify)
+
+    def test_otp_limits_are_centralized_in_configuration(self):
+        for key, default in (("OTP_MAX_ATTEMPTS", 5), ("OTP_RESEND_COOLDOWN_SECONDS", 90), ("OTP_RESEND_LIMIT", 5), ("OTP_RESEND_WINDOW_SECONDS", 3600)):
+            self.assertIn(f"otp_setting('{key}',{default},", AUTH)
+            self.assertRegex(ENV_EXAMPLE, rf"(?m)^{key}={default}$")
+        self.assertEqual(AUTH.count("reserve_otp_send($phone,time())"), 2)
+        for literal in ("<90", ">=8", "attempts<5", "attempts<=5", ">=5) { flash", "$_SESSION['otp_requests']"):
+            self.assertNotIn(literal, AUTH)
 
     def test_concurrent_consume_succeeds_only_once(self):
         with tempfile.TemporaryDirectory() as tmp:
