@@ -6,6 +6,7 @@ already running server via OTP_TEST_BASE_URL + OTP_TEST_DB.
 import http.cookiejar
 import os
 import pathlib
+import re
 import shutil
 import socket
 import sqlite3
@@ -328,6 +329,61 @@ class OtpVerifyHttpTest(unittest.TestCase):
             b.pending(phone, code)
             self.assertEqual(b.verify(typed)[1], "/dashboard")
             self.assertEqual(user_count(phone), 1)
+
+    def test_21_login_preserves_learning_data_and_rotates_session(self):
+        phone = "09120000122"
+        b = Browser()
+        b.pending(phone, "122122")
+        self.assertEqual(b.verify("122122")[1], "/dashboard")
+        user_id = db("SELECT id FROM users WHERE phone=?", (phone,))[0][0]
+        self.assertIsNotNone(db("SELECT phone_verified_at FROM users WHERE id=?", (user_id,))[0][0])
+        db("INSERT INTO enrollments(user_id,course_slug) VALUES (?,?)", (user_id, "python-foundations"))
+        db("INSERT INTO courses(slug,title,description) VALUES ('saved-progress','Saved','Saved')")
+        course_id = db("SELECT id FROM courses WHERE slug='saved-progress'")[0][0]
+        db("INSERT INTO lessons(course_id,title,content,position) VALUES (?,?,?,1)", (course_id, "Saved", "Saved"))
+        lesson_id = db("SELECT id FROM lessons WHERE course_id=?", (course_id,))[0][0]
+        db("INSERT INTO lesson_progress(user_id,lesson_id,status,completed_at) VALUES (?,?,'completed','2026-10-06 10:00:00')", (user_id, lesson_id))
+        self.assertEqual(b.request("/logout", {"csrf": b.csrf})[1], "/")
+        old_sid = session_id(b)
+        self.assertEqual(login(b, "+98 9120000122", "Passw0rd1")[1], "/dashboard")
+        self.assertNotEqual(session_id(b), old_sid)
+        self.assertEqual(b.request("/dashboard")[0], 200)
+        self.assertIn("مقاله‌های من", b.request("/dashboard")[2])
+        self.assertEqual(b.request("/dashboard/learning")[0], 200)
+        self.assertEqual(db("SELECT course_slug FROM enrollments WHERE user_id=?", (user_id,)), [("python-foundations",)])
+        self.assertEqual(db("SELECT status FROM lesson_progress WHERE user_id=?", (user_id,)), [("completed",)])
+
+    def test_22_unverified_and_unknown_users_do_not_gain_access(self):
+        owner = Browser()
+        owner.pending("09120000123", "123123")
+        self.assertEqual(owner.verify("123123")[1], "/dashboard")
+        hash_value = db("SELECT password_hash FROM users WHERE phone='09120000123'")[0][0]
+        db("INSERT INTO users(phone,name,password_hash) VALUES (?,?,?)", ("09120000124", "کاربر", hash_value))
+        for phone, password in (("09120000124", "Passw0rd1"), ("09120000125", "Passw0rd1"), ("09120000123", "wrong-password")):
+            b = Browser()
+            status, location, _ = login(b, phone, password)
+            self.assertEqual((status, location), (303, "/login"))
+            self.assertIn("شماره موبایل یا رمز عبور صحیح نیست.", b.request("/login")[2])
+            self.assertTrue(b.request("/dashboard")[1].startswith("/login"))
+
+    def test_23_unverified_session_cannot_open_dashboard(self):
+        b = Browser()
+        b.pending("09120000126", "126126")
+        self.assertEqual(b.verify("126126")[1], "/dashboard")
+        db("UPDATE users SET phone_verified_at=NULL WHERE phone='09120000126'")
+        self.assertTrue(b.request("/dashboard")[1].startswith("/login"))
+
+
+def session_id(browser):
+    return next((cookie.value for cookie in browser.opener.handlers if isinstance(cookie, urllib.request.HTTPCookieProcessor) for cookie in cookie.cookiejar if cookie.name == "PHPSESSID"), None)
+
+
+def login(browser, phone, password):
+    html = browser.request("/login")[2]
+    captcha = re.search(r'<div class="captcha-box"><strong dir="ltr">([^<]+)</strong>', html).group(1)
+    csrf = re.search(r'name="csrf" value="([^"]+)"', html).group(1)
+    browser.csrf = csrf
+    return browser.request("/auth/login", {"csrf": csrf, "phone": phone, "password": password, "captcha": captcha})
 
 
 def fa(n):

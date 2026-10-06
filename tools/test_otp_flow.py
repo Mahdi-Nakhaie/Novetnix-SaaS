@@ -10,6 +10,7 @@ AUTH = (ROOT / "src/auth.php").read_text(encoding="utf-8")
 ROUTER = (ROOT / "src/router.php").read_text(encoding="utf-8")
 ENV_EXAMPLE = (ROOT / ".env.example").read_text(encoding="utf-8")
 SCHEMA = (ROOT / "database/schema.sqlite.sql").read_text(encoding="utf-8")
+CONNECTION = (ROOT / "database/connection.php").read_text(encoding="utf-8")
 
 
 def function_body(name):
@@ -109,6 +110,36 @@ class OtpFlowTest(unittest.TestCase):
         self.assertIn("attempts<?',[$phone,$entry['otp_hash'],time(),$maxAttempts]", verify)
         self.assertIn("session_regenerate_id(true); $_SESSION['uid']=$userId;", verify)
         self.assertIn("redirect('dashboard')", verify)
+
+    def test_login_requires_verified_phone_and_checks_hash(self):
+        login = AUTH[AUTH.index("if ($path==='auth/login')"):AUTH.index("if ($path==='auth/verify')")]
+        self.assertIn("normalized_phone($phoneRaw)", login)
+        self.assertIn("password_verify($password,$hash)", login)
+        self.assertIn("$u['phone_verified_at']===null", login)
+        self.assertIn("session_regenerate_id(true); $_SESSION['uid']=(int)$u['id']", login)
+        self.assertIn("شماره موبایل یا رمز عبور صحیح نیست.", login)
+        self.assertIn("$u['phone_verified_at']===null", function_body("user"))
+        verify = AUTH[AUTH.index("if ($path==='auth/verify')"):AUTH.index("if ($path==='auth/admin')")]
+        self.assertIn("INSERT INTO users(phone,name,password_hash,phone_verified_at)", verify)
+
+    def test_legacy_verified_users_keep_progress_when_migrated(self):
+        db = sqlite3.connect(":memory:")
+        try:
+            db.execute("PRAGMA foreign_keys=ON")
+            db.executescript(SCHEMA.replace(", phone_verified_at INTEGER", ""))
+            db.execute("INSERT INTO users(phone,name,password_hash) VALUES ('09120000131','User','hash')")
+            db.execute("INSERT INTO users(phone,name,password_hash) VALUES ('09120000132','User','hash')")
+            db.execute("INSERT INTO courses(slug,title,description) VALUES ('saved','Saved','Saved')")
+            db.execute("INSERT INTO lessons(course_id,title,content,position) VALUES (1,'Saved','Saved',1)")
+            db.execute("INSERT INTO lesson_progress(user_id,lesson_id) VALUES (1,1)")
+            db.execute("INSERT INTO otp_codes(phone,otp_hash,created_at,expires_at,used_at) VALUES ('09120000131','hash',100,200,150)")
+            db.execute("ALTER TABLE users ADD COLUMN phone_verified_at INTEGER")
+            migration = re.search(r"\$db->exec\('(UPDATE users SET phone_verified_at=.*?)'\);", CONNECTION).group(1)
+            db.execute(migration)
+            self.assertEqual(db.execute("SELECT phone_verified_at FROM users ORDER BY id").fetchall(), [(150,), (None,)])
+            self.assertEqual(db.execute("SELECT user_id FROM lesson_progress").fetchall(), [(1,)])
+        finally:
+            db.close()
 
     def test_otp_limits_are_centralized_in_configuration(self):
         for key, default in (("OTP_MAX_ATTEMPTS", 5), ("OTP_RESEND_COOLDOWN_SECONDS", 90), ("OTP_RESEND_LIMIT", 5), ("OTP_RESEND_WINDOW_SECONDS", 3600)):

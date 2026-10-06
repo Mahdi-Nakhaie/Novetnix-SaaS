@@ -17,7 +17,8 @@ function redirect(string $path): never { header('Location: '.url($path),true,303
 function flash(string $message, string $kind='success'): void { $_SESSION['flash']=['text'=>$message,'kind'=>$kind]; }
 function user(): ?array {
     if (empty($_SESSION['uid'])) return null;
-    $u=q('SELECT id,phone,name,role FROM users WHERE id=?',[(int)$_SESSION['uid']])->fetch();
+    $u=q('SELECT id,phone,name,role,phone_verified_at FROM users WHERE id=?',[(int)$_SESSION['uid']])->fetch();
+    if (!$u || $u['phone_verified_at']===null) return null;
     if ($u && $u['role']==='admin' && (!hash_equals((string)config_value('ADMIN_PHONE'), $u['phone']) || ($_SESSION['admin_verified_uid'] ?? null)!==(int)$u['id'])) $u['role']='student';
     return $u ?: null;
 }
@@ -141,10 +142,14 @@ function handle_auth_post(string $path): bool {
     }
     if ($path==='auth/login') {
         if (!validate_captcha()) { flash('کد کپچا صحیح نیست.','error'); redirect('login'); }
-        $phone=normalized_phone((string)($_POST['phone'] ?? ''));
-        $password=(string)($_POST['password'] ?? '');
-        $u=$phone ? q('SELECT id,password_hash FROM users WHERE phone=?',[$phone])->fetch() : false;
-        if (!$u || !password_verify($password,(string)$u['password_hash'])) { flash('شماره موبایل یا رمز عبور صحیح نیست.','error'); redirect('login'); }
+        $phoneRaw=registration_input('phone');
+        $phone=$phoneRaw===null ? null : normalized_phone($phoneRaw);
+        $password=registration_input('password') ?? '';
+        $u=$phone ? q('SELECT id,password_hash,phone_verified_at FROM users WHERE phone=?',[$phone])->fetch() : false;
+        $dummyHash=password_hash('invalid-account',PASSWORD_DEFAULT);
+        $hash=$u && $u['password_hash']!=='' ? (string)$u['password_hash'] : $dummyHash;
+        $passwordValid=password_verify($password,$hash);
+        if (!$u || $u['phone_verified_at']===null || !$passwordValid) { flash('شماره موبایل یا رمز عبور صحیح نیست.','error'); redirect('login'); }
         session_regenerate_id(true); $_SESSION['uid']=(int)$u['id']; unset($_SESSION['admin_verified_uid']);
         if ($phone===(config_value('ADMIN_PHONE') ?: '')) redirect('admin-login');
         flash('خوش آمدید!'); redirect('dashboard');
@@ -174,7 +179,7 @@ function handle_auth_post(string $path): bool {
             $now=time();
             $used=q('UPDATE otp_codes SET used_at=? WHERE phone=? AND otp_hash=? AND used_at IS NULL AND expires_at>=? AND attempts<=?', [$now,$phone,$entry['otp_hash'],$now,$maxAttempts]);
             if ($used->rowCount()!==1) { $db->rollBack(); flash('این کد قبلاً استفاده شده یا منقضی شده است؛ دوباره درخواست دهید.','error'); redirect('login'); }
-            q('INSERT INTO users(phone,name,password_hash) VALUES (?,?,?)',[$phone,(string)($_SESSION['verify_name'] ?? ''),(string)($_SESSION['verify_password_hash'] ?? '')]);
+            q('INSERT INTO users(phone,name,password_hash,phone_verified_at) VALUES (?,?,?,?)',[$phone,(string)($_SESSION['verify_name'] ?? ''),(string)($_SESSION['verify_password_hash'] ?? ''),$now]);
             $userId=(int)$db->lastInsertId();
             $db->commit();
         } catch (PDOException $e) {

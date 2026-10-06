@@ -26,6 +26,13 @@ function db(): PDO {
         if (in_array('sent_at',$names,true)) $db->exec('ALTER TABLE otp_codes RENAME COLUMN sent_at TO created_at');
         if (!in_array('used_at',$names,true)) $db->exec('ALTER TABLE otp_codes ADD COLUMN used_at '.($driver==='mysql' ? 'BIGINT NULL' : 'INTEGER'));
         try { $db->exec('ALTER TABLE users ADD COLUMN password_hash '.($driver==='mysql' ? "VARCHAR(255) NOT NULL DEFAULT ''" : "TEXT NOT NULL DEFAULT ''")); } catch (Throwable $e) { }
+        $userColumns=$db->query('SELECT * FROM users LIMIT 0');
+        $hasVerification=false;
+        for ($i=0; $i<$userColumns->columnCount(); $i++) if ($userColumns->getColumnMeta($i)['name']==='phone_verified_at') $hasVerification=true;
+        if (!$hasVerification) {
+            $db->exec('ALTER TABLE users ADD COLUMN phone_verified_at '.($driver==='mysql' ? 'BIGINT NULL' : 'INTEGER'));
+            $db->exec('UPDATE users SET phone_verified_at=(SELECT used_at FROM otp_codes WHERE otp_codes.phone=users.phone AND used_at IS NOT NULL) WHERE EXISTS (SELECT 1 FROM otp_codes WHERE otp_codes.phone=users.phone AND used_at IS NOT NULL)');
+        }
         return $db;
     } catch (Throwable $e) {
         throw new RuntimeException('Database initialization failed.', 0, $e);
