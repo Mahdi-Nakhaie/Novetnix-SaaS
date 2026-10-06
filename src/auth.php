@@ -80,7 +80,7 @@ function send_verification_code(string $phone, string $code): bool {
     return false;
 }
 function handle_auth_post(string $path): bool {
-    if (!in_array($path,['auth/request','auth/login','auth/verify','auth/admin','logout'],true)) return false;
+    if (!in_array($path,['auth/request','auth/resend','auth/login','auth/verify','auth/admin','logout'],true)) return false;
     validate_csrf();
     if ($path==='auth/request') {
         $firstRaw=registration_input('first_name');
@@ -108,6 +108,19 @@ function handle_auth_post(string $path): bool {
         $_SESSION['verify_name']=$first.' '.$last;
         $_SESSION['verify_password_hash']=password_hash($password,PASSWORD_DEFAULT);
         flash('کد تأیید ارسال شد. کد تا '.fa((int)ceil(otp_ttl_seconds()/60)).' دقیقه معتبر است.'); redirect('verify');
+    }
+    if ($path==='auth/resend') {
+        $phone=(string)($_SESSION['verify_phone'] ?? '');
+        if ($phone==='') { flash('درخواست تأییدی در جریان نیست؛ ابتدا ثبت‌نام کنید.','error'); redirect('login'); }
+        $count=(int)($_SESSION['otp_requests'] ?? 0);
+        if ($count>=8) { flash('تعداد درخواست‌ها بیش از حد مجاز است. بعداً دوباره تلاش کنید.','error'); redirect('verify'); }
+        $previous=q('SELECT created_at FROM otp_codes WHERE phone=?',[$phone])->fetch();
+        if ($previous && time()-(int)$previous['created_at']<90) { flash('برای درخواست دوباره کمی صبر کنید.','error'); redirect('verify'); }
+        $code=generate_otp();
+        $hash=store_otp($phone,$code,time());
+        if (!send_verification_code($phone,$code)) { q('DELETE FROM otp_codes WHERE phone=? AND otp_hash=?',[$phone,$hash]); flash('ارسال پیامک فعلاً امکان‌پذیر نیست. کمی بعد دوباره تلاش کنید.','error'); redirect('verify'); }
+        $_SESSION['otp_requests']=$count+1;
+        flash('کد جدید ارسال شد و کد قبلی باطل شد. کد تا '.fa((int)ceil(otp_ttl_seconds()/60)).' دقیقه معتبر است.'); redirect('verify');
     }
     if ($path==='auth/login') {
         if (!validate_captcha()) { flash('کد کپچا صحیح نیست.','error'); redirect('login'); }

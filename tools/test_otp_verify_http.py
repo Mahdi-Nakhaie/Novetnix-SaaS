@@ -78,10 +78,12 @@ class Browser:
             response = error
         return response.status, response.headers.get("Location", ""), response.read().decode("utf-8", "replace")
 
-    def pending(self, phone, code=None):
+    def pending(self, phone, code=None, ttl=None):
         data = {"phone": phone}
         if code is not None:
             data["code"] = code
+        if ttl is not None:
+            data["ttl"] = ttl
         self.csrf = self.request("/__test/pending", data)[2].strip()
 
     def verify(self, code):
@@ -192,6 +194,68 @@ class OtpVerifyHttpTest(unittest.TestCase):
         self.assertNotIn("۹۰۹۰۹۰", html)
         self.assertNotIn("otp_hash", html)
         self.assertNotIn("$2y$", html)
+
+
+    def test_10_ttl_comes_from_configuration(self):
+        b = Browser()
+        for ttl, expected in (("120", 120), ("600", 600), ("5", 300)):
+            b.pending("09120000110", "101010", ttl)
+            created, expires = db("SELECT created_at, expires_at FROM otp_codes WHERE phone=?", ("09120000110",))[0]
+            self.assertEqual(expires - created, expected, ttl)
+        b.pending("09120000110", "101010")
+        created, expires = db("SELECT created_at, expires_at FROM otp_codes WHERE phone=?", ("09120000110",))[0]
+        self.assertEqual(expires - created, 300)
+
+    def test_11_new_code_replaces_old_without_creating_user(self):
+        b = Browser()
+        b.pending("09120000111", "111000")
+        b.pending("09120000111", "222000")
+        self.assertEqual(db("SELECT COUNT(*) FROM otp_codes WHERE phone=?", ("09120000111",))[0][0], 1)
+        self.assertEqual(user_count("09120000111"), 0)
+        self.assertEqual(b.verify("111000")[1], "/verify")
+        self.assertEqual(user_count("09120000111"), 0)
+        self.assertEqual(b.verify("222000")[1], "/dashboard")
+        self.assertEqual(user_count("09120000111"), 1)
+
+    def test_12_multiple_resends_keep_only_latest_code(self):
+        b = Browser()
+        codes = ["300001", "300002", "300003", "300004"]
+        for code in codes:
+            b.pending("09120000112", code)
+        rows = db("SELECT otp_hash, used_at, attempts FROM otp_codes WHERE phone=?", ("09120000112",))
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0][1:], (None, 0))
+        self.assertTrue(rows[0][0].startswith("$2y$"))
+        self.assertNotIn(codes[-1], rows[0][0])
+        for old in codes[:-1]:
+            self.assertEqual(b.verify(old)[1], "/verify")
+        self.assertEqual(user_count("09120000112"), 0)
+        self.assertEqual(b.verify(codes[-1])[1], "/dashboard")
+        self.assertEqual(user_count("09120000112"), 1)
+
+    def test_13_resend_endpoint_respects_cooldown_and_never_creates_user(self):
+        b = Browser()
+        b.pending("09120000113", "131313")
+        status, location, _ = b.request("/auth/resend", {"csrf": b.csrf})
+        self.assertEqual((status, location), (303, "/verify"))
+        self.assertIn("کمی صبر کنید", b.request("/verify")[2])
+        self.assertEqual(user_count("09120000113"), 0)
+        now = int(time.time())
+        db("UPDATE otp_codes SET created_at=?, expires_at=? WHERE phone=?", (now - 200, now + 100, "09120000113"))
+        status, location, _ = b.request("/auth/resend", {"csrf": b.csrf})
+        self.assertEqual((status, location), (303, "/verify"))
+        html = b.request("/verify")[2]
+        self.assertIn("ارسال دوباره کد", html)
+        self.assertNotIn("131313", html)
+        self.assertEqual(user_count("09120000113"), 0)
+        self.assertEqual(b.verify("131313")[1], "/login")
+        self.assertEqual(user_count("09120000113"), 0)
+
+    def test_14_resend_without_pending_registration_is_rejected(self):
+        b = Browser()
+        csrf = b.request("/__test/pending", {"phone": ""})[2].strip()
+        status, location, _ = b.request("/auth/resend", {"csrf": csrf})
+        self.assertEqual((status, location), (303, "/login"))
 
 
 if __name__ == "__main__":

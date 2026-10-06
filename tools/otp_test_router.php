@@ -10,7 +10,9 @@ if ($path==='/__test/pending') {
     $_SESSION['verify_phone']=$phone;
     $_SESSION['verify_name']='کاربر آزمایشی';
     $_SESSION['verify_password_hash']=password_hash('Passw0rd1',PASSWORD_DEFAULT);
+    if (isset($_POST['ttl'])) putenv('OTP_TTL_SECONDS='.(string)$_POST['ttl']);
     if (isset($_POST['code'])) store_otp($phone,(string)$_POST['code'],time());
+    putenv('OTP_TTL_SECONDS');
     echo csrf();
     exit;
 }
