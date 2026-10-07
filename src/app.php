@@ -16,9 +16,10 @@ function seed_demo_courses(): void {
     q('INSERT INTO lessons(course_id,title,content,position,duration_minutes,status) VALUES (?,?,?,?,?,?)',[$course,'مبانی هوش مصنوعی','با مفاهیم اصلی هوش مصنوعی و مسیر حل یک مسئله واقعی آشنا شو.',1,30,'published']);
     q('INSERT INTO lessons(course_id,title,content,position,duration_minutes,status) VALUES (?,?,?,?,?,?)',[$course,'پروژه تشخیص چهره','یک نمونه پروژه عملی را از تعریف مسئله تا اجرای اولیه بررسی کن.',2,40,'published']);
 }
-function course_workspace(string $slug): ?array {
-    $course=q("SELECT id,slug,title,description,estimated_duration_minutes FROM courses WHERE slug=? AND status='published'",[$slug])->fetch();
+function course_workspace(int $userId,string $slug,?int $requestedLesson=null): ?array {
+    $course=q("SELECT c.id,c.slug,c.title,c.description,c.estimated_duration_minutes FROM courses c INNER JOIN enrollments e ON e.course_slug=c.slug AND e.user_id=? WHERE c.slug=? AND c.status='published'",[$userId,$slug])->fetch();
     if (!$course) return null;
+    if ($requestedLesson!==null && !q("SELECT id FROM lessons WHERE id=? AND course_id=? AND status='published'",[$requestedLesson,$course['id']])->fetch()) return null;
     $course['lessons']=q("SELECT id,title,content,position,duration_minutes FROM lessons WHERE course_id=? AND status='published' ORDER BY position ASC",[$course['id']])->fetchAll();
     return $course;
 }
@@ -30,8 +31,13 @@ function course_duration_minutes(array $course): ?int {
 function course_workspace_selection(?array $course,string $requested): array {
     if (!$course || !$course['lessons']) return ['current'=>null,'index'=>-1,'previous'=>null,'next'=>null];
     $index=0;
-    $lessonId=filter_var($requested,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]);
-    if ($lessonId!==false && $lessonId!==null) foreach ($course['lessons'] as $i=>$lesson) if ((int)$lesson['id']===$lessonId) { $index=$i; break; }
+    if ($requested!=='') {
+        $lessonId=filter_var($requested,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]);
+        if ($lessonId===false || $lessonId===null) return ['current'=>null,'index'=>-1,'previous'=>null,'next'=>null];
+        $index=-1;
+        foreach ($course['lessons'] as $i=>$lesson) if ((int)$lesson['id']===$lessonId) { $index=$i; break; }
+        if ($index<0) return ['current'=>null,'index'=>-1,'previous'=>null,'next'=>null];
+    }
     return ['current'=>$course['lessons'][$index],'index'=>$index,'previous'=>$course['lessons'][$index-1] ?? null,'next'=>$course['lessons'][$index+1] ?? null];
 }
 function url(string $path=''): string { return '/'.ltrim($path,'/'); }
@@ -96,12 +102,13 @@ function handle_post(string $path): void {
         q('UPDATE users SET name=? WHERE id=?',[$name,$u['id']]); flash('پروفایل ذخیره شد.'); redirect('dashboard/profile');
     }
     if ($path==='courses/enroll') {
-        $slug=(string)($_POST['slug'] ?? '');
-        if (!isset(COURSES[$slug])) { http_response_code(404); exit; }
-        if (!can_course($slug,$plan)) { flash('برای این مقاله به اشتراک بالاتر نیاز دارید.','error'); redirect('pricing'); }
+        $slug=trim((string)($_POST['slug'] ?? ''));
+        $course=q("SELECT slug FROM courses WHERE slug=? AND status='published'",[$slug])->fetch();
+        if (!$course) { http_response_code(404); exit; }
+        if (isset(COURSES[$slug]) && !can_course($slug,$plan)) { flash('برای این دوره به اشتراک بالاتر نیاز دارید.','error'); redirect('pricing'); }
         if (db()->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql') q('INSERT IGNORE INTO enrollments(user_id,course_slug) VALUES (?,?)',[$u['id'],$slug]);
         else q('INSERT OR IGNORE INTO enrollments(user_id,course_slug) VALUES (?,?)',[$u['id'],$slug]);
-        flash('مقاله به مسیر یادگیری شما اضافه شد.'); redirect('dashboard/learning');
+        flash('دوره به مسیر یادگیری شما اضافه شد.'); redirect('dashboard/learning');
     }
     if ($path==='projects/start') {
         $index=filter_var($_POST['index'] ?? '',FILTER_VALIDATE_INT);

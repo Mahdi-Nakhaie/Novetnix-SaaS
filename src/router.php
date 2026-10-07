@@ -23,8 +23,13 @@ function route(): void {
     if (preg_match('~^dashboard/course/([a-z0-9-]+)$~D',$path,$match)) {
         $u=require_user();
         if ($u['phone']===(config_value('ADMIN_PHONE') ?: '') && $u['role']!=='admin') redirect('admin-login');
-        $course=course_workspace($match[1]);
-        head_page('فضای یادگیری','',true); notice(); page_course_workspace($course,(string)($_GET['lesson'] ?? '')); foot_page(true);
+        $requestedLesson=(string)($_GET['lesson'] ?? '');
+        if ($requestedLesson!=='') {
+            $requestedLesson=filter_var($requestedLesson,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]);
+            if ($requestedLesson===false || $requestedLesson===null) { http_response_code(404); exit; }
+        } else $requestedLesson=null;
+        $course=course_workspace((int)$u['id'],$match[1],$requestedLesson);
+        head_page('فضای یادگیری','',true); notice(); page_course_workspace($course,$requestedLesson===null?'':(string)$requestedLesson); foot_page(true);
         return;
     }
     if ($path==='dashboard' || str_starts_with($path,'dashboard/')) {

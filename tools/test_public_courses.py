@@ -33,6 +33,11 @@ class PublicCoursesTest(unittest.TestCase):
              ("empty", "Empty", "No published lessons", "published")],
         )
         self.db.executemany(
+            "INSERT INTO users(phone,name,phone_verified_at) VALUES (?,?,?)",
+            [("09120000001", "Enrolled", 1), ("09120000002", "Other", 1)],
+        )
+        self.db.execute("INSERT INTO enrollments(user_id,course_slug) VALUES (?,?)", (1, "published"))
+        self.db.executemany(
             "INSERT INTO lessons(course_id,title,content,position,status) VALUES (?,?,?,?,?)",
             [(1, "Third", "Third content", 3, "published"),
              (1, "First", "First content", 1, "published"),
@@ -109,6 +114,34 @@ class PublicCoursesTest(unittest.TestCase):
         self.assertIn("next", self.selection)
         self.assertIn("video-placeholder", self.workspace_view)
         self.assertIn("aspect-ratio:16/9", (ROOT / "site/assets/style.css").read_text(encoding="utf-8"))
+
+    def test_workspace_authorization_is_backend_and_course_scoped(self):
+        route = body(ROUTER, "route")
+        self.assertIn("course_workspace((int)$u['id'],$match[1],$requestedLesson)", route)
+        self.assertIn("INNER JOIN enrollments e", self.workspace)
+        self.assertIn("e.user_id=?", self.workspace)
+        self.assertIn("status='published'", self.workspace)
+        workspace_course_sql = query(self.workspace, "courses")
+        self.assertEqual(self.db.execute(workspace_course_sql, (1, "published")).fetchone()[1], "published")
+        self.assertIsNone(self.db.execute(workspace_course_sql, (2, "published")).fetchone())
+        self.assertNotIn("content", workspace_course_sql)
+
+    def test_workspace_rejects_missing_or_cross_course_lesson(self):
+        lesson_guard = query(self.workspace, "lessons")
+        self.assertEqual(self.db.execute(lesson_guard, (1, 1)).fetchone()[0], 1)
+        self.assertIsNone(self.db.execute(lesson_guard, (5, 1)).fetchone())
+        self.assertIsNone(self.db.execute(lesson_guard, (1, 2)).fetchone())
+        self.assertIn("if ($requestedLesson!==null", self.workspace)
+        self.assertIn("return null", self.workspace)
+        self.assertIn("if ($index<0)", self.selection)
+
+    def test_direct_lesson_parameter_is_validated_before_rendering(self):
+        route = body(ROUTER, "route")
+        self.assertIn("FILTER_VALIDATE_INT", route)
+        self.assertIn("http_response_code(404); exit", route)
+        self.assertIn("page_course_workspace($course", route)
+        self.assertIn("$requestedLesson=filter_var($requestedLesson", route)
+        self.assertIn("course_workspace((int)$u['id'],$match[1],$requestedLesson)", route)
 
     def test_archived_rows_are_excluded_by_public_queries(self):
         db = sqlite3.connect(":memory:")
