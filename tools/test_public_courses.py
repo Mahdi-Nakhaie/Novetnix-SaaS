@@ -7,6 +7,7 @@ import unittest
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 ROUTER = (ROOT / "src/router.php").read_text(encoding="utf-8")
 VIEWS = (ROOT / "src/views.php").read_text(encoding="utf-8")
+APP = (ROOT / "src/app.php").read_text(encoding="utf-8")
 SCHEMA = (ROOT / "database/schema.sqlite.sql").read_text(encoding="utf-8")
 
 
@@ -44,15 +45,16 @@ class PublicCoursesTest(unittest.TestCase):
         self.listing = body(VIEWS, "course_cards")
         self.course_sql = query(self.detail, "courses")
         self.lesson_sql = query(self.detail, "lessons")
-        self.list_sql = query(self.listing, "courses")
+        self.list_sql = query(APP, "courses")
 
     def tearDown(self):
         self.db.close()
 
     def test_public_listing_uses_database_and_excludes_draft(self):
         self.assertEqual([row[0] for row in self.db.execute(self.list_sql)], ["published", "empty"])
-        self.assertIn("course_cards()", body(ROUTER, "page_courses"))
+        self.assertIn("course_cards($courses)", body(ROUTER, "page_courses"))
         self.assertNotIn("COURSES", self.listing)
+        self.assertNotIn("q(", self.listing)
 
     def test_course_lookup_rejects_missing_and_draft(self):
         self.assertEqual(self.db.execute(self.course_sql, ("published",)).fetchone()[2], "Published")
@@ -76,16 +78,19 @@ class PublicCoursesTest(unittest.TestCase):
     def test_empty_published_lesson_list(self):
         course_id = self.db.execute(self.course_sql, ("empty",)).fetchone()[0]
         self.assertEqual(self.db.execute(self.lesson_sql, (course_id,)).fetchall(), [])
+        self.assertIn("estimated_duration_minutes", self.detail)
+        self.assertIn("duration_minutes", self.detail)
+        self.assertIn("مدت ثبت نشده", self.detail)
         self.assertIn("count($lessons)", self.detail)
         self.assertIn("if (!$lessons)", self.detail)
 
     def test_archived_rows_are_excluded_by_public_queries(self):
         db = sqlite3.connect(":memory:")
         try:
-            db.executescript("CREATE TABLE courses (id INTEGER,slug TEXT,title TEXT,description TEXT,status TEXT); CREATE TABLE lessons (course_id INTEGER,title TEXT,content TEXT,position INTEGER,status TEXT);")
-            db.execute("INSERT INTO courses VALUES (1,'archived','Archived','Hidden','archived')")
-            db.execute("INSERT INTO courses VALUES (2,'visible','Visible','Visible','published')")
-            db.execute("INSERT INTO lessons VALUES (2,'Archived lesson','Hidden',1,'archived')")
+            db.executescript("CREATE TABLE courses (id INTEGER,slug TEXT,title TEXT,description TEXT,estimated_duration_minutes INTEGER,status TEXT); CREATE TABLE lessons (course_id INTEGER,title TEXT,content TEXT,position INTEGER,duration_minutes INTEGER,status TEXT);")
+            db.execute("INSERT INTO courses VALUES (1,'archived','Archived','Hidden',NULL,'archived')")
+            db.execute("INSERT INTO courses VALUES (2,'visible','Visible','Visible',NULL,'published')")
+            db.execute("INSERT INTO lessons VALUES (2,'Archived lesson','Hidden',1,NULL,'archived')")
             self.assertEqual(db.execute(self.list_sql).fetchall(), [("visible", "Visible", "Visible")])
             self.assertIsNone(db.execute(self.course_sql, ("archived",)).fetchone())
             self.assertEqual(db.execute(self.lesson_sql, (2,)).fetchall(), [])

@@ -34,9 +34,25 @@ function db(): PDO {
             $db->exec('ALTER TABLE users ADD COLUMN phone_verified_at '.($driver==='mysql' ? 'BIGINT NULL' : 'INTEGER'));
             $db->exec('UPDATE users SET phone_verified_at=(SELECT used_at FROM otp_codes WHERE otp_codes.phone=users.phone AND used_at IS NOT NULL) WHERE EXISTS (SELECT 1 FROM otp_codes WHERE otp_codes.phone=users.phone AND used_at IS NOT NULL)');
         }
+        $courseColumns=$db->query('SELECT * FROM courses LIMIT 0');
+        $hasCourseDuration=false;
+        for ($i=0; $i<$courseColumns->columnCount(); $i++) if ($courseColumns->getColumnMeta($i)['name']==='estimated_duration_minutes') $hasCourseDuration=true;
+        if (!$hasCourseDuration) {
+            $db->exec('ALTER TABLE courses ADD COLUMN estimated_duration_minutes '.($driver==='mysql' ? 'INT NULL' : 'INTEGER CHECK(estimated_duration_minutes IS NULL OR estimated_duration_minutes>0)'));
+            if ($driver==='mysql') $db->exec('ALTER TABLE courses ADD CONSTRAINT chk_courses_duration CHECK (estimated_duration_minutes IS NULL OR estimated_duration_minutes>0)');
+        }
         $lessonColumns=$db->query('SELECT * FROM lessons LIMIT 0');
+        $hasLessonDuration=false;
         $hasLessonStatus=false;
-        for ($i=0; $i<$lessonColumns->columnCount(); $i++) if ($lessonColumns->getColumnMeta($i)['name']==='status') $hasLessonStatus=true;
+        for ($i=0; $i<$lessonColumns->columnCount(); $i++) {
+            $name=$lessonColumns->getColumnMeta($i)['name'];
+            if ($name==='duration_minutes') $hasLessonDuration=true;
+            if ($name==='status') $hasLessonStatus=true;
+        }
+        if (!$hasLessonDuration) {
+            $db->exec('ALTER TABLE lessons ADD COLUMN duration_minutes '.($driver==='mysql' ? 'INT NULL' : 'INTEGER CHECK(duration_minutes IS NULL OR duration_minutes>0)'));
+            if ($driver==='mysql') $db->exec('ALTER TABLE lessons ADD CONSTRAINT chk_lessons_duration CHECK (duration_minutes IS NULL OR duration_minutes>0)');
+        }
         if (!$hasLessonStatus) {
             $db->exec('ALTER TABLE lessons ADD COLUMN status '.($driver==='mysql' ? "VARCHAR(20) NOT NULL DEFAULT 'draft'" : "TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','published'))"));
             if ($driver==='mysql') $db->exec("ALTER TABLE lessons ADD CONSTRAINT chk_lessons_status CHECK (status IN ('draft','published'))");
