@@ -53,6 +53,10 @@ class CoreSchemaTest(unittest.TestCase):
         with self.assertRaises(sqlite3.IntegrityError):
             self.db.execute("INSERT INTO lessons(course_id,title,content,position) VALUES (1,'Invalid','Text',0)")
         with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute("INSERT INTO lessons(course_id,title,content,position) VALUES (1,NULL,'Text',2)")
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute("INSERT INTO lessons(course_id,title,content,position) VALUES (1,'Invalid',NULL,2)")
+        with self.assertRaises(sqlite3.IntegrityError):
             self.db.execute("INSERT INTO courses(slug,title,description,status) VALUES ('invalid','Invalid','Text','unknown')")
 
     def test_courses_support_independent_crud_status_timestamps_and_slug_uniqueness(self):
@@ -67,6 +71,21 @@ class CoreSchemaTest(unittest.TestCase):
             self.db.execute("INSERT INTO courses(slug,title,description) VALUES ('draft-course','Duplicate','Duplicate')")
         with self.assertRaises(sqlite3.IntegrityError):
             self.db.execute("UPDATE courses SET status='archived' WHERE slug='published-course'")
+
+    def test_lessons_have_independent_status_and_ordering_per_course(self):
+        self.db.executemany("INSERT INTO courses(slug,title,description) VALUES (?,?,?)", [("course-a", "A", "A"), ("course-b", "B", "B")])
+        self.db.executemany(
+            "INSERT INTO lessons(course_id,title,content,position,status) VALUES (?,?,?,?,?)",
+            [(1, "A1", "Text", 1, "draft"), (1, "A2", "Text", 2, "published"), (2, "B1", "Text", 1, "published")],
+        )
+        self.assertEqual(self.db.execute("SELECT title,status FROM lessons WHERE course_id=1 ORDER BY position ASC").fetchall(), [("A1", "draft"), ("A2", "published")])
+        self.assertEqual(self.db.execute("SELECT position FROM lessons WHERE course_id=2").fetchall(), [(1,)])
+        self.db.execute("UPDATE lessons SET status='published' WHERE course_id=1 AND position=1")
+        self.assertEqual(self.db.execute("SELECT status FROM lessons WHERE course_id=1 ORDER BY position").fetchall(), [("published",), ("published",)])
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute("INSERT INTO lessons(course_id,title,content,position,status) VALUES (1,'Duplicate','Text',1,'draft')")
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute("INSERT INTO lessons(course_id,title,content,position,status) VALUES (1,'Invalid','Text',3,'archived')")
 
     def test_foreign_key_prevents_orphans(self):
         self.db.execute("INSERT INTO courses(slug,title,description) VALUES ('python','Python','Intro')")

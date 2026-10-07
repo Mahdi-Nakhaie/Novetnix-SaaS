@@ -34,6 +34,13 @@ function db(): PDO {
             $db->exec('ALTER TABLE users ADD COLUMN phone_verified_at '.($driver==='mysql' ? 'BIGINT NULL' : 'INTEGER'));
             $db->exec('UPDATE users SET phone_verified_at=(SELECT used_at FROM otp_codes WHERE otp_codes.phone=users.phone AND used_at IS NOT NULL) WHERE EXISTS (SELECT 1 FROM otp_codes WHERE otp_codes.phone=users.phone AND used_at IS NOT NULL)');
         }
+        $lessonColumns=$db->query('SELECT * FROM lessons LIMIT 0');
+        $hasLessonStatus=false;
+        for ($i=0; $i<$lessonColumns->columnCount(); $i++) if ($lessonColumns->getColumnMeta($i)['name']==='status') $hasLessonStatus=true;
+        if (!$hasLessonStatus) {
+            $db->exec('ALTER TABLE lessons ADD COLUMN status '.($driver==='mysql' ? "VARCHAR(20) NOT NULL DEFAULT 'draft'" : "TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','published'))"));
+            if ($driver==='mysql') $db->exec("ALTER TABLE lessons ADD CONSTRAINT chk_lessons_status CHECK (status IN ('draft','published'))");
+        }
         return $db;
     } catch (Throwable $e) {
         throw new RuntimeException('Database initialization failed.', 0, $e);
