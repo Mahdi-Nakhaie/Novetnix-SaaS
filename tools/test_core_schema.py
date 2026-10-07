@@ -55,6 +55,19 @@ class CoreSchemaTest(unittest.TestCase):
         with self.assertRaises(sqlite3.IntegrityError):
             self.db.execute("INSERT INTO courses(slug,title,description,status) VALUES ('invalid','Invalid','Text','unknown')")
 
+    def test_courses_support_independent_crud_status_timestamps_and_slug_uniqueness(self):
+        self.db.execute("INSERT INTO courses(slug,title,description,status,created_at,updated_at) VALUES (?,?,?,?,?,?)", ("draft-course", "Draft", "First", "draft", "2026-10-07 10:00:00", "2026-10-07 10:00:00"))
+        self.db.execute("INSERT INTO courses(slug,title,description,status,created_at,updated_at) VALUES (?,?,?,?,?,?)", ("published-course", "Published", "Second", "published", "2026-10-07 11:00:00", "2026-10-07 11:00:00"))
+        self.assertEqual(self.db.execute("SELECT slug,status FROM courses ORDER BY id").fetchall(), [("draft-course", "draft"), ("published-course", "published")])
+        self.db.execute("UPDATE courses SET title=?,description=?,updated_at=? WHERE slug=?", ("Updated", "Changed", "2026-10-08 10:00:00", "draft-course"))
+        self.db.execute("UPDATE courses SET status=?,updated_at=? WHERE slug=?", ("published", "2026-10-08 11:00:00", "draft-course"))
+        self.assertEqual(self.db.execute("SELECT title,description,status,created_at,updated_at FROM courses WHERE slug='draft-course'").fetchone(), ("Updated", "Changed", "published", "2026-10-07 10:00:00", "2026-10-08 11:00:00"))
+        self.assertEqual(self.db.execute("SELECT created_at,updated_at FROM courses WHERE slug='published-course'").fetchone(), ("2026-10-07 11:00:00", "2026-10-07 11:00:00"))
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute("INSERT INTO courses(slug,title,description) VALUES ('draft-course','Duplicate','Duplicate')")
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute("UPDATE courses SET status='archived' WHERE slug='published-course'")
+
     def test_foreign_key_prevents_orphans(self):
         self.db.execute("INSERT INTO courses(slug,title,description) VALUES ('python','Python','Intro')")
         with self.assertRaises(sqlite3.IntegrityError):
