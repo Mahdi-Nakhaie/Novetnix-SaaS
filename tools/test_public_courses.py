@@ -67,7 +67,7 @@ class PublicCoursesTest(unittest.TestCase):
     def test_lessons_belong_to_course_are_published_and_ordered(self):
         course_id = self.db.execute(self.course_sql, ("published",)).fetchone()[0]
         self.assertEqual(
-            [(row[0], row[1]) for row in self.db.execute(self.lesson_sql, (course_id,))],
+            [(row[0], row[2]) for row in self.db.execute(self.lesson_sql, (course_id,))],
             [("First", 1), ("Second", 2), ("Third", 3)],
         )
         self.assertIn("[$course['id']]", self.detail)

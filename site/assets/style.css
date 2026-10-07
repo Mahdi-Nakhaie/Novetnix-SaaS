@@ -62,6 +62,8 @@ main{display:block;min-height:60vh}
 .notice{border-radius:var(--r-md);padding:.8rem 1.1rem;margin:1rem 0;font-weight:700;font-size:.9rem;border:1.5px solid}
 .notice.success{background:#eefaf3;border-color:#bfe7d1;color:#146b41}
 .notice.error{background:#fdeef1;border-color:#f5c6d0;color:#9a1f33}
+.field-error{display:block;color:#9a1f33;font-size:.78rem;font-weight:700;margin-top:.35rem}
+input[aria-invalid="true"],textarea[aria-invalid="true"],select[aria-invalid="true"]{border-color:#c92f49;box-shadow:0 0 0 3px rgba(201,47,73,.1)}
 
 /* header */
 .site-header{background:rgba(255,255,255,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:60}
@@ -207,6 +209,25 @@ main{display:block;min-height:60vh}
 
 /* article */
 .article{padding-block:clamp(2rem,5vw,3.5rem)}
+.course-overview-hero{background:linear-gradient(180deg,#fbf9ff 0%,#fff 100%);border-bottom:1px solid var(--line);padding-block:clamp(2.8rem,7vw,5.5rem)}
+.course-overview-hero h1{max-width:850px;font-size:clamp(2rem,5vw,4rem);line-height:1.15;margin-block:.6rem 1rem}
+.course-overview-hero .lead{max-width:700px}
+.course-hero-actions{margin-top:1.5rem}
+.course-overview-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(220px,.8fr);gap:2rem;align-items:center}
+.course-overview-grid h2{margin-block:.4rem .7rem}
+.course-audience-list{display:grid;gap:.7rem}
+.course-audience-list span{background:#fff;border:1px solid var(--line);border-radius:var(--r-md);padding:.8rem 1rem;color:var(--ink-2);font-weight:700}
+.course-benefits{grid-template-columns:repeat(4,1fr)}
+.course-benefits .feature{min-height:150px}
+.lesson-list{display:grid;gap:1rem}
+.lesson-card{display:grid;grid-template-columns:48px 1fr;gap:1rem;background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:1.25rem;box-shadow:var(--shadow-sm)}
+.lesson-number{background:var(--brand-soft);color:var(--brand);border-radius:12px;width:48px;height:48px;display:grid;place-items:center;font-weight:900}
+.lesson-card h3{margin:.5rem 0 .35rem}
+.lesson-card p{margin:0;color:var(--ink-2);white-space:pre-line}
+.course-final-cta{margin-top:2.5rem;text-align:center}
+.course-final-cta .eyebrow{color:#e2c9ff}
+
+
 .article h1{margin-block:.4rem .8rem}
 .lead{font-size:1.08rem;color:var(--ink-2)}
 .article-meta{display:flex;gap:1.2rem;flex-wrap:wrap;color:var(--muted);font-size:.82rem;font-weight:700;border-block:1px solid var(--line);padding-block:.7rem;margin-block:1.4rem}
@@ -650,6 +671,7 @@ body.is-panel{background:linear-gradient(180deg,var(--bg),#f4f0fa)}
   .hero{grid-template-columns:1fr;padding-block:2.5rem}
   .hero-display{order:-1}
   .band-inner,.contact-layout,.panel-columns,.split{grid-template-columns:1fr}
+  .course-overview-grid{grid-template-columns:1fr;gap:1.2rem}
   .metrics-inner{grid-template-columns:repeat(2,1fr)}
   body.is-panel{grid-template-columns:1fr}
   .sidebar{position:fixed;inset-block:0;inset-inline-start:0;width:264px;z-index:80;transform:translateX(100%);transition:transform .22s ease}
@@ -660,6 +682,7 @@ body.is-panel{background:linear-gradient(180deg,var(--bg),#f4f0fa)}
 }
 @media (max-width:640px){
   .course-grid,.project-grid,.features-grid,.pricing-grid,.challenge-grid,.badge-grid{grid-template-columns:1fr}
+  .course-benefits{grid-template-columns:1fr}
   .stat-grid{grid-template-columns:1fr}
   .chart-bars{height:120px}
   .footer-grid{grid-template-columns:1fr}
