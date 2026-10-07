@@ -37,7 +37,7 @@ function page_course(string $slug): void {
     $course=q("SELECT id,slug,title,description FROM courses WHERE slug=? AND status='published'",[$slug])->fetch();
     if (!$course) { http_response_code(404); head_page('یافت نشد',''); notice(); echo '<main class="container section"><h1>Course پیدا نشد.</h1>'; linkto('courses','همه Courseها ←','inline-link'); echo '</main>'; foot_page(); return; }
     $lessons=q("SELECT title,position FROM lessons WHERE course_id=? AND status='published' ORDER BY position ASC",[$course['id']])->fetchAll();
-    head_page($course['title'],$course['description']); notice(); echo '<main class="article"><div class="container narrow-container"><span class="eyebrow">Course</span><h1>'.h($course['title']).'</h1><p class="lead">'.h($course['description']).'</p><section class="article-section"><h2>Lessons</h2>';
+    head_page($course['title'],$course['description']); notice(); echo '<main class="article"><div class="container narrow-container"><span class="eyebrow">Course</span><h1>'.h($course['title']).'</h1><p class="lead">'.h($course['description']).'</p><div class="article-meta"><span>'.fa(count($lessons)).' Lesson</span></div><section class="article-section"><h2>Lessons</h2>';
     if (!$lessons) echo '<p class="muted">این Course هنوز Lesson منتشرشده‌ای ندارد.</p>';
     foreach ($lessons as $lesson) echo '<article class="panel-card"><div class="meta-row"><span class="pill">Lesson '.fa((int)$lesson['position']).'</span></div><h3>'.h($lesson['title']).'</h3></article>';
     echo '</section></div></main>'; foot_page();

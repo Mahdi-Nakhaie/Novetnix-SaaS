@@ -76,6 +76,7 @@ class PublicCoursesTest(unittest.TestCase):
     def test_empty_published_lesson_list(self):
         course_id = self.db.execute(self.course_sql, ("empty",)).fetchone()[0]
         self.assertEqual(self.db.execute(self.lesson_sql, (course_id,)).fetchall(), [])
+        self.assertIn("count($lessons)", self.detail)
         self.assertIn("if (!$lessons)", self.detail)
 
     def test_archived_rows_are_excluded_by_public_queries(self):
