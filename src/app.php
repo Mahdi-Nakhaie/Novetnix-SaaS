@@ -8,6 +8,14 @@ function h(mixed $value): string { return htmlspecialchars((string)$value, ENT_Q
 function fa(int|string $v): string { return strtr((string)$v,['0'=>'۰','1'=>'۱','2'=>'۲','3'=>'۳','4'=>'۴','5'=>'۵','6'=>'۶','7'=>'۷','8'=>'۸','9'=>'۹']); }
 function latin_digits(string $v): string { return strtr($v,['۰'=>'0','۱'=>'1','۲'=>'2','۳'=>'3','۴'=>'4','۵'=>'5','۶'=>'6','۷'=>'7','۸'=>'8','۹'=>'9','٠'=>'0','١'=>'1','٢'=>'2','٣'=>'3','٤'=>'4','٥'=>'5','٦'=>'6','٧'=>'7','٨'=>'8','٩'=>'9']); }
 function published_courses(): array { return q("SELECT slug,title,description FROM courses WHERE status='published' ORDER BY id ASC")->fetchAll(); }
+function seed_demo_courses(): void {
+    $course=q("SELECT id FROM courses WHERE slug=?",['ai-foundations'])->fetchColumn();
+    if ($course) return;
+    q('INSERT INTO courses(slug,title,description,estimated_duration_minutes,status) VALUES (?,?,?,?,?)',['ai-foundations','دوره رایگان مقدماتی هوش مصنوعی','مفاهیم پایه هوش مصنوعی را با یک مسیر کوتاه و پروژه‌محور یاد بگیر.',70,'published']);
+    $course=(int)db()->lastInsertId();
+    q('INSERT INTO lessons(course_id,title,content,position,duration_minutes,status) VALUES (?,?,?,?,?,?)',[$course,'مبانی هوش مصنوعی','با مفاهیم اصلی هوش مصنوعی و مسیر حل یک مسئله واقعی آشنا شو.',1,30,'published']);
+    q('INSERT INTO lessons(course_id,title,content,position,duration_minutes,status) VALUES (?,?,?,?,?,?)',[$course,'پروژه تشخیص چهره','یک نمونه پروژه عملی را از تعریف مسئله تا اجرای اولیه بررسی کن.',2,40,'published']);
+}
 function course_workspace(string $slug): ?array {
     $course=q("SELECT id,slug,title,description,estimated_duration_minutes FROM courses WHERE slug=? AND status='published'",[$slug])->fetch();
     if (!$course) return null;
@@ -208,6 +216,7 @@ function handle_post(string $path): void {
         flash('اعلان برای کاربران ارسال شد.'); redirect('dashboard/announcements');
     }
     if ($path==='admin/seed-demo' && $u['role']==='admin') {
+        seed_demo_courses();
         foreach (ANNOUNCEMENTS as $a) q('INSERT INTO announcements(title,body) VALUES (?,?)',[$a['title'],$a['body']]);
         foreach (CONTENT_ITEMS as $c) q('INSERT INTO content_items(title,kind,status) VALUES (?,?,?)',[$c['title'],$c['kind'],$c['status']]);
         flash('داده‌های نمونه ایجاد شد.'); redirect('dashboard');

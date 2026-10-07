@@ -59,6 +59,7 @@ function project_cards(int $limit=99): void {
     echo '<div class="project-grid">'; foreach (array_slice(PROJECTS,0,$limit) as $i=>$p) { echo '<article class="project-card"><div class="project-visual visual-'.($i%4).'"><span class="visual-number">'.fa(str_pad((string)($i+1),2,'0',STR_PAD_LEFT)).'</span><span class="visual-glyph">'.(['{ }','◈','◇','⌘'][$i%4]).'</span><span class="visual-label">'.h(strtoupper($p['topic'])).'</span></div><div class="project-info"><div class="meta-row"><span class="pill">'.h($p['topic']).'</span><span>'.h($p['level']).'</span></div><h3>'.h($p['title']).'</h3><p>'.h($p['description']).'</p><div class="project-bottom"><span dir="ltr">'.h($p['skills']).'</span><a href="'.h(url('project/'.$i)).'" aria-label="مشاهده پروژه '.h($p['title']).'">مشاهده پروژه ←</a></div></div></article>'; } echo '</div>';
 }
 function course_cards(array $courses): void {
+    if (!$courses) { echo '<div class="empty-state"><h2>هنوز دوره‌ای منتشر نشده است.</h2><p>به‌زودی مسیرهای یادگیری جدید در این بخش قرار می‌گیرند.</p></div>'; return; }
     echo '<div class="course-grid">'; $i=0; foreach ($courses as $c) { echo '<article class="course-card"><div class="course-icon icon-'.($i++%4).'">'.h(mb_substr($c['title'],0,1)).'</div><div class="meta-row"><span class="pill">Course</span><span>منتشرشده</span></div><h3>'.h($c['title']).'</h3><p>'.h($c['description']).'</p><a class="inline-link" href="'.h(url('course/'.$c['slug'])).'">مشاهده Course ←</a></article>'; } echo '</div>';
 }
 function home(array $courses): void {

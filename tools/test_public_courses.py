@@ -57,6 +57,7 @@ class PublicCoursesTest(unittest.TestCase):
         self.assertEqual([row[0] for row in self.db.execute(self.list_sql)], ["published", "empty"])
         self.assertIn("course_cards($courses)", body(ROUTER, "page_courses"))
         self.assertNotIn("COURSES", self.listing)
+        self.assertIn("هنوز دوره‌ای منتشر نشده است", self.listing)
         self.assertNotIn("q(", self.listing)
 
     def test_course_lookup_rejects_missing_and_draft(self):
