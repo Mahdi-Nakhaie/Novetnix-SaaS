@@ -34,14 +34,13 @@ function page_courses(): void {
     echo '<main><section class="page-hero container"><span class="eyebrow">مسیر یادگیری</span><h1>قدم‌به‌قدم تا توانایی ساختن</h1><p>هر مقاله یک مفهوم کاربردی را با تمرین واقعی ترکیب می‌کند؛ از پایتون تا یادگیری عمیق.</p></section><section class="section container">'; course_cards(); echo '</section></main>';
 }
 function page_course(string $slug): void {
-    global $me,$plan;
-    if (!isset(COURSES[$slug])) { http_response_code(404); head_page('یافت نشد',''); notice(); echo '<main class="container section"><h1>مقاله پیدا نشد.</h1>'; linkto('courses','همه مقاله‌ها ←','inline-link'); echo '</main>'; foot_page(); return; }
-    $c=COURSES[$slug]; head_page($c['title'],$c['intro']); notice(); echo '<main class="article"><div class="container narrow-container"><span class="eyebrow">'.h($c['topic']).' · '.h($c['level']).'</span><h1>'.h($c['title']).'</h1><p class="lead">'.h($c['intro']).'</p><div class="article-meta"><span>زمان مطالعه: '.fa($c['minutes']).' دقیقه</span><span>به‌روزرسانی: '.fa(date('Y')).'</span></div>';
-    foreach ($c['sections'] as $i=>$s) echo '<section class="article-section"><h2><span>'.fa($i+1).'</span>'.h($s[0]).'</h2><p>'.h($s[1]).'</p></section>';
-    echo '<div class="article-footer">';
-    if ($me) { if (can_course($slug,$plan)) { form_start('courses/enroll'); echo '<input type="hidden" name="slug" value="'.h($slug).'"><button class="btn btn-primary">افزودن به مسیر یادگیری</button></form>'; } else { echo '<p class="muted">برای ذخیره این مقاله به پلن بالاتر نیاز دارید.</p>'; linkto('pricing','مشاهده پلن‌ها ←','btn btn-outline'); } }
-    else { linkto('login','برای ادامه وارد شوید ←','btn btn-primary'); }
-    linkto('projects','پروژه مرتبط را ببین ←','btn btn-outline'); echo '</div></div></main>'; foot_page();
+    $course=q("SELECT id,slug,title,description FROM courses WHERE slug=? AND status='published'",[$slug])->fetch();
+    if (!$course) { http_response_code(404); head_page('یافت نشد',''); notice(); echo '<main class="container section"><h1>Course پیدا نشد.</h1>'; linkto('courses','همه Courseها ←','inline-link'); echo '</main>'; foot_page(); return; }
+    $lessons=q("SELECT title,position FROM lessons WHERE course_id=? AND status='published' ORDER BY position ASC",[$course['id']])->fetchAll();
+    head_page($course['title'],$course['description']); notice(); echo '<main class="article"><div class="container narrow-container"><span class="eyebrow">Course</span><h1>'.h($course['title']).'</h1><p class="lead">'.h($course['description']).'</p><section class="article-section"><h2>Lessons</h2>';
+    if (!$lessons) echo '<p class="muted">این Course هنوز Lesson منتشرشده‌ای ندارد.</p>';
+    foreach ($lessons as $lesson) echo '<article class="panel-card"><div class="meta-row"><span class="pill">Lesson '.fa((int)$lesson['position']).'</span></div><h3>'.h($lesson['title']).'</h3></article>';
+    echo '</section></div></main>'; foot_page();
 }
 function page_projects(): void {
     echo '<main><section class="page-hero container"><span class="eyebrow">پروژه‌ها</span><h1>یادگیری با ساختن، نه فقط خواندن</h1><p>هر پروژه یک مسئله واقعی با ورودی، خروجی و معیار موفقیت روشن است.</p></section><section class="section container">'; project_cards(); echo '</section></main>';
