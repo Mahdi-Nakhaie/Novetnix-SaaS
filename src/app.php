@@ -8,6 +8,24 @@ function h(mixed $value): string { return htmlspecialchars((string)$value, ENT_Q
 function fa(int|string $v): string { return strtr((string)$v,['0'=>'۰','1'=>'۱','2'=>'۲','3'=>'۳','4'=>'۴','5'=>'۵','6'=>'۶','7'=>'۷','8'=>'۸','9'=>'۹']); }
 function latin_digits(string $v): string { return strtr($v,['۰'=>'0','۱'=>'1','۲'=>'2','۳'=>'3','۴'=>'4','۵'=>'5','۶'=>'6','۷'=>'7','۸'=>'8','۹'=>'9','٠'=>'0','١'=>'1','٢'=>'2','٣'=>'3','٤'=>'4','٥'=>'5','٦'=>'6','٧'=>'7','٨'=>'8','٩'=>'9']); }
 function published_courses(): array { return q("SELECT slug,title,description FROM courses WHERE status='published' ORDER BY id ASC")->fetchAll(); }
+function course_workspace(string $slug): ?array {
+    $course=q("SELECT id,slug,title,description,estimated_duration_minutes FROM courses WHERE slug=? AND status='published'",[$slug])->fetch();
+    if (!$course) return null;
+    $course['lessons']=q("SELECT id,title,content,position,duration_minutes FROM lessons WHERE course_id=? AND status='published' ORDER BY position ASC",[$course['id']])->fetchAll();
+    return $course;
+}
+function course_duration_minutes(array $course): ?int {
+    if ($course['estimated_duration_minutes']!==null) return (int)$course['estimated_duration_minutes'];
+    $durations=array_column($course['lessons'],'duration_minutes');
+    return $durations && !in_array(null,$durations,true) ? (int)array_sum($durations) : null;
+}
+function course_workspace_selection(?array $course,string $requested): array {
+    if (!$course || !$course['lessons']) return ['current'=>null,'index'=>-1,'previous'=>null,'next'=>null];
+    $index=0;
+    $lessonId=filter_var($requested,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]);
+    if ($lessonId!==false && $lessonId!==null) foreach ($course['lessons'] as $i=>$lesson) if ((int)$lesson['id']===$lessonId) { $index=$i; break; }
+    return ['current'=>$course['lessons'][$index],'index'=>$index,'previous'=>$course['lessons'][$index-1] ?? null,'next'=>$course['lessons'][$index+1] ?? null];
+}
 function url(string $path=''): string { return '/'.ltrim($path,'/'); }
 function plan_for(array $u): string {
     $row=q("SELECT plan FROM subscriptions WHERE user_id=? AND status='active' AND starts_at<=? AND expires_at>? ORDER BY expires_at DESC LIMIT 1",[$u['id'],gmdate('Y-m-d H:i:s'),gmdate('Y-m-d H:i:s')])->fetch();

@@ -20,6 +20,13 @@ function route(): void {
     if ($path==='login') { page_login(); return; }
     if ($path==='verify') { page_verify(); return; }
     if ($path==='admin-login') { page_admin_login(); return; }
+    if (preg_match('~^dashboard/course/([a-z0-9-]+)$~D',$path,$match)) {
+        $u=require_user();
+        if ($u['phone']===(config_value('ADMIN_PHONE') ?: '') && $u['role']!=='admin') redirect('admin-login');
+        $course=course_workspace($match[1]);
+        head_page('فضای یادگیری','',true); notice(); page_course_workspace($course,(string)($_GET['lesson'] ?? '')); foot_page(true);
+        return;
+    }
     if ($path==='dashboard' || str_starts_with($path,'dashboard/')) {
         $u=require_user();
         if ($u['phone']===(config_value('ADMIN_PHONE') ?: '') && $u['role']!=='admin') redirect('admin-login');

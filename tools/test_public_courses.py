@@ -43,6 +43,9 @@ class PublicCoursesTest(unittest.TestCase):
         )
         self.detail = body(ROUTER, "page_course")
         self.listing = body(VIEWS, "course_cards")
+        self.workspace = body(APP, "course_workspace")
+        self.selection = body(APP, "course_workspace_selection")
+        self.workspace_view = body(VIEWS, "page_course_workspace")
         self.course_sql = query(self.detail, "courses")
         self.lesson_sql = query(self.detail, "lessons")
         self.list_sql = query(APP, "courses")
@@ -83,6 +86,28 @@ class PublicCoursesTest(unittest.TestCase):
         self.assertIn("مدت ثبت نشده", self.detail)
         self.assertIn("count($lessons)", self.detail)
         self.assertIn("if (!$lessons)", self.detail)
+
+    def test_workspace_route_uses_auth_and_panel_layout(self):
+        route = body(ROUTER, "route")
+        self.assertIn("^dashboard/course/([a-z0-9-]+)$", route)
+        self.assertIn("$u=require_user()", route)
+        self.assertIn("head_page('فضای یادگیری','',true)", route)
+        self.assertIn("foot_page(true)", route)
+        self.assertNotIn("ob_start", route)
+        self.assertNotIn("ob_end_clean", route)
+
+    def test_workspace_loader_and_selection_are_dynamic(self):
+        self.assertIn("status='published'", self.workspace)
+        self.assertIn("ORDER BY position ASC", self.workspace)
+        self.assertIn("[$course['id']]", self.workspace)
+        self.assertIn("course_workspace_selection($course,$requestedLesson)", self.workspace_view)
+        self.assertIn("$course['lessons']", self.workspace_view)
+        self.assertIn("$active", self.workspace_view)
+        self.assertIn("is-active", self.workspace_view)
+        self.assertIn("previous", self.selection)
+        self.assertIn("next", self.selection)
+        self.assertIn("video-placeholder", self.workspace_view)
+        self.assertIn("aspect-ratio:16/9", (ROOT / "site/assets/style.css").read_text(encoding="utf-8"))
 
     def test_archived_rows_are_excluded_by_public_queries(self):
         db = sqlite3.connect(":memory:")
