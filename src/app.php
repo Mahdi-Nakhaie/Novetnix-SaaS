@@ -83,8 +83,12 @@ function save_lesson_progress(array $u): void {
     if (!$lesson) progress_response(404,['error'=>'Lesson پیدا نشد یا دسترسی ندارید.']);
     $status=$completed ? 'completed' : 'started';
     $completedAt=$completed ? gmdate('Y-m-d H:i:s') : null;
-    if (db()->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql') q("INSERT INTO lesson_progress(user_id,lesson_id,watched_seconds,last_position,percentage,completed,status,completed_at) VALUES (?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE watched_seconds=VALUES(watched_seconds),last_position=VALUES(last_position),percentage=VALUES(percentage),completed=VALUES(completed),status=VALUES(status),completed_at=VALUES(completed_at),updated_at=CURRENT_TIMESTAMP",[$u['id'],$lessonId,$watched,$position,$percentage,$completed?1:0,$status,$completedAt]);
-    else q("INSERT INTO lesson_progress(user_id,lesson_id,watched_seconds,last_position,percentage,completed,status,completed_at) VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(user_id,lesson_id) DO UPDATE SET watched_seconds=excluded.watched_seconds,last_position=excluded.last_position,percentage=excluded.percentage,completed=excluded.completed,status=excluded.status,completed_at=excluded.completed_at,updated_at=CURRENT_TIMESTAMP",[$u['id'],$lessonId,$watched,$position,$percentage,$completed?1:0,$status,$completedAt]);
+    try {
+        if (db()->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql') q("INSERT INTO lesson_progress(user_id,lesson_id,watched_seconds,last_position,percentage,completed,status,completed_at) VALUES (?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE watched_seconds=VALUES(watched_seconds),last_position=VALUES(last_position),percentage=VALUES(percentage),completed=VALUES(completed),status=VALUES(status),completed_at=VALUES(completed_at),updated_at=CURRENT_TIMESTAMP",[$u['id'],$lessonId,$watched,$position,$percentage,$completed?1:0,$status,$completedAt]);
+        else q("INSERT INTO lesson_progress(user_id,lesson_id,watched_seconds,last_position,percentage,completed,status,completed_at) VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(user_id,lesson_id) DO UPDATE SET watched_seconds=excluded.watched_seconds,last_position=excluded.last_position,percentage=excluded.percentage,completed=excluded.completed,status=excluded.status,completed_at=excluded.completed_at,updated_at=CURRENT_TIMESTAMP",[$u['id'],$lessonId,$watched,$position,$percentage,$completed?1:0,$status,$completedAt]);
+    } catch (Throwable $e) {
+        progress_response(500,['error'=>'ذخیره پیشرفت انجام نشد.']);
+    }
     header('Content-Type: application/json; charset=utf-8'); echo json_encode(['saved'=>true],JSON_THROW_ON_ERROR); exit;
 }
 function handle_post(string $path): void {

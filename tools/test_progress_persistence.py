@@ -54,6 +54,11 @@ class ProgressPersistenceTest(unittest.TestCase):
         self.assertIn("l.id=?", self.progress)
         self.assertIn("ON CONFLICT(user_id,lesson_id)", self.progress)
         self.assertIn("ON DUPLICATE KEY UPDATE", self.progress)
+        self.assertIn("updated_at=CURRENT_TIMESTAMP", self.progress)
+        self.assertIn("progress_response(500", self.progress)
+        self.assertIn("ذخیره پیشرفت انجام نشد", self.progress)
+        self.assertNotIn("$_POST['updated_at']", self.progress)
+        self.assertNotIn("$_POST['created_at']", self.progress)
         self.assertIn("progress_response(404", self.progress)
         self.assertIn("['error'=>", self.progress)
 
