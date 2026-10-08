@@ -74,5 +74,55 @@
     return true;
   }
 
-  window.NoqtePlaybackEvents = Object.freeze({ attach: attach, detach: detach, retry: retry, readState: readState });
+  function connectProgress(player, options) {
+    options = options || {};
+    if (!options.lessonId || !options.csrf || typeof window.fetch !== "function") return function () {};
+    var endpoint = options.endpoint || "/progress/save";
+    var interval = options.interval || 15000;
+    var dirty = false;
+    var completed = false;
+    var inFlight = false;
+    var pending = false;
+    var timer;
+
+    function mark(done) {
+      dirty = true;
+      if (done) completed = true;
+    }
+
+    function flush(done) {
+      if (done) completed = true;
+      if (!dirty) return;
+      if (inFlight) { pending = true; return; }
+      var state = readState(player);
+      if (!state) return;
+      dirty = false;
+      inFlight = true;
+      var payload = new URLSearchParams({
+        csrf: options.csrf,
+        lesson_id: String(options.lessonId),
+        watched_seconds: String(state.currentTime),
+        last_position: String(state.currentTime),
+        percentage: String(state.currentTime / state.duration * 100),
+        completed: completed ? "1" : "0"
+      });
+      window.fetch(endpoint, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" }, body: payload.toString() })
+        .then(function (response) { if (!response.ok) throw new Error("save failed"); })
+        .catch(function () { dirty = true; })
+        .then(function () {
+          inFlight = false;
+          if (pending) { pending = false; dirty = true; flush(false); }
+        });
+    }
+
+    var detachPlayer = attach(player, function (event) {
+      if (event.type === "timeupdate") mark(false);
+      if (event.type === "pause" || event.type === "ended") { mark(event.type === "ended"); flush(event.type === "ended"); }
+      if (event.type === "seeked") mark(false);
+    });
+    timer = window.setInterval(function () { flush(false); }, interval);
+    return function () { window.clearInterval(timer); detachPlayer(); };
+  }
+
+  window.NoqtePlaybackEvents = Object.freeze({ attach: attach, detach: detach, retry: retry, readState: readState, connectProgress: connectProgress });
 })(window);
