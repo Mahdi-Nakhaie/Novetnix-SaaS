@@ -54,7 +54,8 @@ class ProgressPersistenceTest(unittest.TestCase):
         self.assertIn("l.id=?", self.progress)
         self.assertIn("ON CONFLICT(user_id,lesson_id)", self.progress)
         self.assertIn("ON DUPLICATE KEY UPDATE", self.progress)
-        self.assertIn("http_response_code(404); exit", self.progress)
+        self.assertIn("progress_response(404", self.progress)
+        self.assertIn("['error'=>", self.progress)
 
     def test_authorization_query_rejects_other_users_and_courses(self):
         authorization_sql = re.search(r'SELECT l\.id FROM lessons l INNER JOIN courses c .*?\",\[\$u\[\'id\'\],\$lessonId\]\)', self.progress).group(0)

@@ -67,17 +67,20 @@ function nova_answer(array $messages): ?string {
     $answer=$data['choices'][0]['message']['content'] ?? null;
     return is_string($answer) && trim($answer)!=='' ? mb_substr(trim($answer),0,6000) : null;
 }
+function progress_response(int $status,array $body): void {
+    http_response_code($status); header('Content-Type: application/json; charset=utf-8'); echo json_encode($body,JSON_THROW_ON_ERROR); exit;
+}
 function save_lesson_progress(array $u): void {
     $lessonId=filter_var($_POST['lesson_id'] ?? '',FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]);
     $watched=$_POST['watched_seconds'] ?? null;
     $position=$_POST['last_position'] ?? null;
     $percentage=$_POST['percentage'] ?? null;
     $completed=filter_var($_POST['completed'] ?? null,FILTER_VALIDATE_BOOLEAN,FILTER_NULL_ON_FAILURE);
-    if ($lessonId===false || $lessonId===null || !is_numeric($watched) || !is_numeric($position) || !is_numeric($percentage) || $completed===null) { http_response_code(422); exit('اطلاعات پیشرفت معتبر نیست.'); }
+    if ($lessonId===false || $lessonId===null || !is_numeric($watched) || !is_numeric($position) || !is_numeric($percentage) || $completed===null) progress_response(422,['error'=>'اطلاعات پیشرفت معتبر نیست.']);
     $watched=(float)$watched; $position=(float)$position; $percentage=(float)$percentage;
-    if (!is_finite($watched) || !is_finite($position) || !is_finite($percentage) || $watched<0 || $position<0 || $percentage<0 || $percentage>100) { http_response_code(422); exit('اطلاعات پیشرفت معتبر نیست.'); }
+    if (!is_finite($watched) || !is_finite($position) || !is_finite($percentage) || $watched<0 || $position<0 || $percentage<0 || $percentage>100) progress_response(422,['error'=>'اطلاعات پیشرفت معتبر نیست.']);
     $lesson=q("SELECT l.id FROM lessons l INNER JOIN courses c ON c.id=l.course_id INNER JOIN enrollments e ON e.course_slug=c.slug AND e.user_id=? WHERE l.id=? AND l.status='published' AND c.status='published'",[$u['id'],$lessonId])->fetch();
-    if (!$lesson) { http_response_code(404); exit; }
+    if (!$lesson) progress_response(404,['error'=>'Lesson پیدا نشد یا دسترسی ندارید.']);
     $status=$completed ? 'completed' : 'started';
     $completedAt=$completed ? gmdate('Y-m-d H:i:s') : null;
     if (db()->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql') q("INSERT INTO lesson_progress(user_id,lesson_id,watched_seconds,last_position,percentage,completed,status,completed_at) VALUES (?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE watched_seconds=VALUES(watched_seconds),last_position=VALUES(last_position),percentage=VALUES(percentage),completed=VALUES(completed),status=VALUES(status),completed_at=VALUES(completed_at),updated_at=CURRENT_TIMESTAMP",[$u['id'],$lessonId,$watched,$position,$percentage,$completed?1:0,$status,$completedAt]);
