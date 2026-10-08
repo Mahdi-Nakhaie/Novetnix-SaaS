@@ -30,12 +30,21 @@ class PlaybackEventsContractTest(unittest.TestCase):
         self.assertIn("return {", ADAPTER)
         self.assertIn("type: type", ADAPTER)
 
+    def test_state_reader_validates_real_timing_without_computing_percentage(self):
+        self.assertIn("function readState(player)", ADAPTER)
+        self.assertIn("if (currentTime === null || duration === null", ADAPTER)
+        self.assertIn("duration <= 0", ADAPTER)
+        self.assertIn("currentTime > duration", ADAPTER)
+        self.assertIn("return { currentTime: currentTime, duration: duration }", ADAPTER)
+        self.assertIn("readState: readState", ADAPTER)
+        self.assertNotIn("percentage", ADAPTER)
+
     def test_player_state_contract_uses_real_events_and_retry_api(self):
         for event_type in ("loadstart", "waiting", "stalled", "loadedmetadata", "canplay", "playing", "error"):
             self.assertIn(event_type + ":", ADAPTER)
         for state in ("loading", "ready", "error"):
             self.assertIn('"%s"' % state, ADAPTER)
-        self.assertIn("window.NoqtePlaybackEvents = Object.freeze({ attach: attach, detach: detach, retry: retry })", ADAPTER)
+        self.assertIn("window.NoqtePlaybackEvents = Object.freeze({ attach: attach, detach: detach, retry: retry, readState: readState })", ADAPTER)
         self.assertIn("player.load();", ADAPTER)
         self.assertNotIn("setTimeout", ADAPTER)
         self.assertNotIn("dispatchEvent", ADAPTER)

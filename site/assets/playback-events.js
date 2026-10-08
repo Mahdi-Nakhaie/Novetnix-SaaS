@@ -33,6 +33,14 @@
     };
   }
 
+  function readState(player) {
+    if (!player) return null;
+    var currentTime = mediaValue(player.currentTime);
+    var duration = mediaValue(player.duration);
+    if (currentTime === null || duration === null || duration <= 0 || currentTime < 0 || currentTime > duration) return null;
+    return { currentTime: currentTime, duration: duration };
+  }
+
   function detach(player) {
     var binding = attached.get(player);
     if (!binding) return;
@@ -66,5 +74,5 @@
     return true;
   }
 
-  window.NoqtePlaybackEvents = Object.freeze({ attach: attach, detach: detach, retry: retry });
+  window.NoqtePlaybackEvents = Object.freeze({ attach: attach, detach: detach, retry: retry, readState: readState });
 })(window);
