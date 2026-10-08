@@ -30,6 +30,16 @@ class PlaybackEventsContractTest(unittest.TestCase):
         self.assertIn("return {", ADAPTER)
         self.assertIn("type: type", ADAPTER)
 
+    def test_player_state_contract_uses_real_events_and_retry_api(self):
+        for event_type in ("loadstart", "waiting", "stalled", "loadedmetadata", "canplay", "playing", "error"):
+            self.assertIn(event_type + ":", ADAPTER)
+        for state in ("loading", "ready", "error"):
+            self.assertIn('"%s"' % state, ADAPTER)
+        self.assertIn("window.NoqtePlaybackEvents = Object.freeze({ attach: attach, detach: detach, retry: retry })", ADAPTER)
+        self.assertIn("player.load();", ADAPTER)
+        self.assertNotIn("setTimeout", ADAPTER)
+        self.assertNotIn("dispatchEvent", ADAPTER)
+
     def test_reinitialization_replaces_old_listeners_and_cleanup_is_available(self):
         self.assertIn("var attached = new WeakMap()", ADAPTER)
         self.assertIn("detach(player);", ADAPTER)

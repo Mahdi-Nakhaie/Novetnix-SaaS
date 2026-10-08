@@ -3,6 +3,15 @@
 
   var attached = new WeakMap();
   var eventTypes = ["play", "pause", "seeking", "seeked", "loadedmetadata", "timeupdate", "ended"];
+  var stateTypes = {
+    loadstart: "loading",
+    waiting: "loading",
+    stalled: "loading",
+    loadedmetadata: "ready",
+    canplay: "ready",
+    playing: "ready",
+    error: "error"
+  };
 
   function mediaValue(value) {
     return typeof value === "number" && isFinite(value) ? value : null;
@@ -16,14 +25,23 @@
     };
   }
 
+  function normalizeState(state, player) {
+    return {
+      state: state,
+      currentTime: mediaValue(player.currentTime),
+      duration: mediaValue(player.duration)
+    };
+  }
+
   function detach(player) {
     var binding = attached.get(player);
     if (!binding) return;
     eventTypes.forEach(function (type) { player.removeEventListener(type, binding.handlers[type]); });
+    Object.keys(binding.stateHandlers).forEach(function (type) { player.removeEventListener(type, binding.stateHandlers[type]); });
     attached.delete(player);
   }
 
-  function attach(player, onEvent) {
+  function attach(player, onEvent, onState) {
     if (!player || typeof player.addEventListener !== "function" || typeof onEvent !== "function") {
       throw new TypeError("A Player EventTarget and event callback are required.");
     }
@@ -33,9 +51,20 @@
       handlers[type] = function () { onEvent(normalize(type, player)); };
       player.addEventListener(type, handlers[type]);
     });
-    attached.set(player, { handlers: handlers });
+    var stateHandlers = {};
+    if (typeof onState === "function") Object.keys(stateTypes).forEach(function (type) {
+      stateHandlers[type] = function () { onState(normalizeState(stateTypes[type], player)); };
+      player.addEventListener(type, stateHandlers[type]);
+    });
+    attached.set(player, { handlers: handlers, stateHandlers: stateHandlers });
     return function () { detach(player); };
   }
 
-  window.NoqtePlaybackEvents = Object.freeze({ attach: attach, detach: detach });
+  function retry(player) {
+    if (!player || typeof player.load !== "function") return false;
+    player.load();
+    return true;
+  }
+
+  window.NoqtePlaybackEvents = Object.freeze({ attach: attach, detach: detach, retry: retry });
 })(window);
