@@ -41,6 +41,12 @@
     return { currentTime: currentTime, duration: duration };
   }
 
+  function calculatePercentage(currentTime, duration) {
+    if (typeof currentTime !== "number" || !isFinite(currentTime) || currentTime < 0 ||
+        typeof duration !== "number" || !isFinite(duration) || duration <= 0) return null;
+    return Math.round(Math.min(currentTime, duration) / duration * 10000) / 100;
+  }
+
   function detach(player) {
     var binding = attached.get(player);
     if (!binding) return;
@@ -96,6 +102,8 @@
       if (inFlight) { pending = true; return; }
       var state = readState(player);
       if (!state) return;
+      var percentage = calculatePercentage(state.currentTime, state.duration);
+      if (percentage === null) return;
       dirty = false;
       inFlight = true;
       var payload = new URLSearchParams({
@@ -103,7 +111,7 @@
         lesson_id: String(options.lessonId),
         watched_seconds: String(state.currentTime),
         last_position: String(state.currentTime),
-        percentage: String(state.currentTime / state.duration * 100),
+        percentage: String(percentage),
         completed: completed ? "1" : "0"
       });
       window.fetch(endpoint, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" }, body: payload.toString() })

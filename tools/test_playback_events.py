@@ -1,10 +1,13 @@
+import json
 import pathlib
+import subprocess
 import unittest
 
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 ADAPTER = (ROOT / "site/assets/playback-events.js").read_text(encoding="utf-8")
 VIEWS = (ROOT / "src/views.php").read_text(encoding="utf-8")
+APP = (ROOT / "src/app.php").read_text(encoding="utf-8")
 
 
 def function_body(source, name):
@@ -57,12 +60,47 @@ class PlaybackEventsContractTest(unittest.TestCase):
         self.assertIn("inFlight", ADAPTER)
         self.assertIn("pending", ADAPTER)
         self.assertIn("window.fetch", ADAPTER)
-        self.assertIn("currentTime / state.duration * 100", ADAPTER)
+        self.assertIn("percentage: String(percentage)", ADAPTER)
+        self.assertIn("calculatePercentage(state.currentTime, state.duration)", ADAPTER)
         self.assertIn("window.clearInterval(timer)", ADAPTER)
 
         self.assertIn("var attached = new WeakMap()", ADAPTER)
         self.assertIn("detach(player);", ADAPTER)
         self.assertIn("return function () { detach(player); }", ADAPTER)
+
+    def test_percentage_calculation_cases(self):
+        script = r'''
+const fs = require("node:fs");
+const vm = require("node:vm");
+const source = fs.readFileSync(process.argv[1], "utf8").replace(
+  "})(window);", "window.testPercentage = calculatePercentage; })(window);"
+);
+const context = {window: {}};
+vm.runInNewContext(source, context);
+const calculate = context.window.testPercentage;
+const cases = [
+  [0, 1800], [300, 1800], [900, 1800], [1350, 1800], [1800, 1800],
+  [1850, 1800], [300, 0], [300, -10], [300, null], [300, Infinity],
+  [NaN, 1800], [-5, 1800], [300, 1800], [1200, 1800]
+];
+process.stdout.write(JSON.stringify(cases.map(([position, duration]) => calculate(position, duration))));
+'''
+        result = subprocess.run(
+            ["node", "-e", script, str(ROOT / "site/assets/playback-events.js")],
+            capture_output=True, text=True, check=True,
+        )
+        self.assertEqual(
+            json.loads(result.stdout),
+            [0, 16.67, 50, 75, 100, 100, None, None, None, None, None, None, 16.67, 66.67],
+        )
+
+    def test_backend_rejects_invalid_percentage_independently(self):
+        save = function_body(APP, "save_lesson_progress")
+        self.assertIn("!is_numeric($percentage)", save)
+        self.assertIn("!is_finite($percentage)", save)
+        self.assertIn("$percentage<0 || $percentage>100", save)
+        self.assertIn("percentage=excluded.percentage", save)
+        self.assertIn("percentage=VALUES(percentage)", save)
 
     def test_workspace_has_no_real_player_or_aparat_integration_to_verify(self):
         workspace = function_body(VIEWS, "page_course_workspace")
