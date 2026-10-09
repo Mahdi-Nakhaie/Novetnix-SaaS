@@ -70,6 +70,26 @@ function nova_answer(array $messages): ?string {
 function progress_response(int $status,array $body): void {
     http_response_code($status); header('Content-Type: application/json; charset=utf-8'); echo json_encode($body,JSON_THROW_ON_ERROR); exit;
 }
+function authorized_progress_lesson(int $userId,int $lessonId): bool {
+    return (bool)q("SELECT l.id FROM lessons l INNER JOIN courses c ON c.id=l.course_id INNER JOIN enrollments e ON e.course_slug=c.slug AND e.user_id=? WHERE l.id=? AND l.status='published' AND c.status='published'",[$userId,$lessonId])->fetch();
+}
+function lesson_progress_for_user(array $u,string $requestedLesson): void {
+    $lessonId=filter_var($requestedLesson,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]);
+    if ($lessonId===false || $lessonId===null) progress_response(404,['error'=>'Lesson پیدا نشد یا دسترسی ندارید.']);
+    try {
+        if (!authorized_progress_lesson((int)$u['id'],$lessonId)) progress_response(404,['error'=>'Lesson پیدا نشد یا دسترسی ندارید.']);
+        $progress=q('SELECT lesson_id,last_position,watched_seconds,percentage,completed FROM lesson_progress WHERE user_id=? AND lesson_id=?',[$u['id'],$lessonId])->fetch();
+    } catch (Throwable $e) {
+        progress_response(500,['error'=>'دریافت پیشرفت انجام نشد.']);
+    }
+    progress_response(200,$progress ? [
+        'lesson_id'=>(int)$progress['lesson_id'],
+        'last_position'=>(float)$progress['last_position'],
+        'watched_seconds'=>(float)$progress['watched_seconds'],
+        'percentage'=>(float)$progress['percentage'],
+        'completed'=>(bool)$progress['completed']
+    ] : ['lesson_id'=>$lessonId,'last_position'=>0,'watched_seconds'=>0,'percentage'=>0,'completed'=>false]);
+}
 function save_lesson_progress(array $u): void {
     $lessonId=filter_var($_POST['lesson_id'] ?? '',FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]);
     $watched=$_POST['watched_seconds'] ?? null;
@@ -79,8 +99,7 @@ function save_lesson_progress(array $u): void {
     if ($lessonId===false || $lessonId===null || !is_numeric($watched) || !is_numeric($position) || !is_numeric($percentage) || $completed===null) progress_response(422,['error'=>'اطلاعات پیشرفت معتبر نیست.']);
     $watched=(float)$watched; $position=(float)$position; $percentage=(float)$percentage;
     if (!is_finite($watched) || !is_finite($position) || !is_finite($percentage) || $watched<0 || $position<0 || $percentage<0 || $percentage>100) progress_response(422,['error'=>'اطلاعات پیشرفت معتبر نیست.']);
-    $lesson=q("SELECT l.id FROM lessons l INNER JOIN courses c ON c.id=l.course_id INNER JOIN enrollments e ON e.course_slug=c.slug AND e.user_id=? WHERE l.id=? AND l.status='published' AND c.status='published'",[$u['id'],$lessonId])->fetch();
-    if (!$lesson) progress_response(404,['error'=>'Lesson پیدا نشد یا دسترسی ندارید.']);
+    if (!authorized_progress_lesson((int)$u['id'],$lessonId)) progress_response(404,['error'=>'Lesson پیدا نشد یا دسترسی ندارید.']);
     $status=$completed ? 'completed' : 'started';
     $completedAt=$completed ? gmdate('Y-m-d H:i:s') : null;
     try {

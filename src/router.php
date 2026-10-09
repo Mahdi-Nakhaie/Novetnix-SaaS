@@ -32,6 +32,11 @@ function route(): void {
         head_page('فضای یادگیری','',true); notice(); page_course_workspace($course,$requestedLesson===null?'':(string)$requestedLesson); foot_page(true);
         return;
     }
+    if (preg_match('~^progress/lesson/([1-9][0-9]*)$~D',$path,$match)) {
+        $u=user();
+        if (!$u || trim($u['name'])==='') progress_response(401,['error'=>'برای مشاهده پیشرفت وارد شوید.']);
+        lesson_progress_for_user($u,$match[1]);
+    }
     if ($path==='dashboard' || str_starts_with($path,'dashboard/')) {
         $u=require_user();
         if ($u['phone']===(config_value('ADMIN_PHONE') ?: '') && $u['role']!=='admin') redirect('admin-login');
