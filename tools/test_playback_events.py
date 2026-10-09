@@ -102,11 +102,13 @@ process.stdout.write(JSON.stringify(cases.map(([position, duration]) => calculat
         self.assertIn("percentage=excluded.percentage", save)
         self.assertIn("percentage=VALUES(percentage)", save)
 
-    def test_workspace_has_no_real_player_or_aparat_integration_to_verify(self):
+    def test_aparat_embed_does_not_pretend_to_provide_player_state(self):
         workspace = function_body(VIEWS, "page_course_workspace")
-        self.assertIn("video-placeholder", workspace)
+        self.assertIn("www.aparat.com/embed/lhu79lu", workspace)
         self.assertNotIn("NoqtePlaybackEvents.attach", workspace)
-        self.assertNotIn("Aparat", workspace)
+        self.assertNotIn("connectProgress(", workspace)
+        self.assertNotIn("/progress/save", workspace)
+        self.assertIn("پیشرفت تماشا در حال حاضر به‌صورت خودکار ثبت نمی‌شود", workspace)
 
 
 if __name__ == "__main__":

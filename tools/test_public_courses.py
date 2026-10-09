@@ -72,7 +72,9 @@ class PublicCoursesTest(unittest.TestCase):
                 self.assertIsNone(self.db.execute(self.course_sql, (slug,)).fetchone())
         self.assertIn("if (!$course) { http_response_code(404)", self.detail)
         self.assertNotIn("COURSES", self.detail)
-        self.assertNotIn("courses/enroll", self.detail)
+        self.assertIn("course_start_action($course,$me,$enrolled", self.detail)
+        self.assertIn("courses/enroll", body(ROUTER, "course_start_action"))
+        self.assertIn("dashboard/course/", body(ROUTER, "course_start_action"))
         self.assertIn("page_course(trim(substr($path,7)))", body(ROUTER, "route"))
 
     def test_lessons_belong_to_course_are_published_and_ordered(self):
@@ -92,6 +94,28 @@ class PublicCoursesTest(unittest.TestCase):
         self.assertIn("مدت ثبت نشده", self.detail)
         self.assertIn("count($lessons)", self.detail)
         self.assertIn("if (!$lessons)", self.detail)
+
+    def test_embed_is_scoped_to_first_demo_lesson_and_csp_to_workspace(self):
+        self.assertIn("$course['slug']==='ai-foundations' && (int)$current['position']===1", self.workspace_view)
+        self.assertIn('id="31969839874"', self.workspace_view)
+        self.assertIn('https://www.aparat.com/embed/lhu79lu?data[rnddiv]=31969839874&amp;data[responsive]=yes&amp;titleShow=true', self.workspace_view)
+        self.assertIn('ویدیوی این جلسه هنوز اضافه نشده است', self.workspace_view)
+        self.assertIn('جلسهٔ بعدی', self.workspace_view)
+        self.assertIn('aria-current="true"', self.workspace_view)
+        entry = (ROOT / "public/index.php").read_text(encoding="utf-8")
+        self.assertIn("preg_match('~^dashboard/course/[a-z0-9-]+$~D',$path)", entry)
+        self.assertIn("script-src 'self'\".$aparatPolicy", entry)
+        self.assertIn("frame-src 'self'\".$aparatPolicy", entry)
+        self.assertIn("https://www.aparat.com", entry)
+
+    def test_course_actions_follow_enrollment_and_learning_links_to_workspace(self):
+        action = body(ROUTER, "course_start_action")
+        self.assertIn("linkto('login'", action)
+        self.assertIn("if ($enrolled)", action)
+        self.assertIn("form_start('courses/enroll')", action)
+        self.assertIn("$course['slug']", action)
+        self.assertIn("$me['id'],$course['slug']", self.detail)
+        self.assertIn("dashboard/course/", body(VIEWS, "panel"))
 
     def test_workspace_route_uses_auth_and_panel_layout(self):
         route = body(ROUTER, "route")
