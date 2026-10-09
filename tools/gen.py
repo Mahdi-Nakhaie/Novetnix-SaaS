@@ -152,7 +152,11 @@ def project_cards(limit=None):
 
 
 def course_cards():
-    out = '<div class="course-grid">'
+    out = ('<div class="course-grid"><article class="course-card"><div class="course-icon icon-0">آ</div>'
+           '<div class="meta-row"><span class="pill">پیش‌نمایش دوره</span><span>۲ جلسه · رایگان</span></div>'
+           '<h3>دوره رایگان مقدماتی هوش مصنوعی</h3>'
+           '<p>رابط یادگیری و ویدیوی جلسهٔ اول را در سایت نمایشی ببینید. این نسخه پیشرفت تماشا را ذخیره نمی‌کند.</p>'
+           + linkto("course/ai-foundations", "دیدن دوره و ویدیو ←", "inline-link") + '</article>')
     for i, (slug, c) in enumerate(COURSES.items()):
         out += (
             f'<article class="course-card"><div class="course-icon icon-{i % 4}">{h(c["topic"][0])}</div>'
@@ -304,6 +308,52 @@ def view_courses():
     return ('<main>' + page_hero("مسیر یادگیری", "قدم‌به‌قدم تا توانایی ساختن",
                                  "هر مقاله یک مفهوم کاربردی را با تمرین واقعی ترکیب می‌کند؛ از پایتون تا یادگیری عمیق.")
             + '<section class="section container">' + course_cards() + "</section></main>")
+
+
+def view_demo_course(lesson):
+    lessons = (
+        ("مبانی هوش مصنوعی", "با مفاهیم اصلی هوش مصنوعی و مسیر حل یک مسئله واقعی آشنا شو.", "۳۰ دقیقه", "course/ai-foundations"),
+        ("پروژه تشخیص چهره", "یک نمونه پروژه عملی را از تعریف مسئله تا اجرای اولیه بررسی کن.", "۴۰ دقیقه", "course/ai-foundations/lesson-2"),
+    )
+    title, content, duration, _ = lessons[lesson - 1]
+    out = ('<main class="course-workspace"><nav class="workspace-breadcrumb" aria-label="مسیر صفحه">'
+           + linkto("courses", "مسیر یادگیری") + '<span aria-hidden="true">/</span>'
+           '<span aria-current="page">دوره مقدماتی هوش مصنوعی</span></nav>'
+           '<header class="workspace-header"><div><span class="eyebrow">پیش‌نمایش فضای یادگیری · دوره</span>'
+           '<h1>دوره رایگان مقدماتی هوش مصنوعی</h1>'
+           '<p>مفاهیم پایه هوش مصنوعی را با یک مسیر کوتاه و پروژه‌محور یاد بگیر.</p></div>'
+           '<div class="workspace-meta"><span>۲ جلسه</span><span>۷۰ دقیقه</span></div></header>'
+           '<p class="demo-course-notice">این صفحه فقط پیش‌نمایش رابط دوره است؛ ثبت‌نام، ذخیرهٔ پیشرفت و ادامهٔ پخش در سایت نمایشی فعال نیست.</p>'
+           '<div class="workspace-layout"><section class="workspace-main">')
+    if lesson == 1:
+        out += ('<div class="video-placeholder has-aparat" aria-label="ویدیوی جلسهٔ اول">'
+                '<div id="31969839874" class="aparat-embed"><script type="text/javascript" '
+                'src="https://www.aparat.com/embed/lhu79lu?data[rnddiv]=31969839874&amp;data[responsive]=yes&amp;titleShow=true"></script>'
+                '</div></div><p class="workspace-video-note">ویدیو از آپارات بارگیری می‌شود؛ در این نسخه زمان تماشا ثبت نمی‌شود.</p>')
+    else:
+        out += ('<div class="video-placeholder" aria-label="ویدیوی جلسه">'
+                '<div class="video-placeholder-inner"><strong>ویدیوی این جلسه هنوز اضافه نشده است</strong>'
+                '<span>تا زمان انتشار ویدیو، متن درس را در همین صفحه مطالعه کنید.</span></div></div>')
+    out += (f'<section class="current-lesson"><div class="workspace-kicker">جلسه {fa(lesson)} از ۲</div>'
+            f'<h2>{h(title)}</h2><div class="current-lesson-meta"><span>{duration}</span><span>متن درس</span></div>'
+            f'<p>{h(content)}</p></section><nav class="lesson-navigation" aria-label="ناوبری جلسه‌ها">')
+    if lesson == 1:
+        out += ('<span class="lesson-nav-link is-disabled"><span>← جلسهٔ قبلی</span><strong>ابتدای مسیر</strong></span>'
+                + linkto(lessons[1][3], "جلسهٔ بعدی → پروژه تشخیص چهره", "lesson-nav-link is-next"))
+    else:
+        out += (linkto(lessons[0][3], "← جلسهٔ قبلی: مبانی هوش مصنوعی", "lesson-nav-link")
+                + '<span class="lesson-nav-link is-disabled is-next"><span>جلسهٔ بعدی →</span><strong>پایان مسیر</strong></span>')
+    out += ('</nav></section><aside class="workspace-sidebar" aria-label="فهرست جلسه‌ها">'
+            '<div class="workspace-sidebar-head"><span class="eyebrow">سرفصل‌ها</span><strong>۲ جلسه</strong></div>'
+            '<div class="workspace-lesson-list">')
+    for index, (name, _, minutes, path) in enumerate(lessons, 1):
+        active = index == lesson
+        out += (f'<a class="workspace-lesson{" is-active" if active else ""}" href="{h(href(path))}"'
+                + (' aria-current="page"' if active else '')
+                + f'><span class="workspace-lesson-number">{fa(index)}</span>'
+                f'<span class="workspace-lesson-copy"><strong>{h(name)}</strong><small>{minutes}</small></span>'
+                f'<span class="workspace-lesson-indicator" aria-hidden="true">{"●" if active else ""}</span></a>')
+    return out + '</div></aside></div></main>'
 
 
 def view_course(slug):
@@ -1270,6 +1320,8 @@ def view_body(route):
         return view_courses()
     if view == "course":
         return view_course(route["slug"])
+    if view == "course-demo":
+        return view_demo_course(route["lesson"])
     if view == "projects":
         return view_projects()
     if view == "project":
@@ -1366,6 +1418,8 @@ def build_routes():
 
         {"path": "verify", "title": "تأیید شماره", "view": "verify", "nav": "",
          "description": "تأیید کد پیامک‌شده."},
+        {"path": "course/ai-foundations", "title": "پیش‌نمایش دوره مقدماتی هوش مصنوعی", "view": "course-demo", "lesson": 1, "nav": "courses"},
+        {"path": "course/ai-foundations/lesson-2", "title": "جلسهٔ دوم دوره مقدماتی هوش مصنوعی", "view": "course-demo", "lesson": 2, "nav": "courses"},
     ]
     for slug, c in COURSES.items():
         routes.append({"path": f"course/{slug}", "title": c["title"], "view": "course",

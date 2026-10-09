@@ -3,6 +3,8 @@ import re
 import sqlite3
 import unittest
 
+from tools import gen
+
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 ROUTER = (ROOT / "src/router.php").read_text(encoding="utf-8")
@@ -116,6 +118,25 @@ class PublicCoursesTest(unittest.TestCase):
         self.assertIn("$course['slug']", action)
         self.assertIn("$me['id'],$course['slug']", self.detail)
         self.assertIn("dashboard/course/", body(VIEWS, "panel"))
+
+    def test_static_demo_exposes_lesson_ui_without_claiming_progress(self):
+        paths = {route["path"]: route for route in gen.build_routes()}
+        first = gen.render_page(paths["course/ai-foundations"])
+        second = gen.render_page(paths["course/ai-foundations/lesson-2"])
+        self.assertIn(gen.href("course/ai-foundations"), gen.render_page(paths[""]))
+        self.assertIn(gen.href("course/ai-foundations"), gen.render_page(paths["courses"]))
+        self.assertNotIn("data-protected=", first)
+        self.assertIn("www.aparat.com/embed/lhu79lu", first)
+        self.assertNotIn("www.aparat.com/embed/lhu79lu", second)
+        self.assertIn("ویدیوی این جلسه هنوز اضافه نشده است", second)
+        self.assertIn(gen.href("course/ai-foundations/lesson-2"), first)
+        self.assertIn(gen.href("course/ai-foundations"), second)
+        for page in (first, second):
+            self.assertIn("ذخیرهٔ پیشرفت و ادامهٔ پخش در سایت نمایشی فعال نیست", page)
+            self.assertNotIn("/progress/save", page)
+        for path in ("", "courses", "course/ai-foundations", "course/ai-foundations/lesson-2"):
+            target = ROOT / "site" / path / "index.html"
+            self.assertEqual(target.read_text(encoding="utf-8"), gen.render_page(paths[path]))
 
     def test_workspace_route_uses_auth_and_panel_layout(self):
         route = body(ROUTER, "route")
