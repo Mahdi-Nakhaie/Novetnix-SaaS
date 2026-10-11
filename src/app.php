@@ -23,6 +23,14 @@ function course_workspace(int $userId,string $slug,?int $requestedLesson=null): 
     $course['lessons']=q("SELECT id,title,content,position,duration_minutes FROM lessons WHERE course_id=? AND status='published' ORDER BY position ASC",[$course['id']])->fetchAll();
     return $course;
 }
+function dashboard_course_progress(int $userId): ?array {
+    $course=q("SELECT c.id,c.slug,c.title FROM courses c INNER JOIN enrollments e ON e.course_slug=c.slug WHERE e.user_id=? AND c.status='published' ORDER BY e.created_at DESC,c.id DESC LIMIT 1",[$userId])->fetch();
+    if (!$course) return null;
+    $counts=q("SELECT COUNT(*) AS total,COALESCE(SUM(CASE WHEN EXISTS (SELECT 1 FROM lesson_progress p WHERE p.lesson_id=l.id AND p.user_id=? AND p.completed=1) THEN 1 ELSE 0 END),0) AS completed FROM lessons l WHERE l.course_id=? AND l.status='published'",[$userId,$course['id']])->fetch();
+    $total=(int)$counts['total'];
+    $completed=(int)$counts['completed'];
+    return ['title'=>$course['title'],'slug'=>$course['slug'],'total'=>$total,'completed'=>$completed,'remaining'=>$total-$completed,'percentage'=>$total ? round($completed/$total*100,1) : 0];
+}
 function course_duration_minutes(array $course): ?int {
     if ($course['estimated_duration_minutes']!==null) return (int)$course['estimated_duration_minutes'];
     $durations=array_column($course['lessons'],'duration_minutes');
