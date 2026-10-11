@@ -8,6 +8,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 AUTH = (ROOT / "src/auth.php").read_text(encoding="utf-8")
 APP = (ROOT / "src/app.php").read_text(encoding="utf-8")
 VIEWS = (ROOT / "src/views.php").read_text(encoding="utf-8")
+ROUTER = (ROOT / "src/router.php").read_text(encoding="utf-8")
 SCHEMA = (ROOT / "database/schema.sqlite.sql").read_text(encoding="utf-8")
 
 
@@ -197,6 +198,44 @@ class DashboardActiveLessonTest(unittest.TestCase):
         self.assertEqual(self.candidates()[1][0][2], -4)
         self.assertIn("progress_number($row['last_position'])!==null", body(APP, "dashboard_active_lesson"))
         self.assertNotIn("FROM activities", body(APP, "dashboard_active_lesson"))
+
+    def test_dashboard_cta_targets_only_selected_published_lesson(self):
+        view = body(VIEWS, "panel")
+        self.assertIn("dashboard_active_lesson((int)$me['id'],$courseProgress)", view)
+        self.assertEqual(view.count("dashboard_active_lesson((int)$me['id'],$courseProgress)"), 1)
+        self.assertIn("هنوز در دوره‌ای ثبت‌نام نکرده‌اید", view)
+        self.assertIn("'?lesson='.(int)$activeLesson['lesson']['id']", view)
+        self.assertIn("$activeLesson['lesson_status']==='in_progress'?'ادامهٔ یادگیری ←':'شروع یادگیری ←'", view)
+        self.assertIn("'btn btn-primary'", view)
+        self.assertIn("h($activeLesson['lesson']['title'])", view)
+        self.assertIn("$activeLesson['course_status']==='completed'", view)
+        self.assertIn("elseif ($activeLesson['lesson'])", view)
+        self.assertIn("هنوز درسی برای این دوره منتشر نشده است", view)
+        self.assertIn("$u=require_user()", ROUTER)
+        self.assertIn("course_workspace((int)$u['id'],$match[1],$requestedLesson)", ROUTER)
+        self.assertIn("course_workspace_selection($course,$requestedLesson)", VIEWS)
+        self.assertIn("l.status='published'", body(APP, "dashboard_active_lesson"))
+        self.assertIn("course_id=? AND status='published'", body(APP, "course_workspace"))
+
+    def test_dashboard_data_error_has_no_fabricated_destination(self):
+        view = body(VIEWS, "panel")
+        self.assertLess(view.index("dashboard_active_lesson((int)$me['id'],$courseProgress)"), view.index("catch (Throwable $e)"))
+        self.assertIn("$courseError=true", view)
+        self.assertIn("دریافت مسیر یادگیری ممکن نشد", view)
+        self.assertIn("if ($courseError)", view)
+        self.assertLess(view.index("if ($courseError)"), view.index("linkto('dashboard/course/'.$courseProgress['slug'].'?lesson='"))
+
+    def test_saved_position_is_user_and_lesson_scoped_without_unverified_seek(self):
+        self.record(1, 42)
+        self.record(1, 90, user=2)
+        query = re.search(r"SELECT lesson_id,last_position,watched_seconds,percentage,completed FROM lesson_progress WHERE user_id=\? AND lesson_id=\?", body(APP, "lesson_progress_for_user")).group(0)
+        self.assertEqual(self.db.execute(query, (1, 1)).fetchone()[1], 42)
+        self.assertEqual(self.db.execute(query, (2, 1)).fetchone()[1], 90)
+        self.assertIsNone(self.db.execute(query, (1, 2)).fetchone())
+        self.assertIn("authorized_progress_lesson((int)$u['id'],$lessonId)", body(APP, "lesson_progress_for_user"))
+        self.assertIn("progress_number($progress['last_position'])", body(APP, "lesson_progress_for_user"))
+        self.assertNotIn("last_position", body(VIEWS, "panel"))
+        self.assertNotIn("currentTime", body(VIEWS, "page_course_workspace"))
 
     def test_duplicate_progress_is_blocked_by_schema_and_guarded_in_code(self):
         self.record(1, 1)

@@ -403,7 +403,7 @@ input[aria-invalid="true"],textarea[aria-invalid="true"],select[aria-invalid="tr
 .course-progress-card .inline-link{display:inline-block;margin-top:1rem}
 .course-active-lesson{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-top:1rem}
 .course-active-lesson span{color:var(--muted);font-size:.85rem}
-.course-active-lesson .inline-link{margin-top:0;margin-inline-start:auto}
+.course-active-lesson .btn{margin-inline-start:auto}
 .chat-card{display:flex;flex-direction:column;gap:.8rem}
 .live-badge{display:inline-flex;align-items:center;gap:.4rem;background:#eafaf0;color:#16794a;border:1px solid #bde9cf;border-radius:999px;padding:.2rem .7rem;font-size:.74rem;font-weight:800}
 .live-dot{width:8px;height:8px;border-radius:50%;background:#19a05f;animation:pulse 1.6s infinite}

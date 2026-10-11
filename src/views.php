@@ -142,20 +142,27 @@ function panel(string $sub): void {
         else { $stats=[['مقاله‌های من',(int)q('SELECT COUNT(*) FROM enrollments WHERE user_id=?',[$me['id']])->fetchColumn()],['پروژه‌های من',(int)q('SELECT COUNT(*) FROM projects WHERE user_id=?',[$me['id']])->fetchColumn()],['گفت‌وگوها',(int)q('SELECT COUNT(*) FROM community_posts WHERE user_id=?',[$me['id']])->fetchColumn()],['پلن فعال',PLANS[$plan]['name']]]; }
         echo '<div class="stat-grid">'; foreach ($stats as [$label,$value]) echo '<div class="stat-card"><span>'.h($label).'</span><strong>'.(is_int($value)?fa($value):h($value)).'</strong></div>'; echo '</div><section class="panel-card account-summary"><div><span class="eyebrow">حساب من</span><h2>اطلاعات حساب</h2></div><dl><div><dt>نام و نام خانوادگی</dt><dd>'.h(trim((string)$me['name'])!==''?$me['name']:'ثبت نشده').'</dd></div><div><dt>شماره تلفن</dt><dd dir="ltr">'.h(trim((string)$me['phone'])!==''?$me['phone']:'ثبت نشده').'</dd></div><div><dt>وضعیت شماره تلفن</dt><dd>'.($me['phone_verified_at']!==null?'تأیید شده':'تأیید نشده').'</dd></div></dl></section><div class="panel-columns"><section class="panel-card"><span class="eyebrow">گام بعدی</span><h2>'.($role==='admin'?'مدیریت اشتراک‌ها':'مسیرت را ادامه بده').'</h2><p>'.($role==='admin'?'فعال‌سازی اشتراک پس از تأیید پرداخت خارج از سامانه و بررسی دستی امکان‌پذیر است.':'یک مقاله را بخوان و سپس دانسته‌هایت را در یک پروژه تازه به کار بگیر.').'</p>'; linkto($role==='admin'?'dashboard/subscriptions':'courses',$role==='admin'?'مدیریت اشتراک‌ها ←':'مشاهده مقاله‌ها ←','btn btn-primary'); echo '</section><section class="panel-card soft"><span class="eyebrow">'.($role==='admin'?'جامعه':'کنار هم یاد می‌گیریم').'</span><h2>انجمن Noventix</h2><p>سؤال‌ها، تجربه‌ها و ایده‌ها را با جامعه یادگیری در میان بگذار.</p>'; linkto('community','ورود به انجمن ←','btn btn-outline'); echo '</section></div>';
         if ($role!=='admin') {
-            $courseProgress=dashboard_course_progress((int)$me['id']);
-            if ($courseProgress) {
+            $courseError=false;
+            try {
+                $courseProgress=dashboard_course_progress((int)$me['id']);
+                $activeLesson=$courseProgress ? dashboard_active_lesson((int)$me['id'],$courseProgress) : null;
+            } catch (Throwable $e) {
+                $courseError=true;
+                $courseProgress=null;
+            }
+            if ($courseError) echo '<section class="panel-card course-progress-card"><span class="eyebrow">وضعیت دوره</span><p>دریافت مسیر یادگیری ممکن نشد. لطفاً دوباره تلاش کنید.</p></section>';
+            elseif ($courseProgress) {
                 echo '<section class="panel-card course-progress-card"><span class="eyebrow">وضعیت دوره</span><h2>'.h($courseProgress['title']).'</h2><div class="course-progress-details"><div><span>پیشرفت دوره</span><strong>'.fa((string)$courseProgress['percentage']).'٪</strong></div><div><span>درس‌های تکمیل‌شده</span><strong>'.fa($courseProgress['completed']).' از '.fa($courseProgress['total']).'</strong></div><div><span>درس‌های باقی‌مانده</span><strong>'.fa($courseProgress['remaining']).'</strong></div></div><div class="progress" role="progressbar" aria-label="پیشرفت دوره" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'.h($courseProgress['percentage']).'"><span style="width:'.h($courseProgress['percentage']).'%"></span></div>';
-                $activeLesson=dashboard_active_lesson((int)$me['id'],$courseProgress);
                 echo '<div class="course-active-lesson">';
                 if ($activeLesson['course_status']==='completed') {
                     echo '<strong>این دوره را تکمیل کرده‌اید</strong>';
                     if ($activeLesson['lesson']) echo '<span>آخرین درس: '.h($activeLesson['lesson']['title']).' · تکمیل‌شده</span>';
                 } elseif ($activeLesson['lesson']) {
                     echo '<strong>'.h($activeLesson['lesson']['title']).'</strong><span>'.($activeLesson['lesson_status']==='in_progress'?'در حال یادگیری':'شروع‌نشده').'</span>';
-                    linkto('dashboard/course/'.$courseProgress['slug'].'?lesson='.(int)$activeLesson['lesson']['id'],'ادامه یادگیری ←','inline-link');
+                    linkto('dashboard/course/'.$courseProgress['slug'].'?lesson='.(int)$activeLesson['lesson']['id'],$activeLesson['lesson_status']==='in_progress'?'ادامهٔ یادگیری ←':'شروع یادگیری ←','btn btn-primary');
                 } else echo '<span>هنوز درسی برای این دوره منتشر نشده است.</span>';
                 echo '</div></section>';
-            }
+            } else echo '<section class="panel-card course-progress-card"><span class="eyebrow">وضعیت دوره</span><p>هنوز در دوره‌ای ثبت‌نام نکرده‌اید.</p></section>';
         }
     } elseif ($sub==='profile') {
         panel_head('پروفایل من','اطلاعات نمایش داده‌شده در حساب کاربری.');
