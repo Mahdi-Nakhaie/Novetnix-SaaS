@@ -245,6 +245,27 @@ class PublicCoursesTest(unittest.TestCase):
         self.assertLess(status.index("$position===null || $watched===null"), status.index("(int)$progress['completed']===1"))
         self.assertIn("$progress['status']==='completed' && $progress['completed_at']!==null", status)
 
+    def test_lesson_quiz_is_only_loaded_for_selected_authorized_lesson_and_has_no_answer_in_html(self):
+        self.assertIn("$course['quiz']=$selectedId ? lesson_quiz_for_lesson($selectedId) : null", self.workspace)
+        self.assertIn("if ($requestedLesson!==null", self.workspace)
+        self.assertLess(self.workspace.index("INNER JOIN enrollments e"), self.workspace.index("lesson_quiz_for_lesson($selectedId)"))
+        loader = body(APP, "lesson_quiz_for_lesson")
+        self.assertIn("SELECT pass_percent,questions_json FROM lesson_quizzes WHERE lesson_id=?", loader)
+        self.assertIn("!is_int($question['correct'] ?? null)", loader)
+        self.assertIn("!is_array($questions) || !$questions", loader)
+        self.assertNotIn("['correct']", self.workspace_view)
+        self.assertIn("form_start('progress/save')", self.workspace_view)
+        self.assertIn("name=\"quiz_submit\"", self.workspace_view)
+        self.assertIn("name=\"answers[", self.workspace_view)
+        self.assertIn("h($question['prompt'])", self.workspace_view)
+        self.assertIn("h($option)", self.workspace_view)
+        self.assertIn("آزمون معتبری برای این درس منتشر نشده است", self.workspace_view)
+        for label in ("آزمون پایان درس", "ثبت پاسخ‌ها", "حداقل"):
+            self.assertIn(label, self.workspace_view)
+        css = (ROOT / "public/assets/style.css").read_text(encoding="utf-8")
+        self.assertIn(".lesson-quiz-question", css)
+        self.assertIn("overflow-wrap:anywhere", css)
+
     def test_archived_rows_are_excluded_by_public_queries(self):
         db = sqlite3.connect(":memory:")
         try:

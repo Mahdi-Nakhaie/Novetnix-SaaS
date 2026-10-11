@@ -158,6 +158,11 @@ input[aria-invalid="true"],textarea[aria-invalid="true"],select[aria-invalid="tr
 .current-lesson h2{margin:.45rem 0 .6rem;font-size:clamp(1.25rem,2.4vw,1.8rem)}
 .current-lesson p{color:var(--ink-2);line-height:2;margin:1rem 0 0;white-space:pre-line}
 .current-lesson-meta{display:flex;gap:.7rem;flex-wrap:wrap;color:var(--muted);font-size:.82rem;font-weight:800}
+.lesson-quiz-question{border:0;border-top:1px solid var(--line);padding:1rem 0;margin:0;min-width:0}
+.lesson-quiz-question legend{font-weight:800;padding-top:.8rem;overflow-wrap:anywhere}
+.lesson-quiz-question label{display:flex;align-items:flex-start;gap:.6rem;padding:.65rem 0;line-height:1.8;cursor:pointer;overflow-wrap:anywhere}
+.lesson-quiz-question input{flex:none;margin-top:.5rem}
+.lesson-quiz .btn{max-width:100%;white-space:normal}
 .lesson-navigation{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-top:1.2rem}
 .lesson-nav-link{display:flex;flex-direction:column;gap:.35rem;border:1px solid var(--line);background:#fff;border-radius:var(--r-md);padding:.9rem 1rem;color:var(--ink);text-decoration:none;min-width:0}
 .lesson-nav-link span{color:var(--muted);font-size:.78rem;font-weight:800}.lesson-nav-link strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lesson-nav-link.is-next{text-align:start}.lesson-nav-link.is-disabled{opacity:.55;cursor:default}

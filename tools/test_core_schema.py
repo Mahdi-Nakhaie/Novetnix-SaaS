@@ -21,8 +21,26 @@ class CoreSchemaTest(unittest.TestCase):
     def test_tables_match_both_engines(self):
         tables = lambda schema: set(re.findall(r"CREATE TABLE IF NOT EXISTS (\w+)", schema))
         self.assertEqual(tables(SQLITE_SCHEMA), tables(MYSQL_SCHEMA))
-        self.assertTrue({"users", "courses", "lessons"} <= tables(SQLITE_SCHEMA))
-        self.assertEqual(len(tables(SQLITE_SCHEMA)), 24)
+        self.assertTrue({"users", "courses", "lessons", "lesson_quizzes"} <= tables(SQLITE_SCHEMA))
+        self.assertEqual(len(tables(SQLITE_SCHEMA)), 25)
+
+    def test_quiz_schema_links_each_lesson_to_one_valid_threshold(self):
+        self.db.execute("INSERT INTO courses(slug,title,description) VALUES ('main','Main','')")
+        self.db.executemany("INSERT INTO lessons(course_id,title,content,position,status) VALUES (1,?,'',?,'published')", [("One", 1), ("Two", 2), ("Three", 3), ("Four", 4), ("Five", 5)])
+        fixture='[{"prompt":"Sample?","options":["Yes","No"],"correct":0}]'
+        for lesson in (1, 3, 5):
+            self.db.execute("INSERT INTO lesson_quizzes(lesson_id,pass_percent,questions_json) VALUES (?,?,?)", (lesson, 75, fixture))
+        self.assertEqual([row[0] for row in self.db.execute("SELECT lesson_id FROM lesson_quizzes ORDER BY lesson_id")], [1, 3, 5])
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute("INSERT INTO lesson_quizzes(lesson_id,pass_percent,questions_json) VALUES (1,75,?)", (fixture,))
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute("INSERT INTO lesson_quizzes(lesson_id,pass_percent,questions_json) VALUES (99,75,?)", (fixture,))
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute("INSERT INTO lesson_quizzes(lesson_id,pass_percent,questions_json) VALUES (2,0,?)", (fixture,))
+        self.db.execute("UPDATE lessons SET position=6 WHERE id=3")
+        self.assertEqual(self.db.execute("SELECT pass_percent FROM lesson_quizzes WHERE lesson_id=3").fetchone(), (75,))
+        self.db.execute("DELETE FROM lesson_quizzes WHERE lesson_id=5")
+        self.assertIsNone(self.db.execute("SELECT lesson_id FROM lesson_quizzes WHERE lesson_id=5").fetchone())
 
     def test_multiple_users_courses_and_lessons(self):
         self.db.executemany("INSERT INTO users(phone) VALUES (?)", [("09123456789",), ("09987654321",)])

@@ -97,6 +97,51 @@ class ProgressPersistenceTest(unittest.TestCase):
         self.assertEqual(self.db.execute(lessons, (2, 1)).fetchall(), [])
         self.assertEqual(self.db.execute(lessons, (1, 2)).fetchall(), [])
 
+    def test_quiz_completion_is_atomic_scoped_and_preserves_first_timestamp(self):
+        sql = re.search(r'"(INSERT INTO lesson_progress[^"\n]+ON CONFLICT\(user_id,lesson_id\) DO UPDATE[^"\n]+)"', body(APP, "submit_lesson_quiz")).group(1)
+        self.db.execute(sql, (1, 1, "2026-01-01 10:00:00"))
+        self.db.execute(sql, (1, 1, "2026-02-02 11:00:00"))
+        self.assertEqual(self.db.execute("SELECT completed,status,completed_at FROM lesson_progress WHERE user_id=1 AND lesson_id=1").fetchone(), (1, "completed", "2026-01-01 10:00:00"))
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM lesson_progress WHERE user_id=1 AND lesson_id=1").fetchone()[0], 1)
+        self.db.execute(self.save_sql(), (1, 2, 30, 30, 40))
+        self.db.execute(sql, (2, 2, "2026-03-03 12:00:00"))
+        self.assertEqual(self.db.execute("SELECT completed,completed_at FROM lesson_progress WHERE user_id=1 AND lesson_id=2").fetchone(), (0, None))
+        self.assertEqual(self.db.execute("SELECT completed,completed_at FROM lesson_progress WHERE user_id=2 AND lesson_id=2").fetchone(), (1, "2026-03-03 12:00:00"))
+        counts = re.search(r'"(SELECT COUNT\(\*\) AS total,.*?l\.status=\'published\')"', body(APP, "dashboard_course_progress")).group(1)
+        self.assertEqual(self.db.execute(counts, (1, 1)).fetchone(), (1, 1))
+        self.assertEqual(self.db.execute(counts, (2, 1)).fetchone(), (1, 0))
+        self.assertEqual(self.db.execute(counts, (2, 2)).fetchone(), (1, 1))
+        self.db.execute(self.save_sql(), (1, 1, 25, 25, 25))
+        self.assertEqual(self.db.execute("SELECT completed,completed_at FROM lesson_progress WHERE user_id=1 AND lesson_id=1").fetchone(), (1, "2026-01-01 10:00:00"))
+
+    def test_quiz_submission_reuses_authenticated_csrf_protected_progress_route(self):
+        save = body(APP, "save_lesson_progress")
+        submit = body(APP, "submit_lesson_quiz")
+        grade = body(APP, "lesson_quiz_passed")
+        self.assertIn("submit_lesson_quiz($u)", save)
+        self.assertIn("if ($path==='progress/save') { save_lesson_progress($u); }", body(APP, "handle_post"))
+        self.assertIn("validate_csrf()", body(APP, "handle_post"))
+        self.assertIn("$u=require_user()", body(APP, "handle_post"))
+        self.assertIn("authorized_progress_lesson((int)$u['id'],$lessonId)", submit)
+        self.assertIn("lesson_quiz_for_lesson($lessonId)", submit)
+        self.assertLess(submit.index("if (!$passed)"), submit.index("INSERT INTO lesson_progress"))
+        self.assertIn("$correct*100 >= $quiz['pass_percent']*count($quiz['questions'])", grade)
+        self.assertIn("count($answers)!==count($quiz['questions'])", grade)
+        self.assertIn("(int)$answer===$question['correct']", grade)
+        self.assertIn("if ($passed===null)", submit)
+        self.assertNotIn("$_POST['passed']", submit)
+        self.assertNotIn("$_POST['user_id']", submit)
+        self.assertNotIn("$_POST['pass_percent']", submit)
+        mysql = re.search(r'"(INSERT INTO lesson_progress[^"\n]+ON DUPLICATE KEY UPDATE[^"\n]+)"', submit).group(1)
+        self.assertLess(mysql.index("completed_at=IF("), mysql.index("completed=1,status='completed'"))
+
+    def test_quiz_threshold_boundary_for_variable_question_counts(self):
+        grade = body(APP, "lesson_quiz_passed")
+        self.assertIn("$correct*100 >= $quiz['pass_percent']*count($quiz['questions'])", grade)
+        for total, threshold, correct, expected in [(1, 100, 0, False), (1, 100, 1, True), (2, 50, 1, True), (2, 75, 1, False), (2, 75, 2, True), (5, 80, 3, False), (5, 80, 4, True), (5, 100, 5, True)]:
+            with self.subTest(total=total, threshold=threshold, correct=correct):
+                self.assertEqual(correct * 100 >= threshold * total, expected)
+
     def test_endpoint_uses_auth_user_and_enrollment_lesson_authorization(self):
         self.assertIn("$u['id']", self.progress)
         self.assertIn("authorized_progress_lesson((int)$u['id'],$lessonId)", self.progress)

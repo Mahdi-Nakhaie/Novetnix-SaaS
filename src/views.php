@@ -92,7 +92,20 @@ function page_course_workspace(?array $course,string $requestedLesson): void {
         echo '<div class="video-placeholder-inner"><strong>ویدیوی این جلسه هنوز اضافه نشده است</strong><span>تا زمان انتشار ویدیو، متن درس را در همین صفحه مطالعه کنید.</span></div>';
     }
     echo '</div>'; if ($hasVideo) echo '<p class="workspace-video-note">این ویدیو از آپارات پخش می‌شود؛ پیشرفت تماشا در حال حاضر به‌صورت خودکار ثبت نمی‌شود.</p>';
-    echo '<section class="current-lesson"><div class="workspace-kicker">جلسه '.fa((int)$current['position']).' از '.fa(count($course['lessons'])).'</div><h2>'.h($current['title']).'</h2><div class="current-lesson-meta"><span>'.h(course_workspace_duration($current['duration_minutes']===null?null:(int)$current['duration_minutes'])).'</span><span>متن درس</span></div><p>'.nl2br(h($current['content'])).'</p></section><nav class="lesson-navigation" aria-label="ناوبری جلسه‌ها">';
+    echo '<section class="current-lesson"><div class="workspace-kicker">جلسه '.fa((int)$current['position']).' از '.fa(count($course['lessons'])).'</div><h2>'.h($current['title']).'</h2><div class="current-lesson-meta"><span>'.h(course_workspace_duration($current['duration_minutes']===null?null:(int)$current['duration_minutes'])).'</span><span>متن درس</span></div><p>'.nl2br(h($current['content'])).'</p></section>';
+    echo '<section class="current-lesson lesson-quiz"><h2>آزمون پایان درس</h2>';
+    if ($course['quiz']) {
+        echo '<p>برای تکمیل درس باید به حداقل '.fa($course['quiz']['pass_percent']).'٪ پرسش‌ها پاسخ درست بدهید.</p>';
+        form_start('progress/save');
+        echo '<input type="hidden" name="quiz_submit" value="1"><input type="hidden" name="lesson_id" value="'.(int)$current['id'].'">';
+        foreach ($course['quiz']['questions'] as $i=>$question) {
+            echo '<fieldset class="lesson-quiz-question"><legend>'.fa($i+1).'. '.h($question['prompt']).'</legend>';
+            foreach ($question['options'] as $j=>$option) echo '<label><input type="radio" name="answers['.$i.']" value="'.$j.'" required><span>'.h($option).'</span></label>';
+            echo '</fieldset>';
+        }
+        echo '<button type="submit" class="btn btn-primary">ثبت پاسخ‌ها</button></form>';
+    } else echo '<p>آزمون معتبری برای این درس منتشر نشده است؛ بازکردن درس یا تماشای ویدئو آن را تکمیل نمی‌کند.</p>';
+    echo '</section><nav class="lesson-navigation" aria-label="ناوبری جلسه‌ها">';
     if ($selection['previous']) echo '<a class="lesson-nav-link" href="'.course_workspace_lesson_link($course['slug'],$selection['previous']).'"><span>← جلسهٔ قبلی</span><strong>'.h($selection['previous']['title']).'</strong></a>'; else echo '<span class="lesson-nav-link is-disabled"><span>← جلسهٔ قبلی</span><strong>ابتدای مسیر</strong></span>';
     if ($selection['next']) echo '<a class="lesson-nav-link is-next" href="'.course_workspace_lesson_link($course['slug'],$selection['next']).'"><span>جلسهٔ بعدی →</span><strong>'.h($selection['next']['title']).'</strong></a>'; else echo '<span class="lesson-nav-link is-disabled is-next"><span>جلسهٔ بعدی →</span><strong>پایان مسیر</strong></span>';
     echo '</nav></section><aside class="workspace-sidebar" aria-label="فهرست جلسه‌ها"><div class="workspace-sidebar-head"><span class="eyebrow">سرفصل‌ها</span><strong>'.fa(count($course['lessons'])).' جلسه</strong></div><div class="workspace-lesson-list">'; foreach ($course['lessons'] as $lesson) { $active=(int)$lesson['id']===(int)$current['id']; echo '<a class="workspace-lesson'.($active?' is-active':''). '" href="'.course_workspace_lesson_link($course['slug'],$lesson).'"'.($active?' aria-current="true"':'').'><span class="workspace-lesson-number">'.fa((int)$lesson['position']).'</span><span class="workspace-lesson-copy"><strong>'.h($lesson['title']).'</strong><small>'.h(course_workspace_duration($lesson['duration_minutes']===null?null:(int)$lesson['duration_minutes'])).'</small><span class="workspace-lesson-status is-'.h($lesson['learning_status']).'">'.h(['not_started'=>'شروع‌نشده','in_progress'=>'در حال یادگیری','completed'=>'تکمیل‌شده'][$lesson['learning_status']]).'</span></span><span class="workspace-lesson-indicator" aria-hidden="true">'.($active?'●':'').'</span></a>'; } echo '</div></aside></div></main>';
