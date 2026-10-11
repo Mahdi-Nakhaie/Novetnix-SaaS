@@ -1,3 +1,5 @@
+import hashlib
+import json
 import pathlib
 import re
 import sqlite3
@@ -73,27 +75,51 @@ class DashboardCourseProgressTest(unittest.TestCase):
         self.db.executemany("INSERT INTO courses(slug,title,description,status) VALUES (?,?,?,?)", [("main", "Main", "", "published"), ("other", "Other", "", "published"), ("empty", "Empty", "", "published")])
         self.db.executemany("INSERT INTO lessons(course_id,title,content,position,status) VALUES (?,?,?,?,?)", [(1, "A", "", 1, "published"), (1, "B", "", 2, "published"), (1, "C", "", 3, "draft"), (2, "D", "", 1, "published")])
         self.db.executemany("INSERT INTO enrollments(user_id,course_slug,created_at) VALUES (?,?,?)", [(1, "main", "2026-01-02"), (2, "main", "2026-01-02"), (1, "other", "2026-01-01")])
+        self.db.executemany("INSERT INTO lesson_quizzes(lesson_id,pass_percent,questions_json) VALUES (?,?,?)", [(i, 100, '[{"prompt":"Q","options":["A","B"],"correct":0}]') for i in (1, 2, 4)])
+        self.version = hashlib.sha256(json.dumps({"pass_percent": 100, "questions": [{"prompt": "Q", "options": ["A", "B"], "correct": 0}]}, ensure_ascii=False, separators=(',', ':')).encode()).hexdigest()
         loader = body(APP, "dashboard_course_progress")
         self.course_sql = re.search(r'"(SELECT c\.id,c\.slug,c\.title .*? LIMIT 1)"', loader).group(1)
-        self.count_sql = re.search(r'"(SELECT COUNT\(\*\) AS total,.*?l\.status=\'published\')"', loader).group(1)
+        self.count_sql = re.search(r'"(SELECT l\.id,p\.completed,p\.status,p\.completed_at,p\.quiz_version FROM lessons l LEFT JOIN lesson_progress p .*?l\.status=\'published\')"', loader).group(1)
 
     def tearDown(self):
         self.db.close()
 
     def totals(self, user=1, slug="main"):
         course = self.db.execute(self.course_sql, (user,)).fetchone() if slug == "main" else self.db.execute("SELECT id FROM courses WHERE slug=?", (slug,)).fetchone()
-        total, completed = self.db.execute(self.count_sql, (user, course[0])).fetchone()
+        rows = self.db.execute(self.count_sql, (user, course[0])).fetchall()
+        total = len(rows)
+        completed = 0
+        for lesson_id, flag, status, timestamp, version in rows:
+            quiz = self.db.execute('SELECT pass_percent,questions_json FROM lesson_quizzes WHERE lesson_id=?', (lesson_id,)).fetchone()
+            if quiz and flag == 1 and status == 'completed' and timestamp and version == hashlib.sha256(json.dumps({"pass_percent": quiz[0], "questions": json.loads(quiz[1])}, ensure_ascii=False, separators=(',', ':')).encode()).hexdigest():
+                completed += 1
         return total, completed, total - completed, round(completed / total * 100, 1) if total else 0
+
+    def test_completion_requires_current_quiz_evidence_and_recalculates(self):
+        self.db.execute("INSERT INTO lesson_progress(user_id,lesson_id,completed,status,completed_at) VALUES (1,1,1,'completed','2026-01-01')")
+        self.assertEqual(self.totals(), (2, 0, 2, 0))
+        self.db.execute("UPDATE lesson_progress SET quiz_version=? WHERE user_id=1 AND lesson_id=1", (self.version,))
+        self.assertEqual(self.totals(), (2, 1, 1, 50))
+        self.db.execute("INSERT INTO lesson_progress(user_id,lesson_id,completed,status,completed_at,quiz_version) VALUES (1,2,1,'completed','2026-01-02',?)", (self.version,))
+        self.assertEqual(self.totals(), (2, 2, 0, 100))
+        self.assertEqual(self.totals(), (2, 2, 0, 100))
+        self.db.execute("UPDATE lesson_quizzes SET pass_percent=90 WHERE lesson_id=2")
+        self.assertEqual(self.totals(), (2, 1, 1, 50))
+        self.db.execute("DELETE FROM lesson_quizzes WHERE lesson_id=1")
+        self.assertEqual(self.totals(), (2, 0, 2, 0))
+        self.db.execute("INSERT INTO lessons(course_id,title,content,position,status) VALUES (1,'New','',4,'published')")
+        self.assertEqual(self.totals(), (3, 0, 3, 0))
 
     def test_zero_partial_and_full_completion(self):
         self.assertEqual(self.totals(), (2, 0, 2, 0))
-        self.db.execute("INSERT INTO lesson_progress(user_id,lesson_id,last_position,percentage,completed,status,completed_at) VALUES (1,1,5,50,1,'completed','2026-01-01')")
+        self.db.execute("INSERT INTO lesson_progress(user_id,lesson_id,last_position,percentage,completed,status,completed_at,quiz_version) VALUES (1,1,5,50,1,'completed','2026-01-01',?)", (self.version,))
         self.assertEqual(self.totals(), (2, 1, 1, 50))
-        self.db.execute("INSERT INTO lesson_progress(user_id,lesson_id,completed,status,completed_at) VALUES (1,2,1,'completed','2026-01-01')")
+        self.db.execute("INSERT INTO lesson_progress(user_id,lesson_id,completed,status,completed_at,quiz_version) VALUES (1,2,1,'completed','2026-01-01',?)", (self.version,))
         self.assertEqual(self.totals(), (2, 2, 0, 100))
 
     def test_course_user_draft_and_partial_watch_are_excluded(self):
         self.db.executemany("INSERT INTO lesson_progress(user_id,lesson_id,watched_seconds,completed,status,completed_at) VALUES (?,?,?,?,?,?)", [(2, 1, 0, 1, "completed", "2026-01-01"), (1, 2, 200, 0, "started", None), (1, 3, 0, 1, "completed", "2026-01-01"), (1, 4, 0, 1, "completed", "2026-01-01")])
+        self.db.execute("UPDATE lesson_progress SET quiz_version=? WHERE completed=1", (self.version,))
         self.assertEqual(self.totals(), (2, 0, 2, 0))
         self.assertEqual(self.totals(2), (2, 1, 1, 50))
         self.assertEqual(self.totals(1, "other"), (1, 1, 0, 100))
@@ -119,7 +145,9 @@ class DashboardCourseProgressTest(unittest.TestCase):
         self.assertIn("$total ? round($completed/$total*100,1) : 0", loader)
         self.assertIn('role="progressbar"', view)
         self.assertIn('aria-valuenow="\'.h($courseProgress[\'percentage\'])', view)
-        self.assertIn("p.completed=1", self.count_sql)
+        self.assertIn("verified_lesson_completion($lesson,lesson_quiz_for_lesson((int)$lesson['id']))", loader)
+        self.assertIn("$courseProgress['status']", view)
+        self.assertIn("$courseProgress['status']==='completed'", body(APP, "dashboard_active_lesson"))
         self.assertNotIn("challenge_progress", self.count_sql)
 
 
@@ -137,7 +165,7 @@ class DashboardActiveLessonTest(unittest.TestCase):
         return DashboardCourseProgressTest.totals(self, user, slug)
 
     def record(self, lesson, position, completed=0, user=1, updated="2026-01-03 00:00:00"):
-        self.db.execute("INSERT INTO lesson_progress(user_id,lesson_id,last_position,completed,status,completed_at,updated_at) VALUES (?,?,?,?,?,?,?)", (user, lesson, position, completed, "completed" if completed else "started", updated if completed else None, updated))
+        self.db.execute("INSERT INTO lesson_progress(user_id,lesson_id,last_position,completed,status,completed_at,updated_at,quiz_version) VALUES (?,?,?,?,?,?,?,?)", (user, lesson, position, completed, "completed" if completed else "started", updated if completed else None, updated, self.version if completed else None))
 
     def candidates(self, user=1, course=1):
         lessons = self.db.execute(self.lessons_sql, (course,)).fetchall()
@@ -177,7 +205,7 @@ class DashboardActiveLessonTest(unittest.TestCase):
         view = body(VIEWS, "panel")
         self.assertIn("$activeLesson['course_status']==='completed'", view)
         self.assertIn("این دوره را تکمیل کرده‌اید", view)
-        self.assertIn("if ($courseProgress['completed']===$courseProgress['total'])", body(APP, "dashboard_active_lesson"))
+        self.assertIn("if ($courseProgress['status']==='completed')", body(APP, "dashboard_active_lesson"))
         self.assertIn("$lesson['position']>$completedPosition", body(APP, "dashboard_active_lesson"))
         self.assertIn("'lesson_status'=>'not_started'", body(APP, "dashboard_active_lesson"))
         self.assertIn("'lesson_status'=>'in_progress'", body(APP, "dashboard_active_lesson"))
@@ -228,7 +256,7 @@ class DashboardActiveLessonTest(unittest.TestCase):
     def test_saved_position_is_user_and_lesson_scoped_without_unverified_seek(self):
         self.record(1, 42)
         self.record(1, 90, user=2)
-        query = re.search(r"SELECT lesson_id,last_position,watched_seconds,percentage,completed FROM lesson_progress WHERE user_id=\? AND lesson_id=\?", body(APP, "lesson_progress_for_user")).group(0)
+        query = re.search(r"SELECT lesson_id,last_position,watched_seconds,percentage,completed,status,completed_at,quiz_version FROM lesson_progress WHERE user_id=\? AND lesson_id=\?", body(APP, "lesson_progress_for_user")).group(0)
         self.assertEqual(self.db.execute(query, (1, 1)).fetchone()[1], 42)
         self.assertEqual(self.db.execute(query, (2, 1)).fetchone()[1], 90)
         self.assertIsNone(self.db.execute(query, (1, 2)).fetchone())

@@ -189,7 +189,7 @@ class PublicCoursesTest(unittest.TestCase):
         self.assertIn("course_workspace((int)$u['id'],$match[1],$requestedLesson)", route)
 
     def test_workspace_lesson_progress_is_scoped_to_user_course_and_published_lessons(self):
-        sql = re.search(r'"(SELECT p\.lesson_id,p\.watched_seconds,p\.last_position,p\.percentage,p\.completed,p\.status,p\.completed_at FROM lesson_progress .*?l\.status=\'published\')"', self.workspace).group(1)
+        sql = re.search(r'"(SELECT p\.lesson_id,p\.watched_seconds,p\.last_position,p\.percentage,p\.completed,p\.status,p\.completed_at,p\.quiz_version FROM lesson_progress .*?l\.status=\'published\')"', self.workspace).group(1)
         self.db.executemany(
             "INSERT INTO lesson_progress(user_id,lesson_id,last_position,percentage,completed,status,completed_at) VALUES (?,?,?,?,?,?,?)",
             [(1, 2, 25, 30, 0, "started", None), (1, 1, 0, 100, 1, "completed", "2026-01-01"),
@@ -201,7 +201,7 @@ class PublicCoursesTest(unittest.TestCase):
         self.assertEqual([row[0] for row in self.db.execute(sql, (1, 2))], [5])
         self.assertEqual(self.db.execute(sql, (1, 3)).fetchall(), [])
         self.assertIn("e.user_id=?", self.workspace)
-        self.assertIn("lesson_learning_status($progress[(int)$lesson['id']] ?? null)", self.workspace)
+        self.assertIn("lesson_learning_status($progress[(int)$lesson['id']] ?? null,lesson_quiz_for_lesson((int)$lesson['id']))", self.workspace)
 
     def test_lesson_status_uses_valid_activity_and_existing_completion_flag(self):
         status = body(APP, "lesson_learning_status")
@@ -211,8 +211,10 @@ class PublicCoursesTest(unittest.TestCase):
         self.assertIn("progress_number($progress['percentage'])", status)
         self.assertIn("$percentage>100) return 'not_started'", status)
         self.assertIn("(int)$progress['completed']===1", status)
-        self.assertIn("$progress['status']==='completed'", status)
-        self.assertIn("$progress['completed_at']!==null", status)
+        self.assertIn("verified_lesson_completion($progress,$quiz)", status)
+        verified = body(APP, "verified_lesson_completion")
+        self.assertIn("$progress['status']==='completed'", verified)
+        self.assertIn("!empty($progress['completed_at'])", verified)
         self.assertIn("($position>0 || $watched>0 || $percentage>0) ? 'in_progress' : 'not_started'", status)
         self.assertNotIn("$_GET", status)
         self.assertNotIn("INSERT", self.workspace)
@@ -230,7 +232,7 @@ class PublicCoursesTest(unittest.TestCase):
         self.assertIn("grid-template-columns:1fr", css)
 
     def test_empty_and_malformed_progress_remain_distinguishable(self):
-        sql = re.search(r'"(SELECT p\.lesson_id,p\.watched_seconds,p\.last_position,p\.percentage,p\.completed,p\.status,p\.completed_at FROM lesson_progress .*?l\.status=\'published\')"', self.workspace).group(1)
+        sql = re.search(r'"(SELECT p\.lesson_id,p\.watched_seconds,p\.last_position,p\.percentage,p\.completed,p\.status,p\.completed_at,p\.quiz_version FROM lesson_progress .*?l\.status=\'published\')"', self.workspace).group(1)
         self.assertEqual(self.db.execute(sql, (1, 1)).fetchall(), [])
         self.db.execute("INSERT INTO lesson_progress(user_id,lesson_id) VALUES (?,?)", (1, 2))
         self.db.execute("INSERT INTO lesson_progress(user_id,lesson_id,completed,status,completed_at) VALUES (?,?,?,?,?)", (1, 1, 1, "completed", "2026-01-01"))
@@ -243,7 +245,7 @@ class PublicCoursesTest(unittest.TestCase):
         self.assertEqual(rows[1][2], -5)
         status = body(APP, "lesson_learning_status")
         self.assertLess(status.index("$position===null || $watched===null"), status.index("(int)$progress['completed']===1"))
-        self.assertIn("$progress['status']==='completed' && $progress['completed_at']!==null", status)
+        self.assertIn("verified_lesson_completion($progress,$quiz)", status)
 
     def test_lesson_quiz_is_only_loaded_for_selected_authorized_lesson_and_has_no_answer_in_html(self):
         self.assertIn("$course['quiz']=$selectedId ? lesson_quiz_for_lesson($selectedId) : null", self.workspace)

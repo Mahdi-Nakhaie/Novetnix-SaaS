@@ -165,12 +165,13 @@ function panel(string $sub): void {
             }
             if ($courseError) echo '<section class="panel-card course-progress-card"><span class="eyebrow">وضعیت دوره</span><p>دریافت مسیر یادگیری ممکن نشد. لطفاً دوباره تلاش کنید.</p></section>';
             elseif ($courseProgress) {
-                echo '<section class="panel-card course-progress-card"><span class="eyebrow">وضعیت دوره</span><h2>'.h($courseProgress['title']).'</h2><div class="course-progress-details"><div><span>پیشرفت دوره</span><strong>'.fa((string)$courseProgress['percentage']).'٪</strong></div><div><span>درس‌های تکمیل‌شده</span><strong>'.fa($courseProgress['completed']).' از '.fa($courseProgress['total']).'</strong></div><div><span>درس‌های باقی‌مانده</span><strong>'.fa($courseProgress['remaining']).'</strong></div></div><div class="progress" role="progressbar" aria-label="پیشرفت دوره" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'.h($courseProgress['percentage']).'"><span style="width:'.h($courseProgress['percentage']).'%"></span></div>';
+                echo '<section class="panel-card course-progress-card"><span class="eyebrow">وضعیت دوره</span><h2>'.h($courseProgress['title']).'</h2><p>'.(['completed'=>'تکمیل‌شده','in_progress'=>'در حال یادگیری','not_started'=>'شروع‌نشده'][$courseProgress['status']]).'</p><div class="course-progress-details"><div><span>پیشرفت دوره</span><strong>'.fa((string)$courseProgress['percentage']).'٪</strong></div><div><span>درس‌های تکمیل‌شده</span><strong>'.fa($courseProgress['completed']).' از '.fa($courseProgress['total']).'</strong></div><div><span>درس‌های باقی‌مانده</span><strong>'.fa($courseProgress['remaining']).'</strong></div></div><div class="progress" role="progressbar" aria-label="پیشرفت دوره" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'.h($courseProgress['percentage']).'"><span style="width:'.h($courseProgress['percentage']).'%"></span></div>';
                 echo '<div class="course-active-lesson">';
                 if ($activeLesson['course_status']==='completed') {
                     echo '<strong>این دوره را تکمیل کرده‌اید</strong>';
                     if ($activeLesson['lesson']) echo '<span>آخرین درس: '.h($activeLesson['lesson']['title']).' · تکمیل‌شده</span>';
                 } elseif ($activeLesson['lesson']) {
+                    echo '<p>'.fa($courseProgress['remaining']).' درس الزامی باقی مانده است.</p>';
                     echo '<strong>'.h($activeLesson['lesson']['title']).'</strong><span>'.($activeLesson['lesson_status']==='in_progress'?'در حال یادگیری':'شروع‌نشده').'</span>';
                     linkto('dashboard/course/'.$courseProgress['slug'].'?lesson='.(int)$activeLesson['lesson']['id'],$activeLesson['lesson_status']==='in_progress'?'ادامهٔ یادگیری ←':'شروع یادگیری ←','btn btn-primary');
                 } else echo '<span>هنوز درسی برای این دوره منتشر نشده است.</span>';

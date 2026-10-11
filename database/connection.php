@@ -64,7 +64,8 @@ function db(): PDO {
             'watched_seconds'=>$driver==='mysql' ? 'DOUBLE NOT NULL DEFAULT 0' : 'REAL NOT NULL DEFAULT 0',
             'last_position'=>$driver==='mysql' ? 'DOUBLE NOT NULL DEFAULT 0' : 'REAL NOT NULL DEFAULT 0',
             'percentage'=>$driver==='mysql' ? 'DOUBLE NOT NULL DEFAULT 0' : 'REAL NOT NULL DEFAULT 0',
-            'completed'=>$driver==='mysql' ? 'TINYINT(1) NOT NULL DEFAULT 0' : 'INTEGER NOT NULL DEFAULT 0'
+            'completed'=>$driver==='mysql' ? 'TINYINT(1) NOT NULL DEFAULT 0' : 'INTEGER NOT NULL DEFAULT 0',
+            'quiz_version'=>$driver==='mysql' ? 'VARCHAR(64) NULL' : 'TEXT'
         ];
         foreach ($progressDefinitions as $name=>$definition) if (!in_array($name,$progressNames,true)) $db->exec('ALTER TABLE lesson_progress ADD COLUMN '.$name.' '.$definition);
         if (!in_array('completed',$progressNames,true)) $db->exec("UPDATE lesson_progress SET completed=CASE WHEN status='completed' THEN 1 ELSE 0 END");

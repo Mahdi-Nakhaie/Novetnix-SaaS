@@ -16,13 +16,17 @@ function seed_demo_courses(): void {
     q('INSERT INTO lessons(course_id,title,content,position,duration_minutes,status) VALUES (?,?,?,?,?,?)',[$course,'مبانی هوش مصنوعی','با مفاهیم اصلی هوش مصنوعی و مسیر حل یک مسئله واقعی آشنا شو.',1,30,'published']);
     q('INSERT INTO lessons(course_id,title,content,position,duration_minutes,status) VALUES (?,?,?,?,?,?)',[$course,'پروژه تشخیص چهره','یک نمونه پروژه عملی را از تعریف مسئله تا اجرای اولیه بررسی کن.',2,40,'published']);
 }
-function lesson_learning_status(?array $progress): string {
+function verified_lesson_completion(?array $progress,?array $quiz): bool {
+    return $progress!==null && $quiz!==null && (int)$progress['completed']===1 && $progress['status']==='completed' && !empty($progress['completed_at']) && hash_equals(hash('sha256',json_encode($quiz,JSON_THROW_ON_ERROR)),(string)($progress['quiz_version'] ?? ''));
+}
+function lesson_learning_status(?array $progress,?array $quiz=null): string {
     if ($progress===null) return 'not_started';
     $position=progress_number($progress['last_position']);
     $watched=progress_number($progress['watched_seconds']);
     $percentage=progress_number($progress['percentage']);
     if ($position===null || $watched===null || $percentage===null || $percentage>100) return 'not_started';
-    if ((int)$progress['completed']===1) return $progress['status']==='completed' && $progress['completed_at']!==null && $progress['completed_at']!=='' ? 'completed' : 'not_started';
+    if (verified_lesson_completion($progress,$quiz)) return 'completed';
+    if ((int)$progress['completed']===1) return 'not_started';
     return (int)$progress['completed']===0 && $progress['status']==='started' && $progress['completed_at']===null && ($position>0 || $watched>0 || $percentage>0) ? 'in_progress' : 'not_started';
 }
 function course_workspace(int $userId,string $slug,?int $requestedLesson=null): ?array {
@@ -31,8 +35,8 @@ function course_workspace(int $userId,string $slug,?int $requestedLesson=null): 
     if ($requestedLesson!==null && !q("SELECT id FROM lessons WHERE id=? AND course_id=? AND status='published'",[$requestedLesson,$course['id']])->fetch()) return null;
     $course['lessons']=q("SELECT id,title,content,position,duration_minutes FROM lessons WHERE course_id=? AND status='published' ORDER BY position ASC",[$course['id']])->fetchAll();
     $progress=[];
-    foreach (q("SELECT p.lesson_id,p.watched_seconds,p.last_position,p.percentage,p.completed,p.status,p.completed_at FROM lesson_progress p INNER JOIN lessons l ON l.id=p.lesson_id WHERE p.user_id=? AND l.course_id=? AND l.status='published'",[$userId,$course['id']])->fetchAll() as $row) $progress[(int)$row['lesson_id']]=$row;
-    foreach ($course['lessons'] as &$lesson) $lesson['learning_status']=lesson_learning_status($progress[(int)$lesson['id']] ?? null);
+    foreach (q("SELECT p.lesson_id,p.watched_seconds,p.last_position,p.percentage,p.completed,p.status,p.completed_at,p.quiz_version FROM lesson_progress p INNER JOIN lessons l ON l.id=p.lesson_id WHERE p.user_id=? AND l.course_id=? AND l.status='published'",[$userId,$course['id']])->fetchAll() as $row) $progress[(int)$row['lesson_id']]=$row;
+    foreach ($course['lessons'] as &$lesson) $lesson['learning_status']=lesson_learning_status($progress[(int)$lesson['id']] ?? null,lesson_quiz_for_lesson((int)$lesson['id']));
     unset($lesson);
     $selectedId=$requestedLesson ?? (int)($course['lessons'][0]['id'] ?? 0);
     $course['quiz']=$selectedId ? lesson_quiz_for_lesson($selectedId) : null;
@@ -41,37 +45,43 @@ function course_workspace(int $userId,string $slug,?int $requestedLesson=null): 
 function dashboard_course_progress(int $userId): ?array {
     $course=q("SELECT c.id,c.slug,c.title FROM courses c INNER JOIN enrollments e ON e.course_slug=c.slug WHERE e.user_id=? AND c.status='published' ORDER BY e.created_at DESC,c.id DESC LIMIT 1",[$userId])->fetch();
     if (!$course) return null;
-    $counts=q("SELECT COUNT(*) AS total,COALESCE(SUM(CASE WHEN EXISTS (SELECT 1 FROM lesson_progress p WHERE p.lesson_id=l.id AND p.user_id=? AND p.completed=1) THEN 1 ELSE 0 END),0) AS completed FROM lessons l WHERE l.course_id=? AND l.status='published'",[$userId,$course['id']])->fetch();
-    $total=(int)$counts['total'];
-    $completed=(int)$counts['completed'];
-    return ['id'=>(int)$course['id'],'title'=>$course['title'],'slug'=>$course['slug'],'total'=>$total,'completed'=>$completed,'remaining'=>$total-$completed,'percentage'=>$total ? round($completed/$total*100,1) : 0];
+    $lessons=q("SELECT l.id,p.completed,p.status,p.completed_at,p.quiz_version FROM lessons l LEFT JOIN lesson_progress p ON p.lesson_id=l.id AND p.user_id=? WHERE l.course_id=? AND l.status='published'",[$userId,$course['id']])->fetchAll();
+    $total=count($lessons); $completed=0; $verified=[];
+    foreach ($lessons as $lesson) {
+        if (verified_lesson_completion($lesson,lesson_quiz_for_lesson((int)$lesson['id']))) {
+            $completed++;
+            $verified[]=(int)$lesson['id'];
+        }
+    }
+    $status=$total>0 && $completed===$total ? 'completed' : ($completed>0 ? 'in_progress' : 'not_started');
+    return ['id'=>(int)$course['id'],'title'=>$course['title'],'slug'=>$course['slug'],'total'=>$total,'completed'=>$completed,'remaining'=>$total-$completed,'percentage'=>$total ? round($completed/$total*100,1) : 0,'status'=>$status,'verified_lessons'=>$verified];
 }
 function dashboard_active_lesson(int $userId,array $courseProgress): array {
     $lessons=q("SELECT id,title,position FROM lessons WHERE course_id=? AND status='published' ORDER BY position ASC,id ASC",[$courseProgress['id']])->fetchAll();
-    if (!$lessons) return ['course_status'=>'in_progress','lesson'=>null,'lesson_status'=>null];
+    if (!$lessons) return ['course_status'=>$courseProgress['status'],'lesson'=>null,'lesson_status'=>null];
     $rows=q("SELECT p.id,p.lesson_id,p.last_position,p.completed,p.updated_at FROM lesson_progress p INNER JOIN lessons l ON l.id=p.lesson_id WHERE p.user_id=? AND l.course_id=? AND l.status='published' ORDER BY p.updated_at DESC,p.id DESC",[$userId,$courseProgress['id']])->fetchAll();
     $progress=[]; $active=null; $latestCompleted=null;
     foreach ($rows as $row) {
         $id=(int)$row['lesson_id'];
         if (isset($progress[$id])) continue;
         $progress[$id]=$row;
-        if ((int)$row['completed']===1 && $latestCompleted===null) $latestCompleted=$id;
-        if ((int)$row['completed']===0 && progress_number($row['last_position'])!==null && $active===null) $active=$id;
+        if (in_array($id,$courseProgress['verified_lessons'],true) && $latestCompleted===null) $latestCompleted=$id;
+        if (!in_array($id,$courseProgress['verified_lessons'],true) && progress_number($row['last_position'])!==null && $active===null) $active=$id;
     }
-    if ($courseProgress['completed']===$courseProgress['total']) {
+    if ($courseProgress['status']==='completed') {
         foreach ($lessons as $lesson) if ((int)$lesson['id']===$latestCompleted) return ['course_status'=>'completed','lesson'=>$lesson,'lesson_status'=>'completed'];
         return ['course_status'=>'completed','lesson'=>null,'lesson_status'=>null];
     }
-    if ($active!==null) foreach ($lessons as $lesson) if ((int)$lesson['id']===$active) return ['course_status'=>'in_progress','lesson'=>$lesson,'lesson_status'=>'in_progress'];
+    if ($active!==null) foreach ($lessons as $lesson) if ((int)$lesson['id']===$active) return ['course_status'=>$courseProgress['status'],'lesson'=>$lesson,'lesson_status'=>'in_progress'];
     $completedPosition=null;
     foreach ($lessons as $lesson) if ((int)$lesson['id']===$latestCompleted) $completedPosition=(int)$lesson['position'];
     $next=null;
     foreach ($lessons as $lesson) {
-        if ((int)($progress[(int)$lesson['id']]['completed'] ?? 0)===1) continue;
+        if (in_array((int)$lesson['id'],$courseProgress['verified_lessons'],true)) continue;
         if ($next===null) $next=$lesson;
-        if ($completedPosition!==null && (int)$lesson['position']>$completedPosition) return ['course_status'=>'in_progress','lesson'=>$lesson,'lesson_status'=>'not_started'];
+        if ($completedPosition!==null && (int)$lesson['position']>$completedPosition) return ['course_status'=>$courseProgress['status'],'lesson'=>$lesson,'lesson_status'=>'not_started'];
     }
-    return ['course_status'=>'in_progress','lesson'=>$next,'lesson_status'=>$next?'not_started':null];
+    return ['course_status'=>$courseProgress['status'],'lesson'=>$next,'lesson_status'=>$next?'not_started':null];
 }
 function course_duration_minutes(array $course): ?int {
     if ($course['estimated_duration_minutes']!==null) return (int)$course['estimated_duration_minutes'];
@@ -133,7 +143,8 @@ function lesson_progress_for_user(array $u,string $requestedLesson): void {
     if ($lessonId===false || $lessonId===null) progress_response(404,['error'=>'Lesson پیدا نشد یا دسترسی ندارید.']);
     try {
         if (!authorized_progress_lesson((int)$u['id'],$lessonId)) progress_response(404,['error'=>'Lesson پیدا نشد یا دسترسی ندارید.']);
-        $progress=q('SELECT lesson_id,last_position,watched_seconds,percentage,completed FROM lesson_progress WHERE user_id=? AND lesson_id=?',[$u['id'],$lessonId])->fetch();
+        $progress=q('SELECT lesson_id,last_position,watched_seconds,percentage,completed,status,completed_at,quiz_version FROM lesson_progress WHERE user_id=? AND lesson_id=?',[$u['id'],$lessonId])->fetch();
+        if ($progress) $progress['completed']=verified_lesson_completion($progress,lesson_quiz_for_lesson($lessonId)) ? 1 : 0;
     } catch (Throwable $e) {
         progress_response(500,['error'=>'دریافت پیشرفت انجام نشد.']);
     }
@@ -187,9 +198,10 @@ function submit_lesson_quiz(array $u): void {
     if ($passed===null) { flash('پاسخ‌های آزمون معتبر نیستند.','error'); redirect($target); }
     if (!$passed) { flash('در آزمون پذیرفته نشدید؛ می‌توانید دوباره تلاش کنید.','error'); redirect($target); }
     $at=gmdate('Y-m-d H:i:s');
+    $version=hash('sha256',json_encode($quiz,JSON_THROW_ON_ERROR));
     try {
-        if (db()->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql') q("INSERT INTO lesson_progress(user_id,lesson_id,completed,status,completed_at) VALUES (?,?,1,'completed',?) ON DUPLICATE KEY UPDATE completed_at=IF(completed=1 AND completed_at IS NOT NULL,completed_at,VALUES(completed_at)),completed=1,status='completed',updated_at=CURRENT_TIMESTAMP",[$u['id'],$lessonId,$at]);
-        else q("INSERT INTO lesson_progress(user_id,lesson_id,completed,status,completed_at) VALUES (?,?,1,'completed',?) ON CONFLICT(user_id,lesson_id) DO UPDATE SET completed_at=CASE WHEN lesson_progress.completed=1 AND lesson_progress.completed_at IS NOT NULL THEN lesson_progress.completed_at ELSE excluded.completed_at END,completed=1,status='completed',updated_at=CURRENT_TIMESTAMP",[$u['id'],$lessonId,$at]);
+        if (db()->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql') q("INSERT INTO lesson_progress(user_id,lesson_id,completed,status,completed_at,quiz_version) VALUES (?,?,1,'completed',?,?) ON DUPLICATE KEY UPDATE completed_at=IF(completed=1 AND completed_at IS NOT NULL,completed_at,VALUES(completed_at)),completed=1,status='completed',quiz_version=VALUES(quiz_version),updated_at=CURRENT_TIMESTAMP",[$u['id'],$lessonId,$at,$version]);
+        else q("INSERT INTO lesson_progress(user_id,lesson_id,completed,status,completed_at,quiz_version) VALUES (?,?,1,'completed',?,?) ON CONFLICT(user_id,lesson_id) DO UPDATE SET completed_at=CASE WHEN lesson_progress.completed=1 AND lesson_progress.completed_at IS NOT NULL THEN lesson_progress.completed_at ELSE excluded.completed_at END,completed=1,status='completed',quiz_version=excluded.quiz_version,updated_at=CURRENT_TIMESTAMP",[$u['id'],$lessonId,$at,$version]);
     } catch (Throwable $e) { progress_response(500,['error'=>'ثبت تکمیل درس انجام نشد.']); }
     flash('آزمون را با موفقیت گذراندید؛ درس تکمیل شد.'); redirect($target);
 }
@@ -204,8 +216,8 @@ function save_lesson_progress(array $u): void {
     if (!authorized_progress_lesson((int)$u['id'],$lessonId)) progress_response(404,['error'=>'Lesson پیدا نشد یا دسترسی ندارید.']);
     try {
         if ($completed) {
-            $existing=q('SELECT completed,status,completed_at FROM lesson_progress WHERE user_id=? AND lesson_id=?',[$u['id'],$lessonId])->fetch();
-            if ($existing && (int)$existing['completed']===1 && $existing['status']==='completed' && $existing['completed_at']!==null && $existing['completed_at']!=='') progress_response(200,['saved'=>true]);
+            $existing=q('SELECT completed,status,completed_at,quiz_version FROM lesson_progress WHERE user_id=? AND lesson_id=?',[$u['id'],$lessonId])->fetch();
+            if (verified_lesson_completion($existing ?: null,lesson_quiz_for_lesson($lessonId))) progress_response(200,['saved'=>true]);
             progress_response(422,['error'=>'تکمیل درس بدون معیار تأییدشدهٔ سمت سرور قابل ثبت نیست.']);
         }
         if (db()->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql') q("INSERT INTO lesson_progress(user_id,lesson_id,watched_seconds,last_position,percentage) VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE watched_seconds=VALUES(watched_seconds),last_position=VALUES(last_position),percentage=VALUES(percentage),updated_at=CURRENT_TIMESTAMP",[$u['id'],$lessonId,$watched,$position,$percentage]);
