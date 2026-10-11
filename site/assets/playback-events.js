@@ -89,6 +89,8 @@
     var completed = false;
     var inFlight = false;
     var pending = false;
+    var pendingFinal = false;
+    var lastSent = null;
     var timer;
 
     function mark(done) {
@@ -96,14 +98,16 @@
       if (done) completed = true;
     }
 
-    function flush(done) {
+    function flush(done, finalRequest) {
       if (done) completed = true;
       if (!dirty) return;
-      if (inFlight) { pending = true; return; }
+      if (inFlight) { pending = true; pendingFinal = pendingFinal || !!finalRequest; return; }
       var state = readState(player);
       if (!state) return;
       var percentage = calculatePercentage(state.currentTime, state.duration);
       if (percentage === null) return;
+      var signature = [state.currentTime, state.duration, percentage, completed ? 1 : 0].join(":");
+      if (signature === lastSent) { dirty = false; return; }
       dirty = false;
       inFlight = true;
       var payload = new URLSearchParams({
@@ -114,22 +118,31 @@
         percentage: String(percentage),
         completed: completed ? "1" : "0"
       });
-      window.fetch(endpoint, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" }, body: payload.toString() })
-        .then(function (response) { if (!response.ok) throw new Error("save failed"); })
+      window.fetch(endpoint, { method: "POST", credentials: "same-origin", keepalive: !!finalRequest, headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" }, body: payload.toString() })
+        .then(function (response) { if (!response.ok) throw new Error("save failed"); lastSent = signature; })
         .catch(function () { dirty = true; })
         .then(function () {
           inFlight = false;
-          if (pending) { pending = false; dirty = true; flush(false); }
+          if (pending) { var wasFinal = pendingFinal; pending = false; pendingFinal = false; dirty = true; flush(false, wasFinal); }
         });
     }
 
     var detachPlayer = attach(player, function (event) {
       if (event.type === "timeupdate") mark(false);
-      if (event.type === "pause" || event.type === "ended") { mark(event.type === "ended"); flush(event.type === "ended"); }
+      if (event.type === "pause" || event.type === "ended") { mark(event.type === "ended"); flush(event.type === "ended", false); }
       if (event.type === "seeked") mark(false);
     });
-    timer = window.setInterval(function () { flush(false); }, interval);
-    return function () { window.clearInterval(timer); detachPlayer(); };
+    function onVisibilityChange() { if (document.visibilityState === "hidden") flush(false, false); }
+    function onPageHide() { flush(false, true); }
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("pagehide", onPageHide);
+    timer = window.setInterval(function () { flush(false, false); }, interval);
+    return function () {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("pagehide", onPageHide);
+      detachPlayer();
+    };
   }
 
   window.NoqtePlaybackEvents = Object.freeze({ attach: attach, detach: detach, retry: retry, readState: readState, connectProgress: connectProgress });
