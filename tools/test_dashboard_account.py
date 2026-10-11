@@ -122,5 +122,88 @@ class DashboardCourseProgressTest(unittest.TestCase):
         self.assertNotIn("challenge_progress", self.count_sql)
 
 
+class DashboardActiveLessonTest(unittest.TestCase):
+    def setUp(self):
+        DashboardCourseProgressTest.setUp(self)
+        loader = body(APP, "dashboard_active_lesson")
+        self.lessons_sql = re.search(r'"(SELECT id,title,position FROM lessons .*?id ASC)"', loader).group(1)
+        self.progress_sql = re.search(r'"(SELECT p\.id,p\.lesson_id,.*?p\.id DESC)"', loader).group(1)
+
+    def tearDown(self):
+        self.db.close()
+
+    def totals(self, user=1, slug="main"):
+        return DashboardCourseProgressTest.totals(self, user, slug)
+
+    def record(self, lesson, position, completed=0, user=1, updated="2026-01-03 00:00:00"):
+        self.db.execute("INSERT INTO lesson_progress(user_id,lesson_id,last_position,completed,status,completed_at,updated_at) VALUES (?,?,?,?,?,?,?)", (user, lesson, position, completed, "completed" if completed else "started", updated if completed else None, updated))
+
+    def candidates(self, user=1, course=1):
+        lessons = self.db.execute(self.lessons_sql, (course,)).fetchall()
+        rows = self.db.execute(self.progress_sql, (user, course)).fetchall()
+        return lessons, rows
+
+    def test_new_user_starts_at_first_published_lesson(self):
+        lessons, rows = self.candidates()
+        self.assertEqual([lesson[0] for lesson in lessons], [1, 2])
+        self.assertEqual(rows, [])
+        self.assertIn("if ($next===null) $next=$lesson", body(APP, "dashboard_active_lesson"))
+
+    def test_active_progress_is_user_and_course_scoped(self):
+        self.record(2, 45, updated="2026-01-04 00:00:00")
+        self.record(1, 50, user=2, updated="2026-01-05 00:00:00")
+        self.record(4, 80, updated="2026-01-06 00:00:00")
+        lessons, rows = self.candidates()
+        self.assertEqual([row[1] for row in rows], [2])
+        self.assertEqual(lessons[1][1], "B")
+        self.assertIn("progress_number($row['last_position'])!==null", body(APP, "dashboard_active_lesson"))
+
+    def test_multiple_active_ordered_by_update_and_registration_id(self):
+        self.record(1, 10, updated="2026-01-03 00:00:00")
+        self.record(2, 20, updated="2026-01-04 00:00:00")
+        self.assertEqual([row[1] for row in self.candidates()[1]], [2, 1])
+        self.db.execute("UPDATE lesson_progress SET updated_at='2026-01-04 00:00:00' WHERE lesson_id=1")
+        self.assertEqual([row[1] for row in self.candidates()[1]], [2, 1])
+
+    def test_completed_lesson_suggests_next_and_full_course_has_no_link(self):
+        self.record(1, 20, completed=1)
+        lessons, rows = self.candidates()
+        self.assertEqual([row[1] for row in rows], [1])
+        self.assertEqual(lessons[1][0], 2)
+        self.assertEqual(self.totals(), (2, 1, 1, 50))
+        self.record(2, 30, completed=1)
+        self.assertEqual(self.totals(), (2, 2, 0, 100))
+        view = body(VIEWS, "panel")
+        self.assertIn("$activeLesson['course_status']==='completed'", view)
+        self.assertIn("این دوره را تکمیل کرده‌اید", view)
+        self.assertIn("if ($courseProgress['completed']===$courseProgress['total'])", body(APP, "dashboard_active_lesson"))
+        self.assertIn("$lesson['position']>$completedPosition", body(APP, "dashboard_active_lesson"))
+        self.assertIn("'lesson_status'=>'not_started'", body(APP, "dashboard_active_lesson"))
+        self.assertIn("'lesson_status'=>'in_progress'", body(APP, "dashboard_active_lesson"))
+        self.assertIn("$next?'not_started':null", body(APP, "dashboard_active_lesson"))
+        self.assertIn("'?lesson='.(int)$activeLesson['lesson']['id']", view)
+        self.assertLess(view.index("if ($activeLesson['course_status']==='completed')"), view.index("linkto('dashboard/course/'.$courseProgress['slug'].'?lesson='"))
+
+    def test_invalid_position_activity_and_unavailable_lessons(self):
+        self.record(1, 10)
+        self.db.execute("UPDATE lessons SET status='draft' WHERE id=1")
+        self.assertEqual([lesson[0] for lesson in self.candidates()[0]], [2])
+        self.assertEqual(self.candidates()[1], [])
+        self.record(2, 0)
+        self.db.execute("PRAGMA ignore_check_constraints=ON")
+        self.db.execute("UPDATE lesson_progress SET last_position=-4 WHERE lesson_id=2")
+        self.db.execute("PRAGMA ignore_check_constraints=OFF")
+        self.db.execute("INSERT INTO activities(user_id,kind) VALUES (1,'lesson')")
+        self.assertEqual(self.candidates()[1][0][2], -4)
+        self.assertIn("progress_number($row['last_position'])!==null", body(APP, "dashboard_active_lesson"))
+        self.assertNotIn("FROM activities", body(APP, "dashboard_active_lesson"))
+
+    def test_duplicate_progress_is_blocked_by_schema_and_guarded_in_code(self):
+        self.record(1, 1)
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.record(1, 2)
+        self.assertIn("if (isset($progress[$id])) continue", body(APP, "dashboard_active_lesson"))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -29,7 +29,34 @@ function dashboard_course_progress(int $userId): ?array {
     $counts=q("SELECT COUNT(*) AS total,COALESCE(SUM(CASE WHEN EXISTS (SELECT 1 FROM lesson_progress p WHERE p.lesson_id=l.id AND p.user_id=? AND p.completed=1) THEN 1 ELSE 0 END),0) AS completed FROM lessons l WHERE l.course_id=? AND l.status='published'",[$userId,$course['id']])->fetch();
     $total=(int)$counts['total'];
     $completed=(int)$counts['completed'];
-    return ['title'=>$course['title'],'slug'=>$course['slug'],'total'=>$total,'completed'=>$completed,'remaining'=>$total-$completed,'percentage'=>$total ? round($completed/$total*100,1) : 0];
+    return ['id'=>(int)$course['id'],'title'=>$course['title'],'slug'=>$course['slug'],'total'=>$total,'completed'=>$completed,'remaining'=>$total-$completed,'percentage'=>$total ? round($completed/$total*100,1) : 0];
+}
+function dashboard_active_lesson(int $userId,array $courseProgress): array {
+    $lessons=q("SELECT id,title,position FROM lessons WHERE course_id=? AND status='published' ORDER BY position ASC,id ASC",[$courseProgress['id']])->fetchAll();
+    if (!$lessons) return ['course_status'=>'in_progress','lesson'=>null,'lesson_status'=>null];
+    $rows=q("SELECT p.id,p.lesson_id,p.last_position,p.completed,p.updated_at FROM lesson_progress p INNER JOIN lessons l ON l.id=p.lesson_id WHERE p.user_id=? AND l.course_id=? AND l.status='published' ORDER BY p.updated_at DESC,p.id DESC",[$userId,$courseProgress['id']])->fetchAll();
+    $progress=[]; $active=null; $latestCompleted=null;
+    foreach ($rows as $row) {
+        $id=(int)$row['lesson_id'];
+        if (isset($progress[$id])) continue;
+        $progress[$id]=$row;
+        if ((int)$row['completed']===1 && $latestCompleted===null) $latestCompleted=$id;
+        if ((int)$row['completed']===0 && progress_number($row['last_position'])!==null && $active===null) $active=$id;
+    }
+    if ($courseProgress['completed']===$courseProgress['total']) {
+        foreach ($lessons as $lesson) if ((int)$lesson['id']===$latestCompleted) return ['course_status'=>'completed','lesson'=>$lesson,'lesson_status'=>'completed'];
+        return ['course_status'=>'completed','lesson'=>null,'lesson_status'=>null];
+    }
+    if ($active!==null) foreach ($lessons as $lesson) if ((int)$lesson['id']===$active) return ['course_status'=>'in_progress','lesson'=>$lesson,'lesson_status'=>'in_progress'];
+    $completedPosition=null;
+    foreach ($lessons as $lesson) if ((int)$lesson['id']===$latestCompleted) $completedPosition=(int)$lesson['position'];
+    $next=null;
+    foreach ($lessons as $lesson) {
+        if ((int)($progress[(int)$lesson['id']]['completed'] ?? 0)===1) continue;
+        if ($next===null) $next=$lesson;
+        if ($completedPosition!==null && (int)$lesson['position']>$completedPosition) return ['course_status'=>'in_progress','lesson'=>$lesson,'lesson_status'=>'not_started'];
+    }
+    return ['course_status'=>'in_progress','lesson'=>$next,'lesson_status'=>$next?'not_started':null];
 }
 function course_duration_minutes(array $course): ?int {
     if ($course['estimated_duration_minutes']!==null) return (int)$course['estimated_duration_minutes'];
