@@ -188,6 +188,63 @@ class PublicCoursesTest(unittest.TestCase):
         self.assertIn("$requestedLesson=filter_var($requestedLesson", route)
         self.assertIn("course_workspace((int)$u['id'],$match[1],$requestedLesson)", route)
 
+    def test_workspace_lesson_progress_is_scoped_to_user_course_and_published_lessons(self):
+        sql = re.search(r'"(SELECT p\.lesson_id,p\.watched_seconds,p\.last_position,p\.percentage,p\.completed,p\.status,p\.completed_at FROM lesson_progress .*?l\.status=\'published\')"', self.workspace).group(1)
+        self.db.executemany(
+            "INSERT INTO lesson_progress(user_id,lesson_id,last_position,percentage,completed,status,completed_at) VALUES (?,?,?,?,?,?,?)",
+            [(1, 2, 25, 30, 0, "started", None), (1, 1, 0, 100, 1, "completed", "2026-01-01"),
+             (2, 3, 30, 40, 0, "started", None), (1, 4, 10, 20, 0, "started", None),
+             (1, 5, 10, 20, 0, "started", None)],
+        )
+        self.assertEqual([row[0] for row in self.db.execute(sql, (1, 1))], [1, 2])
+        self.assertEqual([row[0] for row in self.db.execute(sql, (2, 1))], [3])
+        self.assertEqual([row[0] for row in self.db.execute(sql, (1, 2))], [5])
+        self.assertEqual(self.db.execute(sql, (1, 3)).fetchall(), [])
+        self.assertIn("e.user_id=?", self.workspace)
+        self.assertIn("lesson_learning_status($progress[(int)$lesson['id']] ?? null)", self.workspace)
+
+    def test_lesson_status_uses_valid_activity_and_existing_completion_flag(self):
+        status = body(APP, "lesson_learning_status")
+        self.assertIn("if ($progress===null) return 'not_started'", status)
+        self.assertIn("progress_number($progress['last_position'])", status)
+        self.assertIn("progress_number($progress['watched_seconds'])", status)
+        self.assertIn("progress_number($progress['percentage'])", status)
+        self.assertIn("$percentage>100) return 'not_started'", status)
+        self.assertIn("(int)$progress['completed']===1", status)
+        self.assertIn("$progress['status']==='completed'", status)
+        self.assertIn("$progress['completed_at']!==null", status)
+        self.assertIn("($position>0 || $watched>0 || $percentage>0) ? 'in_progress' : 'not_started'", status)
+        self.assertNotIn("$_GET", status)
+        self.assertNotIn("INSERT", self.workspace)
+
+    def test_all_three_persian_statuses_appear_in_each_lesson_link(self):
+        for label in ("شروع‌نشده", "در حال یادگیری", "تکمیل‌شده"):
+            self.assertIn(label, self.workspace_view)
+        self.assertIn("$lesson['learning_status']", self.workspace_view)
+        self.assertIn("workspace-lesson-status", self.workspace_view)
+        self.assertIn("h($lesson['learning_status'])", self.workspace_view)
+        self.assertIn("h($lesson['title'])", self.workspace_view)
+        css = (ROOT / "public/assets/style.css").read_text(encoding="utf-8")
+        self.assertIn(".workspace-lesson-status", css)
+        self.assertIn("overflow-wrap:anywhere", css)
+        self.assertIn("grid-template-columns:1fr", css)
+
+    def test_empty_and_malformed_progress_remain_distinguishable(self):
+        sql = re.search(r'"(SELECT p\.lesson_id,p\.watched_seconds,p\.last_position,p\.percentage,p\.completed,p\.status,p\.completed_at FROM lesson_progress .*?l\.status=\'published\')"', self.workspace).group(1)
+        self.assertEqual(self.db.execute(sql, (1, 1)).fetchall(), [])
+        self.db.execute("INSERT INTO lesson_progress(user_id,lesson_id) VALUES (?,?)", (1, 2))
+        self.db.execute("INSERT INTO lesson_progress(user_id,lesson_id,completed,status,completed_at) VALUES (?,?,?,?,?)", (1, 1, 1, "completed", "2026-01-01"))
+        self.db.execute("PRAGMA ignore_check_constraints=ON")
+        self.db.execute("UPDATE lesson_progress SET last_position=-5 WHERE user_id=1 AND lesson_id=1")
+        self.db.execute("PRAGMA ignore_check_constraints=OFF")
+        rows = {row[0]: row for row in self.db.execute(sql, (1, 1))}
+        self.assertEqual(rows[2][1:6], (0, 0, 0, 0, "started"))
+        self.assertEqual(rows[1][3:6], (0, 1, "completed"))
+        self.assertEqual(rows[1][2], -5)
+        status = body(APP, "lesson_learning_status")
+        self.assertLess(status.index("$position===null || $watched===null"), status.index("(int)$progress['completed']===1"))
+        self.assertIn("$progress['status']==='completed' && $progress['completed_at']!==null", status)
+
     def test_archived_rows_are_excluded_by_public_queries(self):
         db = sqlite3.connect(":memory:")
         try:

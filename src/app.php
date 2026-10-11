@@ -16,11 +16,24 @@ function seed_demo_courses(): void {
     q('INSERT INTO lessons(course_id,title,content,position,duration_minutes,status) VALUES (?,?,?,?,?,?)',[$course,'مبانی هوش مصنوعی','با مفاهیم اصلی هوش مصنوعی و مسیر حل یک مسئله واقعی آشنا شو.',1,30,'published']);
     q('INSERT INTO lessons(course_id,title,content,position,duration_minutes,status) VALUES (?,?,?,?,?,?)',[$course,'پروژه تشخیص چهره','یک نمونه پروژه عملی را از تعریف مسئله تا اجرای اولیه بررسی کن.',2,40,'published']);
 }
+function lesson_learning_status(?array $progress): string {
+    if ($progress===null) return 'not_started';
+    $position=progress_number($progress['last_position']);
+    $watched=progress_number($progress['watched_seconds']);
+    $percentage=progress_number($progress['percentage']);
+    if ($position===null || $watched===null || $percentage===null || $percentage>100) return 'not_started';
+    if ((int)$progress['completed']===1) return $progress['status']==='completed' && $progress['completed_at']!==null && $progress['completed_at']!=='' ? 'completed' : 'not_started';
+    return (int)$progress['completed']===0 && $progress['status']==='started' && $progress['completed_at']===null && ($position>0 || $watched>0 || $percentage>0) ? 'in_progress' : 'not_started';
+}
 function course_workspace(int $userId,string $slug,?int $requestedLesson=null): ?array {
     $course=q("SELECT c.id,c.slug,c.title,c.description,c.estimated_duration_minutes FROM courses c INNER JOIN enrollments e ON e.course_slug=c.slug AND e.user_id=? WHERE c.slug=? AND c.status='published'",[$userId,$slug])->fetch();
     if (!$course) return null;
     if ($requestedLesson!==null && !q("SELECT id FROM lessons WHERE id=? AND course_id=? AND status='published'",[$requestedLesson,$course['id']])->fetch()) return null;
     $course['lessons']=q("SELECT id,title,content,position,duration_minutes FROM lessons WHERE course_id=? AND status='published' ORDER BY position ASC",[$course['id']])->fetchAll();
+    $progress=[];
+    foreach (q("SELECT p.lesson_id,p.watched_seconds,p.last_position,p.percentage,p.completed,p.status,p.completed_at FROM lesson_progress p INNER JOIN lessons l ON l.id=p.lesson_id WHERE p.user_id=? AND l.course_id=? AND l.status='published'",[$userId,$course['id']])->fetchAll() as $row) $progress[(int)$row['lesson_id']]=$row;
+    foreach ($course['lessons'] as &$lesson) $lesson['learning_status']=lesson_learning_status($progress[(int)$lesson['id']] ?? null);
+    unset($lesson);
     return $course;
 }
 function dashboard_course_progress(int $userId): ?array {
