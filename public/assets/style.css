@@ -390,7 +390,11 @@ input[aria-invalid="true"],textarea[aria-invalid="true"],select[aria-invalid="tr
 .term-input:focus{outline:none}
 .term-input::placeholder{color:#6f6490}
 
-/* live chat */
+.account-summary{margin-top:1.2rem}
+.account-summary dl{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin:1rem 0 0}
+.account-summary dl div{background:var(--bg);border:1px solid var(--line);border-radius:var(--r-md);padding:.8rem 1rem}
+.account-summary dt{color:var(--muted);font-size:.78rem;font-weight:700}
+.account-summary dd{margin:.25rem 0 0;font-weight:800;overflow-wrap:anywhere}
 .chat-card{display:flex;flex-direction:column;gap:.8rem}
 .live-badge{display:inline-flex;align-items:center;gap:.4rem;background:#eafaf0;color:#16794a;border:1px solid #bde9cf;border-radius:999px;padding:.2rem .7rem;font-size:.74rem;font-weight:800}
 .live-dot{width:8px;height:8px;border-radius:50%;background:#19a05f;animation:pulse 1.6s infinite}
@@ -726,6 +730,7 @@ body.is-panel{background:linear-gradient(180deg,var(--bg),#f4f0fa)}
   .course-grid,.project-grid,.features-grid,.pricing-grid,.challenge-grid,.badge-grid{grid-template-columns:1fr}
   .course-benefits{grid-template-columns:1fr}
   .stat-grid{grid-template-columns:1fr}
+  .account-summary dl{grid-template-columns:1fr}
   .chart-bars{height:120px}
   .footer-grid{grid-template-columns:1fr}
   .hero-buttons .btn{width:100%}
