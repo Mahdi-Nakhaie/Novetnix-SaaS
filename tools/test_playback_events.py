@@ -105,9 +105,10 @@ process.stdout.write(JSON.stringify(cases.map(([position, duration]) => calculat
 
     def test_backend_rejects_invalid_percentage_independently(self):
         save = function_body(APP, "save_lesson_progress")
-        self.assertIn("!is_numeric($percentage)", save)
-        self.assertIn("!is_finite($percentage)", save)
-        self.assertIn("$percentage<0 || $percentage>100", save)
+        self.assertIn("$percentage===null", save)
+        self.assertIn("progress_number($_POST['last_position'] ?? null)", save)
+        self.assertIn("is_finite($number)", APP)
+        self.assertIn("$percentage>100", save)
         self.assertIn("percentage=excluded.percentage", save)
         self.assertIn("percentage=VALUES(percentage)", save)
 

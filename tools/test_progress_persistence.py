@@ -63,7 +63,12 @@ class ProgressPersistenceTest(unittest.TestCase):
         self.assertNotIn("$_POST['updated_at']", self.progress)
         self.assertNotIn("$_POST['created_at']", self.progress)
         self.assertIn("progress_response(404", self.progress)
-        self.assertIn("['error'=>", self.progress)
+        self.assertIn("function progress_number(mixed $value): ?float", APP)
+        self.assertIn("is_finite($number) && $number>=0", APP)
+        self.assertIn("$watched===null || $position===null || $percentage===null", self.progress)
+        self.assertIn("'position_valid'=>$position!==null", body(APP, "lesson_progress_for_user"))
+        self.assertIn("'progress_status'=>$position===null?'invalid':'valid'", body(APP, "lesson_progress_for_user"))
+        self.assertIn("'progress_status'=>'missing'", body(APP, "lesson_progress_for_user"))
 
     def test_authorization_query_rejects_other_users_and_courses(self):
         authorization_sql = re.search(r'SELECT l\.id FROM lessons l INNER JOIN courses c .*?\",\[\$userId,\$lessonId\]\)', body(APP, "authorized_progress_lesson")).group(0)

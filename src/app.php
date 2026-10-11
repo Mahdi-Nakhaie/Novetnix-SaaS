@@ -73,6 +73,11 @@ function progress_response(int $status,array $body): void {
 function authorized_progress_lesson(int $userId,int $lessonId): bool {
     return (bool)q("SELECT l.id FROM lessons l INNER JOIN courses c ON c.id=l.course_id INNER JOIN enrollments e ON e.course_slug=c.slug AND e.user_id=? WHERE l.id=? AND l.status='published' AND c.status='published'",[$userId,$lessonId])->fetch();
 }
+function progress_number(mixed $value): ?float {
+    if ($value===null || $value==='' || !is_numeric($value)) return null;
+    $number=(float)$value;
+    return is_finite($number) && $number>=0 ? $number : null;
+}
 function lesson_progress_for_user(array $u,string $requestedLesson): void {
     $lessonId=filter_var($requestedLesson,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]);
     if ($lessonId===false || $lessonId===null) progress_response(404,['error'=>'Lesson پیدا نشد یا دسترسی ندارید.']);
@@ -82,23 +87,26 @@ function lesson_progress_for_user(array $u,string $requestedLesson): void {
     } catch (Throwable $e) {
         progress_response(500,['error'=>'دریافت پیشرفت انجام نشد.']);
     }
-    progress_response(200,$progress ? [
-        'lesson_id'=>(int)$progress['lesson_id'],
-        'last_position'=>(float)$progress['last_position'],
-        'watched_seconds'=>(float)$progress['watched_seconds'],
-        'percentage'=>(float)$progress['percentage'],
-        'completed'=>(bool)$progress['completed']
-    ] : ['lesson_id'=>$lessonId,'last_position'=>0,'watched_seconds'=>0,'percentage'=>0,'completed'=>false]);
+    progress_response(200,$progress ? (function () use ($progress) {
+        $position=progress_number($progress['last_position']);
+        return [
+            'lesson_id'=>(int)$progress['lesson_id'],
+            'last_position'=>$position,
+            'watched_seconds'=>progress_number($progress['watched_seconds']),
+            'percentage'=>progress_number($progress['percentage']),
+            'completed'=>(bool)$progress['completed'],
+            'position_valid'=>$position!==null,
+            'progress_status'=>$position===null?'invalid':'valid'
+        ];
+    })() : ['lesson_id'=>$lessonId,'last_position'=>0,'watched_seconds'=>0,'percentage'=>0,'completed'=>false,'position_valid'=>true,'progress_status'=>'missing']);
 }
 function save_lesson_progress(array $u): void {
     $lessonId=filter_var($_POST['lesson_id'] ?? '',FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]);
-    $watched=$_POST['watched_seconds'] ?? null;
-    $position=$_POST['last_position'] ?? null;
-    $percentage=$_POST['percentage'] ?? null;
     $completed=filter_var($_POST['completed'] ?? null,FILTER_VALIDATE_BOOLEAN,FILTER_NULL_ON_FAILURE);
-    if ($lessonId===false || $lessonId===null || !is_numeric($watched) || !is_numeric($position) || !is_numeric($percentage) || $completed===null) progress_response(422,['error'=>'اطلاعات پیشرفت معتبر نیست.']);
-    $watched=(float)$watched; $position=(float)$position; $percentage=(float)$percentage;
-    if (!is_finite($watched) || !is_finite($position) || !is_finite($percentage) || $watched<0 || $position<0 || $percentage<0 || $percentage>100) progress_response(422,['error'=>'اطلاعات پیشرفت معتبر نیست.']);
+    $watched=progress_number($_POST['watched_seconds'] ?? null);
+    $position=progress_number($_POST['last_position'] ?? null);
+    $percentage=progress_number($_POST['percentage'] ?? null);
+    if ($lessonId===false || $lessonId===null || $watched===null || $position===null || $percentage===null || $completed===null || $percentage>100) progress_response(422,['error'=>'اطلاعات پیشرفت معتبر نیست.']);
     if (!authorized_progress_lesson((int)$u['id'],$lessonId)) progress_response(404,['error'=>'Lesson پیدا نشد یا دسترسی ندارید.']);
     $status=$completed ? 'completed' : 'started';
     $completedAt=$completed ? gmdate('Y-m-d H:i:s') : null;
