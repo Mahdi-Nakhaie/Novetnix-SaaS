@@ -40,13 +40,62 @@ class ProgressPersistenceTest(unittest.TestCase):
         indexes = self.db.execute("PRAGMA index_list(lesson_progress)").fetchall()
         self.assertTrue(any(row[2] for row in indexes if row[1].startswith("sqlite_autoindex_lesson_progress")))
 
+    def save_sql(self):
+        return re.search(r'"(INSERT INTO lesson_progress[^"\n]+ON CONFLICT\(user_id,lesson_id\) DO UPDATE[^"\n]+)"', self.progress).group(1)
+
     def test_progress_upsert_updates_existing_user_lesson(self):
-        sql = """INSERT INTO lesson_progress(user_id,lesson_id,watched_seconds,last_position,percentage,completed,status,completed_at)
-        VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(user_id,lesson_id) DO UPDATE SET watched_seconds=excluded.watched_seconds,last_position=excluded.last_position,percentage=excluded.percentage,completed=excluded.completed,status=excluded.status,completed_at=excluded.completed_at,updated_at=CURRENT_TIMESTAMP"""
-        self.db.execute(sql, (1, 1, 10, 10, 20, 0, "started", None))
-        self.db.execute(sql, (1, 1, 25, 25, 50, 0, "started", None))
+        sql = self.save_sql()
+        self.db.execute(sql, (1, 1, 10, 10, 20))
+        self.db.execute(sql, (1, 1, 25, 25, 50))
         self.assertEqual(self.db.execute("SELECT watched_seconds,last_position,percentage FROM lesson_progress WHERE user_id=1 AND lesson_id=1").fetchone(), (25.0, 25.0, 50.0))
         self.assertEqual(self.db.execute("SELECT COUNT(*) FROM lesson_progress").fetchone()[0], 1)
+
+    def test_repeated_saves_preserve_existing_completion_and_first_timestamp(self):
+        self.db.execute("INSERT INTO lesson_progress(user_id,lesson_id,completed,status,completed_at) VALUES (1,1,1,'completed','2026-01-01 10:00:00')")
+        sql = self.save_sql()
+        for position in (30, 60, 60):
+            self.db.execute(sql, (1, 1, position, position, 50))
+        row = self.db.execute("SELECT completed,status,completed_at,last_position FROM lesson_progress WHERE user_id=1 AND lesson_id=1").fetchone()
+        self.assertEqual(row, (1, "completed", "2026-01-01 10:00:00", 60.0))
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM lesson_progress").fetchone()[0], 1)
+        self.db.execute(sql, (2, 1, 20, 20, 20))
+        self.assertEqual(self.db.execute("SELECT completed,completed_at FROM lesson_progress WHERE user_id=2 AND lesson_id=1").fetchone(), (0, None))
+        self.assertEqual(self.db.execute("SELECT completed,completed_at FROM lesson_progress WHERE user_id=1 AND lesson_id=1").fetchone(), (1, "2026-01-01 10:00:00"))
+
+    def test_frontend_completion_cannot_create_or_replace_completed_row(self):
+        self.assertIn("if ($completed) {", self.progress)
+        self.assertLess(self.progress.index("authorized_progress_lesson((int)$u['id'],$lessonId)"), self.progress.index("if ($completed) {"))
+        self.assertLess(self.progress.index("progress_response(422,['error'=>'تکمیل درس"), self.progress.index("INSERT INTO lesson_progress"))
+        lookup = re.search(r"SELECT completed,status,completed_at FROM lesson_progress WHERE user_id=\? AND lesson_id=\?", self.progress).group(0)
+        self.assertIsNone(self.db.execute(lookup, (1, 1)).fetchone())
+        self.db.execute("INSERT INTO lesson_progress(user_id,lesson_id,completed,status,completed_at) VALUES (1,1,1,'completed','2026-01-01 10:00:00')")
+        self.assertEqual(self.db.execute(lookup, (1, 1)).fetchone(), (1, "completed", "2026-01-01 10:00:00"))
+        self.assertIsNone(self.db.execute(lookup, (2, 1)).fetchone())
+        self.assertIn("$existing['status']==='completed' && $existing['completed_at']!==null", self.progress)
+        self.assertIn("progress_response(200,['saved'=>true])", self.progress)
+        self.assertLess(self.progress.index("progress_response(200,['saved'=>true])"), self.progress.index("progress_response(422,['error'=>'تکمیل درس"))
+        self.assertNotIn("completed=excluded.completed", self.progress)
+        self.assertNotIn("completed=VALUES(completed)", self.progress)
+        self.assertNotIn("completed_at=excluded.completed_at", self.progress)
+        self.assertNotIn("completed_at=VALUES(completed_at)", self.progress)
+        self.assertIn("percentage=excluded.percentage", self.progress)
+        self.assertIn("percentage=VALUES(percentage)", self.progress)
+        self.assertIn("validate_csrf()", body(APP, "handle_post"))
+        self.assertIn("$u=require_user()", body(APP, "handle_post"))
+
+    def test_dashboard_counts_and_lesson_rows_are_stable_after_repeated_saves(self):
+        sql = self.save_sql()
+        self.db.execute("INSERT INTO lesson_progress(user_id,lesson_id,completed,status,completed_at) VALUES (1,1,1,'completed','2026-01-01 10:00:00')")
+        for _ in range(3):
+            self.db.execute(sql, (1, 1, 100, 100, 80))
+        counts = re.search(r'"(SELECT COUNT\(\*\) AS total,.*?l\.status=\'published\')"', body(APP, "dashboard_course_progress")).group(1)
+        self.assertEqual(self.db.execute(counts, (1, 1)).fetchone(), (1, 1))
+        self.assertEqual(self.db.execute(counts, (2, 1)).fetchone(), (1, 0))
+        self.assertEqual(self.db.execute(counts, (1, 2)).fetchone(), (1, 0))
+        lessons = re.search(r'"(SELECT p\.lesson_id,p\.watched_seconds,.*?l\.status=\'published\')"', body(APP, "course_workspace")).group(1)
+        self.assertEqual(self.db.execute(lessons, (1, 1)).fetchone()[4:7], (1, "completed", "2026-01-01 10:00:00"))
+        self.assertEqual(self.db.execute(lessons, (2, 1)).fetchall(), [])
+        self.assertEqual(self.db.execute(lessons, (1, 2)).fetchall(), [])
 
     def test_endpoint_uses_auth_user_and_enrollment_lesson_authorization(self):
         self.assertIn("$u['id']", self.progress)

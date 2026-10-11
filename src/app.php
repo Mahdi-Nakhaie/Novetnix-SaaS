@@ -156,11 +156,14 @@ function save_lesson_progress(array $u): void {
     $percentage=progress_number($_POST['percentage'] ?? null);
     if ($lessonId===false || $lessonId===null || $watched===null || $position===null || $percentage===null || $completed===null || $percentage>100) progress_response(422,['error'=>'اطلاعات پیشرفت معتبر نیست.']);
     if (!authorized_progress_lesson((int)$u['id'],$lessonId)) progress_response(404,['error'=>'Lesson پیدا نشد یا دسترسی ندارید.']);
-    $status=$completed ? 'completed' : 'started';
-    $completedAt=$completed ? gmdate('Y-m-d H:i:s') : null;
     try {
-        if (db()->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql') q("INSERT INTO lesson_progress(user_id,lesson_id,watched_seconds,last_position,percentage,completed,status,completed_at) VALUES (?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE watched_seconds=VALUES(watched_seconds),last_position=VALUES(last_position),percentage=VALUES(percentage),completed=VALUES(completed),status=VALUES(status),completed_at=VALUES(completed_at),updated_at=CURRENT_TIMESTAMP",[$u['id'],$lessonId,$watched,$position,$percentage,$completed?1:0,$status,$completedAt]);
-        else q("INSERT INTO lesson_progress(user_id,lesson_id,watched_seconds,last_position,percentage,completed,status,completed_at) VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(user_id,lesson_id) DO UPDATE SET watched_seconds=excluded.watched_seconds,last_position=excluded.last_position,percentage=excluded.percentage,completed=excluded.completed,status=excluded.status,completed_at=excluded.completed_at,updated_at=CURRENT_TIMESTAMP",[$u['id'],$lessonId,$watched,$position,$percentage,$completed?1:0,$status,$completedAt]);
+        if ($completed) {
+            $existing=q('SELECT completed,status,completed_at FROM lesson_progress WHERE user_id=? AND lesson_id=?',[$u['id'],$lessonId])->fetch();
+            if ($existing && (int)$existing['completed']===1 && $existing['status']==='completed' && $existing['completed_at']!==null && $existing['completed_at']!=='') progress_response(200,['saved'=>true]);
+            progress_response(422,['error'=>'تکمیل درس بدون معیار تأییدشدهٔ سمت سرور قابل ثبت نیست.']);
+        }
+        if (db()->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql') q("INSERT INTO lesson_progress(user_id,lesson_id,watched_seconds,last_position,percentage) VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE watched_seconds=VALUES(watched_seconds),last_position=VALUES(last_position),percentage=VALUES(percentage),updated_at=CURRENT_TIMESTAMP",[$u['id'],$lessonId,$watched,$position,$percentage]);
+        else q("INSERT INTO lesson_progress(user_id,lesson_id,watched_seconds,last_position,percentage) VALUES (?,?,?,?,?) ON CONFLICT(user_id,lesson_id) DO UPDATE SET watched_seconds=excluded.watched_seconds,last_position=excluded.last_position,percentage=excluded.percentage,updated_at=CURRENT_TIMESTAMP",[$u['id'],$lessonId,$watched,$position,$percentage]);
     } catch (Throwable $e) {
         progress_response(500,['error'=>'ذخیره پیشرفت انجام نشد.']);
     }
