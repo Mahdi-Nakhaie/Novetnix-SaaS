@@ -100,6 +100,41 @@ class AdminAuthorizationTest(unittest.TestCase):
         finally:
             db.close()
 
+    def test_admin_courses_and_lessons_use_database_order_and_relationship(self):
+        self.assertIn("'dashboard/courses'=>'Courses & Lessons'", VIEWS)
+        self.assertIn("$sub==='courses'", VIEWS)
+        self.assertIn('دریافت فهرست دوره‌ها و درس‌ها ممکن نشد', VIEWS)
+        self.assertIn('هنوز دوره‌ای ثبت نشده است', VIEWS)
+        self.assertIn('این دوره هنوز درسی ندارد', VIEWS)
+        self.assertIn('ثبت نشده (فیلد ویدئو موجود نیست)', VIEWS)
+        self.assertIn("$byCourse[(int)$lesson['course_id']][]=$lesson", VIEWS)
+        self.assertIn("$byCourse[(int)$course['id']] ?? []", VIEWS)
+        course_sql="SELECT id,title,status FROM courses ORDER BY id ASC"
+        lesson_sql="SELECT course_id,title,position,status FROM lessons ORDER BY course_id ASC,position ASC,id ASC"
+        self.assertIn(course_sql, VIEWS)
+        self.assertIn(lesson_sql, VIEWS)
+        self.assertNotIn('video_url', SCHEMA)
+        db=sqlite3.connect(':memory:')
+        try:
+            db.executescript(SCHEMA)
+            db.executemany('INSERT INTO courses(slug,title,description,status) VALUES (?,?,?,?)', [
+                ('first','دوره نخست','', 'draft'),
+                ('second','دوره دوم','', 'published'),
+            ])
+            db.executemany('INSERT INTO lessons(course_id,title,content,position,status) VALUES (?,?,?,?,?)', [
+                (2,'درس دوم','',2,'draft'),
+                (2,'درس اول','',1,'published'),
+                (1,'درس مستقل','',1,'draft'),
+            ])
+            self.assertEqual(db.execute(course_sql).fetchall(), [(1,'دوره نخست','draft'),(2,'دوره دوم','published')])
+            self.assertEqual(db.execute(lesson_sql).fetchall(), [
+                (1,'درس مستقل',1,'draft'),
+                (2,'درس اول',1,'published'),
+                (2,'درس دوم',2,'draft'),
+            ])
+        finally:
+            db.close()
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -21,7 +21,7 @@ function panel_nav(): void {
     global $me,$path;
     $role=$me['role'];
     $items=$role==='admin'
-        ? ['dashboard'=>'Overview','dashboard/users'=>'کاربران','dashboard/users-new'=>'کاربران جدید','dashboard/courses'=>'دوره‌ها','dashboard/catalog'=>'پروژه‌ها','dashboard/challenges'=>'چالش‌ها','dashboard/subscriptions'=>'اشتراک‌ها','dashboard/payments'=>'پرداخت‌ها','dashboard/community'=>'Community','dashboard/support'=>'پشتیبانی','dashboard/announcements'=>'اعلان‌ها','dashboard/gamification'=>'Gamification','dashboard/analytics'=>'Analytics','dashboard/content'=>'Content','dashboard/profile'=>'پروفایل','dashboard/settings'=>'System Settings']
+        ? ['dashboard'=>'Overview','dashboard/users'=>'کاربران','dashboard/users-new'=>'کاربران جدید','dashboard/courses'=>'Courses & Lessons','dashboard/catalog'=>'پروژه‌ها','dashboard/challenges'=>'چالش‌ها','dashboard/subscriptions'=>'اشتراک‌ها','dashboard/payments'=>'پرداخت‌ها','dashboard/community'=>'Community','dashboard/support'=>'پشتیبانی','dashboard/announcements'=>'اعلان‌ها','dashboard/gamification'=>'Gamification','dashboard/analytics'=>'Analytics','dashboard/content'=>'Content','dashboard/profile'=>'پروفایل','dashboard/settings'=>'System Settings']
         : ['dashboard'=>'نمای کلی','dashboard/learning'=>'مسیر یادگیری','dashboard/projects'=>'پروژه‌ها','dashboard/challenges'=>'چالش‌ها','dashboard/community'=>'Community','dashboard/nova'=>'Nova AI','dashboard/subscription'=>'اشتراک','dashboard/support'=>'پشتیبانی','dashboard/gamification'=>'Gamification','dashboard/activity'=>'فعالیت و Streak','dashboard/profile'=>'پروفایل','dashboard/settings'=>'تنظیمات'];
     echo '<aside class="sidebar"><a class="panel-brand" href="/"><img src="/assets/favicon.png" alt="" width="42" height="42"><span>Noventix</span></a><div class="sidebar-caption">'.($role==='admin'?'مدیریت پلتفرم':($role==='owner'?'پنل مالک':'فضای یادگیری')).'</div><nav aria-label="ناوبری پنل">';
     foreach ($items as $href=>$label) linkto($href,$label,$path===$href?'selected':'');
@@ -330,8 +330,30 @@ function admin_panel(string $sub): void {
         }
     } elseif ($sub==='messages') {
         echo '<div class="panel-heading"><h1>پیام‌های تماس</h1><p>پیام‌های ثبت‌شده از فرم تماس.</p></div><div class="panel-list">'; foreach (q('SELECT * FROM contact_messages ORDER BY id DESC LIMIT 50')->fetchAll() as $r) echo '<div class="list-item"><div><h3>'.h($r['name']).' · '.h($r['email']).'</h3><p>'.nl2br(h($r['message'])).'</p></div><small>'.h($r['created_at']).'</small></div>'; echo '</div>';
-    } elseif ($sub==='courses' || $sub==='projects') {
-        echo '<div class="panel-heading"><h1>'.($sub==='courses'?'محتوای آموزشی':'کاتالوگ پروژه‌ها').'</h1><p>'.($sub==='courses'?fa(count(COURSES)).' مقاله فعال در کاتالوگ.':fa(count(PROJECTS)).' پروژه فعال در کاتالوگ.').'</p></div><div class="panel-card"><p class="muted">کاتالوگ از فایل محتوای برنامه بارگذاری می‌شود؛ ویرایش از پنل هنوز فعال نیست.</p>'; linkto($sub==='courses'?'courses':'projects','مشاهده کاتالوگ ←','btn btn-outline'); echo '</div>';
+    } elseif ($sub==='courses') {
+        panel_head('Courses & Lessons','ساختار دوره‌ها و درس‌ها از پایگاه‌داده؛ دوره‌ها فیلد ترتیب ندارند و بر اساس شناسه نمایش داده می‌شوند؛ ترتیب درس‌ها از position است.');
+        try {
+            $courses=q('SELECT id,title,status FROM courses ORDER BY id ASC')->fetchAll();
+            $lessons=q('SELECT course_id,title,position,status FROM lessons ORDER BY course_id ASC,position ASC,id ASC')->fetchAll();
+            $byCourse=[];
+            foreach ($lessons as $lesson) $byCourse[(int)$lesson['course_id']][]=$lesson;
+            if (!$courses) echo '<div class="panel-card"><p class="muted">هنوز دوره‌ای ثبت نشده است.</p></div>';
+            foreach ($courses as $course) {
+                echo '<section class="panel-card"><h2>'.h($course['title']).'</h2><p>شناسه دوره: '.fa((int)$course['id']).' · Status: '.h($course['status'] ?? '—').'</p>';
+                $items=$byCourse[(int)$course['id']] ?? [];
+                if (!$items) echo '<p class="muted">این دوره هنوز درسی ندارد.</p>';
+                else {
+                    echo '<div class="table-wrap"><table><thead><tr><th>Lesson Title</th><th>Order</th><th>Status</th><th>Video URL</th></tr></thead><tbody>';
+                    foreach ($items as $lesson) echo '<tr><td>'.h($lesson['title']).'</td><td>'.fa((int)$lesson['position']).'</td><td>'.h($lesson['status'] ?? '—').'</td><td>ثبت نشده (فیلد ویدئو موجود نیست)</td></tr>';
+                    echo '</tbody></table></div>';
+                }
+                echo '</section>';
+            }
+        } catch (Throwable $e) {
+            echo '<div class="panel-card"><p class="muted">دریافت فهرست دوره‌ها و درس‌ها ممکن نشد. لطفاً دوباره تلاش کنید.</p></div>';
+        }
+    } elseif ($sub==='projects') {
+        echo '<div class="panel-heading"><h1>کاتالوگ پروژه‌ها</h1><p>'.fa(count(PROJECTS)).' پروژه فعال در کاتالوگ.</p></div><div class="panel-card"><p class="muted">کاتالوگ از فایل محتوای برنامه بارگذاری می‌شود؛ ویرایش از پنل هنوز فعال نیست.</p>'; linkto('projects','مشاهده کاتالوگ ←','btn btn-outline'); echo '</div>';
     } elseif ($sub==='users-new') {
         panel_head('کاربران جدید','حساب‌هایی که تازه ثبت‌نام کرده‌اند.');
         echo '<div class="panel-card table-wrap"><table><thead><tr><th>نام</th><th>شماره</th><th>تاریخ عضویت</th></tr></thead><tbody>';
