@@ -30,6 +30,11 @@ function require_user(): array {
     }
     return $u;
 }
+function require_admin(): array {
+    $u=require_user();
+    if ($u['role']!=='admin') { http_response_code(403); exit('دسترسی مجاز نیست.'); }
+    return $u;
+}
 function registration_input(string $key): ?string {
     $value=$_POST[$key] ?? null;
     return is_string($value) ? $value : null;

@@ -37,6 +37,7 @@ function route(): void {
         if (!$u || trim($u['name'])==='') progress_response(401,['error'=>'برای مشاهده پیشرفت وارد شوید.']);
         lesson_progress_for_user($u,$match[1]);
     }
+    if (preg_match('~^dashboard/(users|users-new|courses|catalog|subscriptions|messages|analytics|payments|announcements|content|settings)$~D',$path)) require_admin();
     if ($path==='dashboard' || str_starts_with($path,'dashboard/')) {
         $u=require_user();
         if ($u['phone']===(config_value('ADMIN_PHONE') ?: '') && $u['role']!=='admin') redirect('admin-login');

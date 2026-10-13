@@ -362,7 +362,8 @@ function handle_post(string $path): void {
         }
         flash('پیام شما در انجمن ثبت شد.'); redirect('community');
     }
-    if ($path==='admin/activate' && $u['role']==='admin') {
+    if ($path==='admin/activate') {
+        require_admin();
         $phone=normalized_phone((string)($_POST['phone'] ?? '')); $selected=(string)($_POST['plan'] ?? '');
         if (!$phone || !isset(PLANS[$selected]) || $selected==='free') { flash('شماره و پلن معتبر وارد کنید.','error'); redirect('dashboard/subscriptions'); }
         $target=q('SELECT id FROM users WHERE phone=?',[$phone])->fetch();
@@ -420,7 +421,8 @@ function handle_post(string $path): void {
         q('UPDATE users SET name=? WHERE id=?',[$name,$u['id']]);
         flash('پروفایل به‌روزرسانی شد.'); redirect('dashboard/profile');
     }
-    if ($path==='settings/save' && $u['role']==='admin') {
+    if ($path==='settings/save') {
+        require_admin();
         $key=(string)($_POST['key'] ?? '');
         if (!in_array($key,array_column(SETTINGS_GROUPS,'key'),true)) { flash('تنظیم نامعتبر است.','error'); redirect('dashboard/settings'); }
         $value=trim((string)($_POST['value'] ?? ''));
@@ -428,26 +430,30 @@ function handle_post(string $path): void {
         else q('INSERT INTO settings(skey,svalue) VALUES (?,?) ON CONFLICT(skey) DO UPDATE SET svalue=?',[$key,$value,$value]);
         flash('تنظیم ذخیره شد.'); redirect('dashboard/settings');
     }
-    if ($path==='content/create' && $u['role']==='admin') {
+    if ($path==='content/create') {
+        require_admin();
         $title=trim((string)($_POST['title'] ?? '')); $kind=trim((string)($_POST['kind'] ?? 'مقاله'));
         if (mb_strlen($title)<3 || mb_strlen($title)>180) { flash('عنوان باید بین ۳ تا ۱۸۰ نویسه باشد.','error'); redirect('dashboard/content'); }
         if (!in_array($kind,['مقاله','صفحه'],true)) $kind='مقاله';
         q('INSERT INTO content_items(title,kind,status) VALUES (?,?,?)',[$title,$kind,'پیش‌نویس']);
         flash('محتوای جدید ذخیره و منتشر شد.'); redirect('dashboard/content');
     }
-    if ($path==='content/publish' && $u['role']==='admin') {
+    if ($path==='content/publish') {
+        require_admin();
         $id=filter_var($_POST['id'] ?? '',FILTER_VALIDATE_INT);
         if (!$id) { http_response_code(404); exit; }
         q("UPDATE content_items SET status='منتشرشده' WHERE id=?",[$id]);
         flash('محتوا منتشر شد.'); redirect('dashboard/content');
     }
-    if ($path==='announcements/send' && $u['role']==='admin') {
+    if ($path==='announcements/send') {
+        require_admin();
         $title=trim((string)($_POST['title'] ?? '')); $body=trim((string)($_POST['body'] ?? ''));
         if (mb_strlen($title)<3 || mb_strlen($title)>255 || mb_strlen($body)<5 || mb_strlen($body)>2000) { flash('عنوان و متن اعلان معتبر وارد کنید.','error'); redirect('dashboard/announcements'); }
         q('INSERT INTO announcements(title,body) VALUES (?,?)',[$title,$body]);
         flash('اعلان برای کاربران ارسال شد.'); redirect('dashboard/announcements');
     }
-    if ($path==='admin/seed-demo' && $u['role']==='admin') {
+    if ($path==='admin/seed-demo') {
+        require_admin();
         seed_demo_courses();
         foreach (ANNOUNCEMENTS as $a) q('INSERT INTO announcements(title,body) VALUES (?,?)',[$a['title'],$a['body']]);
         foreach (CONTENT_ITEMS as $c) q('INSERT INTO content_items(title,kind,status) VALUES (?,?,?)',[$c['title'],$c['kind'],$c['status']]);
