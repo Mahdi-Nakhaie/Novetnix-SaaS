@@ -1,5 +1,6 @@
 import pathlib
 import re
+import sqlite3
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -8,6 +9,8 @@ APP = (ROOT / "src/app.php").read_text(encoding="utf-8")
 ROUTER = (ROOT / "src/router.php").read_text(encoding="utf-8")
 PUBLIC = (ROOT / "public/index.php").read_text(encoding="utf-8")
 ENV = (ROOT / ".env.example").read_text(encoding="utf-8")
+SCHEMA = (ROOT / "database/schema.sqlite.sql").read_text(encoding="utf-8")
+VIEWS = (ROOT / "src/views.php").read_text(encoding="utf-8")
 
 
 def body(source, name):
@@ -68,9 +71,29 @@ class AdminAuthorizationTest(unittest.TestCase):
         views = (ROOT / "src/views.php").read_text(encoding="utf-8")
         self.assertIn("elseif ($role==='admin') admin_panel($sub);", views)
         self.assertIn("$role==='admin'", views)
-        for query in ('SELECT * FROM users', 'SELECT * FROM contact_messages', 'SELECT u.phone,s.plan'):
+        for query in ('SELECT name,phone,phone_verified_at,created_at,acquisition_source FROM users', 'SELECT * FROM contact_messages', 'SELECT u.phone,s.plan'):
             self.assertIn(query, views)
-        self.assertIn("if ($u['role']==='admin') redirect('dashboard');", (ROOT / "src/router.php").read_text(encoding="utf-8"))
+        self.assertNotIn("SELECT * FROM users ORDER BY id DESC LIMIT 100", views)
+        self.assertIn("elseif ($role==='admin') admin_panel($sub);", views)
+        self.assertIn("if (!$rows) echo '<tr><td colspan=\"5\"", views)
+        self.assertIn("'Unknown'", views)
+        self.assertIn("دریافت فهرست کاربران ممکن نشد", views)
+    def test_user_listing_query_reads_real_fields_and_preserves_fallback(self):
+        query = re.search(r"q\('((?:SELECT name,phone,phone_verified_at,created_at,acquisition_source).*?)'\)", VIEWS).group(1)
+        db = sqlite3.connect(':memory:')
+        try:
+            db.executescript(SCHEMA)
+            db.executemany("INSERT INTO users(phone,name,phone_verified_at,acquisition_source,created_at) VALUES (?,?,?,?,?)", [
+                ('09120000001', 'تأییدشده', 1700000000, 'Instagram', '2026-01-01 00:00:00'),
+                ('09120000002', 'بدون منبع', None, 'Unknown', '2026-01-02 00:00:00'),
+            ])
+            rows = db.execute(query).fetchall()
+            self.assertEqual(rows[0][0:3], ('بدون منبع', '09120000002', None))
+            self.assertEqual(rows[0][4], 'Unknown')
+            self.assertEqual(rows[1][0:3], ('تأییدشده', '09120000001', 1700000000))
+            self.assertEqual(rows[1][4], 'Instagram')
+        finally:
+            db.close()
 
 
 if __name__ == '__main__':
