@@ -786,5 +786,13 @@ body.is-panel{background:linear-gradient(180deg,var(--bg),#f4f0fa)}
 .noventix-not-found-actions .btn-primary:hover{background:#501080}
 .noventix-not-found-actions .btn-outline{border-color:#708090;color:#28123e}
 .noventix-not-found-actions [hidden]{display:none}
+.cohort-card{overflow:hidden}
+.cohort-table{min-width:760px}
+.cohort-table th,.cohort-table td{padding:.75rem .65rem;text-align:center;border-bottom:1px solid var(--line);white-space:nowrap}
+.cohort-table thead th{color:var(--muted);font-size:.78rem}
+.cohort-table tbody th{text-align:start;color:var(--ink-2)}
+.cohort-table td strong,.cohort-table td small{display:block}
+.cohort-table td strong{color:var(--brand-2)}
+.cohort-table td small{color:var(--muted);font-size:.72rem}
 @media (max-width:480px){.noventix-not-found-art{height:160px}.noventix-not-found-actions{flex-direction:column}.noventix-not-found-actions .btn{width:100%}}
 @media (prefers-reduced-motion:reduce){.noventix-loading-track span{animation:none;width:100%}}

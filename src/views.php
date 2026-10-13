@@ -150,6 +150,35 @@ function jalali_march(int $gy): int {
     $leapG=intdiv($gy,4)-intdiv((intdiv($gy,100)+1)*3,4)-150;
     return 20+$leapJ-$leapG;
 }
+function admin_cohort_data(): array {
+    $months=6;
+    $current=new DateTimeImmutable('first day of this month',new DateTimeZone('UTC'));
+    $start=$current->modify('-'.($months-1).' months');
+    $labels=[];
+    for ($i=0;$i<$months;$i++) $labels[]=$start->modify('+'.$i.' months')->format('Y-m');
+    $cohorts=[]; $userCohorts=[];
+    foreach (q('SELECT id,created_at FROM users WHERE created_at>=? ORDER BY created_at ASC',[$start->format('Y-m-d H:i:s')])->fetchAll() as $user) {
+        $cohort=substr((string)$user['created_at'],0,7);
+        if (!in_array($cohort,$labels,true)) continue;
+        $id=(int)$user['id'];
+        $userCohorts[$id]=$cohort;
+        $cohorts[$cohort]??=['size'=>0,'active'=>array_fill(0,$months,[])];
+        $cohorts[$cohort]['size']++;
+    }
+    foreach (q('SELECT user_id,created_at FROM activities WHERE created_at>=?',[$start->format('Y-m-d H:i:s')])->fetchAll() as $activity) {
+        $userId=(int)$activity['user_id'];
+        if (!isset($userCohorts[$userId])) continue;
+        $cohort=$userCohorts[$userId];
+        $activityMonth=substr((string)$activity['created_at'],0,7);
+        $cohortDate=DateTimeImmutable::createFromFormat('!Y-m-d',$cohort.'-01',new DateTimeZone('UTC'));
+        $activityDate=DateTimeImmutable::createFromFormat('!Y-m-d',$activityMonth.'-01',new DateTimeZone('UTC'));
+        if (!$cohortDate || !$activityDate) continue;
+        $offset=((int)$activityDate->format('Y')-(int)$cohortDate->format('Y'))*12+(int)$activityDate->format('n')-(int)$cohortDate->format('n');
+        if ($offset>=0 && $offset<$months) $cohorts[$cohort]['active'][$offset][$userId]=true;
+    }
+    ksort($cohorts);
+    return ['labels'=>$labels,'rows'=>$cohorts];
+}
 function bars(array $values,bool $gold=false): void {
     $max=max(1,max($values)); echo '<div class="chart-bars'.($gold?' is-gold':'').'">';
     foreach ($values as $i=>$v) echo '<span style="height:'.round($v/$max*100).'%" title="'.h(fa($v)).'"></span>';
@@ -400,6 +429,30 @@ function admin_panel(string $sub): void {
         $revenue=[]; foreach (PLANS as $id=>$p) if ($p['price']) $revenue[]=(int)q("SELECT COUNT(*) FROM subscriptions WHERE plan=?",[$id])->fetchColumn()*(int)$p['price'];
         while (count($revenue)<8) $revenue[]=0;
         echo '<div class="chart-grid"><section class="panel-card"><h2>Active Users</h2><p class="muted">کاربران جدید در ۸ هفته گذشته</p>'; bars(array_reverse($users),true); echo '</section><section class="panel-card"><h2>Revenue</h2><p class="muted">درآمد ماهانه به تفکیک پلن</p>'; bars(array_slice($revenue,0,8)); echo '</section></div>';
+        try {
+            $cohort=admin_cohort_data();
+            echo '<section class="panel-card cohort-card"><h2>Lead Cohort</h2><p class="muted">مبنای cohort ماه ثبت‌نام است؛ فعالیت بر اساس رویدادهای واقعی جدول activities محاسبه شده است.</p>';
+            if (!$cohort['rows']) echo '<div class="empty-state">برای شش ماه اخیر دادهٔ کافی برای cohort وجود ندارد.</div>';
+            else {
+                echo '<div class="table-wrap"><table class="cohort-table"><thead><tr><th>Cohort</th><th>Users</th>'; foreach ($cohort['labels'] as $label) echo '<th>'.h($label).'</th>'; echo '</tr></thead><tbody>';
+                foreach ($cohort['rows'] as $label=>$row) {
+                    $cohortIndex=array_search($label,$cohort['labels'],true);
+                    echo '<tr><th scope="row" dir="ltr">'.h($label).'</th><td>'.fa($row['size']).'</td>';
+                    foreach ($cohort['labels'] as $index=>$month) {
+                        $observed=count($cohort['labels'])-1-(int)$cohortIndex;
+                        if ($index>$observed) { echo '<td dir="ltr">—</td>'; continue; }
+                        $count=count($row['active'][$index] ?? []);
+                        $rate=$row['size'] ? round($count/$row['size']*100) : 0;
+                        echo '<td dir="ltr"><strong>'.fa($rate).'%</strong><small>'.fa($count).' نفر</small></td>';
+                    }
+                    echo '</tr>';
+                }
+                echo '</tbody></table></div>';
+            }
+            echo '</section>';
+        } catch (Throwable $e) {
+            echo '<section class="panel-card"><h2>Lead Cohort</h2><p class="muted">دریافت دادهٔ cohort ممکن نشد. لطفاً دوباره تلاش کنید.</p></section>';
+        }
         echo '<div class="panel-card"><h2>توزیع پلن‌ها</h2><div class="table-wrap"><table><thead><tr><th>پلن</th><th>اشتراک فعال</th></tr></thead><tbody>'; foreach (PLANS as $id=>$p) echo '<tr><td>'.h($p['name']).'</td><td>'.fa((int)q("SELECT COUNT(*) FROM subscriptions WHERE plan=? AND status='active' AND expires_at>?",[$id,gmdate('Y-m-d H:i:s')])->fetchColumn()).'</td></tr>'; echo '</tbody></table></div></div>';
     } elseif ($sub==='subscriptions') {
         $active=(int)q("SELECT COUNT(*) FROM subscriptions WHERE status='active' AND expires_at>?",[gmdate('Y-m-d H:i:s')])->fetchColumn();

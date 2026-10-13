@@ -135,6 +135,19 @@ class AdminAuthorizationTest(unittest.TestCase):
         finally:
             db.close()
 
+    def test_admin_analytics_cohort_uses_registration_and_activity_data(self):
+        self.assertIn('analytics', ROUTER)
+        self.assertIn("function admin_cohort_data(): array", VIEWS)
+        self.assertIn("SELECT id,created_at FROM users WHERE created_at>=?", VIEWS)
+        self.assertIn("SELECT user_id,created_at FROM activities WHERE created_at>=?", VIEWS)
+        self.assertIn("$userCohorts[$userId]", VIEWS)
+        self.assertIn("$cohorts[$cohort]['active'][$offset][$userId]=true", VIEWS)
+        self.assertIn('Lead Cohort', VIEWS)
+        self.assertIn('دادهٔ کافی برای cohort وجود ندارد', VIEWS)
+        self.assertIn('دریافت دادهٔ cohort ممکن نشد', VIEWS)
+        css=(ROOT / 'public/assets/style.css').read_text(encoding='utf-8')
+        self.assertIn('.cohort-table', css)
+
 
 if __name__ == '__main__':
     unittest.main()
