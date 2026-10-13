@@ -694,9 +694,15 @@ def live_chat():
 
 
 def view_notfound():
-    return ('<main class="container section"><span class="eyebrow">404</span>'
-            "<h1>این صفحه پیدا نشد.</h1><p>ممکن است نشانی تغییر کرده باشد.</p>"
-            + linkto("", "بازگشت به خانه ←", "btn btn-primary") + "</main>")
+    return ('<main class="noventix-not-found"><section class="noventix-not-found-content" aria-labelledby="not-found-title">'
+            '<span class="noventix-not-found-label">NOVENTIX / LOST PATH</span>'
+            '<div class="noventix-not-found-art" aria-hidden="true"><span class="noventix-not-found-orbit"></span>'
+            '<span class="noventix-not-found-code">404</span><span class="noventix-not-found-dot"></span></div>'
+            '<h1 id="not-found-title">اینجا چیزی برای پیدا کردن نیست!</h1>'
+            '<p>صفحه‌ای که دنبالش هستی پیدا نشد.</p><div class="noventix-not-found-actions">'
+            + linkto("", "بازگشت به صفحه اصلی", "btn btn-primary")
+            + '<a class="btn btn-outline" href="' + h(href(""))
+            + '" data-safe-back hidden>بازگشت به صفحه قبل</a></div></section></main>')
 
 
 # --------------------------------------------------------------- panels

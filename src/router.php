@@ -42,10 +42,10 @@ function route(): void {
         $u=require_user();
         if ($u['phone']===(config_value('ADMIN_PHONE') ?: '') && $u['role']!=='admin') redirect('admin-login');
         $allowed=['profile','learning','projects','community','nova','subscription','users','users-new','courses','catalog','subscriptions','messages','analytics','challenges','payments','support','announcements','gamification','activity','content','settings'];
-        if (str_starts_with($path,'dashboard/') && !in_array(substr($path,10),$allowed,true)) { http_response_code(404); head_page('یافت نشد',''); notice(); echo '<main class="container section"><h1>این صفحه پیدا نشد.</h1>'; linkto('dashboard','بازگشت به پنل ←','inline-link'); echo '</main>'; foot_page(); return; }
+        if (str_starts_with($path,'dashboard/') && !in_array(substr($path,10),$allowed,true)) { page_not_found(); return; }
         head_page('پنل', '', true); notice(); panel(str_starts_with($path,'dashboard/') ? substr($path,10) : ''); foot_page(true); return;
     }
-    http_response_code(404); head_page('یافت نشد','صفحه مورد نظر پیدا نشد.'); notice(); echo '<main class="container section"><span class="eyebrow">404</span><h1>این صفحه پیدا نشد.</h1><p>ممکن است نشانی تغییر کرده باشد.</p>'; linkto('','بازگشت به خانه ←','btn btn-primary'); echo '</main>'; foot_page();
+    page_not_found();
 }
 
 function page_courses(array $courses): void {
@@ -60,7 +60,7 @@ function course_start_action(array $course,?array $me,bool $enrolled,string $cla
 function page_course(string $slug): void {
     global $me;
     $course=q("SELECT id,slug,title,description,estimated_duration_minutes FROM courses WHERE slug=? AND status='published'",[$slug])->fetch();
-    if (!$course) { http_response_code(404); head_page('یافت نشد',''); notice(); echo '<main class="container section"><h1>Course پیدا نشد.</h1>'; linkto('courses','همه Courseها ←','inline-link'); echo '</main>'; foot_page(); return; }
+    if (!$course) { page_not_found(); return; }
     $lessons=q("SELECT title,content,position,duration_minutes,status FROM lessons WHERE course_id=? AND status='published' ORDER BY position ASC",[$course['id']])->fetchAll();
     $duration=$course['estimated_duration_minutes'];
     if ($duration===null) {
@@ -80,7 +80,7 @@ function page_projects(): void {
 function page_project(string $index): void {
     global $me,$plan;
     $i=filter_var($index,FILTER_VALIDATE_INT);
-    if ($i===false || !isset(PROJECTS[$i])) { http_response_code(404); head_page('یافت نشد',''); notice(); echo '<main class="container section"><h1>پروژه پیدا نشد.</h1>'; linkto('projects','همه پروژه‌ها ←','inline-link'); echo '</main>'; foot_page(); return; }
+    if ($i===false || !isset(PROJECTS[$i])) { page_not_found(); return; }
     $p=PROJECTS[$i]; head_page($p['title'],$p['description']); notice(); echo '<main class="article"><div class="container narrow-container"><span class="eyebrow">'.h($p['topic']).' · '.h($p['level']).'</span><h1>'.h($p['title']).'</h1><p class="lead">'.h($p['description']).'</p><div class="article-meta"><span dir="ltr">'.h($p['skills']).'</span></div><section class="article-section"><h2><span>۱</span>صورت مسئله</h2><p>مسئله را با داده و محدودیت‌های واقعی تعریف کن؛ خروجی مورد انتظار و معیار موفقیت را از ابتدا روشن کن.</p></section><section class="article-section"><h2><span>۲</span>مسیر پیشنهادی</h2><p>با یک راه‌حل ساده شروع کن، نتیجه را بسنج و سپس گام‌به‌گام پیچیدگی را فقط در جایی که لازم است اضافه کن.</p></section><section class="article-section"><h2><span>۳</span>ارزیابی و انتقال</h2><p>کیفیت راه‌حل را با معیار روشن بسنج و همان الگو را روی یک مسئله تازه امتحان کن تا مهارت واقعی شکل بگیرد.</p></section><div class="article-footer">';
     if ($me) { form_start('projects/start'); echo '<input type="hidden" name="index" value="'.$i.'"><button class="btn btn-primary">افزودن به پروژه‌های من</button></form>'; } else linkto('login','برای شروع وارد شوید ←','btn btn-primary');
     linkto('community','پرسش در انجمن ←','btn btn-outline'); echo '</div></div></main>'; foot_page();
@@ -155,7 +155,7 @@ function page_privacy(): void {
 }
 function page_member(int $id): void {
     $member=q('SELECT id,name,created_at FROM users WHERE id=?',[$id])->fetch();
-    if (!$member) { http_response_code(404); exit('کاربر پیدا نشد.'); }
+    if (!$member) { page_not_found(); return; }
     $posts=(int)q('SELECT COUNT(*) FROM community_posts WHERE user_id=?',[$id])->fetchColumn();
     $followers=(int)q('SELECT COUNT(*) FROM user_follows WHERE followed_id=?',[$id])->fetchColumn();
     head_page('پروفایل '.($member['name'] ?: 'عضو انجمن'),'عضو انجمن Noventix'); notice();

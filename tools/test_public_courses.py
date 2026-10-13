@@ -72,7 +72,7 @@ class PublicCoursesTest(unittest.TestCase):
         for slug in ("missing", "draft"):
             with self.subTest(slug=slug):
                 self.assertIsNone(self.db.execute(self.course_sql, (slug,)).fetchone())
-        self.assertIn("if (!$course) { http_response_code(404)", self.detail)
+        self.assertIn("if (!$course) { page_not_found(); return; }", self.detail)
         self.assertNotIn("COURSES", self.detail)
         self.assertIn("course_start_action($course,$me,$enrolled", self.detail)
         self.assertIn("courses/enroll", body(ROUTER, "course_start_action"))
@@ -280,6 +280,28 @@ class PublicCoursesTest(unittest.TestCase):
             self.assertEqual(db.execute(self.lesson_sql, (2,)).fetchall(), [])
         finally:
             db.close()
+    def test_not_found_and_loading_keep_route_status_and_real_requests(self):
+        missing = body(VIEWS, "page_not_found")
+        route = body(ROUTER, "route")
+        self.assertIn("http_response_code(404)", missing)
+        self.assertIn("linkto('','بازگشت به صفحه اصلی'", missing)
+        self.assertIn('data-safe-back hidden', missing)
+        self.assertIn("page_not_found();", route)
+        self.assertIn("require_admin();", route)
+        self.assertIn("if (!$member) { page_not_found(); return; }", body(ROUTER, "page_member"))
+        self.assertIn("page_not_found(); return;", body(ROUTER, "page_project"))
+        self.assertIn('id="noventix-loading"', body(VIEWS, "head_page"))
+        js = (ROOT / "public/assets/app.js").read_text(encoding="utf-8")
+        css = (ROOT / "public/assets/style.css").read_text(encoding="utf-8")
+        for guard in ('event.defaultPrevented', 'event.target.method.toLowerCase() !== "post"', 'window.setTimeout(hideLoading, 10000)', 'window.addEventListener("pageshow", hideLoading)', 'window.addEventListener("pagehide", hideLoading)', 'previous.origin === window.location.origin'):
+            self.assertIn(guard, js)
+        for rule in ('.noventix-loading:not([hidden])', '.noventix-not-found', 'prefers-reduced-motion:reduce', '.noventix-not-found-actions'):
+            self.assertIn(rule, css)
+        static = (ROOT / "site/404.html").read_text(encoding="utf-8")
+        self.assertEqual(static, gen.render_page({"path": "404", "title": "یافت نشد", "description": "صفحه مورد نظر پیدا نشد.", "view": "notfound", "nav": ""}))
+        self.assertIn('data-safe-back hidden', static)
+        self.assertIn('previous.origin === window.location.origin', (ROOT / "site/assets/app.js").read_text(encoding="utf-8"))
+        self.assertIn('.noventix-not-found', (ROOT / "site/assets/style.css").read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

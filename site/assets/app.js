@@ -106,4 +106,15 @@
     field.removeAttribute("aria-invalid");
     if (error) error.remove();
   });
+  var backLink = document.querySelector("[data-safe-back]");
+  if (backLink && document.referrer && window.history.length > 1) {
+    var previous = new URL(document.referrer);
+    if (previous.origin === window.location.origin) {
+      backLink.hidden = false;
+      backLink.addEventListener("click", function (event) {
+        event.preventDefault();
+        window.history.back();
+      });
+    }
+  }
 })();

@@ -738,3 +738,18 @@ body.is-panel{background:linear-gradient(180deg,var(--bg),#f4f0fa)}
   *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
   .btn:hover,.feature:hover,.course-card:hover,.project-card:hover,.social-column a:hover{transform:none}
 }
+.noventix-not-found{min-height:70vh;background:#f5f5f5;display:grid;place-items:center;padding:clamp(2rem,6vw,5rem) 1rem;color:#28123e}
+.noventix-not-found-content{width:min(100%,740px);text-align:center}
+.noventix-not-found-label{color:#465666;font-size:.78rem;font-weight:800;letter-spacing:.2em}
+.noventix-not-found-art{width:min(100%,380px);height:210px;margin:1rem auto 1.6rem;position:relative;display:grid;place-items:center}
+.noventix-not-found-orbit{position:absolute;inset:14px 28px;border:2px solid #708090;border-radius:48% 52% 46% 54%;transform:rotate(-14deg)}
+.noventix-not-found-code{position:relative;font:800 clamp(5rem,18vw,9rem)/1 Estedad,system-ui,sans-serif;color:#6a0dad;letter-spacing:-.07em;direction:ltr}
+.noventix-not-found-dot{position:absolute;width:18px;height:18px;border-radius:50%;background:#b8860b;top:12px;right:32px}
+.noventix-not-found h1{font-size:clamp(1.65rem,4vw,2.7rem);margin-bottom:.6rem}
+.noventix-not-found p{color:#465666;font-size:1.05rem}
+.noventix-not-found-actions{display:flex;gap:.8rem;justify-content:center;flex-wrap:wrap;margin-top:1.6rem}
+.noventix-not-found-actions .btn-primary{background:#6a0dad;box-shadow:none}
+.noventix-not-found-actions .btn-primary:hover{background:#501080}
+.noventix-not-found-actions .btn-outline{border-color:#708090;color:#28123e}
+.noventix-not-found-actions [hidden]{display:none}
+@media (max-width:480px){.noventix-not-found-art{height:160px}.noventix-not-found-actions{flex-direction:column}.noventix-not-found-actions .btn{width:100%}}

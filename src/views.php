@@ -7,6 +7,7 @@ function head_page(string $title,string $description='',bool $panel=false): void
     global $me,$path;
     $full=($title==='خانه' ? 'Noventix | از یادگیری تا ساختن' : h($title).' | Noventix');
     echo '<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#201a35"><title>'.$full.'</title><meta name="description" content="'.h($description ?: 'Noventix؛ آموزش پروژه‌محور پایتون، علم داده و هوش مصنوعی از مطالعه تا ساختن.').'"><link rel="stylesheet" href="/assets/style.css"><script src="/assets/app.js" defer></script><script src="/assets/playback-events.js" defer></script></head><body class="'.($panel?'is-panel':'').'">';
+    echo '<div class="noventix-loading" id="noventix-loading" role="status" aria-live="polite" hidden><div class="noventix-loading-card"><span class="noventix-loading-mark" aria-hidden="true">N</span><strong>Noventix</strong><span class="noventix-loading-track" aria-hidden="true"><span></span></span><p>در حال آماده‌سازی...</p></div></div>';
     if ($panel) { panel_nav(); return; }
     echo '<header class="site-header"><div class="container header-inner"><a href="/" class="brand" aria-label="Noventix، صفحه اصلی"><img src="/assets/logo.png" alt="Noventix" width="171" height="55"></a><nav class="main-nav" aria-label="ناوبری اصلی">';
     foreach ([''=>'خانه','courses'=>'مسیر یادگیری','projects'=>'پروژه‌ها','community'=>'انجمن','pricing'=>'قیمت‌گذاری','about'=>'درباره ما','contact'=>'تماس با ما'] as $href=>$label) linkto($href,$label, $path===$href?'active':'');
@@ -16,6 +17,14 @@ function head_page(string $title,string $description='',bool $panel=false): void
     echo '</div><button class="menu-toggle" type="button" aria-label="باز کردن فهرست" aria-expanded="false" aria-controls="mobile-nav">☰</button></div><nav id="mobile-nav" class="mobile-nav" aria-label="ناوبری موبایل">';
     foreach ([''=>'خانه','courses'=>'مسیر یادگیری','projects'=>'پروژه‌ها','community'=>'انجمن','pricing'=>'قیمت‌گذاری','about'=>'درباره ما','contact'=>'تماس با ما','dashboard'=>'پنل من'] as $href=>$label) linkto($href,$label);
     echo '</nav></header>';
+}
+function page_not_found(): void {
+    http_response_code(404);
+    head_page('یافت نشد','صفحه مورد نظر پیدا نشد.');
+    echo '<main class="noventix-not-found"><section class="noventix-not-found-content" aria-labelledby="not-found-title"><span class="noventix-not-found-label">NOVENTIX / LOST PATH</span><div class="noventix-not-found-art" aria-hidden="true"><span class="noventix-not-found-orbit"></span><span class="noventix-not-found-code">404</span><span class="noventix-not-found-dot"></span></div><h1 id="not-found-title">اینجا چیزی برای پیدا کردن نیست!</h1><p>صفحه‌ای که دنبالش هستی پیدا نشد.</p><div class="noventix-not-found-actions">';
+    linkto('','بازگشت به صفحه اصلی','btn btn-primary');
+    echo '<a class="btn btn-outline" href="/" data-safe-back hidden>بازگشت به صفحه قبل</a></div></section></main>';
+    foot_page();
 }
 function panel_nav(): void {
     global $me,$path;
