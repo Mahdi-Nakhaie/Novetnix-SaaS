@@ -1,3 +1,5 @@
+import hashlib
+import json
 import pathlib
 import re
 import sqlite3
@@ -116,6 +118,95 @@ class ProgressPersistenceTest(unittest.TestCase):
         self.db.execute(self.save_sql(), (1, 1, 25, 25, 25))
         self.assertEqual(self.db.execute("SELECT completed,completed_at FROM lesson_progress WHERE user_id=1 AND lesson_id=1").fetchone(), (1, "2026-01-01 10:00:00"))
 
+    def test_learning_events_follow_verified_quiz_and_are_idempotent(self):
+        submit = body(APP, "submit_lesson_quiz")
+        once = body(APP, "record_learning_event_once")
+        complete = body(APP, "course_lessons_complete")
+        recorder = (ROOT / "database/connection.php").read_text(encoding="utf-8")
+        self.assertIn("record_activity_event($userId,$eventName,$metadata)", once)
+        self.assertIn("SELECT metadata FROM activities WHERE user_id=? AND event_name=?", once)
+        self.assertIn("($stored[$key] ?? null)===$id", once)
+        self.assertIn("record_learning_event_once($userId,'course_started'", submit)
+        self.assertIn("record_learning_event_once($userId,'lesson_started'", submit)
+        self.assertIn("record_learning_event_once($userId,'lesson_completed'", submit)
+        self.assertIn("record_learning_event_once($userId,'course_completed'", submit)
+        self.assertLess(submit.index('authorized_progress_lesson('), submit.index('record_learning_event_once('))
+        self.assertLess(submit.index('if ($passed===null)'), submit.index('record_learning_event_once('))
+        self.assertLess(submit.index('record_learning_event_once($userId,\'course_started\''), submit.index('if ($passed) {'))
+        self.assertLess(submit.index('verified_lesson_completion($progress'), submit.index('record_learning_event_once($userId,\'lesson_completed\''))
+        self.assertLess(submit.index('course_lessons_complete($userId,$courseId)'), submit.index('record_learning_event_once($userId,\'course_completed\''))
+        self.assertLess(submit.index('beginTransaction()'), submit.index('record_learning_event_once('))
+        self.assertLess(submit.index('record_learning_event_once($userId,\'course_completed\''), submit.index('$pdo->commit()'))
+        self.assertIn('SELECT user_id FROM enrollments WHERE user_id=? AND course_slug=? FOR UPDATE', submit)
+        self.assertIn('UPDATE enrollments SET created_at=created_at WHERE user_id=? AND course_slug=?', submit)
+        self.assertIn('if (!$lessons) return false', complete)
+        self.assertIn('verified_lesson_completion($lesson,lesson_quiz_for_lesson((int)$lesson[\'id\']))', complete)
+        self.assertNotIn('record_activity_event(', self.progress)
+        self.assertIn('INSERT INTO activities(user_id,event_name,metadata) VALUES (?,?,?)', recorder)
+
+        quiz = {'pass_percent': 100, 'questions': [{'prompt': 'Q', 'options': ['A', 'B'], 'correct': 0}]}
+        version = hashlib.sha256(json.dumps(quiz, ensure_ascii=False, separators=(',', ':')).encode()).hexdigest()
+        self.db.execute("INSERT INTO lessons(course_id,title,content,position,status) VALUES (1,'Second','',2,'published')")
+        self.db.executemany("INSERT INTO lesson_quizzes(lesson_id,pass_percent,questions_json) VALUES (?,?,?)", [(lesson, 100, json.dumps(quiz['questions'])) for lesson in (1, 3)])
+        lookup = re.search(r"'(SELECT metadata FROM activities WHERE user_id=\? AND event_name=\?)'", once).group(1)
+        insert = re.search(r"'(INSERT INTO activities\(user_id,event_name,metadata\) VALUES \(\?,\?,\?\))'", recorder).group(1)
+        upsert = re.search(r'"(INSERT INTO lesson_progress[^"\n]+ON CONFLICT\(user_id,lesson_id\) DO UPDATE[^"\n]+)"', submit).group(1)
+        counts = re.search(r'"(SELECT l\.id,p\.completed,p\.status,p\.completed_at,p\.quiz_version FROM lessons l LEFT JOIN lesson_progress p .*?l\.status=\'published\')"', complete).group(1)
+
+        def event(user, name, key, value, metadata):
+            for (raw,) in self.db.execute(lookup, (user, name)):
+                if json.loads(raw)[key] == value:
+                    return
+            self.db.execute(insert, (user, name, json.dumps(metadata)))
+
+        def full(user, course):
+            rows = self.db.execute(counts, (user, course)).fetchall()
+            if not rows:
+                return False
+            for lesson, completed, status, timestamp, saved_version in rows:
+                quiz_row = self.db.execute('SELECT pass_percent,questions_json FROM lesson_quizzes WHERE lesson_id=?', (lesson,)).fetchone()
+                if not quiz_row or completed != 1 or status != 'completed' or not timestamp:
+                    return False
+                current = {'pass_percent': quiz_row[0], 'questions': json.loads(quiz_row[1])}
+                if saved_version != hashlib.sha256(json.dumps(current, ensure_ascii=False, separators=(',', ':')).encode()).hexdigest():
+                    return False
+            return True
+
+        def attempt(user, lesson, passed):
+            access = re.search(r'"(SELECT l\.id FROM lessons l INNER JOIN courses c .*?c\.status=\'published\')"', body(APP, 'authorized_progress_lesson')).group(1)
+            if not self.db.execute(access, (user, lesson)).fetchone():
+                return False
+            course = self.db.execute('SELECT course_id FROM lessons WHERE id=?', (lesson,)).fetchone()[0]
+            self.db.execute('SAVEPOINT attempt')
+            event(user, 'course_started', 'course_id', course, {'course_id': course})
+            event(user, 'lesson_started', 'lesson_id', lesson, {'course_id': course, 'lesson_id': lesson})
+            if passed:
+                self.db.execute(upsert, (user, lesson, '2026-01-01 12:00:00', version))
+                event(user, 'lesson_completed', 'lesson_id', lesson, {'course_id': course, 'lesson_id': lesson})
+                if full(user, course):
+                    event(user, 'course_completed', 'course_id', course, {'course_id': course})
+            self.db.execute('RELEASE SAVEPOINT attempt')
+            return True
+
+        self.assertFalse(attempt(2, 1, True))
+        self.assertFalse(attempt(1, 2, True))
+        self.assertEqual(self.db.execute('SELECT COUNT(*) FROM activities').fetchone()[0], 0)
+        self.assertTrue(attempt(1, 1, False))
+        self.assertTrue(attempt(1, 1, False))
+        self.assertEqual(self.db.execute('SELECT event_name FROM activities ORDER BY id').fetchall(), [('course_started',), ('lesson_started',)])
+        self.assertTrue(attempt(1, 1, True))
+        self.assertTrue(attempt(1, 1, True))
+        self.assertEqual(self.db.execute('SELECT event_name FROM activities ORDER BY id').fetchall(), [('course_started',), ('lesson_started',), ('lesson_completed',)])
+        self.assertTrue(attempt(1, 3, True))
+        self.assertTrue(attempt(1, 3, True))
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM activities WHERE event_name='course_completed'").fetchone()[0], 1)
+        self.assertTrue(full(1, 1))
+        self.db.execute('UPDATE lesson_quizzes SET pass_percent=80 WHERE lesson_id=3')
+        self.assertFalse(full(1, 1))
+        rows = self.db.execute('SELECT user_id,event_name,metadata,created_at FROM activities ORDER BY id').fetchall()
+        self.assertEqual(len(rows), 6)
+        self.assertTrue(all(row[0] == 1 and row[3] and set(json.loads(row[2])) <= {'course_id', 'lesson_id'} for row in rows))
+
     def test_quiz_submission_reuses_authenticated_csrf_protected_progress_route(self):
         save = body(APP, "save_lesson_progress")
         submit = body(APP, "submit_lesson_quiz")
@@ -126,7 +217,8 @@ class ProgressPersistenceTest(unittest.TestCase):
         self.assertIn("$u=require_user()", body(APP, "handle_post"))
         self.assertIn("authorized_progress_lesson((int)$u['id'],$lessonId)", submit)
         self.assertIn("lesson_quiz_for_lesson($lessonId)", submit)
-        self.assertLess(submit.index("if (!$passed)"), submit.index("INSERT INTO lesson_progress"))
+        self.assertLess(submit.index("if ($passed===null)"), submit.index("INSERT INTO lesson_progress"))
+        self.assertIn("if ($passed) {", submit)
         self.assertIn("$correct*100 >= $quiz['pass_percent']*count($quiz['questions'])", grade)
         self.assertIn("count($answers)!==count($quiz['questions'])", grade)
         self.assertIn("(int)$answer===$question['correct']", grade)

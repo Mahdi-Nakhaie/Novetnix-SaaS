@@ -186,23 +186,54 @@ function lesson_quiz_passed(array $quiz,array $answers): ?bool {
     }
     return $correct*100 >= $quiz['pass_percent']*count($quiz['questions']);
 }
+function record_learning_event_once(int $userId,string $eventName,string $key,int $id,array $metadata): void {
+    foreach (q('SELECT metadata FROM activities WHERE user_id=? AND event_name=?',[$userId,$eventName])->fetchAll() as $event) {
+        $stored=json_decode((string)$event['metadata'],true);
+        if (is_array($stored) && ($stored[$key] ?? null)===$id) return;
+    }
+    record_activity_event($userId,$eventName,$metadata);
+}
+function course_lessons_complete(int $userId,int $courseId): bool {
+    $lessons=q("SELECT l.id,p.completed,p.status,p.completed_at,p.quiz_version FROM lessons l LEFT JOIN lesson_progress p ON p.lesson_id=l.id AND p.user_id=? WHERE l.course_id=? AND l.status='published'",[$userId,$courseId])->fetchAll();
+    if (!$lessons) return false;
+    foreach ($lessons as $lesson) if (!verified_lesson_completion($lesson,lesson_quiz_for_lesson((int)$lesson['id']))) return false;
+    return true;
+}
 function submit_lesson_quiz(array $u): void {
     $lessonId=filter_var($_POST['lesson_id'] ?? '',FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]);
     if ($lessonId===false || $lessonId===null || !authorized_progress_lesson((int)$u['id'],$lessonId)) progress_response(404,['error'=>'Lesson پیدا نشد یا دسترسی ندارید.']);
-    $course=q('SELECT c.slug FROM lessons l INNER JOIN courses c ON c.id=l.course_id WHERE l.id=?',[$lessonId])->fetch();
+    $course=q('SELECT c.id,c.slug FROM lessons l INNER JOIN courses c ON c.id=l.course_id WHERE l.id=?',[$lessonId])->fetch();
     $target='dashboard/course/'.$course['slug'].'?lesson='.$lessonId;
     $quiz=lesson_quiz_for_lesson($lessonId);
     if ($quiz===null) { flash('آزمون معتبر برای این درس منتشر نشده است.','error'); redirect($target); }
     $answers=$_POST['answers'] ?? null;
     $passed=is_array($answers) ? lesson_quiz_passed($quiz,$answers) : null;
     if ($passed===null) { flash('پاسخ‌های آزمون معتبر نیستند.','error'); redirect($target); }
-    if (!$passed) { flash('در آزمون پذیرفته نشدید؛ می‌توانید دوباره تلاش کنید.','error'); redirect($target); }
-    $at=gmdate('Y-m-d H:i:s');
-    $version=hash('sha256',json_encode($quiz,JSON_THROW_ON_ERROR));
+    $userId=(int)$u['id']; $courseId=(int)$course['id'];
+    $pdo=db();
     try {
-        if (db()->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql') q("INSERT INTO lesson_progress(user_id,lesson_id,completed,status,completed_at,quiz_version) VALUES (?,?,1,'completed',?,?) ON DUPLICATE KEY UPDATE completed_at=IF(completed=1 AND completed_at IS NOT NULL,completed_at,VALUES(completed_at)),completed=1,status='completed',quiz_version=VALUES(quiz_version),updated_at=CURRENT_TIMESTAMP",[$u['id'],$lessonId,$at,$version]);
-        else q("INSERT INTO lesson_progress(user_id,lesson_id,completed,status,completed_at,quiz_version) VALUES (?,?,1,'completed',?,?) ON CONFLICT(user_id,lesson_id) DO UPDATE SET completed_at=CASE WHEN lesson_progress.completed=1 AND lesson_progress.completed_at IS NOT NULL THEN lesson_progress.completed_at ELSE excluded.completed_at END,completed=1,status='completed',quiz_version=excluded.quiz_version,updated_at=CURRENT_TIMESTAMP",[$u['id'],$lessonId,$at,$version]);
-    } catch (Throwable $e) { progress_response(500,['error'=>'ثبت تکمیل درس انجام نشد.']); }
+        $pdo->beginTransaction();
+        if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql') q('SELECT user_id FROM enrollments WHERE user_id=? AND course_slug=? FOR UPDATE',[$userId,$course['slug']]);
+        else q('UPDATE enrollments SET created_at=created_at WHERE user_id=? AND course_slug=?',[$userId,$course['slug']]);
+        record_learning_event_once($userId,'course_started','course_id',$courseId,['course_id'=>$courseId]);
+        record_learning_event_once($userId,'lesson_started','lesson_id',$lessonId,['course_id'=>$courseId,'lesson_id'=>$lessonId]);
+        if ($passed) {
+            $at=gmdate('Y-m-d H:i:s');
+            $version=hash('sha256',json_encode($quiz,JSON_THROW_ON_ERROR));
+            if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql') q("INSERT INTO lesson_progress(user_id,lesson_id,completed,status,completed_at,quiz_version) VALUES (?,?,1,'completed',?,?) ON DUPLICATE KEY UPDATE completed_at=IF(completed=1 AND completed_at IS NOT NULL,completed_at,VALUES(completed_at)),completed=1,status='completed',quiz_version=VALUES(quiz_version),updated_at=CURRENT_TIMESTAMP",[$userId,$lessonId,$at,$version]);
+            else q("INSERT INTO lesson_progress(user_id,lesson_id,completed,status,completed_at,quiz_version) VALUES (?,?,1,'completed',?,?) ON CONFLICT(user_id,lesson_id) DO UPDATE SET completed_at=CASE WHEN lesson_progress.completed=1 AND lesson_progress.completed_at IS NOT NULL THEN lesson_progress.completed_at ELSE excluded.completed_at END,completed=1,status='completed',quiz_version=excluded.quiz_version,updated_at=CURRENT_TIMESTAMP",[$userId,$lessonId,$at,$version]);
+            $progress=q('SELECT completed,status,completed_at,quiz_version FROM lesson_progress WHERE user_id=? AND lesson_id=?',[$userId,$lessonId])->fetch();
+            if (verified_lesson_completion($progress ?: null,lesson_quiz_for_lesson($lessonId))) {
+                record_learning_event_once($userId,'lesson_completed','lesson_id',$lessonId,['course_id'=>$courseId,'lesson_id'=>$lessonId]);
+                if (course_lessons_complete($userId,$courseId)) record_learning_event_once($userId,'course_completed','course_id',$courseId,['course_id'=>$courseId]);
+            }
+        }
+        $pdo->commit();
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        progress_response(500,['error'=>'ثبت وضعیت یادگیری انجام نشد.']);
+    }
+    if (!$passed) { flash('در آزمون پذیرفته نشدید؛ می‌توانید دوباره تلاش کنید.','error'); redirect($target); }
     flash('آزمون را با موفقیت گذراندید؛ درس تکمیل شد.'); redirect($target);
 }
 function save_lesson_progress(array $u): void {
