@@ -26,10 +26,17 @@ function db(): PDO {
         if (in_array('sent_at',$names,true)) $db->exec('ALTER TABLE otp_codes RENAME COLUMN sent_at TO created_at');
         if (!in_array('used_at',$names,true)) $db->exec('ALTER TABLE otp_codes ADD COLUMN used_at '.($driver==='mysql' ? 'BIGINT NULL' : 'INTEGER'));
         if (!in_array('pending_password_hash',$names,true)) $db->exec('ALTER TABLE otp_codes ADD COLUMN pending_password_hash '.($driver==='mysql' ? 'VARCHAR(255) NULL' : 'TEXT'));
+        if (!in_array('pending_source',$names,true)) $db->exec("ALTER TABLE otp_codes ADD COLUMN pending_source ".($driver==='mysql' ? "VARCHAR(64) NOT NULL DEFAULT 'Unknown'" : "TEXT NOT NULL DEFAULT 'Unknown'"));
         try { $db->exec('ALTER TABLE users ADD COLUMN password_hash '.($driver==='mysql' ? "VARCHAR(255) NOT NULL DEFAULT ''" : "TEXT NOT NULL DEFAULT ''")); } catch (Throwable $e) { }
         $userColumns=$db->query('SELECT * FROM users LIMIT 0');
         $hasVerification=false;
-        for ($i=0; $i<$userColumns->columnCount(); $i++) if ($userColumns->getColumnMeta($i)['name']==='phone_verified_at') $hasVerification=true;
+        $hasAcquisitionSource=false;
+        for ($i=0; $i<$userColumns->columnCount(); $i++) {
+            $name=$userColumns->getColumnMeta($i)['name'];
+            if ($name==='phone_verified_at') $hasVerification=true;
+            if ($name==='acquisition_source') $hasAcquisitionSource=true;
+        }
+        if (!$hasAcquisitionSource) $db->exec("ALTER TABLE users ADD COLUMN acquisition_source ".($driver==='mysql' ? "VARCHAR(64) NOT NULL DEFAULT 'Unknown'" : "TEXT NOT NULL DEFAULT 'Unknown'"));
         if (!$hasVerification) {
             $db->exec('ALTER TABLE users ADD COLUMN phone_verified_at '.($driver==='mysql' ? 'BIGINT NULL' : 'INTEGER'));
             $db->exec('UPDATE users SET phone_verified_at=(SELECT used_at FROM otp_codes WHERE otp_codes.phone=users.phone AND used_at IS NOT NULL) WHERE EXISTS (SELECT 1 FROM otp_codes WHERE otp_codes.phone=users.phone AND used_at IS NOT NULL)');

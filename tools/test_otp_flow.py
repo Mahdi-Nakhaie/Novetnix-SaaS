@@ -21,6 +21,81 @@ def function_body(name):
 
 
 class OtpFlowTest(unittest.TestCase):
+    def test_acquisition_source_is_normalized_and_tied_to_verified_phone(self):
+        public = (ROOT / 'public/index.php').read_text(encoding='utf-8')
+        normalize = function_body('acquisition_source')
+        request = AUTH[AUTH.index("if ($path==='auth/request')"):AUTH.index("if ($path==='auth/resend')")]
+        resend = AUTH[AUTH.index("if ($path==='auth/resend')"):AUTH.index("if ($path==='auth/login')")]
+        verify = AUTH[AUTH.index("if ($path==='auth/verify')"):AUTH.index("if ($path==='auth/admin')")]
+        self.assertIn("$_SERVER['REQUEST_METHOD']==='GET' && !$me", public)
+        self.assertIn("array_key_exists('source',$_GET)", public)
+        self.assertIn("acquisition_source($_GET['source'])", public)
+        self.assertIn("!is_string($value) || strlen($value)>64", normalize)
+        self.assertIn("['instagram'=>'Instagram','bale'=>'Bale']", normalize)
+        self.assertIn("strtolower(trim($value))", normalize)
+        self.assertIn("?? 'Unknown'", normalize)
+        self.assertIn("acquisition_source($_SESSION['registration_source'] ?? null)", request)
+        self.assertIn("unset($_SESSION['registration_source'])", request)
+        self.assertIn("DELETE FROM otp_codes WHERE phone=?", function_body('store_otp'))
+        self.assertIn("pending_source FROM otp_codes WHERE phone=?", resend)
+        self.assertIn("acquisition_source($pending['pending_source'])", resend)
+        self.assertIn("$phone=(string)($_SESSION['verify_phone'] ?? '')", verify)
+        self.assertIn("acquisition_source($entry['pending_source'])", verify)
+        self.assertNotIn("$_POST['source']", verify)
+        self.assertNotIn("UPDATE users SET acquisition_source", AUTH)
+        self.assertNotIn("'acquisition_source'=>", AUTH)
+        self.assertNotIn("'source'=>", verify)
+
+    def test_acquisition_source_registration_and_migration(self):
+        insert_otp = re.search(r"'((?:INSERT INTO otp_codes\(phone,otp_hash,pending_password_hash,pending_source).*?VALUES \(\?,\?,\?,\?,\?,\?,\?\))'", AUTH).group(1)
+        insert_user = re.search(r"'((?:INSERT INTO users\(phone,name,password_hash,phone_verified_at,acquisition_source\)).*?VALUES \(\?,\?,\?,\?,\?\))'", AUTH).group(1)
+        db = sqlite3.connect(':memory:')
+        db.execute('PRAGMA foreign_keys=ON')
+        try:
+            db.executescript(SCHEMA)
+            for index, raw in enumerate(('  iNsTaGrAm  ', 'BALE', None, 'unrecognized', ['Instagram']), 1):
+                phone = f'091200000{index:02d}'
+                source = {'instagram': 'Instagram', 'bale': 'Bale'}.get(raw.strip().lower(), 'Unknown') if isinstance(raw, str) and len(raw) <= 64 else 'Unknown'
+                db.execute(insert_otp, (phone, 'hash', 'password-hash', source, 200, 0, 100))
+                entry = db.execute('SELECT pending_source FROM otp_codes WHERE phone=?', (phone,)).fetchone()
+                db.execute(insert_user, (phone, 'User', 'password-hash', 150, entry[0]))
+            self.assertEqual(db.execute('SELECT acquisition_source FROM users ORDER BY id').fetchall(), [('Instagram',), ('Bale',), ('Unknown',), ('Unknown',), ('Unknown',)])
+            db.execute(insert_otp, ('09120000006', 'hash', 'password-hash', 'Bale', 200, 0, 100))
+            db.execute(insert_user, ('09120000006', 'User', 'password-hash', 150, 'Bale'))
+            self.assertEqual(db.execute('SELECT acquisition_source FROM users WHERE id=1').fetchone()[0], 'Instagram')
+            self.assertEqual(db.execute('SELECT acquisition_source FROM users WHERE id=6').fetchone()[0], 'Bale')
+            db.execute("DELETE FROM otp_codes WHERE phone='09120000001'")
+            db.execute(insert_otp, ('09120000001', 'new-hash', 'new-password-hash', 'Unknown', 300, 0, 210))
+            self.assertEqual(db.execute("SELECT acquisition_source FROM users WHERE id=1").fetchone()[0], 'Instagram')
+            db.execute("INSERT INTO users(phone) VALUES ('09120000007')")
+            self.assertEqual(db.execute("SELECT acquisition_source FROM users WHERE phone='09120000007'").fetchone()[0], 'Unknown')
+            self.assertTrue(db.execute('SELECT id FROM users WHERE id=3 AND acquisition_source=?', ('Unknown',)).fetchone())
+            self.assertIn('DEFAULT \'Unknown\'', CONNECTION)
+            self.assertIn("if (!$hasAcquisitionSource)", CONNECTION)
+            self.assertIn("if (!in_array('pending_source',$names,true))", CONNECTION)
+        finally:
+            db.close()
+
+    def test_legacy_users_keep_source_default_on_migration(self):
+        db = sqlite3.connect(':memory:')
+        try:
+            db.execute('CREATE TABLE users (id INTEGER PRIMARY KEY, phone TEXT UNIQUE)')
+            db.execute('CREATE TABLE otp_codes (phone TEXT PRIMARY KEY, pending_password_hash TEXT)')
+            db.execute("INSERT INTO users(phone) VALUES ('09120000001')")
+            db.execute("INSERT INTO otp_codes(phone,pending_password_hash) VALUES ('09120000002','hash')")
+            for _ in range(2):
+                if 'acquisition_source' not in {row[1] for row in db.execute('PRAGMA table_info(users)')}:
+                    db.execute("ALTER TABLE users ADD COLUMN acquisition_source TEXT NOT NULL DEFAULT 'Unknown'")
+                if 'pending_source' not in {row[1] for row in db.execute('PRAGMA table_info(otp_codes)')}:
+                    db.execute("ALTER TABLE otp_codes ADD COLUMN pending_source TEXT NOT NULL DEFAULT 'Unknown'")
+            self.assertEqual(db.execute("SELECT pending_source FROM otp_codes").fetchone()[0], 'Unknown')
+            self.assertEqual(db.execute('SELECT phone,acquisition_source FROM users').fetchone(), ('09120000001', 'Unknown'))
+            db.execute("INSERT INTO users(phone,acquisition_source) VALUES ('09120000002','Telegram')")
+            self.assertEqual(db.execute('SELECT acquisition_source FROM users WHERE id=2').fetchone()[0], 'Telegram')
+            self.assertNotIn('ENUM(', (ROOT / 'database/schema.mysql.sql').read_text(encoding='utf-8').split('CREATE TABLE IF NOT EXISTS users')[1].split(';')[0].split('acquisition_source')[1].split('phone_verified_at')[0])
+        finally:
+            db.close()
+
     def test_generation_uses_csprng_with_six_digits(self):
         body = function_body("generate_otp")
         self.assertIn("random_int(0,999999)", body)
@@ -33,7 +108,7 @@ class OtpFlowTest(unittest.TestCase):
         self.assertIn("password_hash($code,PASSWORD_DEFAULT)", body)
         self.assertIn("beginTransaction", body)
         self.assertIn("DELETE FROM otp_codes WHERE phone=?", body)
-        self.assertIn("[$phone,$hash,$passwordHash,$now+otp_ttl_seconds(),0,$now]", body)
+        self.assertIn("[$phone,$hash,$passwordHash,$source,$now+otp_ttl_seconds(),0,$now]", body)
         self.assertNotIn("$code", body.split("INSERT INTO otp_codes")[1])
 
     def test_ttl_is_configurable(self):
@@ -69,7 +144,7 @@ class OtpFlowTest(unittest.TestCase):
     def test_registration_order_and_duplicate_mobile_are_preserved(self):
         request = AUTH[AUTH.index("if ($path==='auth/request')"):AUTH.index("if ($path==='auth/login')")]
         duplicate = request.index("SELECT 1 FROM users WHERE phone=?")
-        store = request.index("store_otp($phone,$code,time(),password_hash($password,PASSWORD_DEFAULT))")
+        store = request.index("store_otp($phone,$code,time(),password_hash($password,PASSWORD_DEFAULT),$source)")
         send = request.index("send_verification_code($phone,$code)")
         self.assertLess(duplicate, store)
         self.assertLess(store, send)
@@ -135,7 +210,7 @@ class OtpFlowTest(unittest.TestCase):
         self.assertIn("شماره موبایل یا رمز عبور صحیح نیست.", login)
         self.assertIn("$u['phone_verified_at']===null", function_body("user"))
         verify = AUTH[AUTH.index("if ($path==='auth/verify')"):AUTH.index("if ($path==='auth/admin')")]
-        self.assertIn("INSERT INTO users(phone,name,password_hash,phone_verified_at)", verify)
+        self.assertIn("INSERT INTO users(phone,name,password_hash,phone_verified_at,acquisition_source)", verify)
 
     def test_funnel_events_are_scoped_to_successful_auth_operations(self):
         request = AUTH[AUTH.index("if ($path==='auth/request')"):AUTH.index("if ($path==='auth/login')")]
@@ -147,10 +222,10 @@ class OtpFlowTest(unittest.TestCase):
         self.assertIn("record_activity_event($userId,'user_registered')", verify)
         self.assertIn("record_activity_event($userId,'user_verified')", verify)
         self.assertEqual(verify.count('record_activity_event('), 2)
-        for step in ("if ($used->rowCount()!==1)", "INSERT INTO users(phone,name,password_hash,phone_verified_at)", "$userId=(int)$db->lastInsertId()", "record_activity_event($userId,'user_registered')", "record_activity_event($userId,'user_verified')", '$db->commit()'):
+        for step in ("if ($used->rowCount()!==1)", "INSERT INTO users(phone,name,password_hash,phone_verified_at,acquisition_source)", "$userId=(int)$db->lastInsertId()", "record_activity_event($userId,'user_registered')", "record_activity_event($userId,'user_verified')", '$db->commit()'):
             self.assertIn(step, verify)
         self.assertLess(verify.index('password_verify($code,'), verify.index('beginTransaction()'))
-        self.assertLess(verify.index("INSERT INTO users(phone,name,password_hash,phone_verified_at)"), verify.index("record_activity_event($userId,'user_registered')"))
+        self.assertLess(verify.index("INSERT INTO users(phone,name,password_hash,phone_verified_at,acquisition_source)"), verify.index("record_activity_event($userId,'user_registered')"))
         self.assertLess(verify.index("record_activity_event($userId,'user_verified')"), verify.index('$db->commit()'))
         self.assertIn("record_activity_event((int)$u['id'],'user_logged_in')", login)
         self.assertEqual(login.count('record_activity_event('), 1)

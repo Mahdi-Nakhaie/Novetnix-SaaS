@@ -17,6 +17,7 @@ require_once dirname(__DIR__).'/src/views.php';
 require_once dirname(__DIR__).'/src/router.php';
 try { db(); } catch (Throwable $e) { http_response_code(503); exit('پایگاه‌داده در دسترس نیست. تنظیمات سرور را بررسی کنید.'); }
 $me=user();
+if ($_SERVER['REQUEST_METHOD']==='GET' && !$me && array_key_exists('source',$_GET)) $_SESSION['registration_source']=acquisition_source($_GET['source']);
 $plan=$me ? plan_for($me) : 'free';
 if ($_SERVER['REQUEST_METHOD']==='POST') handle_post($path);
 route();
