@@ -38,6 +38,9 @@ function acquisition_source(mixed $value): string {
     if (!is_string($value) || strlen($value)>64) return 'Unknown';
     return ['instagram'=>'Instagram','bale'=>'Bale'][strtolower(trim($value))] ?? 'Unknown';
 }
+function acquisition_campaign(mixed $value): ?string {
+    return is_string($value) && strlen($value)<=64 && preg_match('/^[a-z0-9][a-z0-9_-]{0,63}$/D',$value) ? $value : null;
+}
 function registration_error(string $message, string $first, string $last, string $phone): never {
     $_SESSION['registration_form']=['first_name'=>$first,'last_name'=>$last,'phone'=>$phone];
     flash($message,'error');
@@ -78,13 +81,13 @@ function reserve_otp_send(string $phone, int $now): ?string {
 }
 function generate_otp(): string { return str_pad((string)random_int(0,999999),6,'0',STR_PAD_LEFT); }
 // One row per phone: issuing a new code replaces the previous one, so only the latest code can verify.
-function store_otp(string $phone, string $code, int $now, ?string $passwordHash=null, string $source='Unknown'): string {
+function store_otp(string $phone, string $code, int $now, ?string $passwordHash=null, string $source='Unknown', ?string $campaign=null): string {
     $hash=password_hash($code,PASSWORD_DEFAULT);
     $db=db();
     $db->beginTransaction();
     try {
         q('DELETE FROM otp_codes WHERE phone=?',[$phone]);
-        q('INSERT INTO otp_codes(phone,otp_hash,pending_password_hash,pending_source,expires_at,attempts,created_at) VALUES (?,?,?,?,?,?,?)',[$phone,$hash,$passwordHash,$source,$now+otp_ttl_seconds(),0,$now]);
+        q('INSERT INTO otp_codes(phone,otp_hash,pending_password_hash,pending_source,pending_campaign,expires_at,attempts,created_at) VALUES (?,?,?,?,?,?,?,?)',[$phone,$hash,$passwordHash,$source,$campaign,$now+otp_ttl_seconds(),0,$now]);
         $db->commit();
         return $hash;
     } catch (Throwable $e) {
@@ -128,22 +131,23 @@ function handle_auth_post(string $path): bool {
         if ($wait!==null) registration_error($wait,$first,$last,$phone);
         $code=generate_otp();
         $source=acquisition_source($_SESSION['registration_source'] ?? null);
-        $hash=store_otp($phone,$code,time(),password_hash($password,PASSWORD_DEFAULT),$source);
+        $campaign=acquisition_campaign($_SESSION['registration_campaign'] ?? null);
+        $hash=store_otp($phone,$code,time(),password_hash($password,PASSWORD_DEFAULT),$source,$campaign);
         if (!send_verification_code($phone,$code)) { q('DELETE FROM otp_codes WHERE phone=? AND otp_hash=?',[$phone,$hash]); flash('ارسال پیامک فعلاً امکان‌پذیر نیست. کمی بعد دوباره تلاش کنید.','error'); redirect('login'); }
         $_SESSION['verify_phone']=$phone;
         $_SESSION['verify_name']=$first.' '.$last;
-        unset($_SESSION['registration_source']);
+        unset($_SESSION['registration_source'],$_SESSION['registration_campaign']);
         flash('کد تأیید ارسال شد. کد تا '.fa((int)ceil(otp_ttl_seconds()/60)).' دقیقه معتبر است.'); redirect('verify');
     }
     if ($path==='auth/resend') {
         $phone=(string)($_SESSION['verify_phone'] ?? '');
         if ($phone==='') { flash('درخواست تأییدی در جریان نیست؛ ابتدا ثبت‌نام کنید.','error'); redirect('login'); }
-        $pending=q('SELECT pending_password_hash,pending_source FROM otp_codes WHERE phone=?',[$phone])->fetch();
+        $pending=q('SELECT pending_password_hash,pending_source,pending_campaign FROM otp_codes WHERE phone=?',[$phone])->fetch();
         if (!$pending || !$pending['pending_password_hash']) { flash('درخواست تأییدی در جریان نیست؛ ابتدا ثبت‌نام کنید.','error'); redirect('login'); }
         $wait=reserve_otp_send($phone,time());
         if ($wait!==null) { flash($wait,'error'); redirect('verify'); }
         $code=generate_otp();
-        $hash=store_otp($phone,$code,time(),(string)$pending['pending_password_hash'],acquisition_source($pending['pending_source']));
+        $hash=store_otp($phone,$code,time(),(string)$pending['pending_password_hash'],acquisition_source($pending['pending_source']),acquisition_campaign($pending['pending_campaign']));
         if (!send_verification_code($phone,$code)) { q('UPDATE otp_codes SET attempts=5 WHERE phone=? AND otp_hash=? AND used_at IS NULL', [$phone,$hash]); flash('ارسال پیامک فعلاً امکان‌پذیر نیست. کمی بعد دوباره تلاش کنید.','error'); redirect('verify'); }
         flash('کد جدید ارسال شد و کد قبلی باطل شد. کد تا '.fa((int)ceil(otp_ttl_seconds()/60)).' دقیقه معتبر است.'); redirect('verify');
     }
@@ -189,7 +193,7 @@ function handle_auth_post(string $path): bool {
             $now=time();
             $used=q('UPDATE otp_codes SET used_at=?, pending_password_hash=NULL WHERE phone=? AND otp_hash=? AND used_at IS NULL AND expires_at>=? AND attempts<=?', [$now,$phone,$entry['otp_hash'],$now,$maxAttempts]);
             if ($used->rowCount()!==1) { $db->rollBack(); flash('این کد قبلاً استفاده شده یا منقضی شده است؛ دوباره درخواست دهید.','error'); redirect('login'); }
-            q('INSERT INTO users(phone,name,password_hash,phone_verified_at,acquisition_source) VALUES (?,?,?,?,?)',[$phone,(string)($_SESSION['verify_name'] ?? ''),(string)$entry['pending_password_hash'],$now,acquisition_source($entry['pending_source'])]);
+            q('INSERT INTO users(phone,name,password_hash,phone_verified_at,acquisition_source,acquisition_campaign) VALUES (?,?,?,?,?,?)',[$phone,(string)($_SESSION['verify_name'] ?? ''),(string)$entry['pending_password_hash'],$now,acquisition_source($entry['pending_source']),acquisition_campaign($entry['pending_campaign'])]);
             $userId=(int)$db->lastInsertId();
             record_activity_event($userId,'user_registered');
             record_activity_event($userId,'user_verified');
