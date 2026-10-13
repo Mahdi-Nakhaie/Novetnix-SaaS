@@ -268,9 +268,9 @@ class LeadLifecycleTest(unittest.TestCase):
         self.assertEqual(self.stage(), 'verified')
         self.assertIn("$percentage>=$rule['threshold']", body(APP, 'lead_stage_for_user'))
         self.assertIn("lead_progress_percentage($userId)", body(APP, 'lead_stage_for_user'))
-        self.assertIn("dashboard_course_progress_for_course($userId,(int)$course['id'])", body(APP, 'lead_progress_percentage'))
-        self.assertIn("$progress['completed']/$progress['total']*100", body(APP, 'lead_progress_percentage'))
-        self.assertIn("$progress['total']===0", body(APP, 'lead_progress_percentage'))
+        self.assertIn("dashboard_course_progress_for_course($userId,(int)$course['id'])", body(APP, 'lead_progress_summary'))
+        self.assertIn("$progress['completed']/$progress['total']*100", body(APP, 'lead_progress_summary'))
+        self.assertIn("$progress['total']===0", body(APP, 'lead_progress_summary'))
         self.assertNotIn("user_logged_in", body(APP, 'lead_stage_for_user'))
         self.assertEqual(APP.count("'threshold'=>50.0"), 1)
 

@@ -197,16 +197,20 @@ function dashboard_course_progress_for_course(int $userId,int $courseId): ?array
     $status=$total>0 && $completed===$total ? 'completed' : ($completed>0 ? 'in_progress' : 'not_started');
     return ['id'=>(int)$course['id'],'title'=>$course['title'],'slug'=>$course['slug'],'total'=>$total,'completed'=>$completed,'remaining'=>$total-$completed,'percentage'=>$total ? round($completed/$total*100,1) : 0,'status'=>$status,'verified_lessons'=>$verified];
 }
-function lead_progress_percentage(int $userId): ?float {
+function lead_progress_summary(int $userId): ?array {
     $courses=q("SELECT c.id FROM courses c INNER JOIN enrollments e ON e.course_slug=c.slug AND e.user_id=? WHERE c.status='published' ORDER BY c.id ASC",[$userId])->fetchAll();
     $best=null;
     foreach ($courses as $course) {
         $progress=dashboard_course_progress_for_course($userId,(int)$course['id']);
         if ($progress===null || $progress['total']===0) continue;
         $percentage=$progress['completed']/$progress['total']*100;
-        if ($best===null || $percentage>$best) $best=$percentage;
+        if ($best===null || $percentage>$best['percentage']) $best=array_replace($progress,['percentage'=>$percentage]);
     }
     return $best;
+}
+function lead_progress_percentage(int $userId): ?float {
+    $progress=lead_progress_summary($userId);
+    return $progress['percentage'] ?? null;
 }
 function lead_stage_for_user(int $userId): ?array {
     $user=q('SELECT phone_verified_at FROM users WHERE id=?',[$userId])->fetch();

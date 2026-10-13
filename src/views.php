@@ -304,14 +304,25 @@ function admin_panel(string $sub): void {
     if ($sub==='subscriptions') {
         echo '<div class="panel-heading"><h1>اشتراک‌ها</h1><p>فعال‌سازی دستی فقط بعد از تأیید پرداخت از مسیر رسمی انجام شود.</p></div><div class="panel-card narrow"><h2>فعال‌سازی اشتراک ۳۰ روزه</h2>'; form_start('admin/activate','stack-form'); echo '<label>شماره موبایل کاربر<input name="phone" type="tel" dir="ltr" placeholder="09123456789" required></label><label>پلن<select name="plan">'; foreach (PLANS as $id=>$p) if($id!=='free') echo '<option value="'.h($id).'">'.h($p['name']).'</option>'; echo '</select></label><button class="btn btn-primary">فعال‌سازی پس از تأیید پرداخت</button></form></div><div class="panel-card"><h2>اشتراک‌های اخیر</h2><div class="table-wrap"><table><thead><tr><th>شماره</th><th>پلن</th><th>وضعیت</th><th>پایان (UTC)</th></tr></thead><tbody>'; foreach (q('SELECT u.phone,s.plan,s.status,s.expires_at FROM subscriptions s JOIN users u ON u.id=s.user_id ORDER BY s.id DESC LIMIT 50')->fetchAll() as $r) echo '<tr><td dir="ltr">'.h($r['phone']).'</td><td>'.h(PLANS[$r['plan']]['name'] ?? $r['plan']).'</td><td>'.h($r['status']).'</td><td dir="ltr">'.h($r['expires_at']).'</td></tr>'; echo '</tbody></table></div></div>';
     } elseif ($sub==='users') {
-        panel_head('کاربران','فهرست حساب‌های ثبت‌شده از پایگاه‌داده.');
+        panel_head('کاربران','فهرست حساب‌های ثبت‌شده و وضعیت Lead و یادگیری آن‌ها.');
         try {
-            $rows=q('SELECT name,phone,phone_verified_at,created_at,acquisition_source FROM users ORDER BY id DESC LIMIT 100')->fetchAll();
-            echo '<div class="panel-card table-wrap"><table><thead><tr><th>نام و نام خانوادگی</th><th>شماره موبایل</th><th>تأیید شماره</th><th>تاریخ ثبت‌نام</th><th>منبع جذب</th></tr></thead><tbody>';
-            if (!$rows) echo '<tr><td colspan="5" class="muted">هنوز کاربری ثبت‌نام نکرده است.</td></tr>';
+            $rows=q('SELECT id,name,phone,acquisition_source,acquisition_campaign FROM users ORDER BY id DESC LIMIT 100')->fetchAll();
+            echo '<div class="panel-card table-wrap"><table><thead><tr><th>نام و نام خانوادگی</th><th>شماره موبایل</th><th>Lead Status</th><th>Course Progress</th><th>Completed Lessons</th><th>Course Completion</th><th>Source</th><th>Campaign</th></tr></thead><tbody>';
+            if (!$rows) echo '<tr><td colspan="8" class="muted">هنوز کاربری ثبت‌نام نکرده است.</td></tr>';
             foreach ($rows as $r) {
+                $stage=lead_stage_for_user((int)$r['id']);
+                $learning=lead_progress_summary((int)$r['id']);
+                $progress=$learning ? fa((string)round((float)$learning['percentage'],1)).'٪' : '—';
+                $completed=$learning ? fa((int)$learning['completed']) : '—';
+                $completion=match ($learning['status'] ?? null) {
+                    'completed'=>'Completed',
+                    'in_progress'=>'In Progress',
+                    'not_started'=>'Not Started',
+                    default=>'—'
+                };
                 $source=trim((string)($r['acquisition_source'] ?? '')) ?: 'Unknown';
-                echo '<tr><td>'.h(trim((string)$r['name']) ?: '—').'</td><td dir="ltr">'.h($r['phone']).'</td><td>'.($r['phone_verified_at']!==null?'تأیید شده':'تأیید نشده').'</td><td dir="ltr">'.h(jdate((string)$r['created_at'])).'</td><td>'.h($source).'</td></tr>';
+                $campaign=trim((string)($r['acquisition_campaign'] ?? '')) ?: '—';
+                echo '<tr><td>'.h(trim((string)$r['name']) ?: '—').'</td><td dir="ltr">'.h($r['phone']).'</td><td>'.h($stage['label'] ?? '—').'</td><td dir="ltr">'.h($progress).'</td><td>'.h($completed).'</td><td>'.h($completion).'</td><td>'.h($source).'</td><td dir="ltr">'.h($campaign).'</td></tr>';
             }
             echo '</tbody></table></div>';
         } catch (Throwable $e) {

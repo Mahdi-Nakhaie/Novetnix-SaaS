@@ -71,27 +71,32 @@ class AdminAuthorizationTest(unittest.TestCase):
         views = (ROOT / "src/views.php").read_text(encoding="utf-8")
         self.assertIn("elseif ($role==='admin') admin_panel($sub);", views)
         self.assertIn("$role==='admin'", views)
-        for query in ('SELECT name,phone,phone_verified_at,created_at,acquisition_source FROM users', 'SELECT * FROM contact_messages', 'SELECT u.phone,s.plan'):
+        for query in ('SELECT id,name,phone,acquisition_source,acquisition_campaign FROM users', 'SELECT * FROM contact_messages', 'SELECT u.phone,s.plan'):
             self.assertIn(query, views)
         self.assertNotIn("SELECT * FROM users ORDER BY id DESC LIMIT 100", views)
-        self.assertIn("elseif ($role==='admin') admin_panel($sub);", views)
-        self.assertIn("if (!$rows) echo '<tr><td colspan=\"5\"", views)
+        self.assertIn("lead_stage_for_user((int)$r['id'])", views)
+        self.assertIn("lead_progress_summary((int)$r['id'])", views)
+        self.assertIn("'Completed'", views)
+        self.assertIn("'In Progress'", views)
+        self.assertIn("'Not Started'", views)
+        self.assertIn("if (!$rows) echo '<tr><td colspan=\"8\"", views)
         self.assertIn("'Unknown'", views)
+        self.assertIn("'—'", views)
         self.assertIn("دریافت فهرست کاربران ممکن نشد", views)
     def test_user_listing_query_reads_real_fields_and_preserves_fallback(self):
-        query = re.search(r"q\('((?:SELECT name,phone,phone_verified_at,created_at,acquisition_source).*?)'\)", VIEWS).group(1)
+        query = re.search(r"q\('((?:SELECT id,name,phone,acquisition_source,acquisition_campaign).*?)'\)", VIEWS).group(1)
         db = sqlite3.connect(':memory:')
         try:
             db.executescript(SCHEMA)
-            db.executemany("INSERT INTO users(phone,name,phone_verified_at,acquisition_source,created_at) VALUES (?,?,?,?,?)", [
-                ('09120000001', 'تأییدشده', 1700000000, 'Instagram', '2026-01-01 00:00:00'),
-                ('09120000002', 'بدون منبع', None, 'Unknown', '2026-01-02 00:00:00'),
+            db.executemany("INSERT INTO users(phone,name,acquisition_source,acquisition_campaign) VALUES (?,?,?,?)", [
+                ('09120000001', 'کمپین اینستاگرام', 'Instagram', 'instagram_reel_01'),
+                ('09120000002', 'بدون منبع', 'Unknown', None),
             ])
             rows = db.execute(query).fetchall()
-            self.assertEqual(rows[0][0:3], ('بدون منبع', '09120000002', None))
-            self.assertEqual(rows[0][4], 'Unknown')
-            self.assertEqual(rows[1][0:3], ('تأییدشده', '09120000001', 1700000000))
-            self.assertEqual(rows[1][4], 'Instagram')
+            self.assertEqual(rows[0][0], 2)
+            self.assertEqual(rows[0][1:5], ('بدون منبع', '09120000002', 'Unknown', None))
+            self.assertEqual(rows[1][0], 1)
+            self.assertEqual(rows[1][1:5], ('کمپین اینستاگرام', '09120000001', 'Instagram', 'instagram_reel_01'))
         finally:
             db.close()
 
