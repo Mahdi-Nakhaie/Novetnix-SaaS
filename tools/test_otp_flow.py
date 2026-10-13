@@ -131,11 +131,68 @@ class OtpFlowTest(unittest.TestCase):
         self.assertIn("normalized_phone($phoneRaw)", login)
         self.assertIn("password_verify($password,$hash)", login)
         self.assertIn("$u['phone_verified_at']===null", login)
-        self.assertIn("session_regenerate_id(true); $_SESSION['uid']=(int)$u['id']", login)
+        self.assertLess(login.index('session_regenerate_id(true)'), login.index("$_SESSION['uid']=(int)$u['id']"))
         self.assertIn("شماره موبایل یا رمز عبور صحیح نیست.", login)
         self.assertIn("$u['phone_verified_at']===null", function_body("user"))
         verify = AUTH[AUTH.index("if ($path==='auth/verify')"):AUTH.index("if ($path==='auth/admin')")]
         self.assertIn("INSERT INTO users(phone,name,password_hash,phone_verified_at)", verify)
+
+    def test_funnel_events_are_scoped_to_successful_auth_operations(self):
+        request = AUTH[AUTH.index("if ($path==='auth/request')"):AUTH.index("if ($path==='auth/login')")]
+        login = AUTH[AUTH.index("if ($path==='auth/login')"):AUTH.index("if ($path==='auth/verify')")]
+        verify = AUTH[AUTH.index("if ($path==='auth/verify')"):AUTH.index("if ($path==='auth/admin')")]
+        admin = AUTH[AUTH.index("if ($path==='auth/admin')"):AUTH.index("if ($path==='logout')")]
+        self.assertNotIn('record_activity_event(', request)
+        self.assertNotIn('record_activity_event(', admin)
+        self.assertIn("record_activity_event($userId,'user_registered')", verify)
+        self.assertIn("record_activity_event($userId,'user_verified')", verify)
+        self.assertEqual(verify.count('record_activity_event('), 2)
+        for step in ("if ($used->rowCount()!==1)", "INSERT INTO users(phone,name,password_hash,phone_verified_at)", "$userId=(int)$db->lastInsertId()", "record_activity_event($userId,'user_registered')", "record_activity_event($userId,'user_verified')", '$db->commit()'):
+            self.assertIn(step, verify)
+        self.assertLess(verify.index('password_verify($code,'), verify.index('beginTransaction()'))
+        self.assertLess(verify.index("INSERT INTO users(phone,name,password_hash,phone_verified_at)"), verify.index("record_activity_event($userId,'user_registered')"))
+        self.assertLess(verify.index("record_activity_event($userId,'user_verified')"), verify.index('$db->commit()'))
+        self.assertIn("record_activity_event((int)$u['id'],'user_logged_in')", login)
+        self.assertEqual(login.count('record_activity_event('), 1)
+        self.assertLess(login.index('if (!$u || $u[\'phone_verified_at\']===null || !$passwordValid)'), login.index('session_regenerate_id(true)'))
+        self.assertLess(login.index("$_SESSION['uid']=(int)$u['id']"), login.index("record_activity_event((int)$u['id'],'user_logged_in')"))
+        self.assertNotIn('record_activity_event(', AUTH[AUTH.index("if ($path==='logout')"):])
+        recorder = CONNECTION[CONNECTION.index('function record_activity_event('):]
+        self.assertIn("INSERT INTO activities(user_id,event_name,metadata) VALUES (?,?,?)", recorder)
+        self.assertNotRegex(login + verify, r"record_activity_event\([^;]*\[(?:[^]]*\$(?:password|code|hash|token|session))")
+        self.assertNotIn('INSERT INTO activities', login + verify)
+
+    def test_funnel_success_failure_and_retry_preserve_distinct_events(self):
+        db = sqlite3.connect(':memory:')
+        db.execute('PRAGMA foreign_keys=ON')
+        try:
+            db.executescript(SCHEMA)
+            db.execute("INSERT INTO otp_codes(phone,otp_hash,pending_password_hash,expires_at,created_at) VALUES ('09120000101','otp-hash','password-hash',200,100)")
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM activities').fetchone()[0], 0)
+            db.commit()
+            db.execute('BEGIN')
+            used = db.execute('UPDATE otp_codes SET used_at=?,pending_password_hash=NULL WHERE phone=? AND otp_hash=? AND used_at IS NULL AND expires_at>=?', (150, '09120000101', 'otp-hash', 150))
+            self.assertEqual(used.rowcount, 1)
+            db.execute("INSERT INTO users(phone,phone_verified_at) VALUES ('09120000101',150)")
+            user_id = db.execute('SELECT id FROM users WHERE phone=?', ('09120000101',)).fetchone()[0]
+            for event in ('user_registered', 'user_verified'):
+                db.execute('INSERT INTO activities(user_id,event_name,metadata) VALUES (?,?,?)', (user_id, event, None))
+            db.commit()
+            self.assertEqual(db.execute('UPDATE otp_codes SET used_at=160 WHERE phone=? AND used_at IS NULL', ('09120000101',)).rowcount, 0)
+            db.execute('INSERT INTO activities(user_id,event_name,metadata) VALUES (?,?,?)', (user_id, 'user_logged_in', None))
+            db.commit()
+            rows = db.execute('SELECT user_id,event_name,created_at,metadata FROM activities ORDER BY id').fetchall()
+            self.assertEqual([row[1] for row in rows], ['user_registered', 'user_verified', 'user_logged_in'])
+            self.assertTrue(all(row[0] == user_id and row[2] and row[3] is None for row in rows))
+            db.execute('BEGIN')
+            db.execute("INSERT INTO users(phone,phone_verified_at) VALUES ('09120000102',160)")
+            other_id = db.execute("SELECT id FROM users WHERE phone='09120000102'").fetchone()[0]
+            db.execute('INSERT INTO activities(user_id,event_name) VALUES (?,?)', (other_id, 'user_registered'))
+            db.rollback()
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM activities').fetchone()[0], 3)
+            self.assertIsNone(db.execute("SELECT id FROM users WHERE phone='09120000102'").fetchone())
+        finally:
+            db.close()
 
     def test_legacy_verified_users_keep_progress_when_migrated(self):
         db = sqlite3.connect(":memory:")

@@ -1,3 +1,4 @@
+import json
 import pathlib
 import re
 import sqlite3
@@ -161,13 +162,66 @@ class CoreSchemaTest(unittest.TestCase):
 
     def test_activities_require_user_and_support_history_lookup(self):
         self.db.execute("INSERT INTO users(phone) VALUES ('09123456789')")
-        self.db.executemany("INSERT INTO activities(user_id,kind) VALUES (1,?)", [('lesson_completed',), ('code_run',)])
+        self.db.executemany("INSERT INTO activities(user_id,event_name,metadata) VALUES (1,?,?)", [('lesson_completed', None), ('code_run', json.dumps({'source': 'editor', 'attempt': 2}))])
         with self.assertRaises(sqlite3.IntegrityError):
-            self.db.execute("INSERT INTO activities(user_id,kind) VALUES (999,'code_run')")
+            self.db.execute("INSERT INTO activities(user_id,event_name) VALUES (999,'code_run')")
+        for event_name in (None, '', '  '):
+            with self.assertRaises(sqlite3.IntegrityError):
+                self.db.execute('INSERT INTO activities(user_id,event_name) VALUES (1,?)', (event_name,))
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute("INSERT INTO activities(user_id,event_name,metadata) VALUES (1,'code_run','{invalid')")
         with self.assertRaises(sqlite3.IntegrityError):
             self.db.execute('DELETE FROM users WHERE id=1')
-        self.assertEqual(self.db.execute('SELECT kind FROM activities WHERE user_id=1 ORDER BY created_at,id').fetchall(), [('lesson_completed',), ('code_run',)])
+        rows = self.db.execute('SELECT id,event_name,created_at,metadata FROM activities WHERE user_id=1 ORDER BY created_at,id').fetchall()
+        self.assertEqual([row[1] for row in rows], ['lesson_completed', 'code_run'])
+        self.assertEqual([row[0] for row in rows], [1, 2])
+        self.assertTrue(all(row[2] for row in rows))
+        self.assertIsNone(rows[0][3])
+        self.assertEqual(json.loads(rows[1][3]), {'source': 'editor', 'attempt': 2})
+        self.assertEqual(self.db.execute("SELECT event_name FROM activities WHERE event_name='code_run' AND created_at>=?", ('2000-01-01',)).fetchone(), ('code_run',))
         self.assertTrue(any(row[1] == 'idx_activities_user_created' for row in self.db.execute('PRAGMA index_list(activities)')))
+        self.assertTrue(any(row[1] == 'idx_activities_created' for row in self.db.execute('PRAGMA index_list(activities)')))
+
+    def test_activities_migration_preserves_legacy_events_and_is_repeatable(self):
+        connection = (ROOT / 'database/connection.php').read_text(encoding='utf-8')
+        rename = re.search(r"\$db->exec\('(ALTER TABLE activities RENAME COLUMN kind TO event_name)'\)", connection).group(1)
+        add_metadata = re.search(r"\$driver==='mysql' \? 'JSON NULL' : '(TEXT)'", connection).group(1)
+        create_index = re.search(r"\$db->exec\('(CREATE INDEX IF NOT EXISTS idx_activities_event_created ON activities\(event_name,created_at\))'\)", connection).group(1)
+        legacy = sqlite3.connect(':memory:')
+        try:
+            legacy.execute('PRAGMA foreign_keys=ON')
+            legacy.execute('CREATE TABLE users(id INTEGER PRIMARY KEY)')
+            legacy.execute('INSERT INTO users(id) VALUES (1)')
+            legacy.execute('CREATE TABLE activities(id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, kind TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(user_id) REFERENCES users(id))')
+            legacy.execute('CREATE INDEX idx_activities_user_created ON activities(user_id,created_at)')
+            legacy.execute("INSERT INTO activities(user_id,kind,created_at) VALUES (1,'old_event','2026-01-01 12:00:00')")
+            legacy.executescript(SQLITE_SCHEMA)
+            for _ in range(2):
+                columns = {row[1] for row in legacy.execute('PRAGMA table_info(activities)')}
+                if 'kind' in columns:
+                    legacy.execute(rename)
+                if 'metadata' not in columns:
+                    legacy.execute('ALTER TABLE activities ADD COLUMN metadata ' + add_metadata)
+                legacy.execute(create_index)
+            self.assertEqual(legacy.execute('SELECT id,user_id,event_name,created_at,metadata FROM activities').fetchall(), [(1, 1, 'old_event', '2026-01-01 12:00:00', None)])
+            legacy.execute('INSERT INTO activities(user_id,event_name,metadata) VALUES (1,?,?)', ('new_event', '{"x":1}'))
+            self.assertEqual(legacy.execute('SELECT event_name FROM activities WHERE event_name=? AND created_at>=?', ('new_event', '2000-01-01')).fetchone(), ('new_event',))
+            self.assertTrue(any(row[1] == 'idx_activities_event_created' for row in legacy.execute('PRAGMA index_list(activities)')))
+            self.assertEqual(legacy.execute('PRAGMA foreign_key_check').fetchall(), [])
+        finally:
+            legacy.close()
+
+    def test_activity_recorder_and_mysql_contract(self):
+        connection = (ROOT / 'database/connection.php').read_text(encoding='utf-8')
+        self.assertIn('function record_activity_event(int $userId, string $eventName, ?array $metadata=null): int', connection)
+        self.assertIn('json_encode($metadata,JSON_THROW_ON_ERROR)', connection)
+        self.assertIn("q('INSERT INTO activities(user_id,event_name,metadata) VALUES (?,?,?)'", connection)
+        self.assertIn('return (int)db()->lastInsertId()', connection)
+        self.assertIn('metadata JSON NULL', MYSQL_SCHEMA)
+        self.assertIn('INDEX idx_activities_event_created (event_name,created_at)', MYSQL_SCHEMA)
+        self.assertIn('INDEX idx_activities_user_created (user_id,created_at)', MYSQL_SCHEMA)
+        self.assertIn('INDEX idx_activities_created (created_at)', MYSQL_SCHEMA)
+        self.assertIn("SHOW INDEX FROM activities WHERE Key_name='idx_activities_event_created'", connection)
 
     def test_leads_require_contact_and_track_status(self):
         self.db.execute("INSERT INTO leads(name,email,source) VALUES ('A','a@example.com','contact')")

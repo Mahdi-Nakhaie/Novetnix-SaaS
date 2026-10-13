@@ -78,8 +78,9 @@ class DashboardCourseProgressTest(unittest.TestCase):
         self.db.executemany("INSERT INTO lesson_quizzes(lesson_id,pass_percent,questions_json) VALUES (?,?,?)", [(i, 100, '[{"prompt":"Q","options":["A","B"],"correct":0}]') for i in (1, 2, 4)])
         self.version = hashlib.sha256(json.dumps({"pass_percent": 100, "questions": [{"prompt": "Q", "options": ["A", "B"], "correct": 0}]}, ensure_ascii=False, separators=(',', ':')).encode()).hexdigest()
         loader = body(APP, "dashboard_course_progress")
-        self.course_sql = re.search(r'"(SELECT c\.id,c\.slug,c\.title .*? LIMIT 1)"', loader).group(1)
-        self.count_sql = re.search(r'"(SELECT l\.id,p\.completed,p\.status,p\.completed_at,p\.quiz_version FROM lessons l LEFT JOIN lesson_progress p .*?l\.status=\'published\')"', loader).group(1)
+        helper = body(APP, "dashboard_course_progress_for_course")
+        self.course_sql = re.search(r'"(SELECT c\.id FROM courses .*? LIMIT 1)"', loader).group(1)
+        self.count_sql = re.search(r'"(SELECT l\.id,p\.completed,p\.status,p\.completed_at,p\.quiz_version FROM lessons l LEFT JOIN lesson_progress p .*?l\.status=\'published\')"', helper).group(1)
 
     def tearDown(self):
         self.db.close()
@@ -157,7 +158,7 @@ class DashboardCourseProgressTest(unittest.TestCase):
     def test_empty_unenrolled_and_invalid_progress(self):
         self.db.execute("INSERT INTO enrollments(user_id,course_slug,created_at) VALUES (1,'empty','2026-01-03')")
         self.assertEqual(self.totals(1, "empty"), (0, 0, 0, 0))
-        self.assertEqual(self.db.execute(self.course_sql, (1,)).fetchone()[1], "empty")
+        self.assertEqual(self.db.execute(self.course_sql, (1,)).fetchone()[0], 3)
         self.assertIsNone(self.db.execute(self.course_sql, (999,)).fetchone())
         self.db.execute("UPDATE enrollments SET created_at='2026-01-01' WHERE course_slug='empty'")
         self.db.execute("INSERT INTO lesson_progress(user_id,lesson_id,completed) VALUES (1,1,0)")
@@ -169,14 +170,109 @@ class DashboardCourseProgressTest(unittest.TestCase):
         self.assertIn("dashboard_course_progress((int)$me['id'])", view)
         for field in ("title", "total", "completed", "remaining", "percentage"):
             self.assertIn("$courseProgress['" + field + "']", view)
-        self.assertIn("$total-$completed", loader)
-        self.assertIn("$total ? round($completed/$total*100,1) : 0", loader)
+        helper = body(APP, "dashboard_course_progress_for_course")
+        self.assertIn("return $course ? dashboard_course_progress_for_course($userId,(int)$course['id']) : null", loader)
+        self.assertIn("$total-$completed", helper)
+        self.assertIn("$total ? round($completed/$total*100,1) : 0", helper)
         self.assertIn('role="progressbar"', view)
         self.assertIn('aria-valuenow="\'.h($courseProgress[\'percentage\'])', view)
-        self.assertIn("verified_lesson_completion($lesson,lesson_quiz_for_lesson((int)$lesson['id']))", loader)
+        self.assertIn("verified_lesson_completion($lesson,lesson_quiz_for_lesson((int)$lesson['id']))", helper)
         self.assertIn("$courseProgress['status']", view)
         self.assertIn("$courseProgress['status']==='completed'", body(APP, "dashboard_active_lesson"))
         self.assertNotIn("challenge_progress", self.count_sql)
+
+
+class LeadLifecycleTest(unittest.TestCase):
+    def setUp(self):
+        DashboardCourseProgressTest.setUp(self)
+        self.db.execute("UPDATE users SET password_hash='hash' WHERE id IN (1,2)")
+        rules = re.search(r'const LEAD_STAGES = \[(.*?)\];', APP, re.S).group(1)
+        self.stages = re.findall(r"\['stage'=>'([^']+)','label'=>'([^']+)','threshold'=>([0-9.]+)\]", rules)
+
+    def tearDown(self):
+        self.db.close()
+
+    def stage(self, user=1):
+        row = self.db.execute("SELECT phone_verified_at FROM users WHERE id=?", (user,)).fetchone()
+        if not row:
+            return None
+        if row[0] is None:
+            return self.stages[0][0]
+        best = None
+        courses = self.db.execute("SELECT c.id FROM courses c INNER JOIN enrollments e ON e.course_slug=c.slug AND e.user_id=? WHERE c.status='published' ORDER BY c.id ASC", (user,)).fetchall()
+        for (course_id,) in courses:
+            rows = self.db.execute(self.count_sql, (user, course_id)).fetchall()
+            total = len(rows)
+            completed = 0
+            for lesson_id, flag, status, timestamp, version in rows:
+                quiz = self.db.execute('SELECT pass_percent,questions_json FROM lesson_quizzes WHERE lesson_id=?', (lesson_id,)).fetchone()
+                if quiz and flag == 1 and status == 'completed' and timestamp and version == hashlib.sha256(json.dumps({'pass_percent': quiz[0], 'questions': json.loads(quiz[1])}, ensure_ascii=False, separators=(',', ':')).encode()).hexdigest():
+                    completed += 1
+            percent = completed / total * 100 if total else 0
+            if total and (best is None or percent > best):
+                best = percent
+        index = 1
+        if best is not None:
+            for i, (_, _, limit) in enumerate(self.stages[2:], 2):
+                if best >= float(limit):
+                    index = i
+        return self.stages[index][0]
+
+    def complete(self, lesson, user=1):
+        self.db.execute("INSERT INTO lesson_progress(user_id,lesson_id,completed,status,completed_at,quiz_version) VALUES (?,?,1,'completed','2026-01-01',?)", (user, lesson, self.version))
+
+    def test_registration_verification_and_login_do_not_replace_evidence(self):
+        self.db.execute("UPDATE users SET phone_verified_at=NULL WHERE id=1")
+        self.assertEqual(self.stage(), 'registered')
+        self.complete(1)
+        self.assertEqual(self.stage(), 'registered')
+        self.db.execute("UPDATE users SET phone_verified_at=100 WHERE id=1")
+        self.assertEqual(self.stage(), 'qualified')
+        self.db.execute("INSERT INTO activities(user_id,event_name) VALUES (1,'user_logged_in')")
+        self.assertEqual(self.stage(), 'qualified')
+        self.assertIsNone(self.stage(999))
+        self.db.execute("UPDATE users SET password_hash='' WHERE id=1")
+        self.assertEqual(self.stage(), 'qualified')
+
+    def test_less_than_boundary_boundary_and_full_completion(self):
+        self.db.execute("INSERT INTO lessons(course_id,title,content,position,status) VALUES (1,'D','',4,'published')")
+        self.assertEqual(self.stage(), 'verified')
+        self.complete(1)
+        self.assertEqual(self.stage(), 'verified')
+        self.db.execute("DELETE FROM lessons WHERE id=5")
+        self.assertEqual(self.stage(), 'qualified')
+        self.complete(2)
+        self.assertEqual(self.stage(), 'high_intent')
+        self.assertEqual(self.stages[2][2], '50.0')
+        self.assertEqual(self.stages[3][2], '100.0')
+
+    def test_missing_and_stale_evidence_cannot_promote(self):
+        self.assertEqual(self.stage(), 'verified')
+        self.db.execute("INSERT INTO users(phone,name,phone_verified_at) VALUES ('09120000003','C',100)")
+        self.assertEqual(self.stage(3), 'verified')
+        self.db.execute("INSERT INTO enrollments(user_id,course_slug) VALUES (1,'empty')")
+        self.assertEqual(self.stage(), 'verified')
+        self.db.execute("INSERT INTO lesson_progress(user_id,lesson_id,percentage,completed,status,completed_at) VALUES (1,1,100,1,'completed','2026-01-01')")
+        self.assertEqual(self.stage(), 'verified')
+        self.db.execute("UPDATE lesson_progress SET quiz_version=? WHERE lesson_id=1", (self.version,))
+        self.assertEqual(self.stage(), 'qualified')
+        self.db.execute("UPDATE lesson_quizzes SET pass_percent=90 WHERE lesson_id=1")
+        self.assertEqual(self.stage(), 'verified')
+        self.db.execute("UPDATE courses SET status='draft' WHERE id=1")
+        self.assertEqual(self.stage(), 'verified')
+
+    def test_threshold_is_only_defined_in_central_rules(self):
+        self.complete(1)
+        self.assertEqual(self.stage(), 'qualified')
+        self.stages[2] = ('qualified', 'Qualified', '51.0')
+        self.assertEqual(self.stage(), 'verified')
+        self.assertIn("$percentage>=$rule['threshold']", body(APP, 'lead_stage_for_user'))
+        self.assertIn("lead_progress_percentage($userId)", body(APP, 'lead_stage_for_user'))
+        self.assertIn("dashboard_course_progress_for_course($userId,(int)$course['id'])", body(APP, 'lead_progress_percentage'))
+        self.assertIn("$progress['completed']/$progress['total']*100", body(APP, 'lead_progress_percentage'))
+        self.assertIn("$progress['total']===0", body(APP, 'lead_progress_percentage'))
+        self.assertNotIn("user_logged_in", body(APP, 'lead_stage_for_user'))
+        self.assertEqual(APP.count("'threshold'=>50.0"), 1)
 
 
 class DashboardActiveLessonTest(unittest.TestCase):
@@ -250,7 +346,7 @@ class DashboardActiveLessonTest(unittest.TestCase):
         self.db.execute("PRAGMA ignore_check_constraints=ON")
         self.db.execute("UPDATE lesson_progress SET last_position=-4 WHERE lesson_id=2")
         self.db.execute("PRAGMA ignore_check_constraints=OFF")
-        self.db.execute("INSERT INTO activities(user_id,kind) VALUES (1,'lesson')")
+        self.db.execute("INSERT INTO activities(user_id,event_name) VALUES (1,'lesson')")
         self.assertEqual(self.candidates()[1][0][2], -4)
         self.assertIn("progress_number($row['last_position'])!==null", body(APP, "dashboard_active_lesson"))
         self.assertNotIn("FROM activities", body(APP, "dashboard_active_lesson"))

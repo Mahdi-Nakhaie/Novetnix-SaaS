@@ -90,7 +90,7 @@ class ProgressPersistenceTest(unittest.TestCase):
         self.db.execute("INSERT INTO lesson_progress(user_id,lesson_id,completed,status,completed_at) VALUES (1,1,1,'completed','2026-01-01 10:00:00')")
         for _ in range(3):
             self.db.execute(sql, (1, 1, 100, 100, 80))
-        rows = re.search(r'"(SELECT l\.id,p\.completed,p\.status,p\.completed_at,p\.quiz_version FROM lessons l LEFT JOIN lesson_progress p .*?l\.status=\'published\')"', body(APP, "dashboard_course_progress")).group(1)
+        rows = re.search(r'"(SELECT l\.id,p\.completed,p\.status,p\.completed_at,p\.quiz_version FROM lessons l LEFT JOIN lesson_progress p .*?l\.status=\'published\')"', body(APP, "dashboard_course_progress_for_course")).group(1)
         self.assertEqual(self.db.execute(rows, (1, 1)).fetchall(), [(1, 1, 'completed', '2026-01-01 10:00:00', None)])
         self.assertEqual(self.db.execute(rows, (2, 1)).fetchone()[1], None)
         self.assertEqual(self.db.execute(rows, (1, 2)).fetchone()[1], None)
@@ -111,7 +111,7 @@ class ProgressPersistenceTest(unittest.TestCase):
         self.db.execute(sql, (2, 2, "2026-03-03 12:00:00", "v1"))
         self.assertEqual(self.db.execute("SELECT completed,completed_at FROM lesson_progress WHERE user_id=1 AND lesson_id=2").fetchone(), (0, None))
         self.assertEqual(self.db.execute("SELECT completed,completed_at FROM lesson_progress WHERE user_id=2 AND lesson_id=2").fetchone(), (1, "2026-03-03 12:00:00"))
-        rows = re.search(r'"(SELECT l\.id,p\.completed,p\.status,p\.completed_at,p\.quiz_version FROM lessons l LEFT JOIN lesson_progress p .*?l\.status=\'published\')"', body(APP, "dashboard_course_progress")).group(1)
+        rows = re.search(r'"(SELECT l\.id,p\.completed,p\.status,p\.completed_at,p\.quiz_version FROM lessons l LEFT JOIN lesson_progress p .*?l\.status=\'published\')"', body(APP, "dashboard_course_progress_for_course")).group(1)
         self.assertEqual(self.db.execute(rows, (1, 1)).fetchone()[1], 1)
         self.assertIsNone(self.db.execute(rows, (2, 1)).fetchone()[1])
         self.assertEqual(self.db.execute(rows, (2, 2)).fetchone()[1], 1)

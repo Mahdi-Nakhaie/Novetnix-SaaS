@@ -151,7 +151,9 @@ function handle_auth_post(string $path): bool {
         $hash=$u && $u['password_hash']!=='' ? (string)$u['password_hash'] : $dummyHash;
         $passwordValid=password_verify($password,$hash);
         if (!$u || $u['phone_verified_at']===null || !$passwordValid) { flash('شماره موبایل یا رمز عبور صحیح نیست.','error'); redirect('login'); }
-        session_regenerate_id(true); $_SESSION['uid']=(int)$u['id']; unset($_SESSION['admin_verified_uid']);
+        if (!session_regenerate_id(true)) throw new RuntimeException('Session renewal failed.');
+        $_SESSION['uid']=(int)$u['id']; unset($_SESSION['admin_verified_uid']);
+        record_activity_event((int)$u['id'],'user_logged_in');
         if ($phone===(config_value('ADMIN_PHONE') ?: '')) redirect('admin-login');
         flash('خوش آمدید!'); redirect('dashboard');
     }
@@ -183,6 +185,8 @@ function handle_auth_post(string $path): bool {
             if ($used->rowCount()!==1) { $db->rollBack(); flash('این کد قبلاً استفاده شده یا منقضی شده است؛ دوباره درخواست دهید.','error'); redirect('login'); }
             q('INSERT INTO users(phone,name,password_hash,phone_verified_at) VALUES (?,?,?,?)',[$phone,(string)($_SESSION['verify_name'] ?? ''),(string)$entry['pending_password_hash'],$now]);
             $userId=(int)$db->lastInsertId();
+            record_activity_event($userId,'user_registered');
+            record_activity_event($userId,'user_verified');
             $db->commit();
         } catch (PDOException $e) {
             if ($db->inTransaction()) $db->rollBack();

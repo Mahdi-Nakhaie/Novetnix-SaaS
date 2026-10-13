@@ -69,6 +69,15 @@ function db(): PDO {
         ];
         foreach ($progressDefinitions as $name=>$definition) if (!in_array($name,$progressNames,true)) $db->exec('ALTER TABLE lesson_progress ADD COLUMN '.$name.' '.$definition);
         if (!in_array('completed',$progressNames,true)) $db->exec("UPDATE lesson_progress SET completed=CASE WHEN status='completed' THEN 1 ELSE 0 END");
+        $activityColumns=$db->query('SELECT * FROM activities LIMIT 0');
+        $activityNames=[];
+        for ($i=0; $i<$activityColumns->columnCount(); $i++) $activityNames[]=$activityColumns->getColumnMeta($i)['name'];
+        if (in_array('kind',$activityNames,true)) $db->exec('ALTER TABLE activities RENAME COLUMN kind TO event_name');
+        if (!in_array('metadata',$activityNames,true)) $db->exec('ALTER TABLE activities ADD COLUMN metadata '.($driver==='mysql' ? 'JSON NULL' : 'TEXT'));
+        if ($driver==='mysql') {
+            if (!$db->query("SHOW INDEX FROM activities WHERE Key_name='idx_activities_event_created'")->fetch()) $db->exec('CREATE INDEX idx_activities_event_created ON activities(event_name,created_at)');
+            if (!$db->query("SHOW INDEX FROM activities WHERE Key_name='idx_activities_created'")->fetch()) $db->exec('CREATE INDEX idx_activities_created ON activities(created_at)');
+        } else $db->exec('CREATE INDEX IF NOT EXISTS idx_activities_event_created ON activities(event_name,created_at)');
         return $db;
     } catch (Throwable $e) {
         throw new RuntimeException('Database initialization failed.', 0, $e);
@@ -79,4 +88,10 @@ function q(string $sql, array $params=[]): PDOStatement {
     $statement=db()->prepare($sql);
     $statement->execute($params);
     return $statement;
+}
+
+function record_activity_event(int $userId, string $eventName, ?array $metadata=null): int {
+    if (trim($eventName)==='' || mb_strlen($eventName)>80) throw new InvalidArgumentException('Invalid event name.');
+    q('INSERT INTO activities(user_id,event_name,metadata) VALUES (?,?,?)',[$userId,$eventName,$metadata===null ? null : json_encode($metadata,JSON_THROW_ON_ERROR)]);
+    return (int)db()->lastInsertId();
 }

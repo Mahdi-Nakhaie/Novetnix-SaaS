@@ -43,18 +43,8 @@ function course_workspace(int $userId,string $slug,?int $requestedLesson=null): 
     return $course;
 }
 function dashboard_course_progress(int $userId): ?array {
-    $course=q("SELECT c.id,c.slug,c.title FROM courses c INNER JOIN enrollments e ON e.course_slug=c.slug WHERE e.user_id=? AND c.status='published' ORDER BY e.created_at DESC,c.id DESC LIMIT 1",[$userId])->fetch();
-    if (!$course) return null;
-    $lessons=q("SELECT l.id,p.completed,p.status,p.completed_at,p.quiz_version FROM lessons l LEFT JOIN lesson_progress p ON p.lesson_id=l.id AND p.user_id=? WHERE l.course_id=? AND l.status='published'",[$userId,$course['id']])->fetchAll();
-    $total=count($lessons); $completed=0; $verified=[];
-    foreach ($lessons as $lesson) {
-        if (verified_lesson_completion($lesson,lesson_quiz_for_lesson((int)$lesson['id']))) {
-            $completed++;
-            $verified[]=(int)$lesson['id'];
-        }
-    }
-    $status=$total>0 && $completed===$total ? 'completed' : ($completed>0 ? 'in_progress' : 'not_started');
-    return ['id'=>(int)$course['id'],'title'=>$course['title'],'slug'=>$course['slug'],'total'=>$total,'completed'=>$completed,'remaining'=>$total-$completed,'percentage'=>$total ? round($completed/$total*100,1) : 0,'status'=>$status,'verified_lessons'=>$verified];
+    $course=q("SELECT c.id FROM courses c INNER JOIN enrollments e ON e.course_slug=c.slug WHERE e.user_id=? AND c.status='published' ORDER BY e.created_at DESC,c.id DESC LIMIT 1",[$userId])->fetch();
+    return $course ? dashboard_course_progress_for_course($userId,(int)$course['id']) : null;
 }
 function dashboard_active_lesson(int $userId,array $courseProgress): array {
     $lessons=q("SELECT id,title,position FROM lessons WHERE course_id=? AND status='published' ORDER BY position ASC,id ASC",[$courseProgress['id']])->fetchAll();
@@ -185,6 +175,49 @@ function lesson_quiz_passed(array $quiz,array $answers): ?bool {
         if ((int)$answer===$question['correct']) $correct++;
     }
     return $correct*100 >= $quiz['pass_percent']*count($quiz['questions']);
+}
+// Single source of truth for lead stages: ordered stages and their thresholds.
+const LEAD_STAGES = [
+    ['stage'=>'registered','label'=>'Registered','threshold'=>0.0],
+    ['stage'=>'verified','label'=>'Verified','threshold'=>0.0],
+    ['stage'=>'qualified','label'=>'Qualified','threshold'=>50.0],
+    ['stage'=>'high_intent','label'=>'High Intent','threshold'=>100.0],
+];
+function dashboard_course_progress_for_course(int $userId,int $courseId): ?array {
+    $course=q("SELECT c.id,c.slug,c.title FROM courses c INNER JOIN enrollments e ON e.course_slug=c.slug AND e.user_id=? WHERE c.id=? AND c.status='published'",[$userId,$courseId])->fetch();
+    if (!$course) return null;
+    $lessons=q("SELECT l.id,p.completed,p.status,p.completed_at,p.quiz_version FROM lessons l LEFT JOIN lesson_progress p ON p.lesson_id=l.id AND p.user_id=? WHERE l.course_id=? AND l.status='published'",[$userId,$course['id']])->fetchAll();
+    $total=count($lessons); $completed=0; $verified=[];
+    foreach ($lessons as $lesson) {
+        if (verified_lesson_completion($lesson,lesson_quiz_for_lesson((int)$lesson['id']))) {
+            $completed++;
+            $verified[]=(int)$lesson['id'];
+        }
+    }
+    $status=$total>0 && $completed===$total ? 'completed' : ($completed>0 ? 'in_progress' : 'not_started');
+    return ['id'=>(int)$course['id'],'title'=>$course['title'],'slug'=>$course['slug'],'total'=>$total,'completed'=>$completed,'remaining'=>$total-$completed,'percentage'=>$total ? round($completed/$total*100,1) : 0,'status'=>$status,'verified_lessons'=>$verified];
+}
+function lead_progress_percentage(int $userId): ?float {
+    $courses=q("SELECT c.id FROM courses c INNER JOIN enrollments e ON e.course_slug=c.slug AND e.user_id=? WHERE c.status='published' ORDER BY c.id ASC",[$userId])->fetchAll();
+    $best=null;
+    foreach ($courses as $course) {
+        $progress=dashboard_course_progress_for_course($userId,(int)$course['id']);
+        if ($progress===null || $progress['total']===0) continue;
+        $percentage=$progress['completed']/$progress['total']*100;
+        if ($best===null || $percentage>$best) $best=$percentage;
+    }
+    return $best;
+}
+function lead_stage_for_user(int $userId): ?array {
+    $user=q('SELECT phone_verified_at FROM users WHERE id=?',[$userId])->fetch();
+    if (!$user) return null;
+    $percentage=null;
+    if ($user['phone_verified_at']!==null) {
+        $index=1;
+        $percentage=lead_progress_percentage($userId);
+        if ($percentage!==null) foreach (LEAD_STAGES as $i=>$rule) if ($i>=2 && $percentage>=$rule['threshold']) $index=$i;
+    }
+    return ['stage'=>LEAD_STAGES[$index]['stage'],'label'=>LEAD_STAGES[$index]['label'],'index'=>$index,'percentage'=>$percentage];
 }
 function record_learning_event_once(int $userId,string $eventName,string $key,int $id,array $metadata): void {
     foreach (q('SELECT metadata FROM activities WHERE user_id=? AND event_name=?',[$userId,$eventName])->fetchAll() as $event) {
