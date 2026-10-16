@@ -313,7 +313,7 @@ class PublicCoursesTest(unittest.TestCase):
 
     def test_free_course_access_is_explicit_and_independent_of_subscriptions(self):
         data = (ROOT / 'src/data.php').read_text(encoding='utf-8')
-        self.assertIn('const COMMERCE_ENABLED = false;', data)
+        self.assertIn('const COMMERCE_ENABLED = true;', data)
         self.assertIn("const FREE_COURSE_SLUG = 'ai-foundations';", data)
         access = body(APP, 'can_course')
         self.assertLess(access.index('$slug===FREE_COURSE_SLUG'), access.index('!COMMERCE_ENABLED'))
@@ -383,9 +383,13 @@ class PublicCoursesTest(unittest.TestCase):
             if route['path'] not in ('', 'pricing', 'panel/student/subscription', 'panel/student/payments'):
                 continue
             html = gen.render_page(route)
-            self.assertNotIn('انتخاب پلن', html)
-            self.assertNotIn('ارتقای پلن', html)
-            self.assertIn('دوره', html)
+            if route['path'] == '':
+                self.assertNotIn('انتخاب پلن', html)
+                self.assertNotIn('ارتقای پلن', html)
+                self.assertIn('دوره', html)
+            else:
+                self.assertIn('نسخهٔ سروری PHP', html)
+                self.assertNotIn('data-form="subscription"', html)
 
 
 if __name__ == "__main__":

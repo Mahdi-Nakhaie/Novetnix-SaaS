@@ -42,7 +42,7 @@ def setUpModule():
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         port = s.getsockname()[1]
-    env = dict(os.environ, DB_DSN="sqlite:" + DB, ADMIN_PHONE="09990000000", OTP_TEST_ROUTER="1")
+    env = dict(os.environ, DB_DSN="sqlite:" + DB, ADMIN_PHONE="09990000000", OTP_TEST_ROUTER="1", ZARINPAL_MERCHANT_ID="", PAYMENT_BASE_URL="")
     SERVER = subprocess.Popen([php, "-S", f"127.0.0.1:{port}", "-t", str(ROOT / "public"), str(ROOT / "tools/otp_test_router.php")],
                               env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     BASE = f"http://127.0.0.1:{port}"
@@ -109,6 +109,70 @@ def user_count(phone):
 
 def otp(phone):
     return db("SELECT used_at, attempts FROM otp_codes WHERE phone=?", (phone,))[0]
+
+
+class CommerceCommunityHttpTest(unittest.TestCase):
+    def verified(self, phone):
+        client = Browser()
+        client.pending(phone, '636363')
+        self.assertEqual(client.verify('636363')[0], 303)
+        return client
+
+    def test_nova_is_paused_without_usage_or_messages(self):
+        owner = self.verified('09120000701')
+        uid = db('SELECT id FROM users WHERE phone=?', ('09120000701',))[0][0]
+        status, _, text = owner.request('/dashboard/nova')
+        self.assertEqual(status, 200)
+        self.assertIn('به‌زودی', text)
+        self.assertNotIn('action="/nova/ask"', text)
+        self.assertEqual(owner.request('/nova/ask', {'csrf': owner.csrf, 'question': 'A question long enough'})[0], 303)
+        self.assertEqual(db('SELECT COUNT(*) FROM nova_messages WHERE user_id=?', (uid,))[0][0], 0)
+        self.assertEqual(db('SELECT COUNT(*) FROM nova_usage WHERE user_id=?', (uid,))[0][0], 0)
+
+    def test_repeated_saves_are_unique_and_collection_is_private(self):
+        owner = self.verified('09120000702')
+        other = self.verified('09120000703')
+        uid = db('SELECT id FROM users WHERE phone=?', ('09120000702',))[0][0]
+        db('INSERT INTO community_posts(user_id,title,body) VALUES (?,?,?)', (uid, 'Unique bookmarked post 702', 'A community post for save testing'))
+        post = db('SELECT MAX(id) FROM community_posts')[0][0]
+        for _ in range(10):
+            self.assertEqual(owner.request('/community/react', {'csrf': owner.csrf, 'post_id': post, 'kind': 'save'})[0], 303)
+        self.assertEqual(db("SELECT COUNT(*) FROM post_reactions WHERE post_id=? AND kind='save'", (post,))[0][0], 1)
+        status, _, saved = owner.request('/dashboard/community?saved=1')
+        self.assertEqual(status, 200)
+        self.assertIn('Unique bookmarked post 702', saved)
+        self.assertIn('ذخیره‌شده', saved)
+        self.assertNotIn('Unique bookmarked post 702', other.request('/dashboard/community?saved=1')[2])
+        self.assertEqual(other.request('/community/react', {'csrf': 'bad', 'post_id': post, 'kind': 'save'})[0], 419)
+        self.assertEqual(Browser().request('/dashboard/community?saved=1')[0], 303)
+
+    def test_payment_history_is_owner_scoped_and_not_admin_route(self):
+        owner = self.verified('09120000704')
+        other = self.verified('09120000705')
+        uid = db('SELECT id FROM users WHERE phone=?', ('09120000704',))[0][0]
+        db("INSERT INTO payment_orders(user_id,plan,amount_rial,request_key,status,ref_id) VALUES (?,'bronze',1900000,?,'pending',?)", (uid, 'c' * 32, '9876543210704'))
+        status, _, text = owner.request('/dashboard/payment-history')
+        self.assertEqual(status, 200)
+        self.assertIn('9876543210704', text)
+        self.assertNotIn('9876543210704', other.request('/dashboard/payment-history')[2])
+        self.assertEqual(other.request('/dashboard/payments')[0], 403)
+        status, _, checkout = owner.request('/dashboard/subscription')
+        self.assertEqual(status, 200)
+        self.assertIn('خرید اشتراک با زرین‌پال', checkout)
+        self.assertIn('درگاه واقعی هنوز', checkout)
+        self.assertIn('disabled', checkout)
+        self.assertIn('</html>', checkout)
+        status, _, pricing = owner.request('/pricing')
+        self.assertEqual(status, 200)
+        self.assertIn('برنزی', pricing)
+        self.assertIn('</html>', pricing)
+        before = db('SELECT COUNT(*) FROM subscriptions')[0][0]
+        self.assertEqual(owner.request('/payment/start', {'csrf': owner.csrf, 'plan': 'gold', 'request_key': 'a' * 32})[0], 303)
+        self.assertEqual(db('SELECT COUNT(*) FROM subscriptions')[0][0], before)
+        self.assertEqual(owner.request('/payment/start', {'csrf': 'bad', 'plan': 'gold', 'request_key': 'a' * 32})[0], 419)
+        self.assertEqual(other.request('/payment/retry', {'csrf': other.csrf, 'id': db('SELECT MAX(id) FROM payment_orders')[0][0]})[0], 404)
+        self.assertEqual(Browser().request('/payment/start', {'plan': 'gold'})[0], 419)
+        self.assertEqual(owner.request('/payment/zarinpal/callback?Authority=invalid&Status=OK')[0], 400)
 
 
 class WorkspaceHttpTest(unittest.TestCase):

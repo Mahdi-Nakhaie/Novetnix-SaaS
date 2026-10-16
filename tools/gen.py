@@ -452,7 +452,7 @@ def view_pricing():
             'اگر به سقف برسی، دسترسی‌ات قطع نمی‌شود؛ فقط تا دورهٔ بعد امکان استفادهٔ بیشتر از آن مورد را نداری.</p>'
             '</section><section class="section container"><div class="cta-panel">'
             '<span class="eyebrow">مسیر یادگیری</span><h2>پلن‌ها و امکانات</h2>'
-            '<p>برای فعال‌سازی پلن و دریافت راهنمای پرداخت با پشتیبانی تماس بگیرید.</p>'
+            '<p>پرداخت واقعی فقط در نسخهٔ سروری PHP و با تأیید زرین‌پال انجام می‌شود. در نسخهٔ ایستا خرید یا فعال‌سازی انجام نمی‌شود.</p>'
             + linkto("panel/student/subscription", "مشاهده پلن‌ها ←", "btn btn-light") + "</div></section></main>")
     return out
 
@@ -848,7 +848,7 @@ def community_tools():
             '<label>متن<textarea name="body" required minlength="10" maxlength="5000" rows="4"></textarea></label>'
             '<button class="btn btn-primary">Create Post</button></form>'
             '<p class="form-note" hidden></p></div>'
-            '<div class="panel-columns"><div class="panel-list" data-panel-posts></div>'
+            '<section class="panel-card"><h2>ذخیره‌های من</h2><div data-saved-posts></div></section><div class="panel-columns"><div class="panel-list" data-panel-posts></div>'
             + live_chat() + "</div>")
 
 
@@ -931,13 +931,7 @@ def profile_view():
 
 
 def nova_view():
-    out = panel_head("Nova AI", "مربی همراه شما در مسیر یادگیری.")
-    out += stat_grid([("گفت‌وگوهای امروز", "۰", "nova_today"), ("اعتبار پلن", "۰", "plan_credits"),
-                      ("پرسش بی‌پاسخ", "۰", "nova_open"), ("وضعیت Nova", "نیازمند سرور", None)])
-    out += ('<div class="panel-card narrow-left"><h2>Nova AI</h2>'
-            '<p class="muted">این نسخهٔ ایستا امکان اتصال امن به سرویس هوش مصنوعی را ندارد. برای دریافت پاسخ واقعی Nova، نسخهٔ سروری Noventix با کلید تنظیم‌شده روی سرور لازم است؛ در این صفحه پاسخی تولید یا ارسال نمی‌شود.</p></div>')
-    out += '<div class="panel-list" data-nova-thread></div>'
-    return out
+    return panel_head("Nova AI", "به‌زودی") + '<div class="panel-card"><h2>به‌زودی</h2><p>Nova AI فعلاً غیرفعال است. این نسخهٔ ایستا امکان اتصال امن به سرویس را ندارد.</p></div>'
 
 
 def notifications_view():
@@ -1339,7 +1333,7 @@ def view_body(route):
     if view == "project":
         return view_project(route["index"])
     if view == "pricing":
-        return '<main>' + view_commerce_paused() + '</main>'
+        return view_pricing()
     if view == "about":
         return view_about()
     if view == "contact":
@@ -1389,7 +1383,7 @@ def panel_shell(role, sub):
            f'<div class="sidebar-caption">{"مدیریت پلتفرم" if role == "admin" else "فضای یادگیری"}</div>'
            '<nav aria-label="ناوبری پنل">')
     for key, label in items:
-        if key in ("subscription", "subscriptions", "payments"):
+        if key in ("subscriptions", "payments") and role == "admin":
             continue
         out += linkto(base + (f"/{key}" if key else ""), label, "selected" if sub == key else "")
     out += ('</nav><div class="sidebar-bottom">'
@@ -1399,7 +1393,7 @@ def panel_shell(role, sub):
             '<button type="button" class="panel-menu" aria-label="فهرست پنل">☰</button>'
             f'<span>Noventix <span class="muted">/ {"مدیریت" if role == "admin" else "دانش‌آموز"}</span></span>'
             '<span class="panel-avatar" data-avatar>ک</span></div>')
-    section = (view_commerce_paused() if sub in ("subscription", "subscriptions", "payments")
+    section = (panel_head('اشتراک و پرداخت', 'پرداخت واقعی فقط در نسخهٔ سروری PHP و پس از اتصال زرین‌پال در دسترس است؛ این نسخهٔ ایستا اشتراک فعال نمی‌کند.') + plan_cards() if sub in ("subscription", "subscriptions", "payments")
                else admin_section(sub) if role == "admin" else student_section(sub))
     return out + f'<main class="panel-content">{section}</main></div>'
 

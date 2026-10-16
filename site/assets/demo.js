@@ -30,7 +30,7 @@
   function blank() {
     return {
       user: null, enrollments: [], projects: [], challenges: [],
-      posts: [], tickets: [], notifications: [], content: [],
+      savedPosts: [], posts: [], tickets: [], notifications: [], content: [],
       settings: {}, subscriptions: [], messages: [], users: [],
       nova: [], solutions: [], snippets: [], runs: 0,
       chat: [], reviews: [], terminal: [], payments: [], replies: [], follows: [],
@@ -184,7 +184,7 @@
     var slot = el("[data-current-plan]");
     if (slot) slot.textContent = planById(id).name;
     slot = el("[data-plan-expiry]");
-    if (slot) slot.textContent = id === "free" ? "اشتراک پولی فعالی ثبت نشده است." : "پایان دوره آزمایشی: " + jalali(state.user.plan_expires);
+    if (slot) slot.textContent = id === "free" ? "اشتراک پولی فعالی ثبت نشده است." : "پایان دورهٔ ذخیره‌شده در این مرورگر:" + jalali(state.user.plan_expires);
     slot = el("[data-plan-credits]");
     if (slot) slot.textContent = fa(planLimits[id][1]);
     slot = el("[data-plan-projects]");
@@ -520,7 +520,7 @@
     },
 
     nova: function (form) {
-      note(form, "Nova فقط در نسخهٔ سروری فعال است؛ در این نسخه پاسخی تولید نمی‌شود.", "error");
+      note(form, "Nova AI — به‌زودی. این بخش فعلاً غیرفعال است.", "error");
     },
 
     solution: function (form) {
@@ -545,13 +545,7 @@
 
     subscription: function (form) {
       if (!accountReady()) { location.href = join("login/"); return; }
-      var plan = form.elements.namedItem("plan").value;
-      if (planOrder.indexOf(plan) < 1) { note(form, "پلن انتخاب‌شده معتبر نیست.", "error"); return; }
-      state.user.plan = plan;
-      state.user.plan_expires = new Date(Date.now() + 30 * 86400000).toISOString();
-      store();
-      note(form, "پلن " + planById(plan).name + " برای ۳۰ روز فعال شد.", "success");
-      paintPlan(); paintStats();
+      note(form, "خرید فقط از نسخهٔ سروری و درگاه واقعی زرین‌پال انجام می‌شود؛ این نسخه اشتراک فعال نمی‌کند.", "error");
     },
 
     review: function (form) {
@@ -724,10 +718,11 @@
   function postCard(p, withActions) {
     var replies = p.replies || [];
     var author = p.author || "کاربر";
+    var isSaved = state.savedPosts.some(function (r) { return state.user && r.user === String(state.user.phone) && String(r.post) === String(p.id); });
     var out = '<article class="post-card"><div class="meta-row"><button type="button" class="profile-link" data-member-profile="' + esc(author) + '">' + esc(author) + '</button><span>' + jalali(p.created_at) + '</span></div><div class="member-preview" data-member-card="' + esc(author) + '" hidden><strong>' + esc(author) + '</strong><span>' + fa(state.posts.filter(function (item) { return item.author === author; }).length) + ' پست در انجمن</span>' + (state.user && state.user.name !== author ? '<button type="button" class="btn btn-small btn-outline" data-follow-user="' + esc(author) + '">' + (state.follows.indexOf(author) >= 0 ? 'دنبال می‌کنید' : 'دنبال کردن') + '</button>' : '') + '</div><h2>' + esc(p.title) + '</h2><p>' + esc(p.body).replace(/\n/g, "<br>") + '</p>';
     if (withActions) {
       out += '<div class="react-row"><button type="button" class="text-button" data-like="' + p.id + '">پسندیدن ' + fa(p.likes) + '</button>' +
-        '<button type="button" class="text-button" data-save="' + p.id + '">ذخیره ' + fa(p.saves) + '</button>' +
+        '<button type="button" class="text-button" data-save="' + p.id + '"' + (isSaved ? ' disabled' : '') + '>' + (isSaved ? 'ذخیره‌شده ' : 'ذخیره ') + fa(state.savedPosts.filter(function (r) { return String(r.post) === String(p.id); }).length) + '</button>' +
         '<button type="button" class="text-button" data-comment-toggle="' + p.id + '">نظر ' + fa(replies.length) + '</button></div><form class="comment-form" data-comment-form="' + p.id + '" hidden><textarea name="body" minlength="2" maxlength="2000" required placeholder="نظر خود را بنویسید…"></textarea><button type="submit" class="btn btn-small btn-outline">ارسال نظر</button></form>';
       if (replies.length) out += '<div class="comment-list">' + replies.map(function (r) { return '<div class="comment"><strong>' + esc(r.author) + '</strong><p>' + esc(r.body) + '</p></div>'; }).join("") + '</div>';
     }
@@ -735,6 +730,12 @@
   }
 
   function paintPosts() {
+    var savedHost = el("[data-saved-posts]");
+    if (savedHost) {
+      var mine = state.savedPosts.filter(function (r) { return state.user && r.user === String(state.user.phone); });
+      var saved = state.posts.filter(function (p) { return mine.some(function (r) { return String(r.post) === String(p.id); }); });
+      savedHost.innerHTML = saved.length ? saved.map(function (p) { return postCard(p, true); }).join("") : '<p>هنوز پستی ذخیره نکرده‌اید.</p>';
+    }
     [el("[data-community-list]"), el("[data-panel-posts]")].forEach(function (host) {
       if (!host) return;
       if (!state.posts.length) {
@@ -1096,7 +1097,12 @@
     var save = event.target.closest("[data-save]");
     if (save) {
       var sp = state.posts.filter(function (p) { return String(p.id) === save.getAttribute("data-save"); })[0];
-      if (sp) { sp.saves++; store(); paintPosts(); }
+      if (!accountReady()) { location.href = join("login/"); return; }
+      var member = String(state.user.phone);
+      if (sp && !state.savedPosts.some(function (r) { return r.user === member && String(r.post) === String(sp.id); })) {
+        state.savedPosts.push({user: member, post: sp.id});
+        store(); paintPosts();
+      }
       return;
     }
 

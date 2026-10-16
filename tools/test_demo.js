@@ -164,6 +164,24 @@ forum.handlers.submit({ target: { closest: (selector) => selector === "[data-com
 assert.match(forum.nodes["[data-community-list]"].innerHTML, /نظر تازه درباره پایتون/);
 assert.match(forum.nodes["[data-community-list]"].innerHTML, /data-member-profile/);
 assert.equal(JSON.parse(memory.get("noventix.demo.v1")).posts[0].replies.length, 1);
+forum.nodes["[data-saved-posts]"] = { innerHTML: "" };
+const saveButton = { getAttribute: () => String(postId) };
+for (let i = 0; i < 10; i++) {
+  forum.handlers.click({ target: { closest: (selector) => selector === "[data-save]" ? saveButton : null } });
+}
+assert.equal(JSON.parse(memory.get("noventix.demo.v1")).savedPosts.length, 1);
+assert.match(forum.nodes["[data-saved-posts]"].innerHTML, /پرسش درباره پایتون/);
+const buyer = JSON.parse(memory.get("noventix.demo.v1"));
+submit(forum, "subscription", { plan: "gold" });
+assert.equal(JSON.parse(memory.get("noventix.demo.v1")).user.plan, buyer.user.plan);
+const personalSnapshot = JSON.parse(memory.get("noventix.demo.v1"));
+personalSnapshot.user.phone = "09120000999";
+memory.set("noventix.demo.v1", JSON.stringify(personalSnapshot));
+const otherForum = load("community");
+otherForum.nodes["[data-saved-posts]"] = { innerHTML: "" };
+otherForum.handlers.click({ target: { closest: (selector) => selector === "[data-save]" ? saveButton : null } });
+assert.equal(JSON.parse(memory.get("noventix.demo.v1")).savedPosts.length, 2);
+memory.set("noventix.demo.v1", JSON.stringify(buyer));
 const support = load("panel/student/support");
 support.nodes["[data-tickets]"] = { innerHTML: "" };
 submit(support, "ticket", { subject: "پرسش پشتیبانی", body: "جزئیات مشکل در حساب من", priority: "متوسط" });

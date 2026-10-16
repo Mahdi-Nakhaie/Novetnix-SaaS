@@ -4,6 +4,7 @@ require_once __DIR__.'/data.php';
 require_once dirname(__DIR__).'/database/connection.php';
 require_once __DIR__.'/auth.php';
 require_once __DIR__.'/workspace.php';
+require_once __DIR__.'/payments.php';
 function h(mixed $value): string { return htmlspecialchars((string)$value, ENT_QUOTES|ENT_SUBSTITUTE, 'UTF-8'); }
 // Array form is required: three-argument strtr() maps bytes, which corrupts multibyte Persian digits.
 function fa(int|string $v): string { return strtr((string)$v,['0'=>'۰','1'=>'۱','2'=>'۲','3'=>'۳','4'=>'۴','5'=>'۵','6'=>'۶','7'=>'۷','8'=>'۸','9'=>'۹']); }
@@ -309,24 +310,16 @@ function handle_post(string $path): void {
     }
     $u=require_user(); $plan=plan_for($u);
     if ($path==='progress/save') { save_lesson_progress($u); }
+    if ($path==='payment/start') payment_start($u);
+    if ($path==='payment/retry') {
+        $order=q('SELECT * FROM payment_orders WHERE id=? AND user_id=?',[(int)($_POST['id'] ?? 0),$u['id']])->fetch();
+        if (!$order || !$order['authority']) { http_response_code(404); exit; }
+        try { $paid=payment_verify_order($order); flash($paid?'پرداخت تأیید و اشتراک فعال شد.':'پرداخت هنوز تأیید نشده است.',$paid?'success':'error'); }
+        catch (PaymentError $e) { flash($e->getMessage(),'error'); }
+        redirect('dashboard/payment-history');
+    }
     if ($path==='nova/ask') {
-        $question=trim((string)($_POST['question'] ?? ''));
-        if (mb_strlen($question)<10 || mb_strlen($question)>2000) { flash('سؤال باید بین ۱۰ تا ۲۰۰۰ نویسه باشد.','error'); redirect('dashboard/nova'); }
-        $limit=PLANS[$plan]['nova'];
-        $month=gmdate('Y-m');
-        $used=(int)q('SELECT used FROM nova_usage WHERE user_id=? AND month=?',[$u['id'],$month])->fetchColumn();
-        if ($used >= $limit) { flash('اعتبار Nova در این ماه تمام شده است.','error'); redirect('dashboard/nova'); }
-        if (time()-(int)($_SESSION['nova_last'] ?? 0)<5) { flash('چند ثانیه دیگر دوباره تلاش کنید.','error'); redirect('dashboard/nova'); }
-        $_SESSION['nova_last']=time();
-        $history=array_reverse(q('SELECT question,answer FROM nova_messages WHERE user_id=? ORDER BY id DESC LIMIT 5',[$u['id']])->fetchAll());
-        $messages=[['role'=>'system','content'=>'تو Nova، دستیار آموزشی فارسی Noventix هستی. پاسخ دقیق و روشن بده، اگر مطمئن نیستی صادقانه بگو و از ادعای اجرای کد یا دسترسی به حساب کاربر خودداری کن.']];
-        foreach ($history as $turn) { $messages[]=['role'=>'user','content'=>$turn['question']]; $messages[]=['role'=>'assistant','content'=>$turn['answer']]; }
-        $messages[]=['role'=>'user','content'=>$question];
-        $answer=nova_answer($messages);
-        if ($answer===null) { flash('ارتباط با Nova برقرار نشد. کمی بعد دوباره تلاش کنید؛ اعتباری کم نشد.','error'); redirect('dashboard/nova'); }
-        q('INSERT INTO nova_messages(user_id,question,answer) VALUES (?,?,?)',[$u['id'],$question,$answer]);
-        if (db()->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql') q('INSERT INTO nova_usage(user_id,month,used) VALUES (?,?,1) ON DUPLICATE KEY UPDATE used=used+1',[$u['id'],$month]);
-        else q('INSERT INTO nova_usage(user_id,month,used) VALUES (?,?,1) ON CONFLICT(user_id,month) DO UPDATE SET used=used+1',[$u['id'],$month]);
+        flash('Nova AI — به‌زودی','error');
         redirect('dashboard/nova');
     }
     if ($path==='profile/save') {

@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+function money(int $amount): string { return fa(number_format($amount,0,'.','٬')).' تومان'; }
 function linkto(string $path,string $label,string $class=''): void { echo '<a class="'.($class?h($class):'').'" href="'.h(url($path)).'">'.h($label).'</a>'; }
 function form_start(string $action,string $class='',bool $customValidation=false): void { echo '<form action="'.h(url($action)).'" method="post" class="'.($class?h($class):'').($customValidation?' custom-validation':'').($customValidation?'" novalidate':'"').'><input type="hidden" name="csrf" value="'.h(csrf()).'">'; }
 function head_page(string $title,string $description='',bool $panel=false): void {
@@ -235,24 +236,11 @@ function panel(string $sub): void {
         echo '<div class="profile-head"><div><img src="/assets/nova.png" alt="" width="56" height="56" aria-hidden="true"><div><h2>'.h($me['name'] ?: 'کاربر Noventix').'</h2><p class="muted">'.h($me['phone']).' · Level '.fa('12').' · XP '.fa('۲۴۸۰').'</p><p class="muted">'.h($role==='admin'?'مدیر پلتفرم':($role==='owner'?'مالک پلتفرم':'سازنده‌ای در مسیر یادگیری هوش مصنوعی')).'</p></div></div>'.linkto('dashboard/settings','ویرایش پروفایل','btn btn-outline').'</div>';
         echo '<div class="panel-card narrow">'; form_start('profile/account','stack-form'); echo '<label>نام نمایشی<input name="name" maxlength="100" minlength="2" required value="'.h($me['name']).'" placeholder="نام شما"></label><label>ایمیل (اختیاری)<input type="email" dir="ltr" name="email" maxlength="255" placeholder="you@example.com"></label><label>شماره موبایل<input dir="ltr" disabled value="'.h($me['phone']).'"></label><button class="btn btn-primary">ذخیره تغییرات</button></form><p class="fine-print">شماره موبایل شناسه ورود شماست و از این صفحه قابل تغییر نیست.</p></div>';
     } elseif ($sub==='nova' && $role!=='admin') {
-        panel_head('Nova AI','دستیار آموزشی برای پرسش‌های شما.');
-        $limit=PLANS[$plan]['nova'];
-        $used=(int)q('SELECT used FROM nova_usage WHERE user_id=? AND month=?',[$me['id'],gmdate('Y-m')])->fetchColumn();
-        echo '<div class="panel-card narrow-left"><h2>از Nova بپرسید</h2><p class="muted">پاسخ‌ها با هوش مصنوعی تولید می‌شوند و ممکن است اشتباه باشند. اطلاعات محرمانه را در سؤال وارد نکنید.</p><p>اعتبار این ماه: '.fa(max(0,$limit-$used)).' از '.fa($limit).'</p>';
-        if ($limit>$used) { form_start('nova/ask','stack-form'); echo '<label>سؤال شما<textarea name="question" required minlength="10" maxlength="2000" rows="4" placeholder="سؤالتان را با جزئیات بنویسید"></textarea></label><button class="btn btn-primary">پرسیدن از Nova</button></form>'; }
-        elseif (COMMERCE_ENABLED) linkto('pricing','مشاهده پلن‌ها ←','btn btn-outline');
-        else echo '<p class="muted">سهمیه این ماه در دسترس نیست؛ دوره رایگان بدون نیاز به Nova قابل استفاده است.</p>';
-        echo '</div><div class="panel-list" aria-label="گفت‌وگوهای Nova">';
-        foreach (array_reverse(q('SELECT question,answer,created_at FROM nova_messages WHERE user_id=? ORDER BY id DESC LIMIT 20',[$me['id']])->fetchAll()) as $turn) echo '<div class="panel-card"><div class="chat-bubble is-user"><p>'.nl2br(h($turn['question'])).'</p><small>'.h(jdate($turn['created_at'])).'</small></div><div class="chat-bubble is-nova"><span class="chip">Nova</span><p>'.nl2br(h($turn['answer'])).'</p></div></div>';
-        echo '</div>';
+        panel_head('Nova AI','به‌زودی');
+        echo '<div class="panel-card"><h2>به‌زودی</h2><p>Nova AI فعلاً غیرفعال است.</p></div>';
     } elseif ($sub==='subscription' && $role!=='admin') {
-        $active=(int)q("SELECT COUNT(*) FROM subscriptions WHERE user_id=? AND status='active' AND expires_at>?",[$me['id'],gmdate('Y-m-d H:i:s')])->fetchColumn()?1:0;
-        $expires=q("SELECT expires_at FROM subscriptions WHERE user_id=? AND status='active' ORDER BY expires_at DESC LIMIT 1",[$me['id']])->fetchColumn();
-        $limit=PLANS[$plan]['nova']; $used=min($limit,(int)q('SELECT COUNT(*) FROM projects WHERE user_id=?',[$me['id']])->fetchColumn());
-        panel_head('اشتراک من','وضعیت پلن و ظرفیت امکانات شما.');
-        echo '<div class="sub-layout"><section class="panel-card"><h2>Usage</h2><div class="usage-row"><span>AI Credits</span><strong>'.fa($used).' از '.fa($limit).'</strong></div><div class="progress"><span style="width:'.($limit?max(2,round($used/$limit*100)):2).'%"></span></div><div class="usage-row"><span>Projects</span><strong>'.(PLANS[$plan]['projects']===-1?'نامحدود':fa(PLANS[$plan]['projects'])).'</strong></div></section>';
-        echo '<section class="plan-tile"><span class="eyebrow">Current Plan</span><h2>'.h(PLANS[$plan]['name']).'</h2><p>'.($expires?'تمدید: '.jdate((string)$expires):'اشتراک فعالی ثبت نشده است.').'</p>'; linkto('pricing',$plan==='titanium'?'مشاهده پلن‌ها':'ارتقای پلن',$plan==='titanium'?'btn btn-outline':'btn btn-gold'); echo '</section></div>';
-        echo '<div class="panel-card"><h2>امکانات فعلی</h2><ul class="check-list">'; foreach (PLANS[$plan]['features'] as $f) echo '<li>'.h($f).'</li>'; echo '</ul><p class="muted">پرداخت آنلاین هنوز متصل نشده است؛ برای فعال‌سازی پلن پولی با پشتیبانی تماس بگیرید.</p>'; linkto('dashboard/payments','مشاهده پرداخت‌ها ←','btn btn-outline'); echo '</div>';
+        panel_head('اشتراک من','پلن فعلی: '.PLANS[$plan]['name']);
+        payment_checkout();
     } elseif ($sub==='learning' && $role!=='admin') {
         echo '<div class="panel-heading"><h1>مسیر یادگیری من</h1><p>دوره‌هایی که برای یادگیری انتخاب کرده‌اید.</p></div><div class="panel-list">';
         $rows=q('SELECT course_slug FROM enrollments WHERE user_id=? ORDER BY created_at DESC',[$me['id']])->fetchAll();
@@ -284,7 +272,11 @@ function panel(string $sub): void {
         echo '<div class="panel-heading"><h1>پروژه‌های من</h1><p>مسئله‌هایی که برای ساختن انتخاب کرده‌ای.</p></div><div class="panel-list">'; $rows=q('SELECT catalog_index FROM projects WHERE user_id=? ORDER BY created_at DESC',[$me['id']])->fetchAll(); if (!$rows) echo '<div class="empty-state">هنوز پروژه‌ای شروع نکردی. <a href="/projects">پروژه‌ها را ببین ←</a></div>'; foreach ($rows as $r) { $p=PROJECTS[$r['catalog_index']] ?? null; if($p) echo '<div class="list-item"><div><span class="pill">'.h($p['topic']).'</span><h3>'.h($p['title']).'</h3><p>'.h($p['description']).'</p></div><a href="'.h(url('project/'.$r['catalog_index'])).'">جزئیات ←</a></div>'; } echo '</div>';
     } elseif ($sub==='community') {
         panel_head('Community','از سؤال کوچک تا نمایش بزرگ‌ترین پروژه‌ها.');
-        $posts=q('SELECT p.id,p.user_id,p.title,p.body,p.created_at,u.name,u.phone FROM community_posts p JOIN users u ON u.id=p.user_id ORDER BY p.id DESC LIMIT 20')->fetchAll();
+        echo '<nav><a href="/dashboard/community">همهٔ پست‌ها</a> · <a href="/dashboard/community?saved=1">ذخیره‌های من</a></nav>';
+        $savedOnly=($_GET['saved'] ?? '')==='1';
+        $page=max(1,(int)($_GET['page'] ?? 1));
+        $offset=min($page-1,1000000)*50;
+        $posts=q('SELECT p.id,p.user_id,p.title,p.body,p.created_at,u.name,u.phone FROM community_posts p JOIN users u ON u.id=p.user_id'.($savedOnly ? " WHERE EXISTS (SELECT 1 FROM post_reactions r WHERE r.post_id=p.id AND r.user_id=? AND r.kind='save')" : '').' ORDER BY p.id DESC LIMIT 50 OFFSET '.$offset,$savedOnly?[$me['id']]:[])->fetchAll();
         echo '<div class="panel-card narrow-left"><h2>Create Post</h2>'; form_start('community/create','stack-form'); echo '<label>عنوان<input name="title" required minlength="5" maxlength="180"></label><label>متن<textarea name="body" required minlength="10" maxlength="5000" rows="4"></textarea></label><button class="btn btn-primary">Create Post</button></form></div>';
         echo '<div class="panel-list">'; if (!$posts) echo '<div class="empty-state">هنوز پستی ثبت نشده است.</div>';
         foreach ($posts as $p) {
@@ -292,10 +284,14 @@ function panel(string $sub): void {
             $saves=(int)q("SELECT COUNT(*) FROM post_reactions WHERE post_id=? AND kind='save'",[$p['id']])->fetchColumn();
             $replies=(int)q('SELECT COUNT(*) FROM community_replies WHERE post_id=?',[$p['id']])->fetchColumn();
             echo '<article class="post-card"><div class="meta-row"><a class="profile-link" href="'.h(url('member/'.$p['user_id'])).'">'.h($p['name'] ?: mb_substr($p['phone'],0,4).'****').'</a><span>'.h(jdate($p['created_at'])).'</span>'; if ((int)$p['user_id']!==$me['id']) { $following=q('SELECT 1 FROM user_follows WHERE follower_id=? AND followed_id=?',[$me['id'],$p['user_id']])->fetchColumn(); if ($following) echo '<span class="pill">دنبال می‌کنید</span>'; else { form_start('community/follow','react-form'); echo '<input type="hidden" name="user_id" value="'.(int)$p['user_id'].'"><button class="text-button">دنبال کردن</button></form>'; } } echo '</div><h2>'.h($p['title']).'</h2><p>'.nl2br(h($p['body'])).'</p><div class="react-row">';
-            foreach (['like'=>'Like','save'=>'Save'] as $kind=>$label) { form_start('community/react','react-form'); echo '<input type="hidden" name="post_id" value="'.(int)$p['id'].'"><input type="hidden" name="kind" value="'.h($kind).'"><button class="text-button">'.h($label).' '.fa($kind==='like'?$likes:$saves).'</button></form>'; }
+            foreach (['like'=>'پسندیدن','save'=>'ذخیره'] as $kind=>$label) { $reacted=(bool)q('SELECT 1 FROM post_reactions WHERE post_id=? AND user_id=? AND kind=?',[$p['id'],$me['id'],$kind])->fetchColumn(); if ($reacted) $label=$kind==='save'?'ذخیره‌شده':'پسندیده‌اید'; form_start('community/react','react-form'); echo '<input type="hidden" name="post_id" value="'.(int)$p['id'].'"><input type="hidden" name="kind" value="'.h($kind).'"><button class="text-button"'.($reacted?' disabled':'').'>'.h($label).' '.fa($kind==='like'?$likes:$saves).'</button></form>'; }
             echo '<a class="text-button" href="'.h(url('community')).'">Comment '.fa($replies).'</a></div>'; echo '<div class="comment-list">'; foreach (q('SELECT r.body,r.created_at,u.name FROM community_replies r JOIN users u ON u.id=r.user_id WHERE r.post_id=? ORDER BY r.id',[$p['id']])->fetchAll() as $reply) echo '<div class="comment"><strong>'.h($reply['name'] ?: 'کاربر').'</strong><p>'.nl2br(h($reply['body'])).'</p></div>'; echo '</div>'; form_start('community/comment','comment-form'); echo '<input type="hidden" name="post_id" value="'.(int)$p['id'].'"><textarea name="body" required minlength="2" maxlength="2000" rows="2" placeholder="نظر خود را بنویسید…"></textarea><button class="btn btn-small btn-outline">ارسال نظر</button></form></article>';
         }
-        echo '</div>';
+        echo '</div><nav>';
+        $filter=$savedOnly?'&saved=1':'';
+        if ($page>1) linkto('dashboard/community?page='.($page-1).$filter,'صفحهٔ قبل','btn btn-outline');
+        if (count($posts)===50) linkto('dashboard/community?page='.($page+1).$filter,'صفحهٔ بعد','btn btn-outline');
+        echo '</nav>';
     } elseif ($sub==='support') {
         panel_head('پشتیبانی','تیکت‌های باز و اولویت‌بندی آن‌ها.');
         $open=(int)q("SELECT COUNT(*) FROM tickets WHERE user_id=? AND status='open'",[$me['id']])->fetchColumn();
@@ -306,13 +302,8 @@ function panel(string $sub): void {
         foreach ($rows as $t) { echo '<div class="ticket-card"><div class="meta-row"><span class="pill">'.h($t['priority']).'</span><span>'.h($t['status']==='open'?'باز':'بسته').'</span><span>'.h(jdate($t['created_at'])).'</span></div><h3>'.h($t['subject']).'</h3><div class="ticket-thread">'; foreach (q('SELECT r.body,r.created_at,r.user_id,u.name FROM ticket_replies r JOIN users u ON u.id=r.user_id WHERE r.ticket_id=? ORDER BY r.id',[$t['id']])->fetchAll() as $reply) echo '<div class="ticket-message'.((int)$reply['user_id']===(int)$me['id'] ? ' is-user' : '').'"><strong>'.((int)$reply['user_id']===(int)$me['id'] ? 'شما' : h($reply['name'] ?: 'پشتیبانی')).'</strong><p>'.nl2br(h($reply['body'])).'</p></div>'; echo '</div>'; form_start('tickets/reply','ticket-reply-form'); echo '<input type="hidden" name="ticket_id" value="'.(int)$t['id'].'"><textarea name="body" required minlength="2" maxlength="5000" rows="3" placeholder="پاسخ خود را بنویسید…"></textarea><button class="btn btn-small btn-outline">ارسال پاسخ</button></form></div>'; }
         echo '</div>';
     } elseif ($sub==='payments') {
-        panel_head('پرداخت‌ها','تاریخچه اشتراک و صورتحساب شما.');
-        $rows=q('SELECT * FROM subscriptions WHERE user_id=? ORDER BY id DESC LIMIT 30',[$me['id']])->fetchAll();
-        echo '<div class="panel-card"><h2>صورت‌حساب و پرداخت</h2><p class="muted">پلن فعلی: '.h(PLANS[$plan]['name']).' — '.money((int)PLANS[$plan]['price']).'</p><p class="muted">درگاه پرداخت متصل نیست؛ فعال‌سازی فقط پس از تأیید پرداخت خارج از سامانه انجام می‌شود.</p>'; linkto('pricing','مشاهده پلن‌ها ←','btn btn-primary'); echo '</div>';
-        echo '<div class="panel-card table-wrap"><table><thead><tr><th>پلن</th><th>مبلغ ماهانه</th><th>وضعیت</th><th>پایان</th></tr></thead><tbody>';
-        if (!$rows) echo '<tr><td colspan="4" class="muted">هنوز پرداختی ثبت نشده است.</td></tr>';
-        foreach ($rows as $r) echo '<tr><td>'.h(PLANS[$r['plan']]['name'] ?? $r['plan']).'</td><td>'.money((int)(PLANS[$r['plan']]['price'] ?? 0)).'</td><td>'.h($r['status']).'</td><td>'.h(jdate($r['expires_at'])).'</td></tr>';
-        echo '</tbody></table></div>';
+        panel_head('پرداخت‌ها','تاریخچه تراکنش‌های تأییدشده');
+        payment_history($me,$role==='admin');
     } elseif ($sub==='gamification') {
         $xp=(int)q('SELECT COUNT(*) FROM challenge_progress WHERE user_id=?',[$me['id']])->fetchColumn()*120+2480;
         $streak=(int)q('SELECT COUNT(*) FROM projects WHERE user_id=?',[$me['id']])->fetchColumn()+7;
@@ -428,13 +419,9 @@ function admin_panel(string $sub): void {
         }
         echo '</div>';
     } elseif ($sub==='payments') {
-        panel_head('مدیریت پرداخت‌ها','وضعیت پرداخت‌ها بر اساس اشتراک‌های ثبت‌شده.');
-        $rows=q('SELECT u.phone,s.plan,s.status,s.starts_at,s.expires_at FROM subscriptions s JOIN users u ON u.id=s.user_id ORDER BY s.id DESC LIMIT 40')->fetchAll();
-        echo '<div class="panel-card"><h2>صورت‌حساب و پرداخت</h2><p class="muted">درگاه پرداخت متصل نیست؛ فعال‌سازی اشتراک فقط پس از تأیید پرداخت خارج از سامانه انجام می‌شود.</p>'; linkto('dashboard/subscriptions','فعال‌سازی دستی اشتراک ←','btn btn-primary'); echo '</div>';
-        echo '<div class="panel-card table-wrap"><table><thead><tr><th>شماره</th><th>پلن</th><th>مبلغ ماهانه</th><th>وضعیت</th><th>پایان</th></tr></thead><tbody>';
-        if (!$rows) echo '<tr><td colspan="5" class="muted">هنوز پرداختی ثبت نشده است.</td></tr>';
-        foreach ($rows as $r) echo '<tr><td dir="ltr">'.h($r['phone']).'</td><td>'.h(PLANS[$r['plan']]['name'] ?? $r['plan']).'</td><td>'.money((int)(PLANS[$r['plan']]['price'] ?? 0)).'</td><td>'.h($r['status']).'</td><td>'.h(jdate($r['expires_at'])).'</td></tr>';
-        echo '</tbody></table></div>';
+        require_admin();
+        panel_head('مدیریت پرداخت‌ها','تراکنش‌های واقعی زرین‌پال');
+        payment_history(require_user(),true);
     } elseif ($sub==='analytics') {
         $since=gmdate('Y-m-d H:i:s',time()-30*86400);
         $rows=[['کاربران ۳۰ روز گذشته',(int)q('SELECT COUNT(*) FROM users WHERE created_at>=?',[$since])->fetchColumn()],['گفت‌وگوهای ۳۰ روز گذشته',(int)q('SELECT COUNT(*) FROM community_posts WHERE created_at>=?',[$since])->fetchColumn()],['پروژه‌های شروع‌شده',(int)q('SELECT COUNT(*) FROM projects')->fetchColumn()],['مقاله‌های ذخیره‌شده',(int)q('SELECT COUNT(*) FROM enrollments')->fetchColumn()]];
