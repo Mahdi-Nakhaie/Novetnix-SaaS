@@ -71,7 +71,7 @@ class AdminAuthorizationTest(unittest.TestCase):
         views = (ROOT / "src/views.php").read_text(encoding="utf-8")
         self.assertIn("elseif ($role==='admin') admin_panel($sub);", views)
         self.assertIn("$role==='admin'", views)
-        for query in ('SELECT id,name,phone,acquisition_source,acquisition_campaign FROM users', 'SELECT * FROM contact_messages', 'SELECT u.phone,s.plan'):
+        for query in ('SELECT id,name,phone,acquisition_source,acquisition_campaign,phone_verified_at FROM users', 'SELECT * FROM contact_messages', 'SELECT u.phone,s.plan'):
             self.assertIn(query, views)
         self.assertNotIn("SELECT * FROM users ORDER BY id DESC LIMIT 100", views)
         self.assertIn("lead_stage_for_user((int)$r['id'])", views)
@@ -84,7 +84,7 @@ class AdminAuthorizationTest(unittest.TestCase):
         self.assertIn("'—'", views)
         self.assertIn("دریافت فهرست کاربران ممکن نشد", views)
     def test_user_listing_query_reads_real_fields_and_preserves_fallback(self):
-        query = re.search(r"q\('((?:SELECT id,name,phone,acquisition_source,acquisition_campaign).*?)'\)", VIEWS).group(1)
+        query = re.search(r"q\('((?:SELECT id,name,phone,acquisition_source,acquisition_campaign,phone_verified_at).*?)'\)", VIEWS).group(1)
         db = sqlite3.connect(':memory:')
         try:
             db.executescript(SCHEMA)
@@ -110,7 +110,7 @@ class AdminAuthorizationTest(unittest.TestCase):
         self.assertIn("$byCourse[(int)$lesson['course_id']][]=$lesson", VIEWS)
         self.assertIn("$byCourse[(int)$course['id']] ?? []", VIEWS)
         course_sql="SELECT id,title,status FROM courses ORDER BY id ASC"
-        lesson_sql="SELECT course_id,title,position,status FROM lessons ORDER BY course_id ASC,position ASC,id ASC"
+        lesson_sql="SELECT id,course_id,title,position,status FROM lessons ORDER BY course_id ASC,position ASC,id ASC"
         self.assertIn(course_sql, VIEWS)
         self.assertIn(lesson_sql, VIEWS)
         self.assertNotIn('video_url', SCHEMA)
@@ -128,9 +128,9 @@ class AdminAuthorizationTest(unittest.TestCase):
             ])
             self.assertEqual(db.execute(course_sql).fetchall(), [(1,'دوره نخست','draft'),(2,'دوره دوم','published')])
             self.assertEqual(db.execute(lesson_sql).fetchall(), [
-                (1,'درس مستقل',1,'draft'),
-                (2,'درس اول',1,'published'),
-                (2,'درس دوم',2,'draft'),
+                (3,1,'درس مستقل',1,'draft'),
+                (2,2,'درس اول',1,'published'),
+                (1,2,'درس دوم',2,'draft'),
             ])
         finally:
             db.close()

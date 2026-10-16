@@ -61,8 +61,13 @@ function ws_quota(int $userId,int $bytes,int $exclude=0): void {
 }
 function ws_template_allowed(array $template,int $userId): bool {
     if ($template['status']!=='published') return false;
-    if ($template['course_id']!==null && !q("SELECT c.id FROM courses c JOIN enrollments e ON e.course_slug=c.slug AND e.user_id=? WHERE c.id=? AND c.status='published'",[$userId,$template['course_id']])->fetchColumn()) return false;
-    return $template['lesson_id']===null || (bool)q("SELECT id FROM lessons WHERE id=? AND status='published'",[$template['lesson_id']])->fetchColumn();
+    if ($template['course_id']!==null) {
+        $course=q("SELECT c.slug FROM courses c JOIN enrollments e ON e.course_slug=c.slug AND e.user_id=? WHERE c.id=? AND c.status='published'",[$userId,$template['course_id']])->fetchColumn();
+        if (!$course || !can_course($course,plan_for(['id'=>$userId]))) return false;
+    }
+    if ($template['lesson_id']===null) return true;
+    if (!authorized_progress_lesson($userId,(int)$template['lesson_id'])) return false;
+    return $template['course_id']===null || (bool)q('SELECT id FROM lessons WHERE id=? AND course_id=?',[$template['lesson_id'],$template['course_id']])->fetchColumn();
 }
 function ws_create(int $userId,int $templateId,string $title,?int $catalogIndex=null): int {
     $pdo=db(); $pdo->beginTransaction();
@@ -76,6 +81,10 @@ function ws_create(int $userId,int $templateId,string $title,?int $catalogIndex=
             $title=$template['title']; $manifest=ws_manifest(json_decode($template['files_json'],true,512,JSON_THROW_ON_ERROR));
             $catalogIndex=$template['catalog_index']===null ? null : (int)$template['catalog_index'];
         } else $manifest=ws_manifest(['main.py'=>['kind'=>'file','data'=>base64_encode("print('Hello, Noventix!')\n")]]);
+        if ($catalogIndex!==null) {
+            $workspace=q('SELECT p.id FROM projects p JOIN project_workspaces w ON w.project_id=p.id WHERE p.user_id=? AND p.catalog_index=?',[$userId,$catalogIndex])->fetchColumn();
+            if ($workspace) { $pdo->commit(); return (int)$workspace; }
+        }
         if (mb_strlen($title)<1 || mb_strlen($title)>180) throw new InvalidArgumentException('عنوان باید بین ۱ تا ۱۸۰ نویسه باشد.');
         if ((int)q('SELECT COUNT(*) FROM project_workspaces w JOIN projects p ON p.id=w.project_id WHERE p.user_id=?',[$userId])->fetchColumn()>=20) throw new InvalidArgumentException('حداکثر بیست پروژه ذخیره‌شده مجاز است.');
         ws_quota($userId,$manifest['bytes']);

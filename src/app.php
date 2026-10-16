@@ -5,6 +5,8 @@ require_once dirname(__DIR__).'/database/connection.php';
 require_once __DIR__.'/auth.php';
 require_once __DIR__.'/workspace.php';
 require_once __DIR__.'/payments.php';
+require_once __DIR__.'/seo.php';
+require_once __DIR__.'/course_admin.php';
 function h(mixed $value): string { return htmlspecialchars((string)$value, ENT_QUOTES|ENT_SUBSTITUTE, 'UTF-8'); }
 // Array form is required: three-argument strtr() maps bytes, which corrupts multibyte Persian digits.
 function fa(int|string $v): string { return strtr((string)$v,['0'=>'۰','1'=>'۱','2'=>'۲','3'=>'۳','4'=>'۴','5'=>'۵','6'=>'۶','7'=>'۷','8'=>'۸','9'=>'۹']); }
@@ -33,7 +35,7 @@ function lesson_learning_status(?array $progress,?array $quiz=null): string {
 }
 function course_workspace(int $userId,string $slug,?int $requestedLesson=null): ?array {
     $course=q("SELECT c.id,c.slug,c.title,c.description,c.estimated_duration_minutes FROM courses c INNER JOIN enrollments e ON e.course_slug=c.slug AND e.user_id=? WHERE c.slug=? AND c.status='published'",[$userId,$slug])->fetch();
-    if (!$course) return null;
+    if (!$course || !can_course($slug,plan_for(['id'=>$userId]))) return null;
     if ($requestedLesson!==null && !q("SELECT id FROM lessons WHERE id=? AND course_id=? AND status='published'",[$requestedLesson,$course['id']])->fetch()) return null;
     $course['lessons']=q("SELECT id,title,content,position,duration_minutes FROM lessons WHERE course_id=? AND status='published' ORDER BY position ASC",[$course['id']])->fetchAll();
     $progress=[];
@@ -125,7 +127,10 @@ function progress_response(int $status,array $body): void {
     http_response_code($status); header('Content-Type: application/json; charset=utf-8'); echo json_encode($body,JSON_THROW_ON_ERROR); exit;
 }
 function authorized_progress_lesson(int $userId,int $lessonId): bool {
-    return (bool)q("SELECT l.id FROM lessons l INNER JOIN courses c ON c.id=l.course_id INNER JOIN enrollments e ON e.course_slug=c.slug AND e.user_id=? WHERE l.id=? AND l.status='published' AND c.status='published'",[$userId,$lessonId])->fetch();
+    $lesson=q("SELECT l.id FROM lessons l INNER JOIN courses c ON c.id=l.course_id INNER JOIN enrollments e ON e.course_slug=c.slug AND e.user_id=? WHERE l.id=? AND l.status='published' AND c.status='published'",[$userId,$lessonId])->fetch();
+    if (!$lesson) return false;
+    $slug=q('SELECT c.slug FROM lessons l JOIN courses c ON c.id=l.course_id WHERE l.id=?',[$lessonId])->fetchColumn();
+    return can_course($slug,plan_for(['id'=>$userId]));
 }
 function progress_number(mixed $value): ?float {
     if ($value===null || $value==='' || !is_numeric($value)) return null;
@@ -292,8 +297,8 @@ function save_lesson_progress(array $u): void {
             if (verified_lesson_completion($existing ?: null,lesson_quiz_for_lesson($lessonId))) progress_response(200,['saved'=>true]);
             progress_response(422,['error'=>'تکمیل درس بدون معیار تأییدشدهٔ سمت سرور قابل ثبت نیست.']);
         }
-        if (db()->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql') q("INSERT INTO lesson_progress(user_id,lesson_id,watched_seconds,last_position,percentage) VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE watched_seconds=VALUES(watched_seconds),last_position=VALUES(last_position),percentage=VALUES(percentage),updated_at=CURRENT_TIMESTAMP",[$u['id'],$lessonId,$watched,$position,$percentage]);
-        else q("INSERT INTO lesson_progress(user_id,lesson_id,watched_seconds,last_position,percentage) VALUES (?,?,?,?,?) ON CONFLICT(user_id,lesson_id) DO UPDATE SET watched_seconds=excluded.watched_seconds,last_position=excluded.last_position,percentage=excluded.percentage,updated_at=CURRENT_TIMESTAMP",[$u['id'],$lessonId,$watched,$position,$percentage]);
+        if (db()->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql') q("INSERT INTO lesson_progress(user_id,lesson_id,watched_seconds,last_position,percentage) VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE watched_seconds=GREATEST(watched_seconds,VALUES(watched_seconds)),last_position=VALUES(last_position),percentage=GREATEST(percentage,VALUES(percentage)),updated_at=CURRENT_TIMESTAMP",[$u['id'],$lessonId,$watched,$position,$percentage]);
+        else q("INSERT INTO lesson_progress(user_id,lesson_id,watched_seconds,last_position,percentage) VALUES (?,?,?,?,?) ON CONFLICT(user_id,lesson_id) DO UPDATE SET watched_seconds=MAX(lesson_progress.watched_seconds,excluded.watched_seconds),last_position=excluded.last_position,percentage=MAX(lesson_progress.percentage,excluded.percentage),updated_at=CURRENT_TIMESTAMP",[$u['id'],$lessonId,$watched,$position,$percentage]);
     } catch (Throwable $e) {
         progress_response(500,['error'=>'ذخیره پیشرفت انجام نشد.']);
     }
@@ -309,6 +314,7 @@ function handle_post(string $path): void {
         q('INSERT INTO contact_messages(name,email,message) VALUES (?,?,?)',[$name,$email,$message]); flash('پیام شما ثبت شد.'); redirect('contact');
     }
     $u=require_user(); $plan=plan_for($u);
+    if (in_array($path,['admin/course-save','admin/lesson-save','admin/quiz-save'],true)) course_admin_save($path);
     if ($path==='progress/save') { save_lesson_progress($u); }
     if ($path==='payment/start') payment_start($u);
     if ($path==='payment/retry') {
@@ -340,20 +346,9 @@ function handle_post(string $path): void {
         $index=filter_var($_POST['index'] ?? '',FILTER_VALIDATE_INT);
         if ($index===false || $index<0 || !isset(PROJECTS[$index])) { http_response_code(404); exit; }
         $template=q("SELECT id FROM workspace_templates WHERE catalog_index=? AND status='published'",[$index])->fetchColumn();
-        if ($template) {
-            try { $projectId=ws_create((int)$u['id'],(int)$template,''); }
-            catch (InvalidArgumentException $e) { flash($e->getMessage(),'error'); redirect('project/'.$index); }
-            redirect('dashboard/workspace/'.$projectId);
-        }
-        $limit=PLANS[$plan]['projects'];
-        if ($limit===0) { flash('شروع پروژه فعلاً برای این حساب در دسترس نیست؛ یادگیری دوره رایگان در دسترس است.','error'); redirect('dashboard/learning'); }
-        $exists=q('SELECT id FROM projects WHERE user_id=? AND catalog_index=?',[$u['id'],$index])->fetch();
-        if (!$exists) {
-            $count=(int)q('SELECT COUNT(*) FROM projects WHERE user_id=?',[$u['id']])->fetchColumn();
-            if ($limit!==-1 && $count >= $limit) { flash('ظرفیت پروژه‌های فعال حساب شما تکمیل شده است.','error'); redirect('dashboard/projects'); }
-            q('INSERT INTO projects(user_id,catalog_index) VALUES (?,?)',[$u['id'],$index]);
-        }
-        flash('پروژه به میزکار شما اضافه شد.'); redirect('dashboard/projects');
+        try { $projectId=ws_create((int)$u['id'],(int)($template ?: 0),PROJECTS[$index]['title'],$index); }
+        catch (InvalidArgumentException $e) { flash($e->getMessage(),'error'); redirect('project/'.$index); }
+        redirect('dashboard/workspace/'.$projectId);
     }
     if ($path==='community/create' || $path==='community/reply') {
         $body=trim((string)($_POST['body'] ?? ''));
@@ -444,7 +439,7 @@ function handle_post(string $path): void {
         if (mb_strlen($title)<3 || mb_strlen($title)>180) { flash('عنوان باید بین ۳ تا ۱۸۰ نویسه باشد.','error'); redirect('dashboard/content'); }
         if (!in_array($kind,['مقاله','صفحه'],true)) $kind='مقاله';
         q('INSERT INTO content_items(title,kind,status) VALUES (?,?,?)',[$title,$kind,'پیش‌نویس']);
-        flash('محتوای جدید ذخیره و منتشر شد.'); redirect('dashboard/content');
+        flash('محتوای جدید به‌صورت پیش‌نویس ذخیره شد.'); redirect('dashboard/content');
     }
     if ($path==='content/publish') {
         require_admin();

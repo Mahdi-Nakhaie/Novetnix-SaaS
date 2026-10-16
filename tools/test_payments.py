@@ -22,6 +22,8 @@ class PaymentTests(unittest.TestCase):
             db.executescript((ROOT / 'database/schema.sqlite.sql').read_text())
             db.execute("INSERT INTO users(phone,name,phone_verified_at) VALUES ('09120000901','Buyer',1)")
             db.execute("INSERT INTO users(phone,name,phone_verified_at) VALUES ('09120000902','Other',1)")
+            db.execute("INSERT INTO courses(slug,title,description,status) VALUES ('data-analysis','Data','Published course','published')")
+            db.execute("INSERT INTO lessons(course_id,title,content,position,status) VALUES (1,'Data lesson','Lesson content',1,'published')")
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -35,7 +37,7 @@ use \PDO;
 use \RuntimeException;
 use \Throwable;
 $f=json_decode(stream_get_contents(STDIN),true);
-require $f['root'].'/src/data.php';
+require $f['root'].'/src/app.php';
 $db=new PDO('sqlite:'.$f['path']);
 $db->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION);
 $db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE,PDO::FETCH_ASSOC);
@@ -72,6 +74,17 @@ $_POST=$f['post']; $_GET=$f['query'];
     def scalar(self, sql):
         with sqlite3.connect(self.path) as db:
             return db.execute(sql).fetchone()[0]
+
+    def test_unavailable_benefits_cannot_be_sold(self):
+        out = self.run_php("payment_start(['id'=>1,'phone'=>'09120000901']);", post={'plan': 'titanium', 'request_key': 'c' * 32})
+        self.assertEqual(out['redirect'], 'dashboard/subscription')
+        self.assertNotIn('url', out)
+        with sqlite3.connect(self.path) as db:
+            db.execute("UPDATE courses SET status='draft'")
+        out = self.run_php("payment_start(['id'=>1,'phone'=>'09120000901']);", post={'plan': 'bronze', 'request_key': 'd' * 32})
+        self.assertEqual(out['redirect'], 'dashboard/subscription')
+        self.assertNotIn('url', out)
+        self.assertEqual(self.scalar('SELECT COUNT(*) FROM payment_orders'), 0)
 
     def test_request_uses_server_price_production_endpoint_and_persists_before_redirect(self):
         out = self.run_php("payment_start(['id'=>1,'phone'=>'09120000901']);",

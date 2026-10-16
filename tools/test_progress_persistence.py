@@ -80,8 +80,8 @@ class ProgressPersistenceTest(unittest.TestCase):
         self.assertNotIn("completed=VALUES(completed)", self.progress)
         self.assertNotIn("completed_at=excluded.completed_at", self.progress)
         self.assertNotIn("completed_at=VALUES(completed_at)", self.progress)
-        self.assertIn("percentage=excluded.percentage", self.progress)
-        self.assertIn("percentage=VALUES(percentage)", self.progress)
+        self.assertIn('percentage=MAX(lesson_progress.percentage,excluded.percentage)', self.progress)
+        self.assertIn('percentage=GREATEST(percentage,VALUES(percentage))', self.progress)
         self.assertIn("validate_csrf()", body(APP, "handle_post"))
         self.assertIn("$u=require_user()", body(APP, "handle_post"))
 

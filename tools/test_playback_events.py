@@ -109,8 +109,8 @@ process.stdout.write(JSON.stringify(cases.map(([position, duration]) => calculat
         self.assertIn("progress_number($_POST['last_position'] ?? null)", save)
         self.assertIn("is_finite($number)", APP)
         self.assertIn("$percentage>100", save)
-        self.assertIn("percentage=excluded.percentage", save)
-        self.assertIn("percentage=VALUES(percentage)", save)
+        self.assertIn('percentage=MAX(lesson_progress.percentage,excluded.percentage)', save)
+        self.assertIn('percentage=GREATEST(percentage,VALUES(percentage))', save)
 
     def test_aparat_embed_does_not_pretend_to_provide_player_state(self):
         workspace = function_body(VIEWS, "page_course_workspace")

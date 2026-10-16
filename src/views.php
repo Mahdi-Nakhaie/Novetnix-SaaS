@@ -6,8 +6,12 @@ function linkto(string $path,string $label,string $class=''): void { echo '<a cl
 function form_start(string $action,string $class='',bool $customValidation=false): void { echo '<form action="'.h(url($action)).'" method="post" class="'.($class?h($class):'').($customValidation?' custom-validation':'').($customValidation?'" novalidate':'"').'><input type="hidden" name="csrf" value="'.h(csrf()).'">'; }
 function head_page(string $title,string $description='',bool $panel=false): void {
     global $me,$path;
+    if ($panel || !seo_public_path($path) || http_response_code()===404) header('X-Robots-Tag: noindex, follow');
+    if ($panel) header('Cache-Control: private, no-store');
     $full=($title==='خانه' ? 'Noventix | از یادگیری تا ساختن' : h($title).' | Noventix');
-    echo '<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#201a35"><title>'.$full.'</title><meta name="description" content="'.h($description ?: 'Noventix؛ آموزش پروژه‌محور پایتون، علم داده و هوش مصنوعی از مطالعه تا ساختن.').'"><link rel="stylesheet" href="/assets/style.css"><script src="/assets/app.js" defer></script><script src="/assets/playback-events.js" defer></script></head><body class="'.($panel?'is-panel':'').'">';
+    echo '<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#201a35"><title>'.$full.'</title><meta name="description" content="'.h($description ?: 'Noventix؛ آموزش پروژه‌محور پایتون، علم داده و هوش مصنوعی از مطالعه تا ساختن.').'">';
+    seo_head($title,$description ?: 'Noventix؛ آموزش پروژه‌محور پایتون، علم داده و هوش مصنوعی از مطالعه تا ساختن.',$panel);
+    echo '<link rel="stylesheet" href="/assets/style.css"><script src="/assets/app.js" defer></script><script src="/assets/playback-events.js" defer></script></head><body class="'.($panel?'is-panel':'').'">';
     echo '<div class="noventix-loading" id="noventix-loading" role="status" aria-live="polite" hidden><div class="noventix-loading-card"><span class="noventix-loading-mark" aria-hidden="true">N</span><strong>Noventix</strong><span class="noventix-loading-track" aria-hidden="true"><span></span></span><p>در حال آماده‌سازی...</p></div></div>';
     if ($panel) { panel_nav(); return; }
     echo '<header class="site-header"><div class="container header-inner"><a href="/" class="brand" aria-label="Noventix، صفحه اصلی"><img src="/assets/logo.png" alt="Noventix" width="171" height="55"></a><nav class="main-nav" aria-label="ناوبری اصلی">';
@@ -81,7 +85,7 @@ function course_cards(array $courses): void {
     echo '<div class="course-grid">'; $i=0; foreach ($courses as $c) { echo '<article class="course-card"><div class="course-icon icon-'.($i++%4).'">'.h(mb_substr($c['title'],0,1)).'</div><div class="meta-row"><span class="pill">Course</span><span>منتشرشده</span></div><h3>'.h($c['title']).'</h3><p>'.h($c['description']).'</p><a class="inline-link" href="'.h(url('course/'.$c['slug'])).'">مشاهده Course ←</a></article>'; } echo '</div>';
 }
 function home(array $courses): void {
-    echo '<main><section class="hero container"><div class="hero-copy"><span class="eyebrow"><span class="dot"></span> مسیر تازه یادگیری هوش مصنوعی</span><h1>فقط یاد نگیر؛<br><em>واقعاً بساز.</em></h1><p>پایتون، علم داده و هوش مصنوعی را با مقاله‌های کاربردی یاد بگیر؛ بعد با پروژه‌های واقعی، آموخته‌هایت را به مهارت تبدیل کن.</p><div class="hero-buttons">'; linkto('course/'.FREE_COURSE_SLUG,'شروع دوره رایگان ←','btn btn-primary'); linkto('projects','دیدن پروژه‌ها','btn btn-outline'); echo '</div><div class="hero-proof"><span>✦ مسیر پروژه‌محور</span><span>✦ یادگیری به زبان فارسی</span><span>✦ شروع رایگان</span></div></div><div class="hero-display"><div class="hero-window"><div class="window-top"><span class="window-dots">● ● ●</span><span dir="ltr">noventix / your-next-project</span><span class="code-label">PYTHON</span></div><div class="nova-bubble"><img src="/assets/nova.png" alt="مسکات Nova" width="70" height="70"><span><strong>سلام، من Nova هستم!</strong><small>بیا مسئله را قدم‌به‌قدم حل کنیم.</small></span></div><pre dir="ltr"><span class="code-blue">from</span> sklearn.model_selection <span class="code-blue">import</span> train_test_split
+    echo '<main><section class="hero container"><div class="hero-copy"><span class="eyebrow"><span class="dot"></span> مسیر تازه یادگیری هوش مصنوعی</span><h1>فقط یاد نگیر؛<br><em>واقعاً بساز.</em></h1><p>پایتون، علم داده و هوش مصنوعی را با مقاله‌های کاربردی یاد بگیر؛ بعد با پروژه‌های واقعی، آموخته‌هایت را به مهارت تبدیل کن.</p><div class="hero-buttons">'; linkto('course/'.FREE_COURSE_SLUG,'شروع دوره رایگان ←','btn btn-primary'); linkto('projects','دیدن پروژه‌ها','btn btn-outline'); echo '</div><div class="hero-proof"><span>✦ مسیر پروژه‌محور</span><span>✦ یادگیری به زبان فارسی</span><span>✦ شروع رایگان</span></div></div><div class="hero-display"><div class="hero-window"><div class="window-top"><span class="window-dots">● ● ●</span><span dir="ltr">noventix / your-next-project</span><span class="code-label">PYTHON</span></div><div class="nova-bubble"><img src="/assets/nova.png" alt="مسکات Nova" width="70" height="70"><span><strong>Nova AI — به‌زودی</strong><small>دستیار هوش مصنوعی فعلاً فعال نیست.</small></span></div><pre dir="ltr"><span class="code-blue">from</span> sklearn.model_selection <span class="code-blue">import</span> train_test_split
 
 <span class="code-purple">def</span> <span class="code-yellow">build_your_future</span>(data):
     insights = <span class="code-yellow">learn</span>(data)
@@ -90,7 +94,8 @@ function home(array $courses): void {
     echo '<section class="section container">'; section_header('روش یادگیری ما','فاصله دانستن تا توانستن را کم کن','به جای جمع‌کردن آموزش‌های ناتمام، با یک مسیر روشن مهارتت را در عمل بساز.'); echo '<div class="features-grid"><article class="feature"><div class="feature-icon">◇</div><span class="feature-n">01 / DISCOVER</span><h3>بخوان و بفهم</h3><p>مفهوم‌های پایتون، ماشین لرنینگ و علم داده را در مقاله‌های کوتاه و هدفمند یاد بگیر.</p></article><article class="feature"><div class="feature-icon">⌘</div><span class="feature-n">02 / BUILD</span><h3>یادگیری با ساختن</h3><p>از تحلیل داده تا مدل‌های یادگیری عمیق، مهارت‌هایت را روی مسئله‌های واقعی آزمایش کن.</p></article><article class="feature"><div class="feature-icon">✳</div><span class="feature-n">03 / GROW</span><h3>پیشرفت قابل مشاهده</h3><p>پروژه‌هایت را در میزکار دنبال کن و با گفت‌وگو در انجمن، راه‌حل‌های بهتری پیدا کن.</p></article></div></section>';
     echo '<section class="section alt-section"><div class="container"><div class="section-row">'; section_header('مسیرهای یادگیری','از کجا شروع می‌کنی؟','مقاله‌های کاربردی برای هر مرحله از سفر یادگیری.'); linkto('courses','همه مقاله‌ها ←','inline-link'); echo '</div>'; course_cards($courses); echo '</div></section>';
     echo '<section class="section container"><div class="section-row">'; section_header('یادگیری در عمل','پروژه‌هایی برای دنیای واقعی','از مسئله‌های کوچک شروع کن و به ساختن راه‌حل‌های قابل ارائه برس.'); linkto('projects','همه پروژه‌ها ←','inline-link'); echo '</div>'; project_cards(3); echo '</section>';
-    echo '<section class="section dark-band"><div class="container band-inner"><div><span class="eyebrow">متد یادگیری CRAFT</span><h2>هر قدم یادگیری،<br>یک قدم نزدیک‌تر به ساختن.</h2><p>از درک مسئله و تمرین تا کاربرد آموخته‌ها در موقعیت‌های تازه؛ مسیری که با عمل معنا پیدا می‌کند.</p>'; linkto('about','درباره رویکرد ما ←','btn btn-light'); echo '</div><div class="band-steps"><div><span>01</span><strong>درک مفهوم</strong><small>با سؤال درست شروع کن</small></div><div><span>02</span><strong>ساخت پروژه</strong><small>راه‌حل را امتحان کن</small></div><div><span>03</span><strong>انتقال مهارت</strong><small>در مسئله تازه مستقل باش</small></div></div></div></section>';
+    echo '<section class="section dark-band"><div class="container band-inner"><div><span class="eyebrow">رویکرد عملی یادگیری</span><h2>هر قدم یادگیری،<br>یک قدم نزدیک‌تر به ساختن.</h2><p>از درک مسئله و تمرین تا کاربرد آموخته‌ها در موقعیت‌های تازه؛ مسیری که با عمل معنا پیدا می‌کند.</p>'; linkto('about','درباره رویکرد ما ←','btn btn-light'); echo '</div><div class="band-steps"><div><span>01</span><strong>درک مفهوم</strong><small>با سؤال درست شروع کن</small></div><div><span>02</span><strong>ساخت پروژه</strong><small>راه‌حل را امتحان کن</small></div><div><span>03</span><strong>انتقال مهارت</strong><small>در مسئله تازه مستقل باش</small></div></div></div></section>';
+    echo '<section class="section container"><div class="section-header"><span class="eyebrow">برای شروع، نه وعدهٔ استخدام</span><h2>اگر می‌دانی اما هنوز نمی‌سازی</h2><p>Noventix برای مبتدی‌هایی است که می‌خواهند برنامه‌نویسی و هوش مصنوعی را برای حل مسئله‌های کاری یاد بگیرند. این مسیر تضمین درآمد یا استخدام نیست.</p></div><div class="features-grid"><article class="feature"><h3>۱. حساب بساز و تأیید کن</h3><p>نام، شماره و رمز را ثبت کن و شماره را با کد پیامک تأیید کن.</p></article><article class="feature"><h3>۲. دورهٔ رایگان را شروع کن</h3><p>از صفحهٔ دوره، ثبت‌نام کن؛ جلسه‌ها و آزمون‌های موجود در پنل در دسترس‌اند. تکمیل درس به پاسخ آزمون وابسته است، نه صرفاً بازکردن ویدئو.</p></article><article class="feature"><h3>۳. تمرین کن و برگرد</h3><p>فایل‌های تمرینت را در میزکار خصوصی ذخیره کن. اجرای کد به اتصال سرویس ایزوله وابسته است؛ پخش آپارات به‌تنهایی پیشرفت خودکار ثبت نمی‌کند.</p></article></div></section>';
     if (COMMERCE_ENABLED) {
         echo '<section class="section container">'; section_header('پلن‌های یادگیری','برای هر مرحله، یک انتخاب','از رایگان شروع کن و هر وقت آماده بودی، امکانات بیشتر را فعال کن.'); plan_cards(true); echo '<div class="center-link">'; linkto('pricing','مقایسه کامل امکانات پلن‌ها ←','inline-link'); echo '</div></section>';
     } else {
@@ -350,8 +355,10 @@ function admin_panel(string $sub): void {
     } elseif ($sub==='users') {
         panel_head('کاربران','فهرست حساب‌های ثبت‌شده و وضعیت Lead و یادگیری آن‌ها.');
         try {
-            $rows=q('SELECT id,name,phone,acquisition_source,acquisition_campaign FROM users ORDER BY id DESC LIMIT 100')->fetchAll();
-            echo '<div class="panel-card table-wrap"><table><thead><tr><th>نام و نام خانوادگی</th><th>شماره موبایل</th><th>Lead Status</th><th>Course Progress</th><th>Completed Lessons</th><th>Course Completion</th><th>Source</th><th>Campaign</th></tr></thead><tbody>';
+            $search=is_string($_GET['q'] ?? null) ? trim($_GET['q']) : '';
+            echo '<form method="get"><label>جست‌وجوی نام<input name="q" value="'.h($search).'" maxlength="100"></label><button class="btn btn-outline">جست‌وجو</button></form>';
+            $rows=$search==='' ? q('SELECT id,name,phone,acquisition_source,acquisition_campaign,phone_verified_at FROM users ORDER BY id DESC LIMIT 100')->fetchAll() : q('SELECT id,name,phone,acquisition_source,acquisition_campaign,phone_verified_at FROM users WHERE name LIKE ? ORDER BY id DESC LIMIT 100',['%'.mb_substr($search,0,100).'%'])->fetchAll();
+            echo '<div class="panel-card table-wrap"><table><thead><tr><th>نام و نام خانوادگی</th><th>شماره موبایل</th><th>تأیید شماره</th><th>پلن فعال</th><th>Lead Status</th><th>Course Progress</th><th>Completed Lessons</th><th>Course Completion</th><th>Source</th><th>Campaign</th></tr></thead><tbody>';
             if (!$rows) echo '<tr><td colspan="8" class="muted">هنوز کاربری ثبت‌نام نکرده است.</td></tr>';
             foreach ($rows as $r) {
                 $stage=lead_stage_for_user((int)$r['id']);
@@ -366,7 +373,7 @@ function admin_panel(string $sub): void {
                 };
                 $source=trim((string)($r['acquisition_source'] ?? '')) ?: 'Unknown';
                 $campaign=trim((string)($r['acquisition_campaign'] ?? '')) ?: '—';
-                echo '<tr><td>'.h(trim((string)$r['name']) ?: '—').'</td><td dir="ltr">'.h($r['phone']).'</td><td>'.h($stage['label'] ?? '—').'</td><td dir="ltr">'.h($progress).'</td><td>'.h($completed).'</td><td>'.h($completion).'</td><td>'.h($source).'</td><td dir="ltr">'.h($campaign).'</td></tr>';
+                echo '<tr><td>'.h(trim((string)$r['name']) ?: '—').'</td><td dir="ltr">'.h($r['phone']).'</td><td>'.($r['phone_verified_at']===null?'تأیید نشده':'تأیید شده').'</td><td>'.h(PLANS[plan_for($r)]['name']).'</td><td>'.h($stage['label'] ?? '—').'</td><td dir="ltr">'.h($progress).'</td><td>'.h($completed).'</td><td>'.h($completion).'</td><td>'.h($source).'</td><td dir="ltr">'.h($campaign).'</td></tr>';
             }
             echo '</tbody></table></div>';
         } catch (Throwable $e) {
@@ -376,9 +383,10 @@ function admin_panel(string $sub): void {
         echo '<div class="panel-heading"><h1>پیام‌های تماس</h1><p>پیام‌های ثبت‌شده از فرم تماس.</p></div><div class="panel-list">'; foreach (q('SELECT * FROM contact_messages ORDER BY id DESC LIMIT 50')->fetchAll() as $r) echo '<div class="list-item"><div><h3>'.h($r['name']).' · '.h($r['email']).'</h3><p>'.nl2br(h($r['message'])).'</p></div><small>'.h($r['created_at']).'</small></div>'; echo '</div>';
     } elseif ($sub==='courses') {
         panel_head('Courses & Lessons','ساختار دوره‌ها و درس‌ها از پایگاه‌داده؛ دوره‌ها فیلد ترتیب ندارند و بر اساس شناسه نمایش داده می‌شوند؛ ترتیب درس‌ها از position است.');
+        course_admin_forms();
         try {
             $courses=q('SELECT id,title,status FROM courses ORDER BY id ASC')->fetchAll();
-            $lessons=q('SELECT course_id,title,position,status FROM lessons ORDER BY course_id ASC,position ASC,id ASC')->fetchAll();
+            $lessons=q('SELECT id,course_id,title,position,status FROM lessons ORDER BY course_id ASC,position ASC,id ASC')->fetchAll();
             $byCourse=[];
             foreach ($lessons as $lesson) $byCourse[(int)$lesson['course_id']][]=$lesson;
             if (!$courses) echo '<div class="panel-card"><p class="muted">هنوز دوره‌ای ثبت نشده است.</p></div>';
@@ -388,7 +396,7 @@ function admin_panel(string $sub): void {
                 if (!$items) echo '<p class="muted">این دوره هنوز درسی ندارد.</p>';
                 else {
                     echo '<div class="table-wrap"><table><thead><tr><th>Lesson Title</th><th>Order</th><th>Status</th><th>Video URL</th></tr></thead><tbody>';
-                    foreach ($items as $lesson) echo '<tr><td>'.h($lesson['title']).'</td><td>'.fa((int)$lesson['position']).'</td><td>'.h($lesson['status'] ?? '—').'</td><td>ثبت نشده (فیلد ویدئو موجود نیست)</td></tr>';
+                    foreach ($items as $lesson) echo '<tr><td>'.h($lesson['title']).' (ID: '.fa((int)$lesson['id']).')</td><td>'.fa((int)$lesson['position']).'</td><td>'.h($lesson['status'] ?? '—').'</td><td>ثبت نشده (فیلد ویدئو موجود نیست)</td></tr>';
                     echo '</tbody></table></div>';
                 }
                 echo '</section>';

@@ -21,10 +21,16 @@ function payment_api(string $operation,array $payload): array {
     return $result;
 }
 function payment_authority(string $authority): bool { return (bool)preg_match('/^A[a-zA-Z0-9]{35}$/D',$authority); }
+function payment_plan_courses(string $plan): array {
+    if (!isset(PLANS[$plan]) || $plan==='free' || $plan==='titanium') return [];
+    $courses=q("SELECT c.slug,c.title FROM courses c WHERE c.status='published' AND EXISTS (SELECT 1 FROM lessons l WHERE l.course_id=c.id AND l.status='published') ORDER BY c.id")->fetchAll();
+    return array_values(array_filter($courses,fn($course)=>can_course($course['slug'],$plan) && !can_course($course['slug'],'free')));
+}
 function payment_start(array $u): never {
     $selected=(string)($_POST['plan'] ?? ''); $key=(string)($_POST['request_key'] ?? '');
     if (!COMMERCE_ENABLED || !payment_ready()) { flash('درگاه واقعی هنوز تنظیم نشده است؛ هیچ مبلغی دریافت و اشتراکی فعال نشد.','error'); redirect('dashboard/subscription'); }
     if (!isset(PLANS[$selected]) || PLANS[$selected]['price']<=0 || !preg_match('/^[a-f0-9]{32}$/D',$key)) { http_response_code(422); exit('درخواست خرید معتبر نیست.'); }
+    if (!payment_plan_courses($selected)) { flash('این پلن فعلاً محتوای پولی منتشرشده یا مزیت اضافهٔ قابل‌فروش ندارد؛ خرید غیرفعال است.','error'); redirect('dashboard/subscription'); }
     $pdo=db(); $pdo->beginTransaction();
     try {
         q('UPDATE users SET name=name WHERE id=?',[$u['id']]);
@@ -87,7 +93,14 @@ function payment_callback(): never {
 function payment_checkout(): void {
     echo '<section class="panel-card"><h2>خرید اشتراک با زرین‌پال</h2><p>اشتراک ۳۰ روزه؛ مبلغ به تومان است. Nova AI فعلاً به‌زودی است و فعال نیست. تمدید همان پلن به زمان باقی‌مانده اضافه می‌شود؛ تغییر پلن از امروز است و ماندهٔ پلن قبلی منتقل نمی‌شود.</p>';
     if (!payment_ready()) echo '<p role="status">درگاه واقعی هنوز توسط مدیر تنظیم نشده است. پرداخت آزمایشی یا فعال‌سازی خودکار وجود ندارد.</p>';
-    foreach (PLANS as $key=>$p) { if (!$p['price']) continue; form_start('payment/start'); echo '<input type="hidden" name="plan" value="'.h($key).'"><input type="hidden" name="request_key" value="'.bin2hex(random_bytes(16)).'"><button class="btn btn-primary"'.(!payment_ready()?' disabled':'').'>خرید '.h($p['name']).' — '.money($p['price']).'</button></form>'; }
+    foreach (PLANS as $key=>$p) {
+        if (!$p['price']) continue;
+        $courses=payment_plan_courses($key);
+        echo '<h3>'.h($p['name']).'</h3><p>'.h($p['summary']).'</p>';
+        if (!$courses) echo '<p>خرید غیرفعال است: محتوای پولی قابل‌دسترسی یا مزیت اضافهٔ فعال برای فروش موجود نیست.</p>';
+        else { echo '<ul>'; foreach ($courses as $course) echo '<li><a href="'.h(url('course/'.$course['slug'])).'">'.h($course['title']).'</a></li>'; echo '</ul>'; }
+        form_start('payment/start'); echo '<input type="hidden" name="plan" value="'.h($key).'"><input type="hidden" name="request_key" value="'.bin2hex(random_bytes(16)).'"><button class="btn btn-primary"'.(!payment_ready() || !$courses?' disabled':'').'>خرید '.h($p['name']).' — '.money($p['price']).'</button></form>';
+    }
     echo '<a href="/dashboard/payment-history">تاریخچه و بررسی مجدد پرداخت‌ها</a></section>';
 }
 function payment_history(array $u,bool $admin=false): void {

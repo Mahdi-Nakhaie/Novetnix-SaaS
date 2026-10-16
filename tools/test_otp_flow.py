@@ -255,7 +255,9 @@ class OtpFlowTest(unittest.TestCase):
         self.assertLess(verify.index("beginTransaction"), verify.index("SET used_at=?"))
         self.assertIn("'کد واردشده صحیح نیست. '.fa($left).' تلاش دیگر باقی مانده است.'", verify)
         self.assertIn("attempts<?',[$phone,$entry['otp_hash'],time(),$maxAttempts]", verify)
-        self.assertIn("session_regenerate_id(true); $_SESSION['uid']=$userId;", verify)
+        self.assertIn('session_regenerate_id(true);', verify)
+        self.assertIn("$_SESSION['uid']=$userId;", verify)
+        self.assertIn("$_SESSION['authenticated_at']=time();", verify)
         self.assertIn("redirect('dashboard')", verify)
 
     def test_session_contains_no_credentials_or_otp(self):

@@ -1,0 +1,3491 @@
+{
+  "scope": "Every static HTML page; PHP HTTP evidence is in release-audit.md and tools/test_release.py.",
+  "pages": [
+    {
+      "file": "site/404.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "اینجا چیزی برای پیدا کردن نیست!"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/about/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "ما Noventix را برای ساختن ساختیم"
+        },
+        {
+          "level": 2,
+          "label": "۱مسئله‌ای که دیدیم"
+        },
+        {
+          "level": 2,
+          "label": "۲رویکرد ما"
+        },
+        {
+          "level": 2,
+          "label": "۳تعهد ما"
+        },
+        {
+          "level": 2,
+          "label": "سه اصل راهنمای ما"
+        },
+        {
+          "level": 3,
+          "label": "شفافیت"
+        },
+        {
+          "level": 3,
+          "label": "کاربردپذیری"
+        },
+        {
+          "level": 3,
+          "label": "احترام به یادگیرنده"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/community/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "کنار هم یاد می‌گیریم"
+        },
+        {
+          "level": 2,
+          "label": "گفت‌وگوی زنده"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/contact/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "از اینجا با ما در ارتباط باشید"
+        },
+        {
+          "level": 2,
+          "label": "برای ما پیام بفرستید"
+        },
+        {
+          "level": 2,
+          "label": "کدام مسیر مناسب شماست؟"
+        },
+        {
+          "level": 2,
+          "label": "ما را دنبال کنید"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/course/ai-foundations/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "دوره رایگان مقدماتی هوش مصنوعی"
+        },
+        {
+          "level": 2,
+          "label": "مبانی هوش مصنوعی"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/course/ai-foundations/lesson-2/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "دوره رایگان مقدماتی هوش مصنوعی"
+        },
+        {
+          "level": 2,
+          "label": "پروژه تشخیص چهره"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/course/api-deployment/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "ارائه مدل با FastAPI"
+        },
+        {
+          "level": 2,
+          "label": "۱قرارداد API"
+        },
+        {
+          "level": 2,
+          "label": "۲مرز آموزش و سرویس‌دهی"
+        },
+        {
+          "level": 2,
+          "label": "۳پایش پس از انتشار"
+        },
+        {
+          "level": 2,
+          "label": "۴قرارداد درخواست"
+        },
+        {
+          "level": 2,
+          "label": "۵یکسانی آموزش و اجرا"
+        },
+        {
+          "level": 2,
+          "label": "۶تمرین عملی"
+        },
+        {
+          "level": 2,
+          "label": "✓جمع‌بندی و گام بعدی"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/course/data-analysis/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "تحلیل داده با پایتون و Pandas"
+        },
+        {
+          "level": 2,
+          "label": "۱از سؤال شروع کن، نه نمودار"
+        },
+        {
+          "level": 2,
+          "label": "۲کیفیت داده را بررسی کن"
+        },
+        {
+          "level": 2,
+          "label": "۳نتیجه را مسئولانه تفسیر کن"
+        },
+        {
+          "level": 2,
+          "label": "۴نمونه واقعی"
+        },
+        {
+          "level": 2,
+          "label": "۵دام‌های تحلیل"
+        },
+        {
+          "level": 2,
+          "label": "۶تمرین عملی"
+        },
+        {
+          "level": 2,
+          "label": "✓جمع‌بندی و گام بعدی"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/course/deep-learning/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "شبکه‌های عصبی و یادگیری عمیق"
+        },
+        {
+          "level": 2,
+          "label": "۱بازنمایی داده"
+        },
+        {
+          "level": 2,
+          "label": "۲آموزش و تعمیم"
+        },
+        {
+          "level": 2,
+          "label": "۳تحلیل شکست"
+        },
+        {
+          "level": 2,
+          "label": "۴معماری اولیه"
+        },
+        {
+          "level": 2,
+          "label": "۵پایش آموزش"
+        },
+        {
+          "level": 2,
+          "label": "۶تمرین عملی"
+        },
+        {
+          "level": 2,
+          "label": "✓جمع‌بندی و گام بعدی"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/course/ml-basics/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "یادگیری ماشین از مسئله تا ارزیابی"
+        },
+        {
+          "level": 2,
+          "label": "۱مسئله و معیار موفقیت"
+        },
+        {
+          "level": 2,
+          "label": "۲جلوگیری از نشت داده"
+        },
+        {
+          "level": 2,
+          "label": "۳از baseline عبور کن"
+        },
+        {
+          "level": 2,
+          "label": "۴خط پایه و داده آزمون"
+        },
+        {
+          "level": 2,
+          "label": "۵تفسیر خطا"
+        },
+        {
+          "level": 2,
+          "label": "۶تمرین عملی"
+        },
+        {
+          "level": 2,
+          "label": "✓جمع‌بندی و گام بعدی"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/course/nlp-practice/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "پردازش متن فارسی در عمل"
+        },
+        {
+          "level": 2,
+          "label": "۱داده فارسی را جدی بگیر"
+        },
+        {
+          "level": 2,
+          "label": "۲دسته‌بندی را با baseline آغاز کن"
+        },
+        {
+          "level": 2,
+          "label": "۳ارزیابی منصفانه"
+        },
+        {
+          "level": 2,
+          "label": "۴نرمال‌سازی قابل تکرار"
+        },
+        {
+          "level": 2,
+          "label": "۵ارزیابی در سطح کاربر"
+        },
+        {
+          "level": 2,
+          "label": "۶تمرین عملی"
+        },
+        {
+          "level": 2,
+          "label": "✓جمع‌بندی و گام بعدی"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/course/python-foundations/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "پایتون برای حل مسئله"
+        },
+        {
+          "level": 2,
+          "label": "۱مسئله را به گام‌های کوچک تقسیم کن"
+        },
+        {
+          "level": 2,
+          "label": "۲از تابع‌های کوچک شروع کن"
+        },
+        {
+          "level": 2,
+          "label": "۳تمرین انتقال"
+        },
+        {
+          "level": 2,
+          "label": "۴مثال قابل اجرا"
+        },
+        {
+          "level": 2,
+          "label": "۵خطاهای رایج"
+        },
+        {
+          "level": 2,
+          "label": "۶تمرین و معیار پذیرش"
+        },
+        {
+          "level": 2,
+          "label": "✓جمع‌بندی و گام بعدی"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/courses/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "قدم‌به‌قدم تا توانایی ساختن"
+        },
+        {
+          "level": 3,
+          "label": "دوره رایگان مقدماتی هوش مصنوعی"
+        },
+        {
+          "level": 3,
+          "label": "پایتون برای حل مسئله"
+        },
+        {
+          "level": 3,
+          "label": "تحلیل داده با پایتون و Pandas"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری ماشین از مسئله تا ارزیابی"
+        },
+        {
+          "level": 3,
+          "label": "شبکه‌های عصبی و یادگیری عمیق"
+        },
+        {
+          "level": 3,
+          "label": "پردازش متن فارسی در عمل"
+        },
+        {
+          "level": 3,
+          "label": "ارائه مدل با FastAPI"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/help/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "پاسخ‌های روشن برای شروع سریع"
+        },
+        {
+          "level": 2,
+          "label": "شروع کار"
+        },
+        {
+          "level": 2,
+          "label": "میزکار کد"
+        },
+        {
+          "level": 2,
+          "label": "نیاز به کمک دارید؟"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "فقط یاد نگیر؛واقعاً بساز."
+        },
+        {
+          "level": 2,
+          "label": "فاصله دانستن تا توانستن را کم کن"
+        },
+        {
+          "level": 3,
+          "label": "بخوان و بفهم"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری با ساختن"
+        },
+        {
+          "level": 3,
+          "label": "پیشرفت قابل مشاهده"
+        },
+        {
+          "level": 2,
+          "label": "از کجا شروع می‌کنی؟"
+        },
+        {
+          "level": 3,
+          "label": "دوره رایگان مقدماتی هوش مصنوعی"
+        },
+        {
+          "level": 3,
+          "label": "پایتون برای حل مسئله"
+        },
+        {
+          "level": 3,
+          "label": "تحلیل داده با پایتون و Pandas"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری ماشین از مسئله تا ارزیابی"
+        },
+        {
+          "level": 3,
+          "label": "شبکه‌های عصبی و یادگیری عمیق"
+        },
+        {
+          "level": 3,
+          "label": "پردازش متن فارسی در عمل"
+        },
+        {
+          "level": 3,
+          "label": "ارائه مدل با FastAPI"
+        },
+        {
+          "level": 2,
+          "label": "پروژه‌هایی برای دنیای واقعی"
+        },
+        {
+          "level": 3,
+          "label": "تحلیل فروش یک فروشگاه آنلاین"
+        },
+        {
+          "level": 3,
+          "label": "پیش‌بینی ریزش مشتری"
+        },
+        {
+          "level": 3,
+          "label": "دسته‌بندی احساسات متن فارسی"
+        },
+        {
+          "level": 2,
+          "label": "هر قدم یادگیری،یک قدم نزدیک‌تر به ساختن."
+        },
+        {
+          "level": 2,
+          "label": "مقدمه‌ای بر هوش مصنوعی برای مبتدیان"
+        },
+        {
+          "level": 2,
+          "label": "پروژه بعدی‌ات منتظر توست."
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/login/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "ورود یا ثبت‌نام"
+        },
+        {
+          "level": 2,
+          "label": "ثبت‌نام"
+        },
+        {
+          "level": 2,
+          "label": "ورود به پنل"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/admin/analytics/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "پنل مدیریت"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/admin/announcements/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "پنل مدیریت"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/admin/catalog/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "پنل مدیریت"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/admin/challenges/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "پنل مدیریت"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/admin/community/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "پنل مدیریت"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/admin/content/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "پنل مدیریت"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/admin/course-new/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "پنل مدیریت"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/admin/courses/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "پنل مدیریت"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/admin/gamification/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "پنل مدیریت"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/admin/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "پنل مدیریت"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/admin/payments/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "پنل مدیریت"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/admin/profile/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "پنل مدیریت"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/admin/settings/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "پنل مدیریت"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/admin/subscriptions/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "پنل مدیریت"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/admin/support/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "پنل مدیریت"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/admin/users/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "پنل مدیریت"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/admin/users-new/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "پنل مدیریت"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/student/activity/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "فعالیت و Streak"
+        },
+        {
+          "level": 2,
+          "label": "فعالیت هفته"
+        },
+        {
+          "level": 2,
+          "label": "شکست فعالیت"
+        },
+        {
+          "level": 2,
+          "label": "Streak چطور محاسبه می‌شود؟"
+        },
+        {
+          "level": 2,
+          "label": "هفته‌های اخیر"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/student/challenge/0/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "یک تابع برای محاسبه تخفیف با مدیریت ورودی خالی بنویس"
+        },
+        {
+          "level": 2,
+          "label": "صورت مسئله"
+        },
+        {
+          "level": 2,
+          "label": "آزمون‌های پذیرش"
+        },
+        {
+          "level": 2,
+          "label": "نمونه راه‌حل"
+        },
+        {
+          "level": 2,
+          "label": "خروجی"
+        },
+        {
+          "level": 2,
+          "label": "راهنمای تمرین"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/student/challenge/1/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "داده گم‌شده را با Pandas پاک‌سازی و مستند کن"
+        },
+        {
+          "level": 2,
+          "label": "صورت مسئله"
+        },
+        {
+          "level": 2,
+          "label": "آزمون‌های پذیرش"
+        },
+        {
+          "level": 2,
+          "label": "نمونه راه‌حل"
+        },
+        {
+          "level": 2,
+          "label": "خروجی"
+        },
+        {
+          "level": 2,
+          "label": "راهنمای تمرین"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/student/challenge/2/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "میانگین متحرک یک سری زمانی را با NumPy حساب کن"
+        },
+        {
+          "level": 2,
+          "label": "صورت مسئله"
+        },
+        {
+          "level": 2,
+          "label": "آزمون‌های پذیرش"
+        },
+        {
+          "level": 2,
+          "label": "نمونه راه‌حل"
+        },
+        {
+          "level": 2,
+          "label": "خروجی"
+        },
+        {
+          "level": 2,
+          "label": "راهنمای تمرین"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/student/challenge/3/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "مدل دسته‌بندی ریزش مشتری را با داده نامتوازن آموزش بده"
+        },
+        {
+          "level": 2,
+          "label": "صورت مسئله"
+        },
+        {
+          "level": 2,
+          "label": "آزمون‌های پذیرش"
+        },
+        {
+          "level": 2,
+          "label": "نمونه راه‌حل"
+        },
+        {
+          "level": 2,
+          "label": "خروجی"
+        },
+        {
+          "level": 2,
+          "label": "راهنمای تمرین"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/student/challenge/4/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "معیار ارزیابی مدل را متناسب با هزینه خطا انتخاب کن"
+        },
+        {
+          "level": 2,
+          "label": "صورت مسئله"
+        },
+        {
+          "level": 2,
+          "label": "آزمون‌های پذیرش"
+        },
+        {
+          "level": 2,
+          "label": "نمونه راه‌حل"
+        },
+        {
+          "level": 2,
+          "label": "خروجی"
+        },
+        {
+          "level": 2,
+          "label": "راهنمای تمرین"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/student/challenge/5/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "یک شبکه عصبی ساده برای داده جدولی بساز و آموزش بده"
+        },
+        {
+          "level": 2,
+          "label": "صورت مسئله"
+        },
+        {
+          "level": 2,
+          "label": "آزمون‌های پذیرش"
+        },
+        {
+          "level": 2,
+          "label": "نمونه راه‌حل"
+        },
+        {
+          "level": 2,
+          "label": "خروجی"
+        },
+        {
+          "level": 2,
+          "label": "راهنمای تمرین"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/student/challenge/6/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "بیش‌برازش را با تنظیم و اعتبارسنجی کاهش بده"
+        },
+        {
+          "level": 2,
+          "label": "صورت مسئله"
+        },
+        {
+          "level": 2,
+          "label": "آزمون‌های پذیرش"
+        },
+        {
+          "level": 2,
+          "label": "نمونه راه‌حل"
+        },
+        {
+          "level": 2,
+          "label": "خروجی"
+        },
+        {
+          "level": 2,
+          "label": "راهنمای تمرین"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/student/challenge/7/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "متن فارسی را نرمال‌سازی و یک دسته‌بند احساسات بساز"
+        },
+        {
+          "level": 2,
+          "label": "صورت مسئله"
+        },
+        {
+          "level": 2,
+          "label": "آزمون‌های پذیرش"
+        },
+        {
+          "level": 2,
+          "label": "نمونه راه‌حل"
+        },
+        {
+          "level": 2,
+          "label": "خروجی"
+        },
+        {
+          "level": 2,
+          "label": "راهنمای تمرین"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/student/challenge/8/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "یک مدل یادگیری عمیق را با معیار روشن ارزیابی کن"
+        },
+        {
+          "level": 2,
+          "label": "صورت مسئله"
+        },
+        {
+          "level": 2,
+          "label": "آزمون‌های پذیرش"
+        },
+        {
+          "level": 2,
+          "label": "نمونه راه‌حل"
+        },
+        {
+          "level": 2,
+          "label": "خروجی"
+        },
+        {
+          "level": 2,
+          "label": "راهنمای تمرین"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/student/challenges/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "چالش‌ها"
+        },
+        {
+          "level": 3,
+          "label": "یک تابع برای محاسبه تخفیف با مدیریت ورودی خالی بنویس"
+        },
+        {
+          "level": 3,
+          "label": "داده گم‌شده را با Pandas پاک‌سازی و مستند کن"
+        },
+        {
+          "level": 3,
+          "label": "میانگین متحرک یک سری زمانی را با NumPy حساب کن"
+        },
+        {
+          "level": 3,
+          "label": "مدل دسته‌بندی ریزش مشتری را با داده نامتوازن آموزش بده"
+        },
+        {
+          "level": 3,
+          "label": "معیار ارزیابی مدل را متناسب با هزینه خطا انتخاب کن"
+        },
+        {
+          "level": 3,
+          "label": "یک شبکه عصبی ساده برای داده جدولی بساز و آموزش بده"
+        },
+        {
+          "level": 3,
+          "label": "بیش‌برازش را با تنظیم و اعتبارسنجی کاهش بده"
+        },
+        {
+          "level": 3,
+          "label": "متن فارسی را نرمال‌سازی و یک دسته‌بند احساسات بساز"
+        },
+        {
+          "level": 3,
+          "label": "یک مدل یادگیری عمیق را با معیار روشن ارزیابی کن"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/student/community/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "Community"
+        },
+        {
+          "level": 2,
+          "label": "Create Post"
+        },
+        {
+          "level": 2,
+          "label": "ذخیره‌های من"
+        },
+        {
+          "level": 2,
+          "label": "گفت‌وگوی زنده"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/student/gamification/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "Gamification"
+        },
+        {
+          "level": 2,
+          "label": "Skill Tree"
+        },
+        {
+          "level": 2,
+          "label": "Achievements & Badges"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/student/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "سلام، خوش آمدی 👋"
+        },
+        {
+          "level": 2,
+          "label": "مسیرت را ادامه بده"
+        },
+        {
+          "level": 2,
+          "label": "انجمن Noventix"
+        },
+        {
+          "level": 2,
+          "label": "ادامه مسیر یادگیری"
+        },
+        {
+          "level": 2,
+          "label": "دسترسی پلن فعلی"
+        },
+        {
+          "level": 2,
+          "label": "پیشرفت مسیرها"
+        },
+        {
+          "level": 2,
+          "label": "فعالیت هفته گذشته"
+        },
+        {
+          "level": 2,
+          "label": "میان‌بُرهای امروز"
+        },
+        {
+          "level": 2,
+          "label": "نشان بعدی"
+        },
+        {
+          "level": 2,
+          "label": "سرعت یادگیری"
+        },
+        {
+          "level": 2,
+          "label": "کتابخانه من"
+        },
+        {
+          "level": 2,
+          "label": "رخدادهای تازه"
+        },
+        {
+          "level": 2,
+          "label": "تست‌های API تو آماده بررسی است."
+        },
+        {
+          "level": 2,
+          "label": "تبریک! ۵۰ XP برای تکمیل درس دریافت کردی."
+        },
+        {
+          "level": 2,
+          "label": "یک پاسخ جدید برای پست Community تو ثبت شد."
+        }
+      ]
+    },
+    {
+      "file": "site/panel/student/learning/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "مسیر یادگیری من"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/student/my-challenges/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "چالش‌های من"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/student/notifications/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "اعلان‌ها"
+        },
+        {
+          "level": 2,
+          "label": "تست‌های API تو آماده بررسی است."
+        },
+        {
+          "level": 2,
+          "label": "تبریک! ۵۰ XP برای تکمیل درس دریافت کردی."
+        },
+        {
+          "level": 2,
+          "label": "یک پاسخ جدید برای پست Community تو ثبت شد."
+        }
+      ]
+    },
+    {
+      "file": "site/panel/student/nova/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "Nova AI"
+        },
+        {
+          "level": 2,
+          "label": "به‌زودی"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/student/payments/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "اشتراک و پرداخت"
+        },
+        {
+          "level": 3,
+          "label": "رایگان"
+        },
+        {
+          "level": 3,
+          "label": "برنزی"
+        },
+        {
+          "level": 3,
+          "label": "نقره‌ای"
+        },
+        {
+          "level": 3,
+          "label": "طلایی"
+        },
+        {
+          "level": 3,
+          "label": "تیتانیوم"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/student/profile/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "پروفایل من"
+        },
+        {
+          "level": 2,
+          "label": "کاربر Noventix"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/student/projects/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "پروژه‌های من"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/student/settings/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "تنظیمات"
+        },
+        {
+          "level": 3,
+          "label": "اعلان‌های ایمیلی"
+        },
+        {
+          "level": 3,
+          "label": "اعلان‌های پیامکی"
+        },
+        {
+          "level": 3,
+          "label": "نمایش پروفایل در انجمن"
+        },
+        {
+          "level": 3,
+          "label": "ویرایش پروفایل"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/student/subscription/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "اشتراک و پرداخت"
+        },
+        {
+          "level": 3,
+          "label": "رایگان"
+        },
+        {
+          "level": 3,
+          "label": "برنزی"
+        },
+        {
+          "level": 3,
+          "label": "نقره‌ای"
+        },
+        {
+          "level": 3,
+          "label": "طلایی"
+        },
+        {
+          "level": 3,
+          "label": "تیتانیوم"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/student/support/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "پشتیبانی"
+        },
+        {
+          "level": 2,
+          "label": "۰ تیکت باز"
+        },
+        {
+          "level": 2,
+          "label": "تیکت جدید"
+        }
+      ]
+    },
+    {
+      "file": "site/panel/student/workspace/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "میزکار کد"
+        },
+        {
+          "level": 2,
+          "label": "خروجی"
+        },
+        {
+          "level": 2,
+          "label": "راهنمای تمرین"
+        },
+        {
+          "level": 2,
+          "label": "بررسی کد با Nova"
+        },
+        {
+          "level": 2,
+          "label": "قطعه‌های ذخیره‌شده"
+        },
+        {
+          "level": 2,
+          "label": "تمرین‌های پیشنهادی"
+        }
+      ]
+    },
+    {
+      "file": "site/pricing/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "پلنی که با مسیرت هماهنگ است"
+        },
+        {
+          "level": 3,
+          "label": "رایگان"
+        },
+        {
+          "level": 3,
+          "label": "برنزی"
+        },
+        {
+          "level": 3,
+          "label": "نقره‌ای"
+        },
+        {
+          "level": 3,
+          "label": "طلایی"
+        },
+        {
+          "level": 3,
+          "label": "تیتانیوم"
+        },
+        {
+          "level": 2,
+          "label": "دقیقاً چه چیزی به دست می‌آوری؟"
+        },
+        {
+          "level": 2,
+          "label": "پلن‌ها و امکانات"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/privacy/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "نحوه نگهداری و استفاده از اطلاعات شما"
+        },
+        {
+          "level": 2,
+          "label": "اطلاعات حساب"
+        },
+        {
+          "level": 2,
+          "label": "داده‌های آموزشی"
+        },
+        {
+          "level": 2,
+          "label": "امنیت"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/project/0/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "تحلیل فروش یک فروشگاه آنلاین"
+        },
+        {
+          "level": 2,
+          "label": "۱صورت مسئله"
+        },
+        {
+          "level": 2,
+          "label": "۲مسیر پیشنهادی"
+        },
+        {
+          "level": 2,
+          "label": "۳ارزیابی و انتقال"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/project/1/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "پیش‌بینی ریزش مشتری"
+        },
+        {
+          "level": 2,
+          "label": "۱صورت مسئله"
+        },
+        {
+          "level": 2,
+          "label": "۲مسیر پیشنهادی"
+        },
+        {
+          "level": 2,
+          "label": "۳ارزیابی و انتقال"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/project/2/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "دسته‌بندی احساسات متن فارسی"
+        },
+        {
+          "level": 2,
+          "label": "۱صورت مسئله"
+        },
+        {
+          "level": 2,
+          "label": "۲مسیر پیشنهادی"
+        },
+        {
+          "level": 2,
+          "label": "۳ارزیابی و انتقال"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/project/3/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "تشخیص تصویر با شبکه عصبی"
+        },
+        {
+          "level": 2,
+          "label": "۱صورت مسئله"
+        },
+        {
+          "level": 2,
+          "label": "۲مسیر پیشنهادی"
+        },
+        {
+          "level": 2,
+          "label": "۳ارزیابی و انتقال"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/project/4/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "داشبورد شاخص‌های داده"
+        },
+        {
+          "level": 2,
+          "label": "۱صورت مسئله"
+        },
+        {
+          "level": 2,
+          "label": "۲مسیر پیشنهادی"
+        },
+        {
+          "level": 2,
+          "label": "۳ارزیابی و انتقال"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/project/5/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "پیش‌بینی تقاضا در طول زمان"
+        },
+        {
+          "level": 2,
+          "label": "۱صورت مسئله"
+        },
+        {
+          "level": 2,
+          "label": "۲مسیر پیشنهادی"
+        },
+        {
+          "level": 2,
+          "label": "۳ارزیابی و انتقال"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/project/6/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "سرویس پیش‌بینی با FastAPI"
+        },
+        {
+          "level": 2,
+          "label": "۱صورت مسئله"
+        },
+        {
+          "level": 2,
+          "label": "۲مسیر پیشنهادی"
+        },
+        {
+          "level": 2,
+          "label": "۳ارزیابی و انتقال"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/project/7/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "سیستم پیشنهاد مقاله"
+        },
+        {
+          "level": 2,
+          "label": "۱صورت مسئله"
+        },
+        {
+          "level": 2,
+          "label": "۲مسیر پیشنهادی"
+        },
+        {
+          "level": 2,
+          "label": "۳ارزیابی و انتقال"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/project/8/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "تحلیل بازخورد کاربران"
+        },
+        {
+          "level": 2,
+          "label": "۱صورت مسئله"
+        },
+        {
+          "level": 2,
+          "label": "۲مسیر پیشنهادی"
+        },
+        {
+          "level": 2,
+          "label": "۳ارزیابی و انتقال"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/projects/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "یادگیری با ساختن، نه فقط خواندن"
+        },
+        {
+          "level": 3,
+          "label": "تحلیل فروش یک فروشگاه آنلاین"
+        },
+        {
+          "level": 3,
+          "label": "پیش‌بینی ریزش مشتری"
+        },
+        {
+          "level": 3,
+          "label": "دسته‌بندی احساسات متن فارسی"
+        },
+        {
+          "level": 3,
+          "label": "تشخیص تصویر با شبکه عصبی"
+        },
+        {
+          "level": 3,
+          "label": "داشبورد شاخص‌های داده"
+        },
+        {
+          "level": 3,
+          "label": "پیش‌بینی تقاضا در طول زمان"
+        },
+        {
+          "level": 3,
+          "label": "سرویس پیش‌بینی با FastAPI"
+        },
+        {
+          "level": 3,
+          "label": "سیستم پیشنهاد مقاله"
+        },
+        {
+          "level": 3,
+          "label": "تحلیل بازخورد کاربران"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/support/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "کنارتان هستیم"
+        },
+        {
+          "level": 2,
+          "label": "ارسال درخواست"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/terms/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "قوانین و مقررات"
+        },
+        {
+          "level": 2,
+          "label": "این قوانین چه چیزی را پوشش می‌دهد؟"
+        },
+        {
+          "level": 2,
+          "label": "حساب کاربری و امنیت"
+        },
+        {
+          "level": 2,
+          "label": "ورود با کد پیامکی و تأیید هویت"
+        },
+        {
+          "level": 2,
+          "label": "محتوای آموزشی و حقوق نشر"
+        },
+        {
+          "level": 2,
+          "label": "میزکار کد و فایل‌ها"
+        },
+        {
+          "level": 2,
+          "label": "استفاده از Nova و ابزارهای کمکی"
+        },
+        {
+          "level": 2,
+          "label": "انجمن و تعامل با دیگران"
+        },
+        {
+          "level": 2,
+          "label": "محتوای کاربران و مسئولیت آن"
+        },
+        {
+          "level": 2,
+          "label": "پلن‌ها، پرداخت و لغو"
+        },
+        {
+          "level": 2,
+          "label": "استفاده منصفانه و محدودیت‌ها"
+        },
+        {
+          "level": 2,
+          "label": "دسترس‌پذیری خدمات"
+        },
+        {
+          "level": 2,
+          "label": "مالکیت معنوی Noventix"
+        },
+        {
+          "level": 2,
+          "label": "محدوده مسئولیت"
+        },
+        {
+          "level": 2,
+          "label": "حریم خصوصی و نگهداری اطلاعات"
+        },
+        {
+          "level": 2,
+          "label": "تعلیق و پایان دسترسی"
+        },
+        {
+          "level": 2,
+          "label": "تغییر این شرایط و ارتباط با ما"
+        },
+        {
+          "level": 2,
+          "label": "سؤالی درباره قوانین دارید؟"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    },
+    {
+      "file": "site/verify/index.html",
+      "index_policy": "Demo intentionally excluded; no invented canonical or sitemap origin.",
+      "checks": {
+        "title_present": "PASS",
+        "description_present": "PASS",
+        "single_h1": "PASS",
+        "og_metadata": "PASS",
+        "twitter_metadata": "PASS",
+        "image_alt_attribute": "PASS",
+        "demo_noindex": "PASS",
+        "canonical_production_origin": "NOT TESTED",
+        "http_status_on_deployed_host": "NOT TESTED",
+        "viewport_rendering": "NOT TESTED",
+        "web_vitals": "NOT TESTED",
+        "search_indexation": "NOT TESTED"
+      },
+      "status": "PASS",
+      "scope": "Static source checks only",
+      "headings": [
+        {
+          "level": 1,
+          "label": "کد تأیید را وارد کنید"
+        },
+        {
+          "level": 3,
+          "label": "یادگیری"
+        },
+        {
+          "level": 3,
+          "label": "Noventix"
+        },
+        {
+          "level": 3,
+          "label": "همراه ما باشید"
+        }
+      ]
+    }
+  ]
+}

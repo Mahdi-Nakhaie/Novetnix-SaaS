@@ -106,7 +106,8 @@ class PublicCoursesTest(unittest.TestCase):
         self.assertIn('aria-current="true"', self.workspace_view)
         entry = (ROOT / "public/index.php").read_text(encoding="utf-8")
         self.assertIn("preg_match('~^dashboard/course/[a-z0-9-]+$~D',$path)", entry)
-        self.assertIn("script-src 'self'\".$aparatPolicy", entry)
+        self.assertIn("script-src 'self' 'nonce-", entry)
+        self.assertIn('$seoNonce', entry)
         self.assertIn("frame-src 'self'\".$aparatPolicy", entry)
         self.assertIn("https://www.aparat.com", entry)
 

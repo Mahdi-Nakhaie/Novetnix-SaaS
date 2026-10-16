@@ -238,7 +238,7 @@ def view_home():
         '<span class="window-dots">● ● ●</span><span dir="ltr">noventix / your-next-project</span>'
         '<span class="code-label">PYTHON</span></div>'
         f'<div class="nova-bubble"><img src="{h(asset("nova.png"))}" alt="مسکات Nova" width="70" height="70">'
-        "<span><strong>سلام، من Nova هستم!</strong><small>بیا مسئله را قدم‌به‌قدم حل کنیم.</small></span></div>"
+        "<span><strong>Nova AI — به‌زودی</strong><small>دستیار هوش مصنوعی فعلاً فعال نیست.</small></span></div>"
         '<pre dir="ltr"><span class="code-blue">from</span> sklearn.model_selection <span class="code-blue">import</span> train_test_split\n\n'
         '<span class="code-purple">def</span> <span class="code-yellow">build_your_future</span>(data):\n'
         '    insights = <span class="code-yellow">learn</span>(data)\n'
@@ -275,7 +275,7 @@ def view_home():
             + linkto("projects", "همه پروژه‌ها ←", "inline-link") + "</div>" + project_cards(3) + "</section>")
 
     out += ('<section class="section dark-band"><div class="container band-inner"><div>'
-            '<span class="eyebrow">متد یادگیری CRAFT</span>'
+            '<span class="eyebrow">رویکرد عملی یادگیری</span>'
             "<h2>هر قدم یادگیری،<br>یک قدم نزدیک‌تر به ساختن.</h2>"
             "<p>از درک مسئله و تمرین تا کاربرد آموخته‌ها در موقعیت‌های تازه؛ مسیری که با عمل معنا پیدا می‌کند.</p>"
             + linkto("about", "درباره رویکرد ما ←", "btn btn-light") + "</div>"
@@ -448,8 +448,7 @@ def view_pricing():
             out += f'<td>{h(p["limits"][index][1])}</td>'
         out += "</tr>"
     out += ('</tbody></table></div>'
-            '<p class="fine-print">سقف‌ها ماهانه شمرده می‌شوند و در ابتدای هر دوره بازنشانی می‌شوند. '
-            'اگر به سقف برسی، دسترسی‌ات قطع نمی‌شود؛ فقط تا دورهٔ بعد امکان استفادهٔ بیشتر از آن مورد را نداری.</p>'
+            '<p class="fine-print">سقف پروژه و فضای فایل، ظرفیت ذخیره‌سازی نسخهٔ سروری است و ماهانه بازنشانی نمی‌شود. این نسخهٔ ایستا صرفاً نمایشی است.</p>'
             '</section><section class="section container"><div class="cta-panel">'
             '<span class="eyebrow">مسیر یادگیری</span><h2>پلن‌ها و امکانات</h2>'
             '<p>پرداخت واقعی فقط در نسخهٔ سروری PHP و با تأیید زرین‌پال انجام می‌شود. در نسخهٔ ایستا خرید یا فعال‌سازی انجام نمی‌شود.</p>'
@@ -543,7 +542,7 @@ def view_terms():
           "دسترسی مشکوک را سریع به پشتیبانی گزارش دهید.",
           "یک حساب برای یک نفر؛ ساخت حساب جعلی مجاز نیست."]),
         ("verification", "ورود با کد پیامکی و تأیید هویت",
-         "ورود به حساب با شماره موبایل و کد یک‌بارمصرف انجام می‌شود. کد تأیید فقط برای شماست و نباید آن را برای کسی بفرستید؛ حتی اگر فرستنده خود را از تیم Noventix معرفی کند. تعداد درخواست‌های کد در هر نشست محدود است تا از سوءاستفاده جلوگیری شود. اگر کد را چند بار اشتباه وارد کنید، برای مدتی باید صبر کنید.",
+         "تأیید شماره در نسخهٔ سروری با کد پیامکی و ورود بعدی با رمز عبور و کپچا انجام می‌شود؛ حساب نسخهٔ ایستا نمایشی است. کد تأیید فقط برای شماست و نباید آن را برای کسی بفرستید؛ حتی اگر فرستنده خود را از تیم Noventix معرفی کند. تعداد درخواست‌های کد در هر نشست محدود است تا از سوءاستفاده جلوگیری شود. اگر کد را چند بار اشتباه وارد کنید، برای مدتی باید صبر کنید.",
          ["کد تأیید را با هیچ‌کس به اشتراک نگذارید.",
           "درخواست کد محدود است تا از سوءاستفاده جلوگیری شود.",
           "تلاش‌های ناموفق موقتاً محدود می‌شوند."]),
@@ -559,9 +558,9 @@ def view_terms():
           "میزکار فضای نگهداری دائمی نیست؛ پشتیبان بگیرید.",
           "زمان اجرا محدود است تا حلقه‌های بی‌پایان متوقف شوند."]),
         ("ai", "استفاده از Nova و ابزارهای کمکی",
-         "Nova برای کمک به یادگیری طراحی شده است؛ پاسخ‌های آن می‌تواند ناقص یا نادرست باشد و جای بررسی خودتان را نمی‌گیرد. خروجی Nova را پیش از استفاده در پروژه واقعی، آزمون یا کار درسی خودتان بسنجید. تعداد درخواست‌های هر پلن مشخص است و از سهمیه ماهانه شما کم می‌شود. اطلاعات محرمانه یا داده شخصی دیگران را در پرسش‌ها وارد نکنید.",
+         "Nova AI فعلاً غیرفعال و در وضعیت «به‌زودی» است؛ سهمیه‌ای مصرف نمی‌شود. تاریخچهٔ قبلی حذف نشده است. اطلاعات محرمانه یا داده شخصی دیگران را در پرسش‌ها وارد نکنید.",
          ["پاسخ Nova ممکن است نادرست باشد؛ خودتان بررسی کنید.",
-          "سهمیه هر پلن مشخص و محدود است.",
+          "Nova فعلاً فعال نیست و سهمیه مصرف نمی‌کند.",
           "داده محرمانه در پرسش‌ها وارد نکنید."]),
         ("community", "انجمن و تعامل با دیگران",
          "در پست‌ها، نظرات و گفت‌وگوها محترمانه و مرتبط با موضوع مشارکت کنید. انتشار محتوای آزاردهنده، فریبنده، ناقض حقوق دیگران یا اطلاعات خصوصی افراد بدون رضایتشان مجاز نیست. پست‌ها و نظرات شما برای دیگر اعضای انجمن قابل مشاهده است، پس پیش از انتشار مطمئن شوید که انتشارشان را تأیید می‌کنید. در صورت مشاهده تخلف می‌توانید موضوع را به پشتیبانی گزارش دهید.",
@@ -1297,6 +1296,10 @@ def render_page(route):
         '<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
         '<meta name="theme-color" content="#201a35">'
+        '<meta name="robots" content="noindex,follow">'
+        '<meta name="twitter:card" content="summary">'
+        f'<meta name="twitter:title" content="{h(title)}">'
+        f'<meta name="twitter:description" content="{h(desc or title)}">'
         f"<title>{full}</title>"
         f'<meta name="description" content="{h(desc or "Noventix؛ آموزش پروژه‌محور پایتون، علم داده و هوش مصنوعی از مطالعه تا ساختن.")}">'
         f'<meta property="og:title" content="{h(title)}">'
@@ -1427,8 +1430,8 @@ def build_routes():
 
         {"path": "verify", "title": "تأیید شماره", "view": "verify", "nav": "",
          "description": "تأیید کد پیامک‌شده."},
-        {"path": "course/ai-foundations", "title": "پیش‌نمایش دوره مقدماتی هوش مصنوعی", "view": "course-demo", "lesson": 1, "nav": "courses"},
-        {"path": "course/ai-foundations/lesson-2", "title": "جلسهٔ دوم دوره مقدماتی هوش مصنوعی", "view": "course-demo", "lesson": 2, "nav": "courses"},
+        {"path": "course/ai-foundations", "title": "پیش‌نمایش دوره مقدماتی هوش مصنوعی", "description": "پیش‌نمایش ایستای جلسه اول هوش مصنوعی؛ حساب و پیشرفت سروری در این نسخه فعال نیست.", "view": "course-demo", "lesson": 1, "nav": "courses"},
+        {"path": "course/ai-foundations/lesson-2", "title": "جلسهٔ دوم دوره مقدماتی هوش مصنوعی", "description": "پیش‌نمایش ایستای جلسه دوم و پروژه مقدماتی هوش مصنوعی؛ برای یادگیری واقعی از نسخه سروری استفاده کنید.", "view": "course-demo", "lesson": 2, "nav": "courses"},
     ]
     for slug, c in COURSES.items():
         routes.append({"path": f"course/{slug}", "title": c["title"], "view": "course",
@@ -1450,6 +1453,7 @@ def build_routes():
 
 def main():
     preserved_fonts = {p.name: p.read_bytes() for p in OUT.glob("Estedad-*.ttf")} if OUT.exists() else {}
+    static_assets = {name: (OUT / 'assets' / name).read_bytes() for name in ('app.js', 'style.css', 'playback-events.js', 'python-runner.js', 'python-worker.js') if (OUT / 'assets' / name).is_file()}
     if OUT.exists():
         shutil.rmtree(OUT)
     OUT.mkdir(parents=True)
@@ -1470,8 +1474,11 @@ def main():
     assets_dst = OUT / "assets"
     assets_dst.mkdir(parents=True, exist_ok=True)
     for item in assets_src.iterdir():
-        if item.is_file():
+        if item.is_file() and item.name not in ('workspace.js', 'workspace.css'):
             shutil.copy2(item, assets_dst / item.name)
+    for name, data in static_assets.items():
+        (assets_dst / name).write_bytes(data)
+    (OUT / 'robots.txt').write_text('User-agent: *\nAllow: /\n', encoding='utf-8')
     shutil.copy2(ROOT / "tools" / "demo.js", assets_dst / "demo.js")
     (OUT / ".nojekyll").write_text("", encoding="utf-8")
     (ROOT / "index.html").write_text((OUT / "index.html").read_text(encoding="utf-8"), encoding="utf-8")

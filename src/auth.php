@@ -12,7 +12,7 @@ function validate_captcha(): bool {
     unset($_SESSION['captcha']);
     return $expected!=='' && hash_equals($expected,$given);
 }
-function validate_csrf(): void { if (!hash_equals(csrf(), (string)($_POST['csrf'] ?? ''))) { http_response_code(419); exit('درخواست نامعتبر است. صفحه را دوباره بارگذاری کنید.'); } }
+function validate_csrf(): void { $given=$_POST['csrf'] ?? null; if (!is_string($given) || !hash_equals(csrf(),$given)) { http_response_code(419); exit('درخواست نامعتبر است. صفحه را دوباره بارگذاری کنید.'); } }
 function redirect(string $path): never { header('Location: '.url($path),true,303); exit; }
 function flash(string $message, string $kind='success'): void { $_SESSION['flash']=['text'=>$message,'kind'=>$kind]; }
 function user(): ?array {
@@ -210,7 +210,7 @@ function handle_auth_post(string $path): bool {
             flash('این شماره موبایل قبلاً ثبت شده است. برای ورود از فرم ورود استفاده کنید.','error');
             redirect('login');
         }
-        session_regenerate_id(true); $_SESSION['uid']=$userId; unset($_SESSION['verify_phone'],$_SESSION['verify_name'],$_SESSION['admin_verified_uid']);
+        session_regenerate_id(true); $_SESSION['authenticated_at']=time(); $_SESSION['last_seen']=time(); $_SESSION['uid']=$userId; unset($_SESSION['verify_phone'],$_SESSION['verify_name'],$_SESSION['admin_verified_uid']);
         if ($phone!=='' && $phone===(config_value('ADMIN_PHONE') ?: '')) redirect('admin-login');
         flash('خوش آمدید!'); redirect('dashboard');
     }
@@ -224,9 +224,9 @@ function handle_auth_post(string $path): bool {
         $_SESSION['admin_attempts']=$attempts+1;
         if ($hash==='' || !password_verify((string)($_POST['password'] ?? ''),$hash)) { flash('رمز مدیریت صحیح نیست.','error'); redirect('admin-login'); }
         q("UPDATE users SET role='admin' WHERE id=?",[$u['id']]);
-        session_regenerate_id(true); $_SESSION['admin_verified_uid']=(int)$u['id']; unset($_SESSION['admin_attempts']);
+        session_regenerate_id(true); $_SESSION['authenticated_at']=time(); $_SESSION['last_seen']=time(); $_SESSION['admin_verified_uid']=(int)$u['id']; unset($_SESSION['admin_attempts']);
         redirect('dashboard');
     }
-    if ($path==='logout') { $_SESSION=[]; session_regenerate_id(true); flash('از حساب خود خارج شدید.'); redirect(''); }
+    if ($path==='logout') { $_SESSION=[]; session_regenerate_id(true); $_SESSION['authenticated_at']=time(); $_SESSION['last_seen']=time(); flash('از حساب خود خارج شدید.'); redirect(''); }
     return true;
 }
