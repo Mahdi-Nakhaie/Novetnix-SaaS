@@ -3,6 +3,7 @@
 Starts `php -S` with tools/otp_test_router.php when PHP is installed, or uses an
 already running server via OTP_TEST_BASE_URL + OTP_TEST_DB.
 """
+import base64
 import http.cookiejar
 import json
 import os
@@ -108,6 +109,56 @@ def user_count(phone):
 
 def otp(phone):
     return db("SELECT used_at, attempts FROM otp_codes WHERE phone=?", (phone,))[0]
+
+
+class WorkspaceHttpTest(unittest.TestCase):
+    def verified(self, phone):
+        client = Browser()
+        client.pending(phone, '636363')
+        self.assertEqual(client.verify('636363')[0], 303)
+        return client
+
+    def post(self, client, path, **values):
+        status, _, text = client.request('/workspace/' + path, {'csrf': client.csrf, **values})
+        return status, json.loads(text)
+
+    def test_workspace_create_save_conflict_isolation_and_restore(self):
+        owner = self.verified('09120000301')
+        other = self.verified('09120000302')
+        status, created = self.post(owner, 'create', title='Persistent Python')
+        self.assertEqual(status, 201)
+        project = created['id']
+        self.assertEqual(owner.request('/dashboard/workspace/' + str(project))[0], 200)
+        self.assertEqual(other.request('/workspace/data?id=' + str(project))[0], 404)
+        state = json.loads(owner.request('/workspace/data?id=' + str(project))[2])
+        files = {'main.py': {'kind': 'file', 'data': base64.b64encode(b'print(42)\n').decode()}}
+        self.assertEqual(self.post(owner, 'save', id=project, revision=state['revision'], files=json.dumps(files))[0], 200)
+        self.assertEqual(self.post(owner, 'save', id=project, revision=state['revision'], files='{}')[0], 409)
+        self.assertEqual(self.post(other, 'save', id=project, revision=2, files='{}')[0], 404)
+        self.assertEqual(owner.request('/workspace/download?id=' + str(project) + '&file=main.py')[2], 'print(42)\n')
+        self.assertEqual(other.request('/workspace/download?id=' + str(project) + '&file=main.py')[0], 404)
+        self.assertEqual(self.post(owner, 'delete', id=project, revision=2)[0], 200)
+        self.assertEqual(owner.request('/workspace/data?id=' + str(project))[0], 404)
+        self.assertEqual(self.post(owner, 'restore', id=project, revision=3)[0], 200)
+        self.assertEqual(json.loads(owner.request('/workspace/data?id=' + str(project))[2])['files'], files)
+        self.assertEqual(owner.request('/workspace/save', {'csrf': 'invalid', 'id': project, 'revision': 4, 'files': '{}'})[0], 419)
+        self.assertEqual(owner.request('/workspace/admin-template-save', {'csrf': owner.csrf, 'title': 'Not admin'})[0], 403)
+
+    def test_template_snapshot_and_disabled_runner(self):
+        client = self.verified('09120000303')
+        files = {'main.py': {'kind': 'file', 'data': base64.b64encode(b'print(1)\n').decode()}}
+        db("INSERT INTO workspace_templates(title,instructions,status,files_json,bytes) VALUES ('HTTP fixture','','published',?,9)", (json.dumps(files),))
+        template = db("SELECT id FROM workspace_templates WHERE title='HTTP fixture'")[0][0]
+        status, created = self.post(client, 'create', template_id=template)
+        self.assertEqual(status, 201)
+        self.assertEqual(self.post(client, 'create', template_id=template)[1]['id'], created['id'])
+        db("UPDATE workspace_templates SET files_json='{}',revision=revision+1 WHERE id=?", (template,))
+        state = json.loads(client.request('/workspace/data?id=' + str(created['id']))[2])
+        self.assertEqual(state['files'], files)
+        if not state['runner_ready']:
+            self.assertEqual(self.post(client, 'run', id=created['id'], revision=state['revision'], request_key='00000000-0000-0000-0000-000000000000')[0], 503)
+        anonymous = Browser()
+        self.assertEqual(anonymous.request('/workspace/data?id=' + str(created['id']))[0], 303)
 
 
 class OtpVerifyHttpTest(unittest.TestCase):

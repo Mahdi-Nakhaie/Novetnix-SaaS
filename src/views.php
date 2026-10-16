@@ -37,6 +37,8 @@ function panel_nav(): void {
     $items=$role==='admin'
         ? ['dashboard'=>'Overview','dashboard/users'=>'کاربران','dashboard/users-new'=>'کاربران جدید','dashboard/courses'=>'Courses & Lessons','dashboard/catalog'=>'پروژه‌ها','dashboard/challenges'=>'چالش‌ها','dashboard/subscriptions'=>'اشتراک‌ها','dashboard/payments'=>'پرداخت‌ها','dashboard/community'=>'Community','dashboard/support'=>'پشتیبانی','dashboard/announcements'=>'اعلان‌ها','dashboard/gamification'=>'Gamification','dashboard/analytics'=>'Analytics','dashboard/content'=>'Content','dashboard/profile'=>'پروفایل','dashboard/settings'=>'System Settings']
         : ['dashboard'=>'نمای کلی','dashboard/learning'=>'مسیر یادگیری','dashboard/projects'=>'پروژه‌ها','dashboard/challenges'=>'چالش‌ها','dashboard/community'=>'Community','dashboard/nova'=>'Nova AI','dashboard/subscription'=>'اشتراک','dashboard/support'=>'پشتیبانی','dashboard/gamification'=>'Gamification','dashboard/activity'=>'فعالیت و Streak','dashboard/profile'=>'پروفایل','dashboard/settings'=>'تنظیمات'];
+    $items['dashboard/workspace']='میزکار پایتون';
+    if ($role==='admin') $items['dashboard/workspace-templates']='تمرین‌های پایتون';
     if (!COMMERCE_ENABLED) unset($items['dashboard/subscription'],$items['dashboard/subscriptions'],$items['dashboard/payments']);
     echo '<aside class="sidebar"><a class="panel-brand" href="/"><img src="/assets/favicon.png" alt="" width="42" height="42"><span>Noventix</span></a><div class="sidebar-caption">'.($role==='admin'?'مدیریت پلتفرم':($role==='owner'?'پنل مالک':'فضای یادگیری')).'</div><nav aria-label="ناوبری پنل">';
     foreach ($items as $href=>$label) linkto($href,$label,$path===$href?'selected':'');
@@ -112,6 +114,7 @@ function page_course_workspace(?array $course,string $requestedLesson): void {
     }
     echo '</div>'; if ($hasVideo) echo '<p class="workspace-video-note">این ویدیو از آپارات پخش می‌شود؛ پیشرفت تماشا در حال حاضر به‌صورت خودکار ثبت نمی‌شود.</p>';
     echo '<section class="current-lesson"><div class="workspace-kicker">جلسه '.fa((int)$current['position']).' از '.fa(count($course['lessons'])).'</div><h2>'.h($current['title']).'</h2><div class="current-lesson-meta"><span>'.h(course_workspace_duration($current['duration_minutes']===null?null:(int)$current['duration_minutes'])).'</span><span>متن درس</span></div><p>'.nl2br(h($current['content'])).'</p></section>';
+    ws_lesson_exercises((int)$GLOBALS['me']['id'],(int)$current['id']);
     echo '<section class="current-lesson lesson-quiz"><h2>آزمون پایان درس</h2>';
     if ($course['quiz']) {
         echo '<p>برای تکمیل درس باید به حداقل '.fa($course['quiz']['pass_percent']).'٪ پرسش‌ها پاسخ درست بدهید.</p>';
@@ -277,6 +280,7 @@ function panel(string $sub): void {
         }
         echo '</div>';
     } elseif ($sub==='projects' && $role!=='admin') {
+        ws_index($me);
         echo '<div class="panel-heading"><h1>پروژه‌های من</h1><p>مسئله‌هایی که برای ساختن انتخاب کرده‌ای.</p></div><div class="panel-list">'; $rows=q('SELECT catalog_index FROM projects WHERE user_id=? ORDER BY created_at DESC',[$me['id']])->fetchAll(); if (!$rows) echo '<div class="empty-state">هنوز پروژه‌ای شروع نکردی. <a href="/projects">پروژه‌ها را ببین ←</a></div>'; foreach ($rows as $r) { $p=PROJECTS[$r['catalog_index']] ?? null; if($p) echo '<div class="list-item"><div><span class="pill">'.h($p['topic']).'</span><h3>'.h($p['title']).'</h3><p>'.h($p['description']).'</p></div><a href="'.h(url('project/'.$r['catalog_index'])).'">جزئیات ←</a></div>'; } echo '</div>';
     } elseif ($sub==='community') {
         panel_head('Community','از سؤال کوچک تا نمایش بزرگ‌ترین پروژه‌ها.');

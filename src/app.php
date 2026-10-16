@@ -3,6 +3,7 @@ declare(strict_types=1);
 require_once __DIR__.'/data.php';
 require_once dirname(__DIR__).'/database/connection.php';
 require_once __DIR__.'/auth.php';
+require_once __DIR__.'/workspace.php';
 function h(mixed $value): string { return htmlspecialchars((string)$value, ENT_QUOTES|ENT_SUBSTITUTE, 'UTF-8'); }
 // Array form is required: three-argument strtr() maps bytes, which corrupts multibyte Persian digits.
 function fa(int|string $v): string { return strtr((string)$v,['0'=>'۰','1'=>'۱','2'=>'۲','3'=>'۳','4'=>'۴','5'=>'۵','6'=>'۶','7'=>'۷','8'=>'۸','9'=>'۹']); }
@@ -300,6 +301,7 @@ function save_lesson_progress(array $u): void {
 function handle_post(string $path): void {
     if (handle_auth_post($path)) return;
     validate_csrf();
+    if (str_starts_with($path,'workspace/')) ws_post($path);
     if ($path==='contact/send') {
         $name=trim((string)($_POST['name'] ?? '')); $email=trim((string)($_POST['email'] ?? '')); $message=trim((string)($_POST['message'] ?? ''));
         if (mb_strlen($name)<2 || mb_strlen($name)>100 || !filter_var($email,FILTER_VALIDATE_EMAIL) || mb_strlen($message)<10 || mb_strlen($message)>3000) { flash('نام، ایمیل و پیام معتبر وارد کنید.','error'); redirect('contact'); }
@@ -344,6 +346,12 @@ function handle_post(string $path): void {
     if ($path==='projects/start') {
         $index=filter_var($_POST['index'] ?? '',FILTER_VALIDATE_INT);
         if ($index===false || $index<0 || !isset(PROJECTS[$index])) { http_response_code(404); exit; }
+        $template=q("SELECT id FROM workspace_templates WHERE catalog_index=? AND status='published'",[$index])->fetchColumn();
+        if ($template) {
+            try { $projectId=ws_create((int)$u['id'],(int)$template,''); }
+            catch (InvalidArgumentException $e) { flash($e->getMessage(),'error'); redirect('project/'.$index); }
+            redirect('dashboard/workspace/'.$projectId);
+        }
         $limit=PLANS[$plan]['projects'];
         if ($limit===0) { flash('شروع پروژه فعلاً برای این حساب در دسترس نیست؛ یادگیری دوره رایگان در دسترس است.','error'); redirect('dashboard/learning'); }
         $exists=q('SELECT id FROM projects WHERE user_id=? AND catalog_index=?',[$u['id'],$index])->fetch();
