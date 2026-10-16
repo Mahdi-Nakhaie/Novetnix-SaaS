@@ -122,6 +122,109 @@ class WorkspaceHttpTest(unittest.TestCase):
         status, _, text = client.request('/workspace/' + path, {'csrf': client.csrf, **values})
         return status, json.loads(text)
 
+    def test_dataset_routes_require_owner_and_csrf(self):
+        owner = self.verified('09120000321')
+        other = self.verified('09120000322')
+        _, created = self.post(owner, 'create', title='Hub permissions')
+        project = created['id']
+        self.assertEqual(other.request('/workspace/datasets-state?id=' + str(project))[0], 404)
+        self.assertEqual(other.request('/workspace/datasets-search?id=' + str(project) + '&q=iris')[0], 404)
+        self.assertEqual(Browser().request('/workspace/datasets-state?id=' + str(project))[0], 303)
+        self.assertEqual(owner.request('/workspace/datasets-begin', {'csrf': 'bad', 'id': project})[0], 419)
+        self.assertEqual(self.post(owner, 'datasets-begin', id=project, dataset='../bad', selected_files='[]')[0], 422)
+        self.assertEqual(self.post(other, 'datasets-cancel', id=project, import_id='a' * 32)[0], 404)
+
+    def test_dataset_expiry_releases_reserved_space(self):
+        owner = self.verified('09120000325')
+        _, created = self.post(owner, 'create', title='Expired import')
+        project = created['id']
+        identifier = 'e' * 32
+        owner_id = db('SELECT user_id FROM projects WHERE id=?', (project,))[0][0]
+        metadata = json.dumps({'source': 'https://huggingface.co/datasets/scikit-learn/iris', 'license': None})
+        files = json.dumps([{'path': 'small.csv', 'size': 32, 'hash': 'a' * 40, 'algorithm': 'git-sha1'}])
+        db("INSERT INTO workspace_dataset_imports(id,project_id,owner,dataset_id,revision,fingerprint,state,files_json,metadata_json,bytes,completed_files,created) VALUES (?,?,?,?,?,?,'downloading',?,?,32,0,?)", (identifier, project, owner_id, 'scikit-learn/iris', 'a' * 40, 'b' * 64, files, metadata, int(time.time()) - 121))
+        status, _, text = owner.request('/workspace/datasets-state?id=' + str(project))
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(text)['imports'][0]['state'], 'failed')
+        self.assertEqual(db('SELECT bytes FROM project_workspaces WHERE project_id=?', (project,))[0][0], len("print('Hello, Noventix!')\n"))
+
+    @unittest.skipUnless(os.environ.get('NOVENTIX_HF_LIVE_TESTS') == '1', 'Set NOVENTIX_HF_LIVE_TESTS=1 for real public Hub integration')
+    def test_live_hub_download_filesystem_quota_dedup_and_python_manifest(self):
+        owner = self.verified('09120000323')
+        other = self.verified('09120000324')
+        _, created = self.post(owner, 'create', title='Real Iris import')
+        project = created['id']
+        jobs = []
+        try:
+            status, _, text = owner.request('/workspace/datasets-search?id=' + str(project) + '&q=scikit-learn%2Firis')
+            self.assertEqual(status, 200, text)
+            self.assertTrue(any(d['id'] == 'scikit-learn/iris' for d in json.loads(text)['datasets']))
+            status, _, text = owner.request('/workspace/datasets-detail?id=' + str(project) + '&dataset=scikit-learn/iris')
+            self.assertEqual(status, 200, text)
+            detail = json.loads(text)
+            self.assertEqual(detail['access'], 'public')
+            self.assertTrue(any(f['path'] == 'Iris.csv' for f in detail['files']))
+            args = {'id': project, 'dataset': detail['id'], 'dataset_revision': detail['revision'], 'selected_files': '["Iris.csv"]'}
+            status, job = self.post(owner, 'datasets-begin', **args)
+            self.assertEqual(status, 202, job)
+            jobs.append(job['id'])
+            self.assertEqual(self.post(other, 'datasets-step', id=project, import_id=job['id'])[0], 404)
+            self.assertEqual(self.post(owner, 'datasets-begin', **args)[1]['id'], job['id'])
+            status, cancelled = self.post(owner, 'datasets-cancel', id=project, import_id=job['id'])
+            self.assertEqual((status, cancelled['state']), (200, 'cancelled'))
+            self.assertEqual(self.post(owner, 'datasets-step', id=project, import_id=job['id'])[1]['state'], 'cancelled')
+            status, job = self.post(owner, 'datasets-begin', **args)
+            self.assertEqual(status, 202, job)
+            jobs.append(job['id'])
+            status, complete = self.post(owner, 'datasets-step', id=project, import_id=job['id'])
+            self.assertEqual((status, complete['state']), (200, 'succeeded'), complete)
+            self.assertEqual(self.post(owner, 'datasets-begin', **args)[1]['id'], job['id'])
+            state = json.loads(owner.request('/workspace/data?id=' + str(project))[2])
+            path = complete['directory'] + '/Iris.csv'
+            self.assertIn(path, state['files'])
+            raw = base64.b64decode(state['files'][path]['data'])
+            self.assertTrue(raw.startswith(b'Id,SepalLengthCm'))
+            self.assertTrue((ROOT / 'storage/datasets' / job['id'] / '0.data').is_file())
+            self.assertEqual(other.request('/workspace/download?id=' + str(project) + '&file=' + urllib.parse.quote(path))[0], 404)
+            self.assertEqual(owner.request('/workspace/download?id=' + str(project) + '&file=' + urllib.parse.quote(path))[2].encode(), raw)
+            self.assertEqual(self.post(owner, 'save', id=project, revision=state['revision'], files=json.dumps(state['files']))[0], 200)
+            persisted = db('SELECT files_json,bytes FROM project_workspaces WHERE project_id=?', (project,))[0]
+            self.assertNotIn(path, json.loads(persisted[0]))
+            self.assertGreaterEqual(persisted[1], len(raw))
+            metadata = db('SELECT files_json FROM workspace_dataset_imports WHERE id=?', (job['id'],))[0][0]
+            self.assertNotIn('data', json.loads(metadata)[0])
+            sys_path = str(ROOT / 'services/python-runner')
+            import sys
+            sys.path.insert(0, sys_path)
+            import policy
+            self.assertEqual(policy.manifest(state['files'])[path]['data'], state['files'][path]['data'])
+            import csv
+            import io
+            self.assertEqual(len(list(csv.DictReader(io.StringIO(raw.decode())))), 150)
+            changed = dict(state['files'])
+            changed[path] = {'kind': 'file', 'data': base64.b64encode(b'changed').decode()}
+            self.assertEqual(self.post(owner, 'save', id=project, revision=state['revision'] + 1, files=json.dumps(changed))[0], 422)
+            _, bad_project = self.post(owner, 'create', title='Checksum failure')
+            status, bad_job = self.post(owner, 'datasets-begin', **{**args, 'id': bad_project['id']})
+            self.assertEqual(status, 202, bad_job)
+            jobs.append(bad_job['id'])
+            metadata = json.loads(db('SELECT files_json FROM workspace_dataset_imports WHERE id=?', (bad_job['id'],))[0][0])
+            metadata[0]['hash'] = '0' * 40
+            db('UPDATE workspace_dataset_imports SET files_json=? WHERE id=?', (json.dumps(metadata), bad_job['id']))
+            status, rejected = self.post(owner, 'datasets-step', id=bad_project['id'], import_id=bad_job['id'])
+            self.assertEqual((status, rejected['state']), (200, 'failed'), rejected)
+            self.assertFalse((ROOT / 'storage/datasets' / bad_job['id'] / '0.data').exists())
+            _, full_project = self.post(owner, 'create', title='Quota full')
+            db('UPDATE project_workspaces SET bytes=5242880 WHERE project_id=?', (full_project['id'],))
+            status, error = self.post(owner, 'datasets-begin', **{**args, 'id': full_project['id']})
+            self.assertEqual(status, 422, error)
+            self.assertEqual(db("SELECT COUNT(*) FROM workspace_dataset_imports WHERE project_id=?", (full_project['id'],))[0][0], 0)
+        finally:
+            for identifier in jobs:
+                directory = ROOT / 'storage/datasets' / identifier
+                if directory.exists():
+                    shutil.rmtree(directory)
+
     def test_workspace_create_save_conflict_isolation_and_restore(self):
         owner = self.verified('09120000301')
         other = self.verified('09120000302')

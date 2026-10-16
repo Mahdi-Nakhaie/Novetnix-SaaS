@@ -138,6 +138,10 @@ def execute(job, image, cancelled):
 class Queue:
     def __init__(self, path):
         self.path = str(path)
+        self.inputs = Path(self.path + '.inputs')
+        if self.inputs.is_symlink():
+            raise ValueError('Input storage must not be a symlink.')
+        self.inputs.mkdir(mode=0o700, exist_ok=True)
         with self.connect() as db:
             db.execute('PRAGMA journal_mode=WAL')
             db.execute('CREATE TABLE IF NOT EXISTS jobs (id TEXT PRIMARY KEY, owner INTEGER NOT NULL, request_id TEXT NOT NULL, fingerprint TEXT NOT NULL, state TEXT NOT NULL, payload TEXT NOT NULL, result TEXT, created REAL NOT NULL, UNIQUE(owner,request_id))')
@@ -157,7 +161,10 @@ class Queue:
         entry = payload.get('entrypoint')
         if not valid_path(entry) or not entry.endswith('.py') or files.get(entry, {}).get('kind') != 'file':
             raise ValueError('Invalid entrypoint.')
-        encoded = json.dumps({'owner': owner, 'request_id': key, 'files': files, 'entrypoint': entry}, sort_keys=True)
+        dataset_paths = payload.get('dataset_paths', [])
+        if not isinstance(dataset_paths, list) or len(dataset_paths) > 100 or any(not isinstance(p, str) or not re.fullmatch(r'datasets/[a-f0-9]{32}/.+', p) or p not in files for p in dataset_paths):
+            raise ValueError('Invalid dataset references.')
+        encoded = json.dumps({'owner': owner, 'request_id': key, 'files': files, 'entrypoint': entry, 'dataset_paths': dataset_paths}, sort_keys=True)
         fingerprint = hashlib.sha256(encoded.encode()).hexdigest()
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
@@ -177,8 +184,17 @@ class Queue:
             if db.execute("SELECT id FROM jobs WHERE owner=? AND state IN ('queued','running','cancelling')", (owner,)).fetchone():
                 raise OverflowError('An execution is already active for this owner.')
             identifier = str(uuid.uuid4())
-            db.execute('INSERT INTO jobs VALUES (?,?,?,?,?,?,?,?)',
-                       (identifier, owner, key, fingerprint, 'queued', encoded, None, now))
+            input_path = self.inputs / (identifier + '.json')
+            with input_path.open('xb') as stream:
+                os.chmod(input_path, 0o600)
+                stream.write(encoded.encode())
+            reference = json.dumps({'spooled': True, 'sha256': fingerprint})
+            try:
+                db.execute('INSERT INTO jobs VALUES (?,?,?,?,?,?,?,?)',
+                           (identifier, owner, key, fingerprint, 'queued', reference, None, now))
+            except Exception:
+                input_path.unlink(missing_ok=True)
+                raise
         return {'id': identifier, 'state': 'queued'}
 
     def state(self, identifier, owner):
@@ -192,7 +208,17 @@ class Queue:
     def cancel(self, identifier, owner):
         with self.connect() as db:
             db.execute("UPDATE jobs SET state=CASE WHEN state='queued' THEN 'cancelled' ELSE 'cancelling' END WHERE id=? AND owner=? AND state IN ('queued','running')", (identifier, owner))
-        return self.state(identifier, owner)
+        state = self.state(identifier, owner)
+        if state['state'] == 'cancelled':
+            self.remove_input(identifier)
+            with self.connect() as db:
+                db.execute("UPDATE jobs SET payload='{}' WHERE id=? AND owner=?", (identifier, owner))
+        return state
+
+    def remove_input(self, identifier):
+        if not re.fullmatch(r'[a-f0-9-]{36}', identifier):
+            raise ValueError('Invalid input identity.')
+        (self.inputs / (identifier + '.json')).unlink(missing_ok=True)
 
     def claim(self):
         with self.connect() as db:
@@ -201,15 +227,33 @@ class Queue:
             if not row:
                 return None
             db.execute("UPDATE jobs SET state='running' WHERE id=?", (row['id'],))
-        return {**json.loads(row['payload']), 'id': row['id']}
+        try:
+            payload = json.loads(row['payload'])
+            if payload.get('spooled'):
+                input_path = self.inputs / (row['id'] + '.json')
+                if input_path.is_symlink() or input_path.stat().st_size > MAX_BODY:
+                    raise ValueError('Invalid input storage.')
+                raw = input_path.read_bytes()
+                if not hmac.compare_digest(hashlib.sha256(raw).hexdigest(), payload['sha256']):
+                    raise ValueError('Input checksum mismatch.')
+                payload = json.loads(raw)
+            return {**payload, 'id': row['id']}
+        except (OSError, ValueError, KeyError):
+            with self.connect() as db:
+                db.execute("UPDATE jobs SET state='infrastructure_error',payload='{}' WHERE id=?", (row['id'],))
+            self.remove_input(row['id'])
+            return None
 
     def finish(self, job, result):
+        if job.get('dataset_paths') and isinstance(result.get('files'), dict):
+            result = {**result, 'files': {p: f for p, f in result['files'].items() if not p.startswith('datasets/')}}
         with self.connect() as db:
             row = db.execute('SELECT state FROM jobs WHERE id=?', (job['id'],)).fetchone()
             if row and row['state'] == 'cancelling':
                 result = {'state': 'cancelled', 'stdout': '', 'stderr': '', 'files': {}}
             db.execute('UPDATE jobs SET state=?,result=?,payload=? WHERE id=?',
                        (result['state'], json.dumps(result), '{}', job['id']))
+        self.remove_input(job['id'])
 
 
 def worker(queue, image, stop):
@@ -299,6 +343,7 @@ def main():
         interrupted = db.execute("SELECT id FROM jobs WHERE state IN ('running','cancelling')").fetchall()
         for row in interrupted:
             remove_container('noventix-' + row['id'])
+            queue.remove_input(row['id'])
         db.execute("UPDATE jobs SET state='infrastructure_error',payload='{}' WHERE state IN ('running','cancelling')")
     probe_code = ('import json,platform,importlib.metadata as m;'
                   'print(json.dumps({"python":platform.python_version(),"packages":'

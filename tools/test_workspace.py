@@ -66,7 +66,7 @@ class PolicyTests(unittest.TestCase):
             cleanup.assert_called_once_with('noventix-' + job['id'])
 
     def test_empty_file_map_and_local_metadata_remain_authoritative(self):
-        self.assertIn("'files'=>(object)json_decode($row['files_json']", PHP)
+        self.assertIn("'files'=>(object)hf_materialize(", PHP)
         self.assertIn("return array_replace($result,['local_id'", PHP)
         frontend = (ROOT / 'public/assets/workspace.js').read_text()
         self.assertIn('files = {...state.files}', frontend)
@@ -92,6 +92,29 @@ class QueueTests(unittest.TestCase):
 
     def tearDown(self):
         self.tmp.cleanup()
+
+    def test_dataset_input_spooled_and_results_exclude_original_content(self):
+        path = 'datasets/' + 'a' * 32 + '/small.csv'
+        request = payload()
+        request['files'][path] = file_data('x,y\n1,2\n')
+        request['dataset_paths'] = [path]
+        first = self.queue.submit(request)
+        with self.queue.connect() as db:
+            stored = db.execute('SELECT payload FROM jobs WHERE id=?', (first['id'],)).fetchone()[0]
+            self.assertNotIn(request['files'][path]['data'], stored)
+            self.assertTrue(json.loads(stored)['spooled'])
+        snapshot = self.queue.claim()
+        self.assertEqual(snapshot['files'][path], request['files'][path])
+        self.queue.finish(snapshot, {'state': 'succeeded', 'files': snapshot['files'], 'stdout': '', 'stderr': ''})
+        self.assertNotIn(path, self.queue.state(first['id'], 1)['files'])
+        self.assertFalse((self.queue.inputs / (first['id'] + '.json')).exists())
+
+    def test_corrupt_spooled_input_fails_closed(self):
+        first = self.queue.submit(payload())
+        (self.queue.inputs / (first['id'] + '.json')).write_text('{}')
+        self.assertIsNone(self.queue.claim())
+        self.assertEqual(self.queue.state(first['id'], 1)['state'], 'infrastructure_error')
+        self.assertFalse((self.queue.inputs / (first['id'] + '.json')).exists())
 
     def test_idempotent_snapshot_and_durable_queue(self):
         request = payload()

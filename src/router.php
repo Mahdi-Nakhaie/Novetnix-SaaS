@@ -5,7 +5,7 @@ require_once __DIR__.'/workspace_views.php';
 
 function route(): void {
     global $path,$me,$plan;
-    if (in_array($path,['workspace/data','workspace/download','workspace/run-state','workspace/runtime'],true)) ws_get($path);
+    if (in_array($path,['workspace/data','workspace/download','workspace/run-state','workspace/runtime','workspace/datasets-search','workspace/datasets-detail','workspace/datasets-state'],true)) ws_get($path);
     if ($path==='dashboard/workspace' || preg_match('~^dashboard/workspace/([1-9][0-9]*)$~D',$path,$workspaceMatch)) {
         $u=require_user(); $workspaceId=isset($workspaceMatch[1])?(int)$workspaceMatch[1]:0;
         if ($workspaceId) ws_owned((int)$u['id'],$workspaceId);

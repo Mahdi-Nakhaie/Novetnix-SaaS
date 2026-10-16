@@ -23,8 +23,8 @@ class CoreSchemaTest(unittest.TestCase):
         tables = lambda schema: set(re.findall(r"CREATE TABLE IF NOT EXISTS (\w+)", schema))
         self.assertEqual(tables(SQLITE_SCHEMA), tables(MYSQL_SCHEMA))
         self.assertTrue({"users", "courses", "lessons", "lesson_quizzes"} <= tables(SQLITE_SCHEMA))
-        self.assertTrue({'workspace_templates', 'project_workspaces', 'workspace_runs'} <= tables(SQLITE_SCHEMA))
-        self.assertEqual(len(tables(SQLITE_SCHEMA)), 28)
+        self.assertTrue({'workspace_templates', 'project_workspaces', 'workspace_runs', 'workspace_dataset_imports', 'workspace_hub_rates'} <= tables(SQLITE_SCHEMA))
+        self.assertEqual(len(tables(SQLITE_SCHEMA)), 30)
 
     def test_quiz_schema_links_each_lesson_to_one_valid_threshold(self):
         self.db.execute("INSERT INTO courses(slug,title,description) VALUES ('main','Main','')")

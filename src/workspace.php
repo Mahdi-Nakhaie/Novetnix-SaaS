@@ -6,6 +6,8 @@ const WS_USER_BYTES = 20971520;
 const WS_FILE_BYTES = 1048576;
 const WS_FILE_COUNT = 100;
 
+require_once __DIR__.'/datasets.php';
+
 function ws_reply(int $status,array $body): never {
     http_response_code($status);
     header('Content-Type: application/json; charset=utf-8');
@@ -55,7 +57,7 @@ function ws_lock_user(int $userId): void {
 }
 function ws_quota(int $userId,int $bytes,int $exclude=0): void {
     $used=(int)q('SELECT COALESCE(SUM(w.bytes),0) FROM project_workspaces w JOIN projects p ON p.id=w.project_id WHERE p.user_id=? AND p.id<>?',[$userId,$exclude])->fetchColumn();
-    if ($used+$bytes>WS_USER_BYTES) throw new InvalidArgumentException('سهمیه ذخیره‌سازی حساب بیست مگابایت است؛ پروژه‌های حذف‌شده نیز در سهمیه‌اند.');
+    if ($used+$bytes+hf_reservations($userId)>WS_USER_BYTES) throw new InvalidArgumentException('سهمیه ذخیره‌سازی حساب بیست مگابایت است؛ پروژه‌های حذف‌شده نیز در سهمیه‌اند.');
 }
 function ws_template_allowed(array $template,int $userId): bool {
     if ($template['status']!=='published') return false;
@@ -88,8 +90,16 @@ function ws_create(int $userId,int $templateId,string $title,?int $catalogIndex=
 function ws_save(int $userId,int $projectId,int $revision,array $manifest): void {
     $pdo=db(); $pdo->beginTransaction();
     try {
-        ws_lock_user($userId); ws_owned($userId,$projectId); ws_quota($userId,$manifest['bytes'],$projectId);
-        $saved=q('UPDATE project_workspaces SET files_json=?,bytes=?,revision=revision+1,updated_at=CURRENT_TIMESTAMP WHERE project_id=? AND revision=? AND deleted_at IS NULL',[$manifest['json'],$manifest['bytes'],$projectId,$revision]);
+        ws_lock_user($userId); ws_owned($userId,$projectId);
+        $refs=hf_refs($projectId);
+        foreach ($manifest['files'] as $path=>$file) if ($refs && ($path==='datasets' || str_starts_with($path,'datasets/'))) {
+            if (!isset($refs[$path]) || $file['kind']!=='file' || !hash_equals($refs[$path]['sha256'],hash('sha256',base64_decode($file['data'],true)))) throw new InvalidArgumentException('فایل‌های دیتاست فقط‌خواندنی‌اند؛ برای تغییر، کپی را با مسیر دیگری ذخیره کنید.');
+        }
+        $manifest=ws_manifest(hf_local($manifest['files'],$projectId));
+        $bytes=$manifest['bytes']+hf_dataset_bytes($projectId);
+        if ($bytes+hf_reservations($userId,$projectId)>WS_PROJECT_BYTES || count($manifest['files'])+count($refs)>WS_FILE_COUNT) throw new InvalidArgumentException('سهمیه پروژه با دیتاست‌ها و دریافت فعال تکمیل است.');
+        ws_quota($userId,$bytes,$projectId);
+        $saved=q('UPDATE project_workspaces SET files_json=?,bytes=?,revision=revision+1,updated_at=CURRENT_TIMESTAMP WHERE project_id=? AND revision=? AND deleted_at IS NULL',[$manifest['json'],$bytes,$projectId,$revision]);
         if ($saved->rowCount()!==1) { $pdo->rollBack(); ws_fail('پروژه در تب دیگری تغییر کرده؛ پیش از ذخیره دوباره باز کنید.',409); }
         $pdo->commit();
     } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
@@ -156,7 +166,7 @@ function ws_run_sync(array $run,int $userId): array {
     $result=ws_runner('GET','/jobs/'.$run['remote_id'].'?owner='.$userId);
     $states=['queued','running','cancelling','cancelled','succeeded','program_error','timeout','output_limit','artifact_limit','dependency_error','memory_limit','cpu_limit','infrastructure_error'];
     if (!in_array($result['state'] ?? '',$states,true)) throw new RuntimeException('Invalid run state.');
-    if (isset($result['files'])) $result['files']=ws_manifest($result['files'])['files'];
+    if (isset($result['files'])) $result['files']=ws_manifest(hf_local($result['files'],(int)$run['project_id']))['files'];
     q('UPDATE workspace_runs SET state=?,result_json=? WHERE id=?',[$result['state'],json_encode($result,JSON_THROW_ON_ERROR),$run['id']]);
     return array_replace($result,['local_id'=>(int)$run['id'],'revision'=>(int)$run['revision']]);
 }
@@ -164,18 +174,19 @@ function ws_get(string $path): never {
     foreach ($_GET as $value) if (!is_string($value)) ws_fail('پارامتر درخواست معتبر نیست.');
     $u=require_user(); $userId=(int)$u['id'];
     try {
+        if (str_starts_with($path,'workspace/datasets-')) hf_get($path,$userId);
         if ($path==='workspace/runtime') ws_reply(200,ws_runner('GET','/health'));
         if ($path==='workspace/run-state') ws_reply(200,ws_run_sync(ws_run_owned($userId,(int)($_GET['id'] ?? 0)),$userId));
         $row=ws_owned($userId,(int)($_GET['id'] ?? 0));
         if ($path==='workspace/download') {
-            $name=(string)($_GET['file'] ?? ''); $files=json_decode($row['files_json'],true,512,JSON_THROW_ON_ERROR);
+            $name=(string)($_GET['file'] ?? ''); $files=hf_materialize((int)$row['project_id'],json_decode($row['files_json'],true,512,JSON_THROW_ON_ERROR)+hf_refs((int)$row['project_id']));
             if (!ws_path($name) || !isset($files[$name]) || $files[$name]['kind']!=='file') ws_fail('فایل پیدا نشد.',404);
             header('Content-Type: application/octet-stream'); header('Content-Disposition: attachment; filename="'.basename($name).'"'); header('Cache-Control: no-store'); header('X-Content-Type-Options: nosniff');
             echo base64_decode($files[$name]['data'],true); exit;
         }
         $pending=q("SELECT id,request_key,entrypoint,remote_id FROM workspace_runs WHERE project_id=? AND state IN ('submitting','queued','running','cancelling') ORDER BY id DESC LIMIT 1",[$row['project_id']])->fetch();
-        ws_reply(200,['id'=>(int)$row['project_id'],'pending_run'=>$pending?:null,'revision'=>(int)$row['revision'],'title'=>$row['title'],'files'=>(object)json_decode($row['files_json'],true,512,JSON_THROW_ON_ERROR),'runner_ready'=>ws_runner_ready()]);
-    } catch (InvalidArgumentException $e) { ws_fail($e->getMessage()); } catch (Throwable $e) { ws_fail('خواندن پروژه یا سرویس اجرا ممکن نشد.',503); }
+        ws_reply(200,['id'=>(int)$row['project_id'],'pending_run'=>$pending?:null,'revision'=>(int)$row['revision'],'title'=>$row['title'],'files'=>(object)hf_materialize((int)$row['project_id'],json_decode($row['files_json'],true,512,JSON_THROW_ON_ERROR)+hf_refs((int)$row['project_id'])),'dataset_paths'=>array_keys(hf_refs((int)$row['project_id'])),'runner_ready'=>ws_runner_ready()]);
+    } catch (InvalidArgumentException $e) { ws_fail($e->getMessage()); } catch (HfError $e) { ws_fail($e->getMessage(),503); } catch (Throwable $e) { ws_fail('خواندن پروژه یا سرویس اجرا ممکن نشد.',503); }
 }
 function ws_template_save(): never {
     require_admin();
@@ -203,6 +214,7 @@ function ws_post(string $path): never {
     if ((int)($_SERVER['CONTENT_LENGTH'] ?? 0)>8388608 || strlen((string)($_POST['files'] ?? ''))>7500000) ws_fail('درخواست بیش از حد مجاز است.',413);
     $u=require_user(); $userId=(int)$u['id'];
     try {
+        if (str_starts_with($path,'workspace/datasets-')) hf_post($path,$userId);
         if ($path==='workspace/admin-template-save') ws_template_save();
         if ($path==='workspace/create') ws_reply(201,['id'=>ws_create($userId,(int)($_POST['template_id'] ?? 0),trim((string)($_POST['title'] ?? 'پروژه پایتون')))]);
         if ($path==='workspace/legacy') {
@@ -237,13 +249,13 @@ function ws_post(string $path): never {
                     if ((int)q('SELECT COUNT(*) FROM workspace_runs r JOIN projects p ON p.id=r.project_id WHERE p.user_id=?',[$userId])->fetchColumn()>=100) throw new InvalidArgumentException('سقف تاریخچه اجرا تکمیل است؛ مدیر باید نگهداری تاریخچه را بررسی کند.');
                     $history=(int)q('SELECT COALESCE(SUM(LENGTH(r.snapshot_json)+COALESCE(LENGTH(r.result_json),0)),0) FROM workspace_runs r JOIN projects p ON p.id=r.project_id WHERE p.user_id=?',[$userId])->fetchColumn();
                     if ($history+16777216>67108864) throw new InvalidArgumentException('سهمیه تاریخچه اجرا تکمیل است؛ فایل‌های پروژه محفوظ‌اند و مدیر باید تاریخچه را آرشیو کند.');
-                    q('INSERT INTO workspace_runs(project_id,request_key,revision,entrypoint,snapshot_json) VALUES (?,?,?,?,?)',[$id,$key,$revision,$entry,$row['files_json']]);
+                    q('INSERT INTO workspace_runs(project_id,request_key,revision,entrypoint,snapshot_json) VALUES (?,?,?,?,?)',[$id,$key,$revision,$entry,json_encode((object)($files+hf_refs($id)),JSON_THROW_ON_ERROR)]);
                     $run=q('SELECT * FROM workspace_runs WHERE id=?',[(int)$pdo->lastInsertId()])->fetch();
                 }
                 $pdo->commit();
             } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
             if (!$run['remote_id']) {
-                $remote=ws_runner('POST','/jobs',['owner'=>$userId,'request_id'=>'p'.$id.'-'.$key,'entrypoint'=>$run['entrypoint'],'files'=>json_decode($run['snapshot_json'],true,512,JSON_THROW_ON_ERROR)]);
+                $remote=ws_runner('POST','/jobs',['owner'=>$userId,'request_id'=>'p'.$id.'-'.$key,'entrypoint'=>$run['entrypoint'],'dataset_paths'=>array_keys(array_filter(json_decode($run['snapshot_json'],true,512,JSON_THROW_ON_ERROR),static fn($file)=>($file['kind'] ?? '')==='dataset')),'files'=>ws_manifest(hf_materialize($id,json_decode($run['snapshot_json'],true,512,JSON_THROW_ON_ERROR)))['files']]);
                 if (!preg_match('/^[a-f0-9-]{36}$/D',(string)($remote['id'] ?? ''))) throw new RuntimeException('Invalid runner ID.');
                 q("UPDATE workspace_runs SET remote_id=?,state='queued' WHERE id=?",[$remote['id'],$run['id']]);
             }
@@ -260,5 +272,6 @@ function ws_post(string $path): never {
         }
         ws_fail('مسیر میزکار پیدا نشد.',404);
     } catch (InvalidArgumentException|JsonException $e) { ws_fail($e instanceof JsonException?'JSON فایل‌ها معتبر نیست.':$e->getMessage()); }
+    catch (HfError $e) { ws_fail($e->getMessage(),503); }
     catch (Throwable $e) { ws_fail('ذخیره یا پردازش درخواست انجام نشد؛ داده قبلی حفظ شده است.',503); }
 }
