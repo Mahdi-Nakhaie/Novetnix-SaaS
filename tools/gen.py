@@ -170,7 +170,7 @@ def course_cards():
 
 
 NAV_ITEMS = [("", "خانه"), ("courses", "مسیر یادگیری"), ("projects", "پروژه‌ها"),
-             ("community", "انجمن"), ("pricing", "قیمت‌گذاری"), ("about", "درباره ما"),
+             ("community", "انجمن"), ("about", "درباره ما"),
              ("contact", "تماس با ما")]
 
 
@@ -211,7 +211,7 @@ def footer_html():
         "<div><h3>یادگیری</h3>"
         + linkto("courses", "مقاله‌ها") + linkto("projects", "پروژه‌ها") + linkto("community", "انجمن")
         + "</div><div><h3>Noventix</h3>"
-        + linkto("pricing", "پلن‌ها") + linkto("about", "درباره ما") + linkto("contact", "تماس با ما")
+        + linkto("about", "درباره ما") + linkto("contact", "تماس با ما")
         + linkto("help", "مرکز راهنما") + linkto("support", "پشتیبانی") + linkto("terms", "قوانین و مقررات")
         + linkto("privacy", "حریم خصوصی")
         + "</div><div><h3>همراه ما باشید</h3>"
@@ -285,11 +285,11 @@ def view_home():
             "<div><span>03</span><strong>انتقال مهارت</strong><small>در مسئله تازه مستقل باش</small></div>"
             "</div></div></section>")
 
-    out += ('<section class="section container">'
-            + section_header("پلن‌های یادگیری", "برای هر مرحله، یک انتخاب",
-                             "از رایگان شروع کن و هر وقت آماده بودی، امکانات بیشتر را فعال کن.")
-            + plan_cards(True)
-            + '<div class="center-link">' + linkto("pricing", "مقایسه کامل امکانات پلن‌ها ←", "inline-link") + "</div></section>")
+    out += ('<section class="section container"><div class="cta-panel">'
+            '<span class="eyebrow">دوره رایگان MVP</span>'
+            '<h2>مقدمه‌ای بر هوش مصنوعی برای مبتدیان</h2>'
+            '<p>ثبت‌نام، تأیید شماره تلفن و یادگیری بدون پرداخت.</p>'
+            + linkto("course/ai-foundations", "مشاهده دوره رایگان ←", "btn btn-light") + '</div></section>')
 
     out += ('<section class="section container"><div class="cta-panel">'
             '<span class="eyebrow">آینده از همین قدم شروع می‌شود</span>'
@@ -408,6 +408,12 @@ def view_project(index):
             f'<button type="button" class="btn btn-primary" data-project="{index}">افزودن به پروژه‌های من</button>'
             + linkto("community", "پرسش در انجمن ←", "btn btn-outline") + "</div></div></main>")
     return out
+
+
+def view_commerce_paused():
+    return ('<section class="container section"><div class="panel-card"><h1>یادگیری رایگان در Noventix</h1>'
+            '<p>خرید اشتراک و پرداخت موقتاً غیرفعال است. دوره مقدماتی هوش مصنوعی رایگان است.</p>'
+            + linkto("course/ai-foundations", "مشاهده دوره رایگان ←", "btn btn-primary") + '</div></section>')
 
 
 def view_pricing():
@@ -1009,8 +1015,8 @@ def student_section(sub):
                 '<section class="panel-card"><h2>دسترسی پلن فعلی</h2><ul class="check-list">'
                 '<li>اعتبار Nova: <strong data-plan-credits>۰</strong></li>'
                 '<li>ظرفیت پروژه: <strong data-plan-projects>۰</strong></li></ul>'
-                '<p class="muted">برای دسترسی به پروژه‌ها و مقاله‌های پیشرفته، پلن مناسب را فعال کنید.</p>'
-                + linkto("panel/student/subscription", "مدیریت اشتراک ←", "btn btn-outline") + "</section></div>")
+                '<p class="muted">دوره مقدماتی هوش مصنوعی بدون پرداخت قابل استفاده است.</p>'
+                + linkto("course/ai-foundations", "مشاهده دوره رایگان ←", "btn btn-outline") + "</section></div>")
         out += ('<div class="panel-columns"><section class="panel-card"><h2>پیشرفت مسیرها</h2>')
         for name, percent in TRACKS:
             out += (f'<div class="skill-row"><div class="usage-row"><span>{h(name)}</span>'
@@ -1110,7 +1116,7 @@ def admin_section(sub):
         out += ('<div class="panel-columns"><section class="panel-card">'
                 '<span class="eyebrow">گام بعدی</span><h2>مدیریت اشتراک‌ها</h2>'
                 "<p>فعال‌سازی اشتراک پس از تأیید پرداخت خارج از سامانه و بررسی دستی امکان‌پذیر است.</p>"
-                + linkto("panel/admin/subscriptions", "مدیریت اشتراک‌ها ←", "btn btn-primary")
+                + linkto("panel/admin/users", "مدیریت کاربران ←", "btn btn-primary")
                 + '</section><section class="panel-card soft"><span class="eyebrow">جامعه</span>'
                   "<h2>انجمن Noventix</h2>"
                   "<p>سؤال‌ها، تجربه‌ها و ایده‌ها را با جامعه یادگیری در میان بگذار.</p>"
@@ -1333,7 +1339,7 @@ def view_body(route):
     if view == "project":
         return view_project(route["index"])
     if view == "pricing":
-        return view_pricing()
+        return '<main>' + view_commerce_paused() + '</main>'
     if view == "about":
         return view_about()
     if view == "contact":
@@ -1383,6 +1389,8 @@ def panel_shell(role, sub):
            f'<div class="sidebar-caption">{"مدیریت پلتفرم" if role == "admin" else "فضای یادگیری"}</div>'
            '<nav aria-label="ناوبری پنل">')
     for key, label in items:
+        if key in ("subscription", "subscriptions", "payments"):
+            continue
         out += linkto(base + (f"/{key}" if key else ""), label, "selected" if sub == key else "")
     out += ('</nav><div class="sidebar-bottom">'
             f'<a href="{h(href(""))}">بازگشت به سایت ↗</a>'
@@ -1391,7 +1399,8 @@ def panel_shell(role, sub):
             '<button type="button" class="panel-menu" aria-label="فهرست پنل">☰</button>'
             f'<span>Noventix <span class="muted">/ {"مدیریت" if role == "admin" else "دانش‌آموز"}</span></span>'
             '<span class="panel-avatar" data-avatar>ک</span></div>')
-    section = admin_section(sub) if role == "admin" else student_section(sub)
+    section = (view_commerce_paused() if sub in ("subscription", "subscriptions", "payments")
+               else admin_section(sub) if role == "admin" else student_section(sub))
     return out + f'<main class="panel-content">{section}</main></div>'
 
 

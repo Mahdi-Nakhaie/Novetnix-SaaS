@@ -82,7 +82,7 @@ class PublicCoursesTest(unittest.TestCase):
     def test_lessons_belong_to_course_are_published_and_ordered(self):
         course_id = self.db.execute(self.course_sql, ("published",)).fetchone()[0]
         self.assertEqual(
-            [(row[0], row[2]) for row in self.db.execute(self.lesson_sql, (course_id,))],
+            [(row[0], row[1]) for row in self.db.execute(self.lesson_sql, (course_id,))],
             [("First", 1), ("Second", 2), ("Third", 3)],
         )
         self.assertIn("[$course['id']]", self.detail)
@@ -302,6 +302,90 @@ class PublicCoursesTest(unittest.TestCase):
         self.assertIn('data-safe-back hidden', static)
         self.assertIn('previous.origin === window.location.origin', (ROOT / "site/assets/app.js").read_text(encoding="utf-8"))
         self.assertIn('.noventix-not-found', (ROOT / "site/assets/style.css").read_text(encoding="utf-8"))
+
+
+    def test_public_curriculum_never_exposes_protected_lesson_content(self):
+        self.assertNotIn('content', self.lesson_sql)
+        self.assertNotIn("$lesson['content']", self.detail)
+        self.assertIn('authorized_progress_lesson', APP)
+        self.assertIn("e.user_id=?", body(APP, 'authorized_progress_lesson'))
+        self.assertIn("l.status='published' AND c.status='published'", body(APP, 'authorized_progress_lesson'))
+
+    def test_free_course_access_is_explicit_and_independent_of_subscriptions(self):
+        data = (ROOT / 'src/data.php').read_text(encoding='utf-8')
+        self.assertIn('const COMMERCE_ENABLED = false;', data)
+        self.assertIn("const FREE_COURSE_SLUG = 'ai-foundations';", data)
+        access = body(APP, 'can_course')
+        self.assertLess(access.index('$slug===FREE_COURSE_SLUG'), access.index('!COMMERCE_ENABLED'))
+        self.assertNotIn('q(', access)
+        post = body(APP, 'handle_post')
+        enroll = post[post.index("if ($path==='courses/enroll')"):post.index("if ($path==='projects/start')")]
+        self.assertIn('if (!can_course($slug,$plan))', enroll)
+        self.assertNotIn('isset(COURSES[$slug])', enroll)
+        self.assertLess(post.index('$u=require_user()'), post.index("if ($path==='courses/enroll')"))
+        self.assertLess(enroll.index("status='published'"), enroll.index('INSERT'))
+
+    def test_free_enrollment_is_idempotent_and_does_not_fabricate_progress(self):
+        self.db.execute("INSERT INTO courses(slug,title,description,status) VALUES ('ai-foundations','AI','','published')")
+        insert = re.search(r"q\('(INSERT OR IGNORE INTO enrollments[^']+)'", APP).group(1)
+        for _ in range(3):
+            self.db.execute(insert, (2, 'ai-foundations'))
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM enrollments WHERE user_id=2 AND course_slug='ai-foundations'").fetchone()[0], 1)
+        self.assertEqual(self.db.execute('SELECT COUNT(*) FROM subscriptions').fetchone()[0], 0)
+        self.assertEqual(self.db.execute('SELECT COUNT(*) FROM lesson_progress').fetchone()[0], 0)
+        self.assertIn('INSERT IGNORE INTO enrollments', APP)
+        enroll = APP[APP.index("if ($path==='courses/enroll')"):APP.index("if ($path==='projects/start')")]
+        self.assertNotIn('lesson_progress', enroll)
+        self.assertNotIn('activities', enroll)
+
+    def test_verified_free_learner_access_uses_own_enrollment_without_payment(self):
+        self.db.execute("INSERT INTO courses(slug,title,description,status) VALUES ('ai-foundations','AI','','published')")
+        course_id = self.db.execute("SELECT id FROM courses WHERE slug='ai-foundations'").fetchone()[0]
+        self.db.execute("INSERT INTO lessons(course_id,title,content,position,status) VALUES (?,'Free lesson','protected',1,'published')", (course_id,))
+        lesson_id = self.db.execute('SELECT MAX(id) FROM lessons').fetchone()[0]
+        self.db.execute("INSERT INTO enrollments(user_id,course_slug) VALUES (2,'ai-foundations')")
+        workspace_sql = query(self.workspace, 'courses')
+        self.assertIsNotNone(self.db.execute(workspace_sql, (2, 'ai-foundations')).fetchone())
+        self.assertIsNone(self.db.execute(workspace_sql, (1, 'ai-foundations')).fetchone())
+        access_sql = query(body(APP, 'authorized_progress_lesson'), 'lessons')
+        self.assertIsNotNone(self.db.execute(access_sql, (2, lesson_id)).fetchone())
+        self.assertIsNone(self.db.execute(access_sql, (1, lesson_id)).fetchone())
+        self.db.execute("UPDATE lessons SET status='draft' WHERE id=?", (lesson_id,))
+        self.assertIsNone(self.db.execute(access_sql, (2, lesson_id)).fetchone())
+        self.assertEqual(self.db.execute('SELECT COUNT(*) FROM subscriptions').fetchone()[0], 0)
+
+    def test_anonymous_and_unverified_users_remain_blocked(self):
+        auth = (ROOT / 'src/auth.php').read_text(encoding='utf-8')
+        self.assertIn("if (empty($_SESSION['uid'])) return null;", body(auth, 'user'))
+        self.assertIn("if (!$u || $u['phone_verified_at']===null) return null;", body(auth, 'user'))
+        self.assertIn("redirect('login?next='", body(auth, 'require_user'))
+        self.assertIn('$u=require_user()', body(ROUTER, 'route'))
+        self.assertIn('validate_csrf();', body(APP, 'handle_post'))
+        self.assertNotIn("$_POST['user_id']", APP[APP.index("if ($path==='courses/enroll')"):APP.index("if ($path==='projects/start')")])
+
+    def test_commerce_routes_keep_admin_guard_before_paused_message(self):
+        route = body(ROUTER, 'route')
+        pause = "if (!COMMERCE_ENABLED && in_array($path,['dashboard/subscription','dashboard/subscriptions','dashboard/payments'],true))"
+        self.assertIn('if (COMMERCE_ENABLED) page_pricing(); else commerce_paused();', route)
+        self.assertLess(route.index('require_admin();'), route.index(pause))
+        post = body(APP, 'handle_post')
+        activate = post[post.index("if ($path==='admin/activate')"):post.index("if ($path==='challenges/start')")]
+        self.assertLess(activate.index('require_admin();'), activate.index('!COMMERCE_ENABLED'))
+        self.assertLess(activate.index('!COMMERCE_ENABLED'), activate.index('UPDATE subscriptions'))
+        self.assertIn('http_response_code(403)', activate)
+        self.assertIn('function page_pricing()', ROUTER)
+        self.assertIn('CREATE TABLE IF NOT EXISTS subscriptions', SCHEMA)
+
+    def test_primary_navigation_and_home_have_no_purchase_ctas(self):
+        self.assertNotIn("'pricing'=>'", body(VIEWS, 'head_page'))
+        self.assertIn("unset($items['dashboard/subscription'],$items['dashboard/subscriptions'],$items['dashboard/payments'])", body(VIEWS, 'panel_nav'))
+        for route in gen.build_routes():
+            if route['path'] not in ('', 'pricing', 'panel/student/subscription', 'panel/student/payments'):
+                continue
+            html = gen.render_page(route)
+            self.assertNotIn('انتخاب پلن', html)
+            self.assertNotIn('ارتقای پلن', html)
+            self.assertIn('دوره', html)
 
 
 if __name__ == "__main__":

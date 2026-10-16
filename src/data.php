@@ -1,6 +1,10 @@
 <?php
 declare(strict_types=1);
 
+const COMMERCE_ENABLED = false;
+const FREE_COURSE_SLUG = 'ai-foundations';
+const FREE_COURSE_TITLE = 'مقدمه‌ای بر هوش مصنوعی برای مبتدیان';
+
 const PLANS = [
     'free' => ['name'=>'رایگان','price'=>0,'tag'=>'برای شروع','summary'=>'مقدمه‌ای کوتاه برای آشنایی با مسیر یادگیری','features'=>['مقاله‌های مقدماتی','پروژه‌های نمونه','انجمن عمومی'],'projects'=>0,'nova'=>0,
         'limits'=>[['پروژه فعال','نمونهٔ نمایشی'],['گفت‌وگوی Nova در ماه','ندارد'],['CRAFT','فقط آشنایی'],['Transfer','ندارد'],['حافظه پروژه','ندارد']]],

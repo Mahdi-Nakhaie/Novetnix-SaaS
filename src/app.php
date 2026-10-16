@@ -96,6 +96,8 @@ function plan_for(array $u): string {
     return $row && isset(PLANS[$row['plan']]) ? $row['plan'] : 'free';
 }
 function can_course(string $slug, string $plan): bool {
+    if ($slug===FREE_COURSE_SLUG) return true;
+    if (!COMMERCE_ENABLED) return false;
     $need=['python-foundations'=>0,'data-analysis'=>1,'ml-basics'=>1,'nlp-practice'=>2,'deep-learning'=>3,'api-deployment'=>3];
     return array_search($plan,array_keys(PLANS),true) >= ($need[$slug] ?? 99);
 }
@@ -334,7 +336,7 @@ function handle_post(string $path): void {
         $slug=trim((string)($_POST['slug'] ?? ''));
         $course=q("SELECT slug FROM courses WHERE slug=? AND status='published'",[$slug])->fetch();
         if (!$course) { http_response_code(404); exit; }
-        if (isset(COURSES[$slug]) && !can_course($slug,$plan)) { flash('برای این دوره به اشتراک بالاتر نیاز دارید.','error'); redirect('pricing'); }
+        if (!can_course($slug,$plan)) { flash('ثبت‌نام این دوره فعلاً در دسترس نیست؛ دوره مقدماتی هوش مصنوعی رایگان است.','error'); redirect('course/'.FREE_COURSE_SLUG); }
         if (db()->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql') q('INSERT IGNORE INTO enrollments(user_id,course_slug) VALUES (?,?)',[$u['id'],$slug]);
         else q('INSERT OR IGNORE INTO enrollments(user_id,course_slug) VALUES (?,?)',[$u['id'],$slug]);
         flash('دوره به مسیر یادگیری شما اضافه شد.'); redirect('dashboard/learning');
@@ -343,11 +345,11 @@ function handle_post(string $path): void {
         $index=filter_var($_POST['index'] ?? '',FILTER_VALIDATE_INT);
         if ($index===false || $index<0 || !isset(PROJECTS[$index])) { http_response_code(404); exit; }
         $limit=PLANS[$plan]['projects'];
-        if ($limit===0) { flash('برای شروع پروژه، پلن برنزی یا بالاتر را انتخاب کنید.','error'); redirect('pricing'); }
+        if ($limit===0) { flash('شروع پروژه فعلاً برای این حساب در دسترس نیست؛ یادگیری دوره رایگان در دسترس است.','error'); redirect('dashboard/learning'); }
         $exists=q('SELECT id FROM projects WHERE user_id=? AND catalog_index=?',[$u['id'],$index])->fetch();
         if (!$exists) {
             $count=(int)q('SELECT COUNT(*) FROM projects WHERE user_id=?',[$u['id']])->fetchColumn();
-            if ($limit!==-1 && $count >= $limit) { flash('ظرفیت پروژه‌های فعال پلن شما تکمیل شده است.','error'); redirect('pricing'); }
+            if ($limit!==-1 && $count >= $limit) { flash('ظرفیت پروژه‌های فعال حساب شما تکمیل شده است.','error'); redirect('dashboard/projects'); }
             q('INSERT INTO projects(user_id,catalog_index) VALUES (?,?)',[$u['id'],$index]);
         }
         flash('پروژه به میزکار شما اضافه شد.'); redirect('dashboard/projects');
@@ -368,6 +370,7 @@ function handle_post(string $path): void {
     }
     if ($path==='admin/activate') {
         require_admin();
+        if (!COMMERCE_ENABLED) { http_response_code(403); exit('فعال‌سازی اشتراک و پرداخت موقتاً غیرفعال است.'); }
         $phone=normalized_phone((string)($_POST['phone'] ?? '')); $selected=(string)($_POST['plan'] ?? '');
         if (!$phone || !isset(PLANS[$selected]) || $selected==='free') { flash('شماره و پلن معتبر وارد کنید.','error'); redirect('dashboard/subscriptions'); }
         $target=q('SELECT id FROM users WHERE phone=?',[$phone])->fetch();

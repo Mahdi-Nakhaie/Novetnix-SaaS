@@ -10,7 +10,7 @@ function route(): void {
     if (str_starts_with($path,'course/')) { page_course(trim(substr($path,7))); return; }
     if ($path==='projects') { head_page('پروژه‌ها','پروژه‌های واقعی پایتون، علم داده و هوش مصنوعی برای تبدیل دانش به مهارت.'); notice(); page_projects(); foot_page(); return; }
     if (str_starts_with($path,'project/')) { page_project(substr($path,8)); return; }
-    if ($path==='pricing') { head_page('قیمت‌گذاری','مقایسه پلن‌های رایگان، برنزی، نقره‌ای، طلایی و تیتانیوم Noventix.'); notice(); page_pricing(); foot_page(); return; }
+    if ($path==='pricing') { head_page('قیمت‌گذاری','یادگیری رایگان در Noventix؛ خرید اشتراک موقتاً غیرفعال است.'); notice(); if (COMMERCE_ENABLED) page_pricing(); else commerce_paused(); foot_page(); return; }
     if ($path==='about') { head_page('درباره ما','داستان، رویکرد آموزشی و اصول تجربه یادگیری در Noventix.'); notice(); page_about(); foot_page(); return; }
     if ($path==='contact') { head_page('تماس با ما','راه‌های ارتباط با تیم Noventix و شبکه‌های اجتماعی.'); notice(); page_contact(); foot_page(); return; }
     if ($path==='community') { page_community(); return; }
@@ -43,6 +43,9 @@ function route(): void {
         if ($u['phone']===(config_value('ADMIN_PHONE') ?: '') && $u['role']!=='admin') redirect('admin-login');
         $allowed=['profile','learning','projects','community','nova','subscription','users','users-new','courses','catalog','subscriptions','messages','analytics','challenges','payments','support','announcements','gamification','activity','content','settings'];
         if (str_starts_with($path,'dashboard/') && !in_array(substr($path,10),$allowed,true)) { page_not_found(); return; }
+        if (!COMMERCE_ENABLED && in_array($path,['dashboard/subscription','dashboard/subscriptions','dashboard/payments'],true)) {
+            head_page('یادگیری رایگان','',true); notice(); commerce_paused(); foot_page(true); return;
+        }
         head_page('پنل', '', true); notice(); panel(str_starts_with($path,'dashboard/') ? substr($path,10) : ''); foot_page(true); return;
     }
     page_not_found();
@@ -54,6 +57,7 @@ function page_courses(array $courses): void {
 function course_start_action(array $course,?array $me,bool $enrolled,string $class): void {
     if (!$me || trim($me['name'])==='') { linkto('login','برای شروع وارد شوید ←',$class); return; }
     if ($enrolled) { linkto('dashboard/course/'.$course['slug'],'ورود به فضای یادگیری ←',$class); return; }
+    if (!COMMERCE_ENABLED && $course['slug']!==FREE_COURSE_SLUG) { echo '<p class="muted">ثبت‌نام این دوره فعلاً در دسترس نیست.</p>'; return; }
     form_start('courses/enroll');
     echo '<input type="hidden" name="slug" value="'.h($course['slug']).'"><button class="'.h($class).'">شروع رایگان دوره ←</button></form>';
 }
@@ -61,7 +65,7 @@ function page_course(string $slug): void {
     global $me;
     $course=q("SELECT id,slug,title,description,estimated_duration_minutes FROM courses WHERE slug=? AND status='published'",[$slug])->fetch();
     if (!$course) { page_not_found(); return; }
-    $lessons=q("SELECT title,content,position,duration_minutes,status FROM lessons WHERE course_id=? AND status='published' ORDER BY position ASC",[$course['id']])->fetchAll();
+    $lessons=q("SELECT title,position,duration_minutes,status FROM lessons WHERE course_id=? AND status='published' ORDER BY position ASC",[$course['id']])->fetchAll();
     $duration=$course['estimated_duration_minutes'];
     if ($duration===null) {
         $lessonDurations=array_column($lessons,'duration_minutes');
@@ -71,7 +75,7 @@ function page_course(string $slug): void {
     $enrolled=$me && trim($me['name'])!=='' && (bool)q('SELECT 1 FROM enrollments WHERE user_id=? AND course_slug=?',[$me['id'],$course['slug']])->fetchColumn();
     head_page($course['title'],$course['description']); notice(); echo '<main class="course-overview"><section class="course-overview-hero"><div class="container narrow-container"><span class="eyebrow">مسیر یادگیری · Course</span><h1>'.h($course['title']).'</h1><p class="lead">'.h($course['description']).'</p><div class="article-meta"><span>'.$durationLabel.'</span><span>'.fa(count($lessons)).' Lesson</span><span>رایگان</span><span>یادگیری پروژه‌محور</span></div><div class="course-hero-actions">'; course_start_action($course,$me,$enrolled,'btn btn-primary'); echo '</div></div></section><section class="section container narrow-container"><div class="course-overview-grid"><div><span class="eyebrow">برای چه کسی؟</span><h2>شروعی روشن برای ساختن با AI</h2><p class="muted">برای مبتدی‌هایی که می‌خواهند مفاهیم هوش مصنوعی را با یک مسیر عملی و قابل فهم یاد بگیرند.</p></div><div class="course-audience-list"><span>مبتدی و علاقه‌مند به AI</span><span>یادگیری همراه با پروژه</span><span>حرکت از مفهوم به اجرا</span></div></div></section><section class="section alt-section"><div class="container"><div class="section-header"><span class="eyebrow">خروجی دوره</span><h2>چه چیزهایی یاد می‌گیری؟</h2></div><div class="features-grid course-benefits"><article class="feature"><h3>مفاهیم پایه AI</h3><p>درک اصولی مفاهیم مهم بدون پیچیده‌گویی.</p></article><article class="feature"><h3>روند ساخت پروژه</h3><p>آشنایی با مسیر تبدیل ایده به یک نمونه عملی.</p></article><article class="feature"><h3>تمرین واقعی</h3><p>یادگیری با مثال‌هایی که به ساختن کمک می‌کنند.</p></article><article class="feature"><h3>حرکت به اجرا</h3><p>اتصال دانسته‌ها به یک تجربه قابل ارائه.</p></article></div></div></section><section class="section container narrow-container"><div class="section-header"><span class="eyebrow">Curriculum</span><h2>مسیر جلسات</h2><p>جلسه‌ها از محتوای منتشرشدهٔ همین Course ساخته می‌شوند.</p></div>';
     if (!$lessons) echo '<div class="empty-state">این Course هنوز Lesson منتشرشده‌ای ندارد.</div>';
-    else { echo '<div class="lesson-list">'; foreach ($lessons as $lesson) { echo '<article class="lesson-card"><div class="lesson-number">'.fa((int)$lesson['position']).'</div><div><div class="meta-row"><span class="pill">منتشرشده</span><span>'.($lesson['duration_minutes']===null?'مدت ثبت نشده':fa((int)$lesson['duration_minutes']).' دقیقه').'</span></div><h3>'.h($lesson['title']).'</h3><p>'.nl2br(h($lesson['content'])).'</p></div></article>'; } echo '</div>'; }
+    else { echo '<div class="lesson-list">'; foreach ($lessons as $lesson) { echo '<article class="lesson-card"><div class="lesson-number">'.fa((int)$lesson['position']).'</div><div><div class="meta-row"><span class="pill">منتشرشده</span><span>'.($lesson['duration_minutes']===null?'مدت ثبت نشده':fa((int)$lesson['duration_minutes']).' دقیقه').'</span></div><h3>'.h($lesson['title']).'</h3></div></article>'; } echo '</div>'; }
     echo '<div class="cta-panel course-final-cta"><span class="eyebrow">قدم بعدی</span><h2>آماده‌ای شروع کنی؟</h2><p>از اولین Lesson شروع کن و قدم‌به‌قدم جلو برو.</p>'; course_start_action($course,$me,$enrolled,'btn btn-light'); echo '</div></section></main>'; foot_page();
 }
 function page_projects(): void {
