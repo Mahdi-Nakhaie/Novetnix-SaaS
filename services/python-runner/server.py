@@ -17,6 +17,9 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 from policy import PACKAGES, manifest, requirements, valid_path
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'curriculum'))
+import grading
 
 ACTIVE = ('queued', 'running', 'cancelling')
 TERMINAL = ('succeeded', 'program_error', 'cancelled', 'timeout', 'output_limit',
@@ -164,7 +167,13 @@ class Queue:
         dataset_paths = payload.get('dataset_paths', [])
         if not isinstance(dataset_paths, list) or len(dataset_paths) > 100 or any(not isinstance(p, str) or not re.fullmatch(r'datasets/[a-f0-9]{32}/.+', p) or p not in files for p in dataset_paths):
             raise ValueError('Invalid dataset references.')
-        encoded = json.dumps({'owner': owner, 'request_id': key, 'files': files, 'entrypoint': entry, 'dataset_paths': dataset_paths}, sort_keys=True)
+        normalized = {'owner': owner, 'request_id': key, 'files': files, 'entrypoint': entry, 'dataset_paths': dataset_paths}
+        if 'assessment' in payload:
+            spec = payload['assessment']
+            if not isinstance(spec, dict) or spec.get('key') not in {p['key'] for p in grading.definitions()} or spec.get('version') != grading.version() or entry != 'main.py' or dataset_paths:
+                raise ValueError('Invalid assessment definition/version.')
+            normalized['assessment'] = {'key': spec['key'], 'version': spec['version']}
+        encoded = json.dumps(normalized, sort_keys=True)
         fingerprint = hashlib.sha256(encoded.encode()).hexdigest()
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
@@ -263,7 +272,8 @@ def worker(queue, image, stop):
             stop.wait(0.2)
             continue
         try:
-            result = execute(job, image, lambda: stop.is_set() or queue.state(job['id'], job['owner'])['state'] == 'cancelling')
+            cancelled = lambda: stop.is_set() or queue.state(job['id'], job['owner'])['state'] == 'cancelling'
+            result = grading.grade(job, execute, image, cancelled) if job.get('assessment') else execute(job, image, cancelled)
         except CleanupFailure:
             stop.set()
             result = {'state': 'infrastructure_error', 'stdout': '', 'stderr': 'Sandbox cleanup failed; runner paused.', 'files': {}}
@@ -356,9 +366,8 @@ def main():
     if not runtime['python'].startswith('3.12.') or runtime['packages'] != PACKAGES:
         raise RuntimeError('Sandbox image does not match the approved runtime profile.')
     stop = threading.Event()
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-        for _ in range(2):
-            pool.submit(worker, queue, image, stop)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+        pool.submit(worker, queue, image, stop)
         server = HTTPServer(('127.0.0.1', int(os.environ.get('RUNNER_PORT', '8091'))), Handler)
         server.queue, server.token, server.stop, server.runtime = queue, token, stop, runtime
         try:

@@ -89,6 +89,10 @@ function db(): PDO {
             if (!$db->query("SHOW INDEX FROM activities WHERE Key_name='idx_activities_event_created'")->fetch()) $db->exec('CREATE INDEX idx_activities_event_created ON activities(event_name,created_at)');
             if (!$db->query("SHOW INDEX FROM activities WHERE Key_name='idx_activities_created'")->fetch()) $db->exec('CREATE INDEX idx_activities_created ON activities(created_at)');
         } else $db->exec('CREATE INDEX IF NOT EXISTS idx_activities_event_created ON activities(event_name,created_at)');
+        $runColumns=$db->query('SELECT * FROM workspace_runs LIMIT 0');
+        $runNames=[];
+        for ($i=0;$i<$runColumns->columnCount();$i++) $runNames[]=$runColumns->getColumnMeta($i)['name'];
+        foreach (['assessment_key','assessment_version'] as $column) if (!in_array($column,$runNames,true)) $db->exec('ALTER TABLE workspace_runs ADD COLUMN '.$column.' '.($driver==='mysql'?'VARCHAR(64) NULL':'TEXT'));
         return $db;
     } catch (Throwable $e) {
         throw new RuntimeException('Database initialization failed.', 0, $e);

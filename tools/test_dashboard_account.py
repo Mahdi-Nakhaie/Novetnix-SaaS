@@ -128,7 +128,7 @@ class DashboardCourseProgressTest(unittest.TestCase):
         self.assertIn("if (preg_match('~^dashboard/course/", ROUTER)
         self.assertIn("$u=require_user()", ROUTER)
         self.assertIn("function page_projects(): void", ROUTER)
-        self.assertIn("const PROJECTS = [", (ROOT / "src/data.php").read_text(encoding="utf-8"))
+        self.assertIn("curriculum/catalog.json", (ROOT / "src/data.php").read_text(encoding="utf-8"))
         self.assertEqual(self.totals(), (2, 0, 2, 0))
         self.db.execute("INSERT INTO lesson_progress(user_id,lesson_id,last_position,completed,status,completed_at) VALUES (1,1,999,1,'completed','2026-01-01')")
         self.db.execute("INSERT INTO lesson_progress(user_id,lesson_id,last_position,completed,status,completed_at) VALUES (1,2,999,1,'completed','2026-01-02')")

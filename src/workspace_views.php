@@ -28,8 +28,8 @@ function ws_index(array $u): void {
     if (!$found) echo '<p>تمرین منتشرشده و قابل‌دسترسی موجود نیست. مدیر می‌تواند فایل‌های اولیه و دیتاست را در همین پنل اضافه کند.</p>';
     echo '</div><h2>اتصال پروژه‌های قبلی</h2>';
     foreach (q('SELECT p.id,p.catalog_index FROM projects p LEFT JOIN project_workspaces w ON w.project_id=p.id WHERE p.user_id=? AND w.project_id IS NULL AND p.catalog_index>=0',[$u['id']])->fetchAll() as $project) {
-        if (!isset(PROJECTS[$project['catalog_index']])) continue;
-        ws_form('legacy'); echo '<input type="hidden" name="id" value="'.(int)$project['id'].'"><p>'.h(PROJECTS[$project['catalog_index']]['title']).' — ایجاد فایل main.py خالی از منطق پروژه، بدون دیتاست ساختگی</p><button class="btn btn-outline">بازکردن میزکار</button></form>';
+        if (!isset(LEGACY_PROJECTS[$project['catalog_index']])) continue;
+        ws_form('legacy'); echo '<input type="hidden" name="id" value="'.(int)$project['id'].'"><p>'.h(LEGACY_PROJECTS[$project['catalog_index']]['title']).' — ایجاد فایل main.py خالی از منطق پروژه، بدون دیتاست ساختگی</p><button class="btn btn-outline">بازکردن میزکار</button></form>';
     }
     echo '</section>';
 }

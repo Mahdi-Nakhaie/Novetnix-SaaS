@@ -70,7 +70,8 @@ const COURSES = [
     ]],
 ];
 
-const PROJECTS = [
+define('PROJECTS', json_decode(file_get_contents(dirname(__DIR__).'/curriculum/catalog.json'),true,512,JSON_THROW_ON_ERROR));
+const LEGACY_PROJECTS = [
     ['title'=>'تحلیل فروش یک فروشگاه آنلاین','topic'=>'Data Science','level'=>'مقدماتی','description'=>'از داده‌های تراکنش، روند فروش و محصولات پرفروش را استخراج و با نمودار روایت کن.','skills'=>'Python · Pandas · Visualization'],
     ['title'=>'پیش‌بینی ریزش مشتری','topic'=>'Machine Learning','level'=>'متوسط','description'=>'یک مسئله دسته‌بندی واقعی را با داده نامتوازن، baseline و معیارهای درست حل کن.','skills'=>'Scikit-learn · Classification · Metrics'],
     ['title'=>'دسته‌بندی احساسات متن فارسی','topic'=>'NLP','level'=>'متوسط','description'=>'متن‌های فارسی را نرمال‌سازی کن و یک مدل تحلیل احساسات بساز.','skills'=>'Python · NLP · Evaluation'],

@@ -8,7 +8,7 @@ function route(): void {
     if (seo_route($path)) return;
     if ($path==='payment/zarinpal/callback') payment_callback();
     if ($path==='dashboard/payment-history') { $u=require_user(); head_page('تاریخچه پرداخت','',true); notice(); echo '<main class="panel-content">'; payment_history($u); echo '</main>'; foot_page(true); return; }
-    if (in_array($path,['workspace/data','workspace/download','workspace/run-state','workspace/runtime','workspace/datasets-search','workspace/datasets-detail','workspace/datasets-state'],true)) ws_get($path);
+    if (in_array($path,['workspace/project-solution','workspace/data','workspace/download','workspace/run-state','workspace/runtime','workspace/datasets-search','workspace/datasets-detail','workspace/datasets-state'],true)) ws_get($path);
     if ($path==='dashboard/workspace' || preg_match('~^dashboard/workspace/([1-9][0-9]*)$~D',$path,$workspaceMatch)) {
         $u=require_user(); $workspaceId=isset($workspaceMatch[1])?(int)$workspaceMatch[1]:0;
         if ($workspaceId) ws_owned((int)$u['id'],$workspaceId);
@@ -101,9 +101,7 @@ function page_project(string $index): void {
     global $me,$plan;
     $i=filter_var($index,FILTER_VALIDATE_INT);
     if ($i===false || !isset(PROJECTS[$i])) { page_not_found(); return; }
-    $p=PROJECTS[$i]; head_page($p['title'],$p['description']); notice(); echo '<main class="article"><div class="container narrow-container"><span class="eyebrow">'.h($p['topic']).' · '.h($p['level']).'</span><h1>'.h($p['title']).'</h1><p class="lead">'.h($p['description']).'</p><div class="article-meta"><span dir="ltr">'.h($p['skills']).'</span></div><section class="article-section"><h2><span>۱</span>صورت مسئله</h2><p>مسئله را با داده و محدودیت‌های واقعی تعریف کن؛ خروجی مورد انتظار و معیار موفقیت را از ابتدا روشن کن.</p></section><section class="article-section"><h2><span>۲</span>مسیر پیشنهادی</h2><p>با یک راه‌حل ساده شروع کن، نتیجه را بسنج و سپس گام‌به‌گام پیچیدگی را فقط در جایی که لازم است اضافه کن.</p></section><section class="article-section"><h2><span>۳</span>ارزیابی و انتقال</h2><p>کیفیت راه‌حل را با معیار روشن بسنج و همان الگو را روی یک مسئله تازه امتحان کن تا مهارت واقعی شکل بگیرد.</p></section><div class="article-footer">';
-    if ($me) { form_start('projects/start'); echo '<input type="hidden" name="index" value="'.$i.'"><button class="btn btn-primary">افزودن به پروژه‌های من</button></form>'; } else linkto('login','برای شروع وارد شوید ←','btn btn-primary');
-    linkto('community','پرسش در انجمن ←','btn btn-outline'); echo '</div></div></main>'; foot_page();
+    lp_page($i);
 }
 function page_pricing(): void {
     echo '<main><section class="page-hero container"><span class="eyebrow">قیمت‌گذاری</span><h1>پلنی که با مسیرت هماهنگ است</h1><p>از رایگان شروع کن و هر زمان که خواستی، امکانات بیشتر را فعال کن.</p></section><section class="section container">'; plan_cards(); echo '</section><section class="section container"><div class="section-header"><span class="eyebrow">مقایسه کامل</span><h2>دقیقاً چه چیزی به دست می‌آوری؟</h2><p>همه قیمت‌ها ماهانه و به تومان است.</p></div><div class="table-wrap compare-wrap"><table class="compare-table"><caption class="sr-only">مقایسه امکانات پلن‌های Noventix</caption><thead><tr><th scope="col">ویژگی</th>'; foreach (PLANS as $p) echo '<th scope="col">'.h($p['name']).'</th>'; echo '</tr></thead><tbody>'; foreach (COMPARISON as $feature=>$values) { echo '<tr><th scope="row">'.h($feature).'</th>'; foreach ($values as $v) echo '<td>'.h($v).'</td>'; echo '</tr>'; } echo '</tbody></table></div>';

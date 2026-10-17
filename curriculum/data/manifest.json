@@ -1,0 +1,82 @@
+[
+  {
+    "file": "housing.csv",
+    "source": "https://archive.ics.uci.edu/static/public/477/real+estate+valuation+data+set.zip",
+    "license": "CC BY 4.0",
+    "attribution": "Yeh, I. (2018), Real Estate Valuation, UCI, doi:10.24432/C5J30W. Header names normalized; price is per unit area.",
+    "rows": 414,
+    "sha256": "24709631c3dbb4c1241a5595e2f41ee876c487e69d35494aefede4ebae38603a",
+    "status": "bundled",
+    "retrieved": "2026-10-16"
+  },
+  {
+    "file": "diabetes.csv",
+    "source": "https://archive.ics.uci.edu/static/public/529/early+stage+diabetes+risk+prediction+dataset.zip",
+    "license": "CC BY 4.0",
+    "attribution": "Islam et al. (2020), Early Stage Diabetes Risk Prediction, UCI, doi:10.24432/C5VG8H. Categories encoded 0/1; educational only.",
+    "rows": 520,
+    "sha256": "7b99b42d302406a21c44102c1024aaa3c8d8e8e86c77acd01f363b0d38dc8dd5",
+    "status": "bundled",
+    "retrieved": "2026-10-16"
+  },
+  {
+    "file": "weather.csv",
+    "source": "https://archive.ics.uci.edu/static/public/275/bike+sharing+dataset.zip",
+    "license": "CC BY 4.0",
+    "attribution": "Fanaee-T (2013), Bike Sharing, UCI, doi:10.24432/C5W894. Daily weather columns only; normalized temperature converted using dataset scale.",
+    "rows": 731,
+    "sha256": "aacb0b7cddc859dac36a00b8a38303fa366ae79d302e9fe63cac720861324df1",
+    "status": "bundled",
+    "retrieved": "2026-10-16"
+  },
+  {
+    "file": "sentiment.csv",
+    "source": "https://archive.ics.uci.edu/static/public/331/sentiment+labelled+sentences.zip",
+    "license": "CC BY 4.0",
+    "attribution": "Kotzias (2015), Sentiment Labelled Sentences, UCI, doi:10.24432/C57604. English Amazon/IMDb/Yelp text, binary labels.",
+    "rows": 3000,
+    "sha256": "131ed6dcfb6457dd8411da4206fadf4a307896a64f83831757c0c1d10d1ea643",
+    "status": "bundled",
+    "retrieved": "2026-10-16"
+  },
+  {
+    "file": "iris.csv",
+    "source": "https://archive.ics.uci.edu/static/public/53/iris.zip",
+    "license": "CC BY 4.0",
+    "attribution": "Fisher (1936), Iris, UCI, doi:10.24432/C56C76.",
+    "rows": 150,
+    "sha256": "45022cab5a7807929ae2e85a2d63f35672220f1bdaa0e0640e1cf2140c0ce653",
+    "status": "bundled",
+    "retrieved": "2026-10-16"
+  },
+  {
+    "file": "flights.csv",
+    "source": "https://vincentarelbundock.github.io/Rdatasets/csv/nycflights13/flights.csv",
+    "license": "CC0 1.0",
+    "attribution": "nycflights13 (Hadley Wickham), 2013 NYC departures, US Bureau of Transportation Statistics; first 2000 complete rows via Rdatasets. https://cran.r-project.org/web/packages/nycflights13/index.html",
+    "rows": 2000,
+    "sha256": "d5d083e71a31fb2101d8c43350cdbcf506bf9c4c68fade6a66fcd2b15aaff042",
+    "status": "bundled",
+    "retrieved": "2026-10-16"
+  },
+  {
+    "file": "sales.csv",
+    "source": "Noventix reproducible educational fixture",
+    "license": "CC0 1.0",
+    "attribution": "Synthetic educational sales; not real transactions.",
+    "rows": 4,
+    "sha256": "f9942c0246953151bf0ffa6fe607c19719e0d58fbb33fc111b9d0cc5432f74da",
+    "status": "bundled",
+    "retrieved": "2026-10-16"
+  },
+  {
+    "file": "missing.csv",
+    "source": "Noventix reproducible educational fixture",
+    "license": "CC0 1.0",
+    "attribution": "Synthetic missing values fixture.",
+    "rows": 4,
+    "sha256": "38b883c65554da308aea880982f4a6d03d0b45ac3e3b2a906c2269f61cad3459",
+    "status": "bundled",
+    "retrieved": "2026-10-16"
+  }
+]

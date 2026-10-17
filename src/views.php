@@ -310,11 +310,7 @@ function panel(string $sub): void {
         panel_head('پرداخت‌ها','تاریخچه تراکنش‌های تأییدشده');
         payment_history($me,$role==='admin');
     } elseif ($sub==='gamification') {
-        $xp=(int)q('SELECT COUNT(*) FROM challenge_progress WHERE user_id=?',[$me['id']])->fetchColumn()*120+2480;
-        $streak=(int)q('SELECT COUNT(*) FROM projects WHERE user_id=?',[$me['id']])->fetchColumn()+7;
-        panel_head('Gamification','سطح، امتیاز و نشان‌های یادگیری.');
-        echo '<div class="stat-grid">'; foreach ([['Level','۱۲'],['XP',fa($xp)],['Streak',fa($streak).' روز'],['Missions',fa(count(CHALLENGES)).' فعال']] as [$l,$v]) echo '<div class="stat-card"><span>'.h($l).'</span><strong>'.h($v).'</strong></div>'; echo '</div>';
-        echo '<div class="panel-columns"><section class="panel-card"><h2>Skill Tree</h2>'; foreach (TRACKS as $t) echo '<div class="skill-row"><div class="usage-row"><span>'.h($t['name']).'</span><strong>'.fa($t['percent']).'٪</strong></div><div class="progress"><span style="width:'.$t['percent'].'%"></span></div></div>'; echo '</section><section class="panel-card"><h2>Achievements &amp; Badges</h2><div class="badge-grid">'; foreach (BADGES as $b) echo '<div class="badge" title="'.h($b['need']).'"><span>'.h($b['icon']).'</span>'.h($b['title']).'</div>'; echo '</div></section></div>';
+        lp_progress_view((int)$me['id']);
     } elseif ($sub==='activity' && $role!=='admin') {
         panel_head('فعالیت و Streak','هر روزی که واقعاً کار کرده باشی، در این تقویم ثبت می‌شود.');
         $kinds=[['projects','پروژه فعال','پروژه‌هایی که به فهرست خود اضافه کرده‌ای'],['challenges','چالش حل‌شده','چالش‌هایی که راه‌حل برایشان ثبت شده'],['enrollments','مقاله ذخیره‌شده','مقاله‌هایی که در مسیر یادگیری ذخیره کرده‌ای'],['posts','گفت‌وگوی انجمن','پست‌هایی که در انجمن منتشر کرده‌ای']];
@@ -489,12 +485,7 @@ function admin_panel(string $sub): void {
         else foreach ($rows as $a) echo '<div class="announce-card"><div><h2>'.h($a['title']).'</h2><p>'.h($a['body']).'</p></div><small>'.h(jdate($a['created_at'])).'</small></div>';
         echo '</div>';
     } elseif ($sub==='gamification') {
-        $xp=(int)q('SELECT COUNT(*) FROM challenge_progress WHERE user_id=?',[$me['id']])->fetchColumn()*120+2480;
-        $streak=(int)q('SELECT COUNT(*) FROM projects WHERE user_id=?',[$me['id']])->fetchColumn()+7;
-        panel_head('Gamification','سطح، امتیاز و نشان‌های یادگیری.');
-        $stats=[['Level',(string)(12)],['XP',fa($xp)],['Streak',fa($streak).' روز'],['Missions',fa(count(CHALLENGES)).' فعال']];
-        echo '<div class="stat-grid">'; foreach ($stats as [$l,$v]) echo '<div class="stat-card"><span>'.h($l).'</span><strong>'.h($v).'</strong></div>'; echo '</div>';
-        echo '<div class="panel-columns"><section class="panel-card"><h2>Skill Tree</h2>'; foreach (TRACKS as $t) echo '<div class="skill-row"><div class="usage-row"><span>'.h($t['name']).'</span><strong>'.fa($t['percent']).'٪</strong></div><div class="progress"><span style="width:'.$t['percent'].'%"></span></div></div>'; echo '</section><section class="panel-card"><h2>Achievements &amp; Badges</h2><div class="badge-grid">'; foreach (BADGES as $b) echo '<div class="badge" title="'.h($b['need']).'"><span>'.h($b['icon']).'</span>'.h($b['title']).'</div>'; echo '</div></section></div>';
+        lp_progress_view((int)$me['id']);
     } elseif ($sub==='content') {
         panel_head('Content','مدیریت محتوای آموزشی و صفحات عمومی.');
         echo '<div class="panel-card narrow-left"><button type="button" class="btn btn-primary" data-toggle="#content-form">ایجاد محتوا</button></div>';

@@ -69,7 +69,7 @@ function ws_template_allowed(array $template,int $userId): bool {
     if (!authorized_progress_lesson($userId,(int)$template['lesson_id'])) return false;
     return $template['course_id']===null || (bool)q('SELECT id FROM lessons WHERE id=? AND course_id=?',[$template['lesson_id'],$template['course_id']])->fetchColumn();
 }
-function ws_create(int $userId,int $templateId,string $title,?int $catalogIndex=null): int {
+function ws_create(int $userId,int $templateId,string $title,?int $catalogIndex=null,?array $initial=null): int {
     $pdo=db(); $pdo->beginTransaction();
     try {
         ws_lock_user($userId);
@@ -80,7 +80,7 @@ function ws_create(int $userId,int $templateId,string $title,?int $catalogIndex=
             if ($existing) { $pdo->commit(); return (int)$existing; }
             $title=$template['title']; $manifest=ws_manifest(json_decode($template['files_json'],true,512,JSON_THROW_ON_ERROR));
             $catalogIndex=$template['catalog_index']===null ? null : (int)$template['catalog_index'];
-        } else $manifest=ws_manifest(['main.py'=>['kind'=>'file','data'=>base64_encode("print('Hello, Noventix!')\n")]]);
+        } else $manifest=$initial ?? ws_manifest(['main.py'=>['kind'=>'file','data'=>base64_encode("print('Hello, Noventix!')\n")]]);
         if ($catalogIndex!==null) {
             $workspace=q('SELECT p.id FROM projects p JOIN project_workspaces w ON w.project_id=p.id WHERE p.user_id=? AND p.catalog_index=?',[$userId,$catalogIndex])->fetchColumn();
             if ($workspace) { $pdo->commit(); return (int)$workspace; }
@@ -177,7 +177,8 @@ function ws_run_sync(array $run,int $userId): array {
     if (!in_array($result['state'] ?? '',$states,true)) throw new RuntimeException('Invalid run state.');
     if (isset($result['files'])) $result['files']=ws_manifest(hf_local($result['files'],(int)$run['project_id']))['files'];
     q('UPDATE workspace_runs SET state=?,result_json=? WHERE id=?',[$result['state'],json_encode($result,JSON_THROW_ON_ERROR),$run['id']]);
-    return array_replace($result,['local_id'=>(int)$run['id'],'revision'=>(int)$run['revision']]);
+    $awarded=!empty($run['assessment_key']) && lp_grant($run,$result,$userId);
+    return array_replace($result,['local_id'=>(int)$run['id'],'revision'=>(int)$run['revision'],'xp_awarded'=>$awarded]);
 }
 function ws_get(string $path): never {
     foreach ($_GET as $value) if (!is_string($value)) ws_fail('پارامتر درخواست معتبر نیست.');
@@ -187,6 +188,13 @@ function ws_get(string $path): never {
         if ($path==='workspace/runtime') ws_reply(200,ws_runner('GET','/health'));
         if ($path==='workspace/run-state') ws_reply(200,ws_run_sync(ws_run_owned($userId,(int)($_GET['id'] ?? 0)),$userId));
         $row=ws_owned($userId,(int)($_GET['id'] ?? 0));
+        if ($path==='workspace/project-solution') {
+            $definition=lp_definition((int)$row['catalog_index']);
+            if (!$definition) ws_fail('پروژه آموزشی پیدا نشد.',404);
+            $attempt=q("SELECT id FROM workspace_runs WHERE project_id=? AND remote_id IS NOT NULL AND state IN ('succeeded','program_error','timeout','output_limit','cpu_limit','memory_limit','artifact_limit') LIMIT 1",[$row['project_id']])->fetchColumn();
+            if (!$attempt) ws_fail('ابتدا یک تلاش اجرایی واقعی انجام دهید.',403);
+            ws_reply(200,['solution'=>file_get_contents(dirname(__DIR__).'/curriculum/solutions/'.$definition['key'].'.py')]);
+        }
         if ($path==='workspace/download') {
             $name=(string)($_GET['file'] ?? ''); $files=hf_materialize((int)$row['project_id'],json_decode($row['files_json'],true,512,JSON_THROW_ON_ERROR)+hf_refs((int)$row['project_id']));
             if (!ws_path($name) || !isset($files[$name]) || $files[$name]['kind']!=='file') ws_fail('فایل پیدا نشد.',404);
@@ -228,9 +236,9 @@ function ws_post(string $path): never {
         if ($path==='workspace/create') ws_reply(201,['id'=>ws_create($userId,(int)($_POST['template_id'] ?? 0),trim((string)($_POST['title'] ?? 'پروژه پایتون')))]);
         if ($path==='workspace/legacy') {
             $project=q('SELECT * FROM projects WHERE id=? AND user_id=?',[(int)($_POST['id'] ?? 0),$userId])->fetch();
-            if (!$project || !isset(PROJECTS[$project['catalog_index']])) ws_fail('پروژه پیدا نشد.',404);
+            if (!$project || !isset(LEGACY_PROJECTS[$project['catalog_index']])) ws_fail('پروژه پیدا نشد.',404);
             $existing=q('SELECT project_id FROM project_workspaces WHERE project_id=?',[$project['id']])->fetchColumn();
-            $id=$existing?(int)$existing:ws_create($userId,0,PROJECTS[$project['catalog_index']]['title'],(int)$project['catalog_index']);
+            $id=$existing?(int)$existing:ws_create($userId,0,LEGACY_PROJECTS[$project['catalog_index']]['title'],(int)$project['catalog_index']);
             ws_reply(200,['id'=>$id]);
         }
         $id=(int)($_POST['id'] ?? 0); $row=ws_owned($userId,$id,$path==='workspace/restore'); $revision=(int)($_POST['revision'] ?? 0);
@@ -246,10 +254,14 @@ function ws_post(string $path): never {
             if (!ws_runner_ready()) ws_fail('موتور اجرای ایزوله هنوز راه‌اندازی نشده است؛ خروجی ساختگی نمایش داده نمی‌شود.',503);
             $key=(string)($_POST['request_key'] ?? ''); $entry=(string)($_POST['entrypoint'] ?? 'main.py');
             if (!preg_match('/^[a-f0-9-]{36}$/D',$key) || !ws_path($entry) || !str_ends_with($entry,'.py')) throw new InvalidArgumentException('شناسه اجرا یا فایل ورودی معتبر نیست.');
+            $definition=lp_definition((int)$row['catalog_index']);
+            $assessment=($_POST['assess'] ?? '')==='1';
+            if ($assessment && (!$definition || $entry!=='main.py' || hf_refs($id))) throw new InvalidArgumentException('ارزیابی فقط برای پروژه آموزشی با main.py و داده‌های تعریف‌شده فعال است.');
             $pdo=db(); $pdo->beginTransaction();
             try {
                 ws_lock_user($userId);
                 $run=q('SELECT * FROM workspace_runs WHERE project_id=? AND request_key=?',[$id,$key])->fetch();
+                if ($run && (($run['assessment_key']!==null)!==$assessment || ($run['assessment_key']!==null && $run['assessment_key']!==$definition['key']))) throw new InvalidArgumentException('شناسه درخواست قبلاً برای اجرای متفاوت استفاده شده است.');
                 if (!$run) {
                     $row=ws_owned($userId,$id);
                     if ((int)$row['revision']!==$revision) { $pdo->rollBack(); ws_fail('ابتدا آخرین نسخه فایل‌ها را ذخیره کنید.',409); }
@@ -258,13 +270,15 @@ function ws_post(string $path): never {
                     if ((int)q('SELECT COUNT(*) FROM workspace_runs r JOIN projects p ON p.id=r.project_id WHERE p.user_id=?',[$userId])->fetchColumn()>=100) throw new InvalidArgumentException('سقف تاریخچه اجرا تکمیل است؛ مدیر باید نگهداری تاریخچه را بررسی کند.');
                     $history=(int)q('SELECT COALESCE(SUM(LENGTH(r.snapshot_json)+COALESCE(LENGTH(r.result_json),0)),0) FROM workspace_runs r JOIN projects p ON p.id=r.project_id WHERE p.user_id=?',[$userId])->fetchColumn();
                     if ($history+16777216>67108864) throw new InvalidArgumentException('سهمیه تاریخچه اجرا تکمیل است؛ فایل‌های پروژه محفوظ‌اند و مدیر باید تاریخچه را آرشیو کند.');
-                    q('INSERT INTO workspace_runs(project_id,request_key,revision,entrypoint,snapshot_json) VALUES (?,?,?,?,?)',[$id,$key,$revision,$entry,json_encode((object)($files+hf_refs($id)),JSON_THROW_ON_ERROR)]);
+                    q('INSERT INTO workspace_runs(project_id,request_key,revision,entrypoint,snapshot_json,assessment_key,assessment_version) VALUES (?,?,?,?,?,?,?)',[$id,$key,$revision,$entry,json_encode((object)($files+hf_refs($id)),JSON_THROW_ON_ERROR),$assessment?$definition['key']:null,$assessment?lp_version():null]);
                     $run=q('SELECT * FROM workspace_runs WHERE id=?',[(int)$pdo->lastInsertId()])->fetch();
                 }
                 $pdo->commit();
             } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
             if (!$run['remote_id']) {
-                $remote=ws_runner('POST','/jobs',['owner'=>$userId,'request_id'=>'p'.$id.'-'.$key,'entrypoint'=>$run['entrypoint'],'dataset_paths'=>array_keys(array_filter(json_decode($run['snapshot_json'],true,512,JSON_THROW_ON_ERROR),static fn($file)=>($file['kind'] ?? '')==='dataset')),'files'=>ws_manifest(hf_materialize($id,json_decode($run['snapshot_json'],true,512,JSON_THROW_ON_ERROR)))['files']]);
+                $payload=['owner'=>$userId,'request_id'=>'p'.$id.'-'.$key,'entrypoint'=>$run['entrypoint'],'dataset_paths'=>array_keys(array_filter(json_decode($run['snapshot_json'],true,512,JSON_THROW_ON_ERROR),static fn($file)=>($file['kind'] ?? '')==='dataset')),'files'=>ws_manifest(hf_materialize($id,json_decode($run['snapshot_json'],true,512,JSON_THROW_ON_ERROR)))['files']];
+                if ($run['assessment_key']!==null) $payload['assessment']=['key'=>$run['assessment_key'],'version'=>$run['assessment_version']];
+                $remote=ws_runner('POST','/jobs',$payload);
                 if (!preg_match('/^[a-f0-9-]{36}$/D',(string)($remote['id'] ?? ''))) throw new RuntimeException('Invalid runner ID.');
                 q("UPDATE workspace_runs SET remote_id=?,state='queued' WHERE id=?",[$remote['id'],$run['id']]);
             }

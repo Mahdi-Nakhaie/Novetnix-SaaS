@@ -1,0 +1,3025 @@
+[
+  {
+    "key": "calculator",
+    "title": "ماشین‌حساب ساده",
+    "topic": "Python",
+    "level": "مقدماتی",
+    "description": "دو عدد و یک عملگر را دریافت کن و نتیجه یا خطای روشن برگردان.",
+    "goal": "استفاده از شرط، تابع و مدیریت تقسیم بر صفر",
+    "skills": "Python · Functions · Conditions",
+    "minutes": 30,
+    "xp": 60,
+    "datasets": [],
+    "dependencies": [],
+    "input": "شیء JSON شامل a و b عددی و operator یکی از + - * /",
+    "output": "فایل result.json با {value: number} یا {error: division_by_zero|invalid_operator}",
+    "steps": [
+      "request.json را با json و pathlib بخوان.",
+      "تابع solve را برای چهار عمل اصلی پیاده‌سازی کن.",
+      "پیش از تقسیم، صفر بودن مخرج و معتبر بودن عملگر را بررسی کن.",
+      "خروجی را در result.json ذخیره کن؛ با تغییر ورودی دوباره اجرا کن."
+    ],
+    "example": {
+      "input": {
+        "a": 8,
+        "b": 2,
+        "operator": "/"
+      },
+      "output": {
+        "value": 4
+      }
+    },
+    "criteria": [
+      "چهار عمل روی اعداد مثبت و منفی",
+      "خطای division_by_zero برای تقسیم بر صفر",
+      "خطای invalid_operator برای عملگر ناشناخته"
+    ],
+    "notes": "عملگر را با eval اجرا نکن؛ شرط‌های روشن کافی‌اند."
+  },
+  {
+    "key": "grades",
+    "title": "تحلیل نمرات دانشجویان",
+    "description": "آمار نمرات و تعداد قبول و مردود را محاسبه کن.",
+    "goal": "کار با لیست، توابع آماری و اعتبارسنجی",
+    "skills": "Python · Lists · Statistics",
+    "minutes": 40,
+    "xp": 80,
+    "datasets": [],
+    "input": "grades: لیست عددی از صفر تا بیست؛ حد قبولی ۱۰ است.",
+    "output": "result.json: mean, min, max, passed, failed؛ لیست خالی: error=empty_grades؛ نمره خارج بازه: error=invalid_grade",
+    "steps": [
+      "لیست grades را از request.json بخوان.",
+      "خالی بودن و بازه نمره‌ها را پیش از محاسبه بررسی کن.",
+      "میانگین، کمینه و بیشینه را محاسبه کن.",
+      "قبولی را برای نمره حداقل ۱۰ بشمار و JSON ذخیره کن."
+    ],
+    "example": {
+      "input": {
+        "grades": [
+          8,
+          12,
+          16
+        ]
+      },
+      "output": {
+        "mean": 12,
+        "min": 8,
+        "max": 16,
+        "passed": 2,
+        "failed": 1
+      }
+    },
+    "criteria": [
+      "میانگین و حدود درست",
+      "قبولی مرزی نمره ۱۰",
+      "مدیریت لیست خالی و نمره نامعتبر"
+    ],
+    "dependencies": [],
+    "notes": "",
+    "topic": "Python",
+    "level": "مقدماتی"
+  },
+  {
+    "key": "sales",
+    "title": "تحلیل داده‌های فروش",
+    "description": "از CSV فروش، جمع کل و فروش هر محصول را گزارش کن.",
+    "goal": "خواندن CSV و تجمیع داده",
+    "skills": "Python · csv · Aggregation",
+    "minutes": 50,
+    "xp": 100,
+    "datasets": [
+      "sales.csv"
+    ],
+    "input": "csv: متن CSV با ستون‌های product, quantity, price, month؛ تعداد و قیمت غیرمنفی‌اند.",
+    "output": "result.json: total و by_product (نگاشت نام محصول به مبلغ فروش)؛ CSV خالی error=empty_data؛ قیمت یا تعداد نامعتبر error=invalid_row",
+    "steps": [
+      "متن csv در request.json را با csv.DictReader و io.StringIO بخوان.",
+      "برای هر سطر quantity × price را حساب کن.",
+      "فروش تکراری هر محصول را جمع کن.",
+      "جمع کل و نگاشت محصولات را ذخیره کن."
+    ],
+    "example": {
+      "input": {
+        "csv": "product,quantity,price,month\nbook,2,10,2026-01\npen,3,2,2026-01\n"
+      },
+      "output": {
+        "total": 26,
+        "by_product": {
+          "book": 20,
+          "pen": 6
+        }
+      }
+    },
+    "criteria": [
+      "فروش کل و تجمیع محصولات تکراری",
+      "اعشار و سطرهای صفر",
+      "رد داده نامعتبر و خالی"
+    ],
+    "dependencies": [],
+    "notes": "",
+    "topic": "Python",
+    "level": "مقدماتی"
+  },
+  {
+    "key": "cleaning",
+    "title": "پاک‌سازی داده‌های ناقص",
+    "description": "مقادیر گمشده ستون‌های عددی را شناسایی و با میانگین جایگزین کن.",
+    "goal": "مدیریت missing و ذخیره خروجی پاک",
+    "skills": "Pandas · Missing values · CSV",
+    "minutes": 60,
+    "xp": 130,
+    "datasets": [
+      "missing.csv"
+    ],
+    "input": "csv با name, age, score؛ خانه خالی در age/score گمشده است.",
+    "output": "result.json: missing_before و means شامل age/score؛ cleaned.csv با همان ترتیب سطر و ستون؛ ستون کاملاً خالی error=all_missing بدون فایل پاک",
+    "steps": [
+      "CSV را با pandas.read_csv بخوان.",
+      "تعداد خانه‌های خالی عددی را ثبت کن.",
+      "میانگین هر ستون عددی را فقط از خانه‌های غیرخالی حساب کن.",
+      "اگر ستونی هیچ عددی ندارد خطای all_missing برگردان؛ در غیر این صورت fillna و to_csv را اجرا کن."
+    ],
+    "example": {
+      "input": {
+        "csv": "name,age,score\nA,20,80\nB,,60\nC,40,\n"
+      },
+      "output": {
+        "missing_before": 2,
+        "means": {
+          "age": 30,
+          "score": 70
+        }
+      }
+    },
+    "criteria": [
+      "شمارش missing و میانگین بدون نشت از مقادیر جایگزین",
+      "خروجی cleaned.csv بدون خانه گمشده و حفظ نام‌ها",
+      "مدیریت ستون تماماً خالی"
+    ],
+    "dependencies": [
+      "pandas"
+    ],
+    "notes": "",
+    "topic": "Data Science",
+    "level": "تحلیل داده"
+  },
+  {
+    "key": "advanced-sales",
+    "title": "تحلیل داده‌های فروش پیشرفته",
+    "description": "فروش ماهانه و شاخص‌های کلیدی را همراه نمودار بساز.",
+    "goal": "گروه‌بندی زمانی و تجسم داده",
+    "skills": "Pandas · GroupBy · Matplotlib",
+    "minutes": 70,
+    "xp": 160,
+    "datasets": [
+      "sales.csv"
+    ],
+    "input": "csv با ستون‌های product, quantity, price, month، حداقل یک سطر معتبر.",
+    "output": "result.json: total, by_month, orders, average_order؛ chart.png نمودار ستونی فروش ماهانه حداقل ۳۲۰×۲۰۰ پیکسل",
+    "steps": [
+      "ستون revenue = quantity × price بساز.",
+      "با groupby فروش هر ماه را جمع بزن.",
+      "تعداد سطرها را orders و total/orders را average_order قرار بده.",
+      "نمودار by_month را با matplotlib ذخیره کن؛ plt.close را فراموش نکن."
+    ],
+    "example": {
+      "input": {
+        "csv": "product,quantity,price,month\nbook,2,10,2026-01\npen,3,2,2026-02\n"
+      },
+      "output": {
+        "total": 26,
+        "by_month": {
+          "2026-01": 20,
+          "2026-02": 6
+        },
+        "orders": 2,
+        "average_order": 13
+      }
+    },
+    "criteria": [
+      "مجموع ماهانه و کل",
+      "تعداد و میانگین سفارش‌ها",
+      "فایل PNG واقعی غیرخالی"
+    ],
+    "dependencies": [
+      "pandas",
+      "matplotlib"
+    ],
+    "notes": "",
+    "topic": "Data Science",
+    "level": "تحلیل داده"
+  },
+  {
+    "key": "weather",
+    "title": "تحلیل داده‌های آب‌وهوا",
+    "description": "دماهای روزانه واقعی را خلاصه و تغییراتشان را رسم کن.",
+    "goal": "تحلیل سری روزانه و اختلاف متوالی",
+    "skills": "Pandas · Time series · Matplotlib",
+    "minutes": 70,
+    "xp": 170,
+    "datasets": [
+      "weather.csv"
+    ],
+    "input": "csv با date, temperature, condition؛ حداقل یک ردیف؛ تاریخ‌ها به ترتیب صعودی هستند.",
+    "output": "result.json: mean, min, max, changes (اختلاف دمای هر روز با روز قبل؛ طول n−1) و chart.png نمودار خطی حداقل ۳۲۰×۲۰۰",
+    "steps": [
+      "CSV را بخوان و ستون temperature را عددی در نظر بگیر.",
+      "میانگین و کمینه و بیشینه را محاسبه کن.",
+      "با diff و حذف مقدار اول، تغییرات متوالی را بساز.",
+      "تاریخ و دما را روی نمودار خطی رسم و chart.png ذخیره کن."
+    ],
+    "example": {
+      "input": {
+        "csv": "date,temperature,condition\n2026-01-01,10,1\n2026-01-02,13,2\n"
+      },
+      "output": {
+        "mean": 11.5,
+        "min": 10,
+        "max": 13,
+        "changes": [
+          3
+        ]
+      }
+    },
+    "criteria": [
+      "آمار دمای واقعی",
+      "تغییرات روزانه و حالت تک‌روز",
+      "تولید PNG معتبر"
+    ],
+    "dependencies": [
+      "pandas",
+      "matplotlib"
+    ],
+    "notes": "",
+    "topic": "Data Science",
+    "level": "تحلیل داده"
+  },
+  {
+    "key": "housing",
+    "title": "پیش‌بینی قیمت خانه",
+    "description": "آموزش مدل رگرسیون برای قیمت هر واحد مساحت؛ این داده قیمت کل خانه نیست.",
+    "goal": "جداسازی آموزش و ارزیابی و سنجش تعمیم مدل",
+    "skills": "Python · Scikit-learn · Evaluation",
+    "minutes": 100,
+    "xp": 210,
+    "datasets": [
+      "housing.csv"
+    ],
+    "input": "train: لیست سطرهای دارای price؛ test: لیست ویژگی‌های بدون هدف؛ features: ['age', 'distance', 'stores', 'latitude', 'longitude']؛ target: price",
+    "output": "result.json شامل predictions با یک مقدار به‌ازای هر سطر test؛ عدد برای رگرسیون و برچسب موجود در train برای دسته‌بندی.",
+    "steps": [
+      "request.json شامل train دارای برچسب و test بدون برچسب است؛ فایل CSV محلی برای مطالعه است و در ارزیابی به محیط ارسال نمی‌شود.",
+      "train را به ویژگی‌ها و target جدا کن؛ داده ارزیابی بیرونی را هرگز برای fit استفاده نکن.",
+      "برای تمرین، با train_test_split و random_state=42 بخشی از train را نگه دار و مدل را با MAE یا accuracy/F1 بسنج.",
+      "مدل یا Pipeline را فقط روی داده آموزش fit کن؛ سپس برای تمام سطرهای test پیش‌بینی کن.",
+      "predictions را به ترتیب test در result.json ذخیره کن؛ امتیاز نهایی را داور روی برچسب‌های خارج محیط محاسبه می‌کند."
+    ],
+    "example": {
+      "input": {
+        "train": [
+          {
+            "age": 17.1,
+            "distance": 967.4,
+            "stores": 4.0,
+            "latitude": 24.98872,
+            "longitude": 121.53408,
+            "price": 40.0
+          },
+          {
+            "age": 36.6,
+            "distance": 488.8193,
+            "stores": 8.0,
+            "latitude": 24.97015,
+            "longitude": 121.54494,
+            "price": 38.3
+          },
+          {
+            "age": 15.7,
+            "distance": 815.9314,
+            "stores": 4.0,
+            "latitude": 24.97886,
+            "longitude": 121.53464,
+            "price": 38.1
+          },
+          {
+            "age": 22.8,
+            "distance": 707.9067,
+            "stores": 2.0,
+            "latitude": 24.981,
+            "longitude": 121.54713,
+            "price": 36.6
+          },
+          {
+            "age": 15.2,
+            "distance": 461.1016,
+            "stores": 5.0,
+            "latitude": 24.95425,
+            "longitude": 121.5399,
+            "price": 34.6
+          },
+          {
+            "age": 3.1,
+            "distance": 383.8624,
+            "stores": 5.0,
+            "latitude": 24.98085,
+            "longitude": 121.54391,
+            "price": 56.2
+          },
+          {
+            "age": 22.2,
+            "distance": 379.5575,
+            "stores": 10.0,
+            "latitude": 24.98343,
+            "longitude": 121.53762,
+            "price": 44.0
+          },
+          {
+            "age": 16.3,
+            "distance": 4066.587,
+            "stores": 0.0,
+            "latitude": 24.94297,
+            "longitude": 121.50342,
+            "price": 20.5
+          },
+          {
+            "age": 38.0,
+            "distance": 461.7848,
+            "stores": 0.0,
+            "latitude": 24.97229,
+            "longitude": 121.53445,
+            "price": 35.7
+          },
+          {
+            "age": 15.6,
+            "distance": 289.3248,
+            "stores": 5.0,
+            "latitude": 24.98203,
+            "longitude": 121.54348,
+            "price": 46.1
+          },
+          {
+            "age": 21.7,
+            "distance": 463.9623,
+            "stores": 9.0,
+            "latitude": 24.9703,
+            "longitude": 121.54458,
+            "price": 42.0
+          },
+          {
+            "age": 31.5,
+            "distance": 258.186,
+            "stores": 9.0,
+            "latitude": 24.96867,
+            "longitude": 121.54331,
+            "price": 36.3
+          },
+          {
+            "age": 16.2,
+            "distance": 2288.011,
+            "stores": 3.0,
+            "latitude": 24.95885,
+            "longitude": 121.51359,
+            "price": 24.4
+          },
+          {
+            "age": 12.7,
+            "distance": 187.4823,
+            "stores": 1.0,
+            "latitude": 24.97388,
+            "longitude": 121.52981,
+            "price": 28.5
+          },
+          {
+            "age": 27.6,
+            "distance": 515.1122,
+            "stores": 5.0,
+            "latitude": 24.96299,
+            "longitude": 121.5432,
+            "price": 37.4
+          },
+          {
+            "age": 2.7,
+            "distance": 533.4762,
+            "stores": 4.0,
+            "latitude": 24.97445,
+            "longitude": 121.54765,
+            "price": 53.9
+          },
+          {
+            "age": 1.8,
+            "distance": 1455.798,
+            "stores": 1.0,
+            "latitude": 24.9512,
+            "longitude": 121.549,
+            "price": 27.0
+          },
+          {
+            "age": 37.3,
+            "distance": 587.8877,
+            "stores": 8.0,
+            "latitude": 24.97077,
+            "longitude": 121.54634,
+            "price": 37.4
+          },
+          {
+            "age": 0.0,
+            "distance": 185.4296,
+            "stores": 0.0,
+            "latitude": 24.9711,
+            "longitude": 121.5317,
+            "price": 55.3
+          },
+          {
+            "age": 40.1,
+            "distance": 123.7429,
+            "stores": 8.0,
+            "latitude": 24.97635,
+            "longitude": 121.54329,
+            "price": 44.3
+          },
+          {
+            "age": 7.1,
+            "distance": 2175.03,
+            "stores": 3.0,
+            "latitude": 24.96305,
+            "longitude": 121.51254,
+            "price": 32.1
+          },
+          {
+            "age": 25.9,
+            "distance": 4519.69,
+            "stores": 0.0,
+            "latitude": 24.94826,
+            "longitude": 121.49587,
+            "price": 22.1
+          },
+          {
+            "age": 16.9,
+            "distance": 4066.587,
+            "stores": 0.0,
+            "latitude": 24.94297,
+            "longitude": 121.50342,
+            "price": 18.3
+          },
+          {
+            "age": 30.3,
+            "distance": 4510.359,
+            "stores": 1.0,
+            "latitude": 24.94925,
+            "longitude": 121.49542,
+            "price": 22.6
+          },
+          {
+            "age": 15.6,
+            "distance": 1756.411,
+            "stores": 2.0,
+            "latitude": 24.9832,
+            "longitude": 121.51812,
+            "price": 27.3
+          },
+          {
+            "age": 12.2,
+            "distance": 1360.139,
+            "stores": 1.0,
+            "latitude": 24.95204,
+            "longitude": 121.54842,
+            "price": 30.1
+          },
+          {
+            "age": 30.9,
+            "distance": 6396.283,
+            "stores": 1.0,
+            "latitude": 24.94375,
+            "longitude": 121.47883,
+            "price": 12.2
+          },
+          {
+            "age": 3.5,
+            "distance": 757.3377,
+            "stores": 3.0,
+            "latitude": 24.97538,
+            "longitude": 121.54971,
+            "price": 36.7
+          },
+          {
+            "age": 12.2,
+            "distance": 1360.139,
+            "stores": 1.0,
+            "latitude": 24.95204,
+            "longitude": 121.54842,
+            "price": 26.6
+          },
+          {
+            "age": 17.3,
+            "distance": 444.1334,
+            "stores": 1.0,
+            "latitude": 24.97501,
+            "longitude": 121.5273,
+            "price": 43.9
+          },
+          {
+            "age": 9.9,
+            "distance": 279.1726,
+            "stores": 7.0,
+            "latitude": 24.97528,
+            "longitude": 121.54541,
+            "price": 57.4
+          },
+          {
+            "age": 10.3,
+            "distance": 211.4473,
+            "stores": 1.0,
+            "latitude": 24.97417,
+            "longitude": 121.52999,
+            "price": 45.3
+          },
+          {
+            "age": 15.9,
+            "distance": 289.3248,
+            "stores": 5.0,
+            "latitude": 24.98203,
+            "longitude": 121.54348,
+            "price": 42.1
+          },
+          {
+            "age": 26.4,
+            "distance": 335.5273,
+            "stores": 6.0,
+            "latitude": 24.9796,
+            "longitude": 121.5414,
+            "price": 38.1
+          },
+          {
+            "age": 30.7,
+            "distance": 1264.73,
+            "stores": 0.0,
+            "latitude": 24.94883,
+            "longitude": 121.52954,
+            "price": 18.3
+          },
+          {
+            "age": 8.0,
+            "distance": 2216.612,
+            "stores": 4.0,
+            "latitude": 24.96007,
+            "longitude": 121.51361,
+            "price": 23.9
+          },
+          {
+            "age": 12.0,
+            "distance": 1360.139,
+            "stores": 1.0,
+            "latitude": 24.95204,
+            "longitude": 121.54842,
+            "price": 28.9
+          },
+          {
+            "age": 12.8,
+            "distance": 1449.722,
+            "stores": 3.0,
+            "latitude": 24.97289,
+            "longitude": 121.51728,
+            "price": 21.4
+          },
+          {
+            "age": 21.7,
+            "distance": 512.5487,
+            "stores": 4.0,
+            "latitude": 24.974,
+            "longitude": 121.53842,
+            "price": 44.2
+          },
+          {
+            "age": 31.3,
+            "distance": 1758.406,
+            "stores": 1.0,
+            "latitude": 24.95402,
+            "longitude": 121.55282,
+            "price": 20.7
+          }
+        ],
+        "test": [
+          {
+            "age": 25.3,
+            "distance": 2707.392,
+            "stores": 3.0,
+            "latitude": 24.96056,
+            "longitude": 121.50831
+          },
+          {
+            "age": 17.3,
+            "distance": 2261.432,
+            "stores": 4.0,
+            "latitude": 24.96182,
+            "longitude": 121.51222
+          },
+          {
+            "age": 11.9,
+            "distance": 1360.139,
+            "stores": 1.0,
+            "latitude": 24.95204,
+            "longitude": 121.54842
+          }
+        ],
+        "features": [
+          "age",
+          "distance",
+          "stores",
+          "latitude",
+          "longitude"
+        ],
+        "target": "price"
+      },
+      "output": {
+        "predictions": [
+          "برچسب یا عدد برای هر سطر test"
+        ]
+      }
+    },
+    "criteria": [
+      "MAE حداکثر 8.0",
+      "شکل و تعداد و نوع پیش‌بینی‌ها مطابق ورودی",
+      "ارزیابی روی دو تقسیم تصادفی مستقل؛ برچسب test به کد ارسال نمی‌شود."
+    ],
+    "dependencies": [
+      "pandas",
+      "scikit-learn",
+      "numpy"
+    ],
+    "notes": "تقسیم داده را داور هم مستقل انجام می‌دهد؛ موفقیت صرف اجرای برنامه یا metric چاپ‌شده کافی نیست. random_state=42 را برای بازتولیدپذیری تنظیم کن.",
+    "topic": "Machine Learning",
+    "level": "یادگیری ماشین"
+  },
+  {
+    "key": "iris",
+    "title": "دسته‌بندی گل‌های Iris",
+    "description": "از اندازه‌های گل، گونه را پیش‌بینی کن.",
+    "goal": "جداسازی آموزش و ارزیابی و سنجش تعمیم مدل",
+    "skills": "Python · Scikit-learn · Evaluation",
+    "minutes": 100,
+    "xp": 220,
+    "datasets": [
+      "iris.csv"
+    ],
+    "input": "train: لیست سطرهای دارای species؛ test: لیست ویژگی‌های بدون هدف؛ features: ['sepal_length', 'sepal_width', 'petal_length', 'petal_width']؛ target: species",
+    "output": "result.json شامل predictions با یک مقدار به‌ازای هر سطر test؛ عدد برای رگرسیون و برچسب موجود در train برای دسته‌بندی.",
+    "steps": [
+      "request.json شامل train دارای برچسب و test بدون برچسب است؛ فایل CSV محلی برای مطالعه است و در ارزیابی به محیط ارسال نمی‌شود.",
+      "train را به ویژگی‌ها و target جدا کن؛ داده ارزیابی بیرونی را هرگز برای fit استفاده نکن.",
+      "برای تمرین، با train_test_split و random_state=42 بخشی از train را نگه دار و مدل را با MAE یا accuracy/F1 بسنج.",
+      "مدل یا Pipeline را فقط روی داده آموزش fit کن؛ سپس برای تمام سطرهای test پیش‌بینی کن.",
+      "predictions را به ترتیب test در result.json ذخیره کن؛ امتیاز نهایی را داور روی برچسب‌های خارج محیط محاسبه می‌کند."
+    ],
+    "example": {
+      "input": {
+        "train": [
+          {
+            "sepal_length": 5.5,
+            "sepal_width": 2.5,
+            "petal_length": 4.0,
+            "petal_width": 1.3,
+            "species": "Iris-versicolor"
+          },
+          {
+            "sepal_length": 5.6,
+            "sepal_width": 2.8,
+            "petal_length": 4.9,
+            "petal_width": 2.0,
+            "species": "Iris-virginica"
+          },
+          {
+            "sepal_length": 5.1,
+            "sepal_width": 3.4,
+            "petal_length": 1.5,
+            "petal_width": 0.2,
+            "species": "Iris-setosa"
+          },
+          {
+            "sepal_length": 4.4,
+            "sepal_width": 3.2,
+            "petal_length": 1.3,
+            "petal_width": 0.2,
+            "species": "Iris-setosa"
+          },
+          {
+            "sepal_length": 5.5,
+            "sepal_width": 2.3,
+            "petal_length": 4.0,
+            "petal_width": 1.3,
+            "species": "Iris-versicolor"
+          },
+          {
+            "sepal_length": 6.2,
+            "sepal_width": 3.4,
+            "petal_length": 5.4,
+            "petal_width": 2.3,
+            "species": "Iris-virginica"
+          },
+          {
+            "sepal_length": 6.1,
+            "sepal_width": 2.8,
+            "petal_length": 4.0,
+            "petal_width": 1.3,
+            "species": "Iris-versicolor"
+          },
+          {
+            "sepal_length": 5.0,
+            "sepal_width": 3.6,
+            "petal_length": 1.4,
+            "petal_width": 0.2,
+            "species": "Iris-setosa"
+          },
+          {
+            "sepal_length": 7.2,
+            "sepal_width": 3.6,
+            "petal_length": 6.1,
+            "petal_width": 2.5,
+            "species": "Iris-virginica"
+          },
+          {
+            "sepal_length": 6.1,
+            "sepal_width": 2.9,
+            "petal_length": 4.7,
+            "petal_width": 1.4,
+            "species": "Iris-versicolor"
+          },
+          {
+            "sepal_length": 5.0,
+            "sepal_width": 3.5,
+            "petal_length": 1.6,
+            "petal_width": 0.6,
+            "species": "Iris-setosa"
+          },
+          {
+            "sepal_length": 5.3,
+            "sepal_width": 3.7,
+            "petal_length": 1.5,
+            "petal_width": 0.2,
+            "species": "Iris-setosa"
+          },
+          {
+            "sepal_length": 5.6,
+            "sepal_width": 2.9,
+            "petal_length": 3.6,
+            "petal_width": 1.3,
+            "species": "Iris-versicolor"
+          },
+          {
+            "sepal_length": 4.5,
+            "sepal_width": 2.3,
+            "petal_length": 1.3,
+            "petal_width": 0.3,
+            "species": "Iris-setosa"
+          },
+          {
+            "sepal_length": 5.4,
+            "sepal_width": 3.4,
+            "petal_length": 1.7,
+            "petal_width": 0.2,
+            "species": "Iris-setosa"
+          },
+          {
+            "sepal_length": 6.3,
+            "sepal_width": 3.3,
+            "petal_length": 6.0,
+            "petal_width": 2.5,
+            "species": "Iris-virginica"
+          },
+          {
+            "sepal_length": 4.9,
+            "sepal_width": 3.0,
+            "petal_length": 1.4,
+            "petal_width": 0.2,
+            "species": "Iris-setosa"
+          },
+          {
+            "sepal_length": 6.9,
+            "sepal_width": 3.1,
+            "petal_length": 5.1,
+            "petal_width": 2.3,
+            "species": "Iris-virginica"
+          },
+          {
+            "sepal_length": 5.9,
+            "sepal_width": 3.0,
+            "petal_length": 4.2,
+            "petal_width": 1.5,
+            "species": "Iris-versicolor"
+          },
+          {
+            "sepal_length": 5.1,
+            "sepal_width": 3.8,
+            "petal_length": 1.5,
+            "petal_width": 0.3,
+            "species": "Iris-setosa"
+          },
+          {
+            "sepal_length": 5.5,
+            "sepal_width": 3.5,
+            "petal_length": 1.3,
+            "petal_width": 0.2,
+            "species": "Iris-setosa"
+          },
+          {
+            "sepal_length": 4.9,
+            "sepal_width": 3.1,
+            "petal_length": 1.5,
+            "petal_width": 0.1,
+            "species": "Iris-setosa"
+          },
+          {
+            "sepal_length": 6.9,
+            "sepal_width": 3.1,
+            "petal_length": 4.9,
+            "petal_width": 1.5,
+            "species": "Iris-versicolor"
+          },
+          {
+            "sepal_length": 6.4,
+            "sepal_width": 3.1,
+            "petal_length": 5.5,
+            "petal_width": 1.8,
+            "species": "Iris-virginica"
+          },
+          {
+            "sepal_length": 6.1,
+            "sepal_width": 2.6,
+            "petal_length": 5.6,
+            "petal_width": 1.4,
+            "species": "Iris-virginica"
+          },
+          {
+            "sepal_length": 7.7,
+            "sepal_width": 2.6,
+            "petal_length": 6.9,
+            "petal_width": 2.3,
+            "species": "Iris-virginica"
+          },
+          {
+            "sepal_length": 5.4,
+            "sepal_width": 3.0,
+            "petal_length": 4.5,
+            "petal_width": 1.5,
+            "species": "Iris-versicolor"
+          },
+          {
+            "sepal_length": 6.2,
+            "sepal_width": 2.8,
+            "petal_length": 4.8,
+            "petal_width": 1.8,
+            "species": "Iris-virginica"
+          },
+          {
+            "sepal_length": 5.4,
+            "sepal_width": 3.9,
+            "petal_length": 1.7,
+            "petal_width": 0.4,
+            "species": "Iris-setosa"
+          },
+          {
+            "sepal_length": 4.6,
+            "sepal_width": 3.4,
+            "petal_length": 1.4,
+            "petal_width": 0.3,
+            "species": "Iris-setosa"
+          },
+          {
+            "sepal_length": 5.8,
+            "sepal_width": 2.6,
+            "petal_length": 4.0,
+            "petal_width": 1.2,
+            "species": "Iris-versicolor"
+          },
+          {
+            "sepal_length": 4.8,
+            "sepal_width": 3.4,
+            "petal_length": 1.6,
+            "petal_width": 0.2,
+            "species": "Iris-setosa"
+          },
+          {
+            "sepal_length": 7.9,
+            "sepal_width": 3.8,
+            "petal_length": 6.4,
+            "petal_width": 2.0,
+            "species": "Iris-virginica"
+          },
+          {
+            "sepal_length": 6.0,
+            "sepal_width": 2.2,
+            "petal_length": 5.0,
+            "petal_width": 1.5,
+            "species": "Iris-virginica"
+          },
+          {
+            "sepal_length": 5.7,
+            "sepal_width": 2.6,
+            "petal_length": 3.5,
+            "petal_width": 1.0,
+            "species": "Iris-versicolor"
+          },
+          {
+            "sepal_length": 5.8,
+            "sepal_width": 2.7,
+            "petal_length": 3.9,
+            "petal_width": 1.2,
+            "species": "Iris-versicolor"
+          },
+          {
+            "sepal_length": 4.3,
+            "sepal_width": 3.0,
+            "petal_length": 1.1,
+            "petal_width": 0.1,
+            "species": "Iris-setosa"
+          },
+          {
+            "sepal_length": 5.0,
+            "sepal_width": 2.0,
+            "petal_length": 3.5,
+            "petal_width": 1.0,
+            "species": "Iris-versicolor"
+          },
+          {
+            "sepal_length": 7.7,
+            "sepal_width": 2.8,
+            "petal_length": 6.7,
+            "petal_width": 2.0,
+            "species": "Iris-virginica"
+          },
+          {
+            "sepal_length": 4.4,
+            "sepal_width": 3.0,
+            "petal_length": 1.3,
+            "petal_width": 0.2,
+            "species": "Iris-setosa"
+          }
+        ],
+        "test": [
+          {
+            "sepal_length": 6.7,
+            "sepal_width": 3.1,
+            "petal_length": 4.4,
+            "petal_width": 1.4
+          },
+          {
+            "sepal_length": 5.2,
+            "sepal_width": 3.5,
+            "petal_length": 1.5,
+            "petal_width": 0.2
+          },
+          {
+            "sepal_length": 5.6,
+            "sepal_width": 2.5,
+            "petal_length": 3.9,
+            "petal_width": 1.1
+          }
+        ],
+        "features": [
+          "sepal_length",
+          "sepal_width",
+          "petal_length",
+          "petal_width"
+        ],
+        "target": "species"
+      },
+      "output": {
+        "predictions": [
+          "برچسب یا عدد برای هر سطر test"
+        ]
+      }
+    },
+    "criteria": [
+      "accuracy و macro-F1 حداقل 0.85",
+      "شکل و تعداد و نوع پیش‌بینی‌ها مطابق ورودی",
+      "ارزیابی روی دو تقسیم تصادفی مستقل؛ برچسب test به کد ارسال نمی‌شود."
+    ],
+    "dependencies": [
+      "pandas",
+      "scikit-learn",
+      "numpy"
+    ],
+    "notes": "تقسیم داده را داور هم مستقل انجام می‌دهد؛ موفقیت صرف اجرای برنامه یا metric چاپ‌شده کافی نیست. random_state=42 را برای بازتولیدپذیری تنظیم کن.",
+    "topic": "Machine Learning",
+    "level": "یادگیری ماشین"
+  },
+  {
+    "key": "diabetes",
+    "title": "تشخیص دیابت با داده‌های آموزشی",
+    "description": "طبقه‌بندی برچسب آموزشی با داده علائم؛ این تمرین ابزار تشخیص پزشکی نیست.",
+    "goal": "جداسازی آموزش و ارزیابی و سنجش تعمیم مدل",
+    "skills": "Python · Scikit-learn · Evaluation",
+    "minutes": 100,
+    "xp": 240,
+    "datasets": [
+      "diabetes.csv"
+    ],
+    "input": "train: لیست سطرهای دارای class؛ test: لیست ویژگی‌های بدون هدف؛ features: ['age', 'gender', 'polyuria', 'polydipsia', 'sudden_weight_loss', 'weakness', 'polyphagia', 'genital_thrush', 'visual_blurring', 'itching', 'irritability', 'delayed_healing', 'partial_paresis', 'muscle_stiffness', 'alopecia', 'obesity']؛ target: class",
+    "output": "result.json شامل predictions با یک مقدار به‌ازای هر سطر test؛ عدد برای رگرسیون و برچسب موجود در train برای دسته‌بندی.",
+    "steps": [
+      "request.json شامل train دارای برچسب و test بدون برچسب است؛ فایل CSV محلی برای مطالعه است و در ارزیابی به محیط ارسال نمی‌شود.",
+      "train را به ویژگی‌ها و target جدا کن؛ داده ارزیابی بیرونی را هرگز برای fit استفاده نکن.",
+      "برای تمرین، با train_test_split و random_state=42 بخشی از train را نگه دار و مدل را با MAE یا accuracy/F1 بسنج.",
+      "مدل یا Pipeline را فقط روی داده آموزش fit کن؛ سپس برای تمام سطرهای test پیش‌بینی کن.",
+      "predictions را به ترتیب test در result.json ذخیره کن؛ امتیاز نهایی را داور روی برچسب‌های خارج محیط محاسبه می‌کند."
+    ],
+    "example": {
+      "input": {
+        "train": [
+          {
+            "age": 60.0,
+            "gender": 0.0,
+            "polyuria": 1.0,
+            "polydipsia": 1.0,
+            "sudden_weight_loss": 1.0,
+            "weakness": 1.0,
+            "polyphagia": 1.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 1.0,
+            "itching": 1.0,
+            "irritability": 0.0,
+            "delayed_healing": 1.0,
+            "partial_paresis": 1.0,
+            "muscle_stiffness": 1.0,
+            "alopecia": 0.0,
+            "obesity": 1.0,
+            "class": "1"
+          },
+          {
+            "age": 32.0,
+            "gender": 1.0,
+            "polyuria": 0.0,
+            "polydipsia": 0.0,
+            "sudden_weight_loss": 0.0,
+            "weakness": 0.0,
+            "polyphagia": 0.0,
+            "genital_thrush": 1.0,
+            "visual_blurring": 0.0,
+            "itching": 0.0,
+            "irritability": 1.0,
+            "delayed_healing": 1.0,
+            "partial_paresis": 0.0,
+            "muscle_stiffness": 0.0,
+            "alopecia": 0.0,
+            "obesity": 1.0,
+            "class": "1"
+          },
+          {
+            "age": 58.0,
+            "gender": 1.0,
+            "polyuria": 0.0,
+            "polydipsia": 1.0,
+            "sudden_weight_loss": 0.0,
+            "weakness": 0.0,
+            "polyphagia": 0.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 1.0,
+            "itching": 1.0,
+            "irritability": 0.0,
+            "delayed_healing": 0.0,
+            "partial_paresis": 0.0,
+            "muscle_stiffness": 1.0,
+            "alopecia": 0.0,
+            "obesity": 0.0,
+            "class": "0"
+          },
+          {
+            "age": 59.0,
+            "gender": 0.0,
+            "polyuria": 0.0,
+            "polydipsia": 0.0,
+            "sudden_weight_loss": 0.0,
+            "weakness": 1.0,
+            "polyphagia": 0.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 1.0,
+            "itching": 1.0,
+            "irritability": 0.0,
+            "delayed_healing": 1.0,
+            "partial_paresis": 0.0,
+            "muscle_stiffness": 1.0,
+            "alopecia": 1.0,
+            "obesity": 1.0,
+            "class": "0"
+          },
+          {
+            "age": 40.0,
+            "gender": 1.0,
+            "polyuria": 0.0,
+            "polydipsia": 1.0,
+            "sudden_weight_loss": 0.0,
+            "weakness": 1.0,
+            "polyphagia": 1.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 0.0,
+            "itching": 1.0,
+            "irritability": 1.0,
+            "delayed_healing": 1.0,
+            "partial_paresis": 1.0,
+            "muscle_stiffness": 1.0,
+            "alopecia": 0.0,
+            "obesity": 1.0,
+            "class": "1"
+          },
+          {
+            "age": 45.0,
+            "gender": 1.0,
+            "polyuria": 0.0,
+            "polydipsia": 0.0,
+            "sudden_weight_loss": 0.0,
+            "weakness": 1.0,
+            "polyphagia": 0.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 0.0,
+            "itching": 1.0,
+            "irritability": 1.0,
+            "delayed_healing": 1.0,
+            "partial_paresis": 1.0,
+            "muscle_stiffness": 0.0,
+            "alopecia": 0.0,
+            "obesity": 0.0,
+            "class": "0"
+          },
+          {
+            "age": 46.0,
+            "gender": 1.0,
+            "polyuria": 0.0,
+            "polydipsia": 0.0,
+            "sudden_weight_loss": 0.0,
+            "weakness": 1.0,
+            "polyphagia": 0.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 0.0,
+            "itching": 1.0,
+            "irritability": 0.0,
+            "delayed_healing": 1.0,
+            "partial_paresis": 0.0,
+            "muscle_stiffness": 0.0,
+            "alopecia": 1.0,
+            "obesity": 0.0,
+            "class": "0"
+          },
+          {
+            "age": 31.0,
+            "gender": 0.0,
+            "polyuria": 1.0,
+            "polydipsia": 1.0,
+            "sudden_weight_loss": 1.0,
+            "weakness": 1.0,
+            "polyphagia": 1.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 0.0,
+            "itching": 1.0,
+            "irritability": 1.0,
+            "delayed_healing": 0.0,
+            "partial_paresis": 1.0,
+            "muscle_stiffness": 1.0,
+            "alopecia": 0.0,
+            "obesity": 0.0,
+            "class": "1"
+          },
+          {
+            "age": 30.0,
+            "gender": 0.0,
+            "polyuria": 1.0,
+            "polydipsia": 1.0,
+            "sudden_weight_loss": 1.0,
+            "weakness": 0.0,
+            "polyphagia": 1.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 0.0,
+            "itching": 0.0,
+            "irritability": 1.0,
+            "delayed_healing": 0.0,
+            "partial_paresis": 1.0,
+            "muscle_stiffness": 1.0,
+            "alopecia": 0.0,
+            "obesity": 0.0,
+            "class": "1"
+          },
+          {
+            "age": 48.0,
+            "gender": 0.0,
+            "polyuria": 1.0,
+            "polydipsia": 1.0,
+            "sudden_weight_loss": 1.0,
+            "weakness": 1.0,
+            "polyphagia": 1.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 1.0,
+            "itching": 1.0,
+            "irritability": 1.0,
+            "delayed_healing": 1.0,
+            "partial_paresis": 1.0,
+            "muscle_stiffness": 1.0,
+            "alopecia": 0.0,
+            "obesity": 0.0,
+            "class": "1"
+          },
+          {
+            "age": 56.0,
+            "gender": 1.0,
+            "polyuria": 1.0,
+            "polydipsia": 0.0,
+            "sudden_weight_loss": 1.0,
+            "weakness": 1.0,
+            "polyphagia": 0.0,
+            "genital_thrush": 1.0,
+            "visual_blurring": 0.0,
+            "itching": 1.0,
+            "irritability": 1.0,
+            "delayed_healing": 0.0,
+            "partial_paresis": 0.0,
+            "muscle_stiffness": 0.0,
+            "alopecia": 1.0,
+            "obesity": 0.0,
+            "class": "1"
+          },
+          {
+            "age": 56.0,
+            "gender": 1.0,
+            "polyuria": 0.0,
+            "polydipsia": 1.0,
+            "sudden_weight_loss": 0.0,
+            "weakness": 1.0,
+            "polyphagia": 1.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 1.0,
+            "itching": 1.0,
+            "irritability": 0.0,
+            "delayed_healing": 1.0,
+            "partial_paresis": 0.0,
+            "muscle_stiffness": 1.0,
+            "alopecia": 1.0,
+            "obesity": 0.0,
+            "class": "0"
+          },
+          {
+            "age": 61.0,
+            "gender": 0.0,
+            "polyuria": 1.0,
+            "polydipsia": 0.0,
+            "sudden_weight_loss": 0.0,
+            "weakness": 0.0,
+            "polyphagia": 1.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 0.0,
+            "itching": 0.0,
+            "irritability": 1.0,
+            "delayed_healing": 0.0,
+            "partial_paresis": 0.0,
+            "muscle_stiffness": 0.0,
+            "alopecia": 1.0,
+            "obesity": 0.0,
+            "class": "1"
+          },
+          {
+            "age": 48.0,
+            "gender": 0.0,
+            "polyuria": 1.0,
+            "polydipsia": 1.0,
+            "sudden_weight_loss": 1.0,
+            "weakness": 1.0,
+            "polyphagia": 1.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 0.0,
+            "itching": 1.0,
+            "irritability": 1.0,
+            "delayed_healing": 1.0,
+            "partial_paresis": 1.0,
+            "muscle_stiffness": 0.0,
+            "alopecia": 0.0,
+            "obesity": 0.0,
+            "class": "1"
+          },
+          {
+            "age": 30.0,
+            "gender": 1.0,
+            "polyuria": 0.0,
+            "polydipsia": 0.0,
+            "sudden_weight_loss": 0.0,
+            "weakness": 0.0,
+            "polyphagia": 0.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 0.0,
+            "itching": 0.0,
+            "irritability": 0.0,
+            "delayed_healing": 0.0,
+            "partial_paresis": 0.0,
+            "muscle_stiffness": 0.0,
+            "alopecia": 0.0,
+            "obesity": 0.0,
+            "class": "0"
+          },
+          {
+            "age": 28.0,
+            "gender": 0.0,
+            "polyuria": 0.0,
+            "polydipsia": 0.0,
+            "sudden_weight_loss": 0.0,
+            "weakness": 0.0,
+            "polyphagia": 0.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 1.0,
+            "itching": 0.0,
+            "irritability": 0.0,
+            "delayed_healing": 0.0,
+            "partial_paresis": 1.0,
+            "muscle_stiffness": 1.0,
+            "alopecia": 0.0,
+            "obesity": 0.0,
+            "class": "1"
+          },
+          {
+            "age": 38.0,
+            "gender": 0.0,
+            "polyuria": 0.0,
+            "polydipsia": 0.0,
+            "sudden_weight_loss": 0.0,
+            "weakness": 0.0,
+            "polyphagia": 0.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 0.0,
+            "itching": 0.0,
+            "irritability": 0.0,
+            "delayed_healing": 0.0,
+            "partial_paresis": 0.0,
+            "muscle_stiffness": 0.0,
+            "alopecia": 0.0,
+            "obesity": 1.0,
+            "class": "1"
+          },
+          {
+            "age": 40.0,
+            "gender": 1.0,
+            "polyuria": 0.0,
+            "polydipsia": 1.0,
+            "sudden_weight_loss": 1.0,
+            "weakness": 1.0,
+            "polyphagia": 0.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 1.0,
+            "itching": 1.0,
+            "irritability": 0.0,
+            "delayed_healing": 0.0,
+            "partial_paresis": 1.0,
+            "muscle_stiffness": 1.0,
+            "alopecia": 0.0,
+            "obesity": 0.0,
+            "class": "0"
+          },
+          {
+            "age": 50.0,
+            "gender": 0.0,
+            "polyuria": 0.0,
+            "polydipsia": 0.0,
+            "sudden_weight_loss": 0.0,
+            "weakness": 1.0,
+            "polyphagia": 0.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 1.0,
+            "itching": 1.0,
+            "irritability": 0.0,
+            "delayed_healing": 1.0,
+            "partial_paresis": 0.0,
+            "muscle_stiffness": 0.0,
+            "alopecia": 1.0,
+            "obesity": 0.0,
+            "class": "0"
+          },
+          {
+            "age": 42.0,
+            "gender": 1.0,
+            "polyuria": 0.0,
+            "polydipsia": 0.0,
+            "sudden_weight_loss": 0.0,
+            "weakness": 0.0,
+            "polyphagia": 0.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 0.0,
+            "itching": 0.0,
+            "irritability": 0.0,
+            "delayed_healing": 0.0,
+            "partial_paresis": 0.0,
+            "muscle_stiffness": 0.0,
+            "alopecia": 1.0,
+            "obesity": 0.0,
+            "class": "0"
+          },
+          {
+            "age": 30.0,
+            "gender": 1.0,
+            "polyuria": 0.0,
+            "polydipsia": 0.0,
+            "sudden_weight_loss": 0.0,
+            "weakness": 0.0,
+            "polyphagia": 0.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 0.0,
+            "itching": 0.0,
+            "irritability": 0.0,
+            "delayed_healing": 0.0,
+            "partial_paresis": 0.0,
+            "muscle_stiffness": 0.0,
+            "alopecia": 0.0,
+            "obesity": 0.0,
+            "class": "0"
+          },
+          {
+            "age": 38.0,
+            "gender": 0.0,
+            "polyuria": 1.0,
+            "polydipsia": 1.0,
+            "sudden_weight_loss": 1.0,
+            "weakness": 1.0,
+            "polyphagia": 1.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 1.0,
+            "itching": 1.0,
+            "irritability": 1.0,
+            "delayed_healing": 1.0,
+            "partial_paresis": 1.0,
+            "muscle_stiffness": 1.0,
+            "alopecia": 0.0,
+            "obesity": 0.0,
+            "class": "1"
+          },
+          {
+            "age": 54.0,
+            "gender": 1.0,
+            "polyuria": 1.0,
+            "polydipsia": 1.0,
+            "sudden_weight_loss": 1.0,
+            "weakness": 1.0,
+            "polyphagia": 0.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 1.0,
+            "itching": 1.0,
+            "irritability": 1.0,
+            "delayed_healing": 1.0,
+            "partial_paresis": 1.0,
+            "muscle_stiffness": 1.0,
+            "alopecia": 0.0,
+            "obesity": 0.0,
+            "class": "1"
+          },
+          {
+            "age": 45.0,
+            "gender": 0.0,
+            "polyuria": 0.0,
+            "polydipsia": 0.0,
+            "sudden_weight_loss": 0.0,
+            "weakness": 0.0,
+            "polyphagia": 1.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 1.0,
+            "itching": 1.0,
+            "irritability": 0.0,
+            "delayed_healing": 0.0,
+            "partial_paresis": 1.0,
+            "muscle_stiffness": 0.0,
+            "alopecia": 0.0,
+            "obesity": 0.0,
+            "class": "1"
+          },
+          {
+            "age": 54.0,
+            "gender": 1.0,
+            "polyuria": 0.0,
+            "polydipsia": 0.0,
+            "sudden_weight_loss": 0.0,
+            "weakness": 1.0,
+            "polyphagia": 0.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 0.0,
+            "itching": 1.0,
+            "irritability": 0.0,
+            "delayed_healing": 1.0,
+            "partial_paresis": 0.0,
+            "muscle_stiffness": 1.0,
+            "alopecia": 1.0,
+            "obesity": 0.0,
+            "class": "0"
+          },
+          {
+            "age": 54.0,
+            "gender": 1.0,
+            "polyuria": 0.0,
+            "polydipsia": 0.0,
+            "sudden_weight_loss": 0.0,
+            "weakness": 1.0,
+            "polyphagia": 0.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 0.0,
+            "itching": 1.0,
+            "irritability": 0.0,
+            "delayed_healing": 1.0,
+            "partial_paresis": 0.0,
+            "muscle_stiffness": 1.0,
+            "alopecia": 1.0,
+            "obesity": 0.0,
+            "class": "0"
+          },
+          {
+            "age": 47.0,
+            "gender": 0.0,
+            "polyuria": 0.0,
+            "polydipsia": 0.0,
+            "sudden_weight_loss": 1.0,
+            "weakness": 1.0,
+            "polyphagia": 1.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 0.0,
+            "itching": 0.0,
+            "irritability": 0.0,
+            "delayed_healing": 0.0,
+            "partial_paresis": 0.0,
+            "muscle_stiffness": 1.0,
+            "alopecia": 0.0,
+            "obesity": 0.0,
+            "class": "1"
+          },
+          {
+            "age": 47.0,
+            "gender": 1.0,
+            "polyuria": 0.0,
+            "polydipsia": 0.0,
+            "sudden_weight_loss": 0.0,
+            "weakness": 0.0,
+            "polyphagia": 0.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 0.0,
+            "itching": 1.0,
+            "irritability": 0.0,
+            "delayed_healing": 0.0,
+            "partial_paresis": 0.0,
+            "muscle_stiffness": 0.0,
+            "alopecia": 1.0,
+            "obesity": 0.0,
+            "class": "0"
+          },
+          {
+            "age": 55.0,
+            "gender": 0.0,
+            "polyuria": 1.0,
+            "polydipsia": 1.0,
+            "sudden_weight_loss": 1.0,
+            "weakness": 0.0,
+            "polyphagia": 1.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 0.0,
+            "itching": 1.0,
+            "irritability": 0.0,
+            "delayed_healing": 1.0,
+            "partial_paresis": 1.0,
+            "muscle_stiffness": 0.0,
+            "alopecia": 0.0,
+            "obesity": 0.0,
+            "class": "1"
+          },
+          {
+            "age": 55.0,
+            "gender": 0.0,
+            "polyuria": 1.0,
+            "polydipsia": 1.0,
+            "sudden_weight_loss": 1.0,
+            "weakness": 1.0,
+            "polyphagia": 0.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 1.0,
+            "itching": 0.0,
+            "irritability": 0.0,
+            "delayed_healing": 0.0,
+            "partial_paresis": 1.0,
+            "muscle_stiffness": 0.0,
+            "alopecia": 0.0,
+            "obesity": 1.0,
+            "class": "1"
+          },
+          {
+            "age": 36.0,
+            "gender": 0.0,
+            "polyuria": 0.0,
+            "polydipsia": 0.0,
+            "sudden_weight_loss": 0.0,
+            "weakness": 1.0,
+            "polyphagia": 0.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 0.0,
+            "itching": 0.0,
+            "irritability": 1.0,
+            "delayed_healing": 0.0,
+            "partial_paresis": 0.0,
+            "muscle_stiffness": 0.0,
+            "alopecia": 0.0,
+            "obesity": 0.0,
+            "class": "0"
+          },
+          {
+            "age": 46.0,
+            "gender": 1.0,
+            "polyuria": 0.0,
+            "polydipsia": 0.0,
+            "sudden_weight_loss": 0.0,
+            "weakness": 1.0,
+            "polyphagia": 0.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 0.0,
+            "itching": 1.0,
+            "irritability": 0.0,
+            "delayed_healing": 1.0,
+            "partial_paresis": 0.0,
+            "muscle_stiffness": 0.0,
+            "alopecia": 1.0,
+            "obesity": 0.0,
+            "class": "0"
+          },
+          {
+            "age": 40.0,
+            "gender": 1.0,
+            "polyuria": 0.0,
+            "polydipsia": 0.0,
+            "sudden_weight_loss": 1.0,
+            "weakness": 0.0,
+            "polyphagia": 0.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 0.0,
+            "itching": 0.0,
+            "irritability": 0.0,
+            "delayed_healing": 0.0,
+            "partial_paresis": 0.0,
+            "muscle_stiffness": 0.0,
+            "alopecia": 0.0,
+            "obesity": 1.0,
+            "class": "0"
+          },
+          {
+            "age": 68.0,
+            "gender": 1.0,
+            "polyuria": 1.0,
+            "polydipsia": 1.0,
+            "sudden_weight_loss": 0.0,
+            "weakness": 0.0,
+            "polyphagia": 1.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 1.0,
+            "itching": 1.0,
+            "irritability": 1.0,
+            "delayed_healing": 0.0,
+            "partial_paresis": 1.0,
+            "muscle_stiffness": 0.0,
+            "alopecia": 0.0,
+            "obesity": 0.0,
+            "class": "1"
+          },
+          {
+            "age": 54.0,
+            "gender": 1.0,
+            "polyuria": 1.0,
+            "polydipsia": 1.0,
+            "sudden_weight_loss": 1.0,
+            "weakness": 1.0,
+            "polyphagia": 0.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 1.0,
+            "itching": 1.0,
+            "irritability": 1.0,
+            "delayed_healing": 1.0,
+            "partial_paresis": 1.0,
+            "muscle_stiffness": 1.0,
+            "alopecia": 0.0,
+            "obesity": 0.0,
+            "class": "1"
+          },
+          {
+            "age": 63.0,
+            "gender": 1.0,
+            "polyuria": 1.0,
+            "polydipsia": 1.0,
+            "sudden_weight_loss": 1.0,
+            "weakness": 1.0,
+            "polyphagia": 1.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 1.0,
+            "itching": 0.0,
+            "irritability": 0.0,
+            "delayed_healing": 0.0,
+            "partial_paresis": 0.0,
+            "muscle_stiffness": 1.0,
+            "alopecia": 1.0,
+            "obesity": 1.0,
+            "class": "1"
+          },
+          {
+            "age": 47.0,
+            "gender": 1.0,
+            "polyuria": 1.0,
+            "polydipsia": 0.0,
+            "sudden_weight_loss": 1.0,
+            "weakness": 1.0,
+            "polyphagia": 1.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 0.0,
+            "itching": 0.0,
+            "irritability": 0.0,
+            "delayed_healing": 1.0,
+            "partial_paresis": 1.0,
+            "muscle_stiffness": 1.0,
+            "alopecia": 0.0,
+            "obesity": 0.0,
+            "class": "1"
+          },
+          {
+            "age": 61.0,
+            "gender": 1.0,
+            "polyuria": 1.0,
+            "polydipsia": 0.0,
+            "sudden_weight_loss": 0.0,
+            "weakness": 1.0,
+            "polyphagia": 1.0,
+            "genital_thrush": 1.0,
+            "visual_blurring": 1.0,
+            "itching": 1.0,
+            "irritability": 1.0,
+            "delayed_healing": 1.0,
+            "partial_paresis": 1.0,
+            "muscle_stiffness": 0.0,
+            "alopecia": 0.0,
+            "obesity": 0.0,
+            "class": "1"
+          },
+          {
+            "age": 70.0,
+            "gender": 1.0,
+            "polyuria": 0.0,
+            "polydipsia": 1.0,
+            "sudden_weight_loss": 1.0,
+            "weakness": 1.0,
+            "polyphagia": 1.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 1.0,
+            "itching": 1.0,
+            "irritability": 1.0,
+            "delayed_healing": 0.0,
+            "partial_paresis": 0.0,
+            "muscle_stiffness": 0.0,
+            "alopecia": 1.0,
+            "obesity": 0.0,
+            "class": "1"
+          },
+          {
+            "age": 50.0,
+            "gender": 0.0,
+            "polyuria": 0.0,
+            "polydipsia": 1.0,
+            "sudden_weight_loss": 0.0,
+            "weakness": 1.0,
+            "polyphagia": 1.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 1.0,
+            "itching": 1.0,
+            "irritability": 1.0,
+            "delayed_healing": 1.0,
+            "partial_paresis": 1.0,
+            "muscle_stiffness": 1.0,
+            "alopecia": 0.0,
+            "obesity": 0.0,
+            "class": "1"
+          }
+        ],
+        "test": [
+          {
+            "age": 48.0,
+            "gender": 0.0,
+            "polyuria": 1.0,
+            "polydipsia": 1.0,
+            "sudden_weight_loss": 1.0,
+            "weakness": 1.0,
+            "polyphagia": 1.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 0.0,
+            "itching": 0.0,
+            "irritability": 0.0,
+            "delayed_healing": 0.0,
+            "partial_paresis": 1.0,
+            "muscle_stiffness": 0.0,
+            "alopecia": 0.0,
+            "obesity": 0.0
+          },
+          {
+            "age": 50.0,
+            "gender": 0.0,
+            "polyuria": 1.0,
+            "polydipsia": 1.0,
+            "sudden_weight_loss": 0.0,
+            "weakness": 1.0,
+            "polyphagia": 1.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 0.0,
+            "itching": 0.0,
+            "irritability": 0.0,
+            "delayed_healing": 1.0,
+            "partial_paresis": 1.0,
+            "muscle_stiffness": 0.0,
+            "alopecia": 0.0,
+            "obesity": 0.0
+          },
+          {
+            "age": 59.0,
+            "gender": 0.0,
+            "polyuria": 0.0,
+            "polydipsia": 0.0,
+            "sudden_weight_loss": 0.0,
+            "weakness": 0.0,
+            "polyphagia": 0.0,
+            "genital_thrush": 0.0,
+            "visual_blurring": 0.0,
+            "itching": 0.0,
+            "irritability": 0.0,
+            "delayed_healing": 0.0,
+            "partial_paresis": 0.0,
+            "muscle_stiffness": 0.0,
+            "alopecia": 0.0,
+            "obesity": 0.0
+          }
+        ],
+        "features": [
+          "age",
+          "gender",
+          "polyuria",
+          "polydipsia",
+          "sudden_weight_loss",
+          "weakness",
+          "polyphagia",
+          "genital_thrush",
+          "visual_blurring",
+          "itching",
+          "irritability",
+          "delayed_healing",
+          "partial_paresis",
+          "muscle_stiffness",
+          "alopecia",
+          "obesity"
+        ],
+        "target": "class"
+      },
+      "output": {
+        "predictions": [
+          "برچسب یا عدد برای هر سطر test"
+        ]
+      }
+    },
+    "criteria": [
+      "accuracy و macro-F1 حداقل 0.8",
+      "شکل و تعداد و نوع پیش‌بینی‌ها مطابق ورودی",
+      "ارزیابی روی دو تقسیم تصادفی مستقل؛ برچسب test به کد ارسال نمی‌شود."
+    ],
+    "dependencies": [
+      "pandas",
+      "scikit-learn",
+      "numpy"
+    ],
+    "notes": "تقسیم داده را داور هم مستقل انجام می‌دهد؛ موفقیت صرف اجرای برنامه یا metric چاپ‌شده کافی نیست. random_state=42 را برای بازتولیدپذیری تنظیم کن.",
+    "topic": "Machine Learning",
+    "level": "یادگیری ماشین"
+  },
+  {
+    "key": "flights",
+    "title": "تحلیل و پیش‌بینی تأخیرهای پرواز",
+    "description": "تأخیر ورود را پس از مشخص‌شدن تأخیر خروج و زمان پرواز تخمین بزن؛ پیش‌بینی پیش از خروج نیست.",
+    "goal": "جداسازی آموزش و ارزیابی و سنجش تعمیم مدل",
+    "skills": "Python · Scikit-learn · Evaluation",
+    "minutes": 100,
+    "xp": 270,
+    "datasets": [
+      "flights.csv"
+    ],
+    "input": "train: لیست سطرهای دارای arr_delay؛ test: لیست ویژگی‌های بدون هدف؛ features: ['month', 'day', 'hour', 'distance', 'air_time', 'dep_delay']؛ target: arr_delay",
+    "output": "result.json شامل predictions با یک مقدار به‌ازای هر سطر test؛ عدد برای رگرسیون و برچسب موجود در train برای دسته‌بندی.",
+    "steps": [
+      "request.json شامل train دارای برچسب و test بدون برچسب است؛ فایل CSV محلی برای مطالعه است و در ارزیابی به محیط ارسال نمی‌شود.",
+      "train را به ویژگی‌ها و target جدا کن؛ داده ارزیابی بیرونی را هرگز برای fit استفاده نکن.",
+      "برای تمرین، با train_test_split و random_state=42 بخشی از train را نگه دار و مدل را با MAE یا accuracy/F1 بسنج.",
+      "مدل یا Pipeline را فقط روی داده آموزش fit کن؛ سپس برای تمام سطرهای test پیش‌بینی کن.",
+      "predictions را به ترتیب test در result.json ذخیره کن؛ امتیاز نهایی را داور روی برچسب‌های خارج محیط محاسبه می‌کند."
+    ],
+    "example": {
+      "input": {
+        "train": [
+          {
+            "month": 1.0,
+            "day": 2.0,
+            "hour": 18.0,
+            "distance": 760.0,
+            "air_time": 127.0,
+            "dep_delay": -1.0,
+            "arr_delay": -16.0
+          },
+          {
+            "month": 1.0,
+            "day": 1.0,
+            "hour": 16.0,
+            "distance": 199.0,
+            "air_time": 48.0,
+            "dep_delay": 14.0,
+            "arr_delay": 13.0
+          },
+          {
+            "month": 1.0,
+            "day": 3.0,
+            "hour": 8.0,
+            "distance": 1069.0,
+            "air_time": 165.0,
+            "dep_delay": -1.0,
+            "arr_delay": -4.0
+          },
+          {
+            "month": 1.0,
+            "day": 3.0,
+            "hour": 8.0,
+            "distance": 1005.0,
+            "air_time": 165.0,
+            "dep_delay": 2.0,
+            "arr_delay": 2.0
+          },
+          {
+            "month": 1.0,
+            "day": 2.0,
+            "hour": 16.0,
+            "distance": 762.0,
+            "air_time": 130.0,
+            "dep_delay": -2.0,
+            "arr_delay": 26.0
+          },
+          {
+            "month": 1.0,
+            "day": 2.0,
+            "hour": 18.0,
+            "distance": 419.0,
+            "air_time": 74.0,
+            "dep_delay": -9.0,
+            "arr_delay": -15.0
+          },
+          {
+            "month": 1.0,
+            "day": 2.0,
+            "hour": 19.0,
+            "distance": 2586.0,
+            "air_time": 320.0,
+            "dep_delay": 17.0,
+            "arr_delay": -33.0
+          },
+          {
+            "month": 1.0,
+            "day": 2.0,
+            "hour": 6.0,
+            "distance": 719.0,
+            "air_time": 112.0,
+            "dep_delay": 80.0,
+            "arr_delay": 90.0
+          },
+          {
+            "month": 1.0,
+            "day": 2.0,
+            "hour": 18.0,
+            "distance": 719.0,
+            "air_time": 137.0,
+            "dep_delay": 15.0,
+            "arr_delay": 19.0
+          },
+          {
+            "month": 1.0,
+            "day": 2.0,
+            "hour": 7.0,
+            "distance": 1400.0,
+            "air_time": 215.0,
+            "dep_delay": 7.0,
+            "arr_delay": 13.0
+          },
+          {
+            "month": 1.0,
+            "day": 2.0,
+            "hour": 15.0,
+            "distance": 642.0,
+            "air_time": 121.0,
+            "dep_delay": 43.0,
+            "arr_delay": 47.0
+          },
+          {
+            "month": 1.0,
+            "day": 2.0,
+            "hour": 21.0,
+            "distance": 301.0,
+            "air_time": 63.0,
+            "dep_delay": -4.0,
+            "arr_delay": -10.0
+          },
+          {
+            "month": 1.0,
+            "day": 1.0,
+            "hour": 17.0,
+            "distance": 1416.0,
+            "air_time": 234.0,
+            "dep_delay": 2.0,
+            "arr_delay": 16.0
+          },
+          {
+            "month": 1.0,
+            "day": 1.0,
+            "hour": 17.0,
+            "distance": 2402.0,
+            "air_time": 344.0,
+            "dep_delay": 1.0,
+            "arr_delay": -19.0
+          },
+          {
+            "month": 1.0,
+            "day": 2.0,
+            "hour": 6.0,
+            "distance": 1085.0,
+            "air_time": 157.0,
+            "dep_delay": -1.0,
+            "arr_delay": -1.0
+          },
+          {
+            "month": 1.0,
+            "day": 2.0,
+            "hour": 12.0,
+            "distance": 719.0,
+            "air_time": 136.0,
+            "dep_delay": -1.0,
+            "arr_delay": -1.0
+          },
+          {
+            "month": 1.0,
+            "day": 2.0,
+            "hour": 18.0,
+            "distance": 2422.0,
+            "air_time": 325.0,
+            "dep_delay": -5.0,
+            "arr_delay": -51.0
+          },
+          {
+            "month": 1.0,
+            "day": 2.0,
+            "hour": 16.0,
+            "distance": 1626.0,
+            "air_time": 242.0,
+            "dep_delay": -1.0,
+            "arr_delay": -18.0
+          },
+          {
+            "month": 1.0,
+            "day": 2.0,
+            "hour": 12.0,
+            "distance": 1183.0,
+            "air_time": 196.0,
+            "dep_delay": -2.0,
+            "arr_delay": 1.0
+          },
+          {
+            "month": 1.0,
+            "day": 2.0,
+            "hour": 15.0,
+            "distance": 2475.0,
+            "air_time": 341.0,
+            "dep_delay": -5.0,
+            "arr_delay": -23.0
+          },
+          {
+            "month": 1.0,
+            "day": 2.0,
+            "hour": 9.0,
+            "distance": 266.0,
+            "air_time": 51.0,
+            "dep_delay": -6.0,
+            "arr_delay": -1.0
+          },
+          {
+            "month": 1.0,
+            "day": 1.0,
+            "hour": 15.0,
+            "distance": 282.0,
+            "air_time": 58.0,
+            "dep_delay": 16.0,
+            "arr_delay": 12.0
+          },
+          {
+            "month": 1.0,
+            "day": 2.0,
+            "hour": 8.0,
+            "distance": 1020.0,
+            "air_time": 142.0,
+            "dep_delay": 10.0,
+            "arr_delay": -6.0
+          },
+          {
+            "month": 1.0,
+            "day": 2.0,
+            "hour": 6.0,
+            "distance": 1028.0,
+            "air_time": 146.0,
+            "dep_delay": -6.0,
+            "arr_delay": -10.0
+          },
+          {
+            "month": 1.0,
+            "day": 2.0,
+            "hour": 18.0,
+            "distance": 1598.0,
+            "air_time": 191.0,
+            "dep_delay": -3.0,
+            "arr_delay": -4.0
+          },
+          {
+            "month": 1.0,
+            "day": 1.0,
+            "hour": 18.0,
+            "distance": 2422.0,
+            "air_time": 334.0,
+            "dep_delay": -4.0,
+            "arr_delay": -13.0
+          },
+          {
+            "month": 1.0,
+            "day": 2.0,
+            "hour": 17.0,
+            "distance": 544.0,
+            "air_time": 100.0,
+            "dep_delay": -4.0,
+            "arr_delay": -6.0
+          },
+          {
+            "month": 1.0,
+            "day": 1.0,
+            "hour": 13.0,
+            "distance": 445.0,
+            "air_time": 86.0,
+            "dep_delay": 40.0,
+            "arr_delay": 46.0
+          },
+          {
+            "month": 1.0,
+            "day": 2.0,
+            "hour": 7.0,
+            "distance": 733.0,
+            "air_time": 127.0,
+            "dep_delay": 12.0,
+            "arr_delay": 12.0
+          },
+          {
+            "month": 1.0,
+            "day": 1.0,
+            "hour": 11.0,
+            "distance": 1620.0,
+            "air_time": 256.0,
+            "dep_delay": 13.0,
+            "arr_delay": 34.0
+          },
+          {
+            "month": 1.0,
+            "day": 1.0,
+            "hour": 13.0,
+            "distance": 569.0,
+            "air_time": 129.0,
+            "dep_delay": 35.0,
+            "arr_delay": 65.0
+          },
+          {
+            "month": 1.0,
+            "day": 2.0,
+            "hour": 20.0,
+            "distance": 404.0,
+            "air_time": 74.0,
+            "dep_delay": 3.0,
+            "arr_delay": -11.0
+          },
+          {
+            "month": 1.0,
+            "day": 2.0,
+            "hour": 15.0,
+            "distance": 282.0,
+            "air_time": 51.0,
+            "dep_delay": 128.0,
+            "arr_delay": 141.0
+          },
+          {
+            "month": 1.0,
+            "day": 2.0,
+            "hour": 7.0,
+            "distance": 445.0,
+            "air_time": 94.0,
+            "dep_delay": -2.0,
+            "arr_delay": 12.0
+          },
+          {
+            "month": 1.0,
+            "day": 2.0,
+            "hour": 20.0,
+            "distance": 762.0,
+            "air_time": 125.0,
+            "dep_delay": -4.0,
+            "arr_delay": 6.0
+          },
+          {
+            "month": 1.0,
+            "day": 2.0,
+            "hour": 17.0,
+            "distance": 2446.0,
+            "air_time": 319.0,
+            "dep_delay": -6.0,
+            "arr_delay": -44.0
+          },
+          {
+            "month": 1.0,
+            "day": 1.0,
+            "hour": 14.0,
+            "distance": 1504.0,
+            "air_time": 252.0,
+            "dep_delay": 1.0,
+            "arr_delay": 17.0
+          },
+          {
+            "month": 1.0,
+            "day": 2.0,
+            "hour": 7.0,
+            "distance": 2422.0,
+            "air_time": 309.0,
+            "dep_delay": -1.0,
+            "arr_delay": -45.0
+          },
+          {
+            "month": 1.0,
+            "day": 2.0,
+            "hour": 9.0,
+            "distance": 1023.0,
+            "air_time": 154.0,
+            "dep_delay": 0.0,
+            "arr_delay": 15.0
+          },
+          {
+            "month": 1.0,
+            "day": 2.0,
+            "hour": 8.0,
+            "distance": 1605.0,
+            "air_time": 242.0,
+            "dep_delay": 1.0,
+            "arr_delay": -11.0
+          }
+        ],
+        "test": [
+          {
+            "month": 1.0,
+            "day": 1.0,
+            "hour": 10.0,
+            "distance": 762.0,
+            "air_time": 129.0,
+            "dep_delay": -4.0
+          },
+          {
+            "month": 1.0,
+            "day": 2.0,
+            "hour": 16.0,
+            "distance": 533.0,
+            "air_time": 102.0,
+            "dep_delay": 168.0
+          },
+          {
+            "month": 1.0,
+            "day": 1.0,
+            "hour": 15.0,
+            "distance": 483.0,
+            "air_time": 98.0,
+            "dep_delay": -8.0
+          }
+        ],
+        "features": [
+          "month",
+          "day",
+          "hour",
+          "distance",
+          "air_time",
+          "dep_delay"
+        ],
+        "target": "arr_delay"
+      },
+      "output": {
+        "predictions": [
+          "برچسب یا عدد برای هر سطر test"
+        ]
+      }
+    },
+    "criteria": [
+      "MAE حداکثر 15.0",
+      "شکل و تعداد و نوع پیش‌بینی‌ها مطابق ورودی",
+      "ارزیابی روی دو تقسیم تصادفی مستقل؛ برچسب test به کد ارسال نمی‌شود."
+    ],
+    "dependencies": [
+      "pandas",
+      "scikit-learn",
+      "numpy"
+    ],
+    "notes": "تقسیم داده را داور هم مستقل انجام می‌دهد؛ موفقیت صرف اجرای برنامه یا metric چاپ‌شده کافی نیست. random_state=42 را برای بازتولیدپذیری تنظیم کن.",
+    "topic": "Applied AI",
+    "level": "کاربردی"
+  },
+  {
+    "key": "sentiment",
+    "title": "تحلیل احساسات متن",
+    "description": "متن انگلیسی Amazon/IMDb/Yelp را به مثبت (۱) و منفی (۰) دسته‌بندی کن.",
+    "goal": "جداسازی آموزش و ارزیابی و سنجش تعمیم مدل",
+    "skills": "Python · Scikit-learn · Evaluation",
+    "minutes": 100,
+    "xp": 280,
+    "datasets": [
+      "sentiment.csv"
+    ],
+    "input": "train: لیست سطرهای دارای label؛ test: لیست ویژگی‌های بدون هدف؛ features: ['text']؛ target: label",
+    "output": "result.json شامل predictions با یک مقدار به‌ازای هر سطر test؛ عدد برای رگرسیون و برچسب موجود در train برای دسته‌بندی.",
+    "steps": [
+      "request.json شامل train دارای برچسب و test بدون برچسب است؛ فایل CSV محلی برای مطالعه است و در ارزیابی به محیط ارسال نمی‌شود.",
+      "train را به ویژگی‌ها و target جدا کن؛ داده ارزیابی بیرونی را هرگز برای fit استفاده نکن.",
+      "از TfidfVectorizer و LogisticRegression در یک Pipeline استفاده کن؛ واژگان فقط از train استخراج شوند.",
+      "برای تمرین، با train_test_split و random_state=42 بخشی از train را نگه دار و مدل را با MAE یا accuracy/F1 بسنج.",
+      "مدل یا Pipeline را فقط روی داده آموزش fit کن؛ سپس برای تمام سطرهای test پیش‌بینی کن.",
+      "predictions را به ترتیب test در result.json ذخیره کن؛ امتیاز نهایی را داور روی برچسب‌های خارج محیط محاسبه می‌کند."
+    ],
+    "example": {
+      "input": {
+        "train": [
+          {
+            "text": "The best scene in the movie was when Gerardo is trying to find a song that keeps running through his head.  ",
+            "label": "1"
+          },
+          {
+            "text": "first time there and might just be the last.",
+            "label": "0"
+          },
+          {
+            "text": "Don't trust their website and don't expect any helpful support.",
+            "label": "0"
+          },
+          {
+            "text": "Everything was good and tasty!",
+            "label": "1"
+          },
+          {
+            "text": "The battery life is highly unacceptable.",
+            "label": "0"
+          },
+          {
+            "text": "Same evening, him and I are both drastically sick.",
+            "label": "0"
+          },
+          {
+            "text": "This is the number one best TH game in the series.  ",
+            "label": "1"
+          },
+          {
+            "text": "I believe the screenwriter did a good job of tying up the loose ends.  ",
+            "label": "1"
+          },
+          {
+            "text": "Disappointing accessory from a good manufacturer.",
+            "label": "0"
+          },
+          {
+            "text": "We will not be coming back.",
+            "label": "0"
+          },
+          {
+            "text": "Brilliance indeed.  ",
+            "label": "1"
+          },
+          {
+            "text": "Excellent short film.  ",
+            "label": "1"
+          },
+          {
+            "text": "A world better than 95% of the garbage in the theatres today.  ",
+            "label": "1"
+          },
+          {
+            "text": "I've only had my bluetooth for a few weeks, but I really like it.",
+            "label": "1"
+          },
+          {
+            "text": "The Macarons here are insanely good.",
+            "label": "1"
+          },
+          {
+            "text": "This is a great little item.",
+            "label": "1"
+          },
+          {
+            "text": "What the hell kind of crap is that?!  ",
+            "label": "0"
+          },
+          {
+            "text": "I love the decor with the Chinese calligraphy wall paper.",
+            "label": "1"
+          },
+          {
+            "text": "Things that went wrong: - They burned the saganaki.",
+            "label": "0"
+          },
+          {
+            "text": "However, I recently watched the whole thing again on DVD, and I was completely struck by how extremely stupid the storyline was - how it contained holes, inconsistencies and - frankly - a whole lot of crap - and how horrid the dancing was.  ",
+            "label": "0"
+          },
+          {
+            "text": "That was done in the second movie.  ",
+            "label": "0"
+          },
+          {
+            "text": "Delicious and I will absolutely be back!",
+            "label": "1"
+          },
+          {
+            "text": "Pretty cool I would say.",
+            "label": "1"
+          },
+          {
+            "text": "Go rent it.  ",
+            "label": "1"
+          },
+          {
+            "text": "There is so much good food in Vegas that I feel cheated for wasting an eating opportunity by going to Rice and Company.",
+            "label": "0"
+          },
+          {
+            "text": "AVOID THIS ESTABLISHMENT!",
+            "label": "0"
+          },
+          {
+            "text": "If there were zero stars I would give it zero stars.",
+            "label": "0"
+          },
+          {
+            "text": "It's been my choice headset for years.Great sound; good volume; good noise cancellation.",
+            "label": "1"
+          },
+          {
+            "text": "The story line is just awful!  ",
+            "label": "0"
+          },
+          {
+            "text": "This second appearance of Mickey Mouse (following the silent PLANE CRAZY earlier that year) is probably his most famous film--mostly because it was so ground-breaking.  ",
+            "label": "1"
+          },
+          {
+            "text": "[...] down the drain because of a weak snap!",
+            "label": "0"
+          },
+          {
+            "text": "Crust is not good.",
+            "label": "0"
+          },
+          {
+            "text": "I own a Jabra Earset and was very happy with it, but the sound quality, especially outgoing, on this is better.",
+            "label": "1"
+          },
+          {
+            "text": "it did not work in my cell phone plug i am very up set with the charger!.",
+            "label": "0"
+          },
+          {
+            "text": "Appears to actually outperform the original battery from China that came with my V325i.",
+            "label": "1"
+          },
+          {
+            "text": "One thing I hate is the mode set button at the side.",
+            "label": "0"
+          },
+          {
+            "text": "There are many continuity errors: one other user commented on different cars in the garage, Joe's glasses...the one that got to me the most was the fact Joe's facial hair configuration seemed to change from scene to scene.  ",
+            "label": "0"
+          },
+          {
+            "text": "Some may say this buffet is pricey but I think you get what you pay for and this place you are getting quite a lot!",
+            "label": "1"
+          },
+          {
+            "text": "I would avoid this place if you are staying in the Mirage.",
+            "label": "0"
+          },
+          {
+            "text": "It's just lame.  ",
+            "label": "0"
+          },
+          {
+            "text": "This film tries to be a serious and sophisticated thriller/horror flick and it fails miserably.  ",
+            "label": "0"
+          },
+          {
+            "text": "So good I am going to have to review this place twice - once hereas a tribute to the place and once as a tribute to an event held here last night.",
+            "label": "1"
+          },
+          {
+            "text": "Overall I was not impressed and would not go back.",
+            "label": "0"
+          },
+          {
+            "text": "Great bluetooth!.",
+            "label": "1"
+          },
+          {
+            "text": "Great phone!.",
+            "label": "1"
+          },
+          {
+            "text": "Finally, after three or four times the spring of the latch broke and I could not use it any longer on the visor.",
+            "label": "0"
+          },
+          {
+            "text": "Couldn't ask for a more satisfying meal.",
+            "label": "1"
+          },
+          {
+            "text": "The Jabra EarGels fit my ears very well.",
+            "label": "1"
+          },
+          {
+            "text": "Also, I feel like the chips are bought, not made in house.",
+            "label": "0"
+          },
+          {
+            "text": "This place is horrible and way overpriced.",
+            "label": "0"
+          },
+          {
+            "text": "Linked to my phone without effort.",
+            "label": "1"
+          },
+          {
+            "text": "Wow, what a bad film.  ",
+            "label": "0"
+          },
+          {
+            "text": "Great software for Motorolas.",
+            "label": "1"
+          },
+          {
+            "text": "The color is even prettier than I thought it would be, and the graphics are incredibly sharp.",
+            "label": "1"
+          },
+          {
+            "text": "On three different occasions I asked for well done or medium well, and all three times I got the bloodiest piece of meat on my plate.",
+            "label": "0"
+          },
+          {
+            "text": "Instead, we got a bore fest about a whiny, spoiled brat babysitting.  ",
+            "label": "0"
+          },
+          {
+            "text": "The cable looks so thin and flimsy, it is scary.",
+            "label": "0"
+          },
+          {
+            "text": "Today is the second time I've been to their lunch buffet and it was pretty good.",
+            "label": "1"
+          },
+          {
+            "text": "Mishima is extremely uninteresting.  ",
+            "label": "0"
+          },
+          {
+            "text": "I was VERY disappointed!!",
+            "label": "0"
+          }
+        ],
+        "test": [
+          {
+            "text": "Jawbone Era is awesome too!"
+          },
+          {
+            "text": "My sister has one also and she loves it."
+          },
+          {
+            "text": "Call me a nut, but I think this is one of the best movies ever.  "
+          }
+        ],
+        "features": [
+          "text"
+        ],
+        "target": "label"
+      },
+      "output": {
+        "predictions": [
+          "برچسب یا عدد برای هر سطر test"
+        ]
+      }
+    },
+    "criteria": [
+      "accuracy و macro-F1 حداقل 0.72",
+      "شکل و تعداد و نوع پیش‌بینی‌ها مطابق ورودی",
+      "ارزیابی روی دو تقسیم تصادفی مستقل؛ برچسب test به کد ارسال نمی‌شود."
+    ],
+    "dependencies": [
+      "pandas",
+      "scikit-learn",
+      "numpy"
+    ],
+    "notes": "تقسیم داده را داور هم مستقل انجام می‌دهد؛ موفقیت صرف اجرای برنامه یا metric چاپ‌شده کافی نیست. random_state=42 را برای بازتولیدپذیری تنظیم کن.",
+    "topic": "Applied AI",
+    "level": "کاربردی"
+  },
+  {
+    "key": "pipeline",
+    "title": "ساخت یک خط لوله یادگیری ماشین",
+    "description": "پاک‌سازی، مقیاس‌بندی، آموزش، ارزیابی و ذخیره یک مدل رگرسیون را ترکیب کن.",
+    "goal": "جداسازی آموزش و ارزیابی و سنجش تعمیم مدل",
+    "skills": "Python · Scikit-learn · Evaluation",
+    "minutes": 150,
+    "xp": 350,
+    "datasets": [
+      "housing.csv"
+    ],
+    "input": "train: لیست سطرهای دارای price؛ test: لیست ویژگی‌های بدون هدف؛ features: ['age', 'distance', 'stores', 'latitude', 'longitude']؛ target: price",
+    "output": "result.json شامل predictions با یک مقدار به‌ازای هر سطر test؛ عدد برای رگرسیون و برچسب موجود در train برای دسته‌بندی. model.json با پارامترهای عددی مدل و پیش‌پردازش.",
+    "steps": [
+      "request.json شامل train دارای برچسب و test بدون برچسب است؛ فایل CSV محلی برای مطالعه است و در ارزیابی به محیط ارسال نمی‌شود.",
+      "train را به ویژگی‌ها و target جدا کن؛ داده ارزیابی بیرونی را هرگز برای fit استفاده نکن.",
+      "از SimpleImputer(strategy=\"median\")، StandardScaler و Ridge در Pipeline استفاده کن؛ چند خانه عددی train/test در ارزیابی null هستند.",
+      "برای تمرین، با train_test_split و random_state=42 بخشی از train را نگه دار و مدل را با MAE یا accuracy/F1 بسنج.",
+      "مدل یا Pipeline را فقط روی داده آموزش fit کن؛ سپس برای تمام سطرهای test پیش‌بینی کن.",
+      "predictions را به ترتیب test در result.json ذخیره کن؛ امتیاز نهایی را داور روی برچسب‌های خارج محیط محاسبه می‌کند.",
+      "model.json را شامل median, mean, scale, coef (لیست به ترتیب features) و intercept ذخیره کن؛ فرمول پیش‌بینی ((x−mean)/scale)·coef+intercept است. بردار median برای null به کار می‌رود."
+    ],
+    "example": {
+      "input": {
+        "train": [
+          {
+            "age": 17.1,
+            "distance": 967.4,
+            "stores": 4.0,
+            "latitude": 24.98872,
+            "longitude": 121.53408,
+            "price": 40.0
+          },
+          {
+            "age": 36.6,
+            "distance": 488.8193,
+            "stores": 8.0,
+            "latitude": 24.97015,
+            "longitude": 121.54494,
+            "price": 38.3
+          },
+          {
+            "age": 15.7,
+            "distance": 815.9314,
+            "stores": 4.0,
+            "latitude": 24.97886,
+            "longitude": 121.53464,
+            "price": 38.1
+          },
+          {
+            "age": 22.8,
+            "distance": 707.9067,
+            "stores": 2.0,
+            "latitude": 24.981,
+            "longitude": 121.54713,
+            "price": 36.6
+          },
+          {
+            "age": 15.2,
+            "distance": 461.1016,
+            "stores": 5.0,
+            "latitude": 24.95425,
+            "longitude": 121.5399,
+            "price": 34.6
+          },
+          {
+            "age": 3.1,
+            "distance": 383.8624,
+            "stores": 5.0,
+            "latitude": 24.98085,
+            "longitude": 121.54391,
+            "price": 56.2
+          },
+          {
+            "age": 22.2,
+            "distance": 379.5575,
+            "stores": 10.0,
+            "latitude": 24.98343,
+            "longitude": 121.53762,
+            "price": 44.0
+          },
+          {
+            "age": 16.3,
+            "distance": 4066.587,
+            "stores": 0.0,
+            "latitude": 24.94297,
+            "longitude": 121.50342,
+            "price": 20.5
+          },
+          {
+            "age": 38.0,
+            "distance": 461.7848,
+            "stores": 0.0,
+            "latitude": 24.97229,
+            "longitude": 121.53445,
+            "price": 35.7
+          },
+          {
+            "age": 15.6,
+            "distance": 289.3248,
+            "stores": 5.0,
+            "latitude": 24.98203,
+            "longitude": 121.54348,
+            "price": 46.1
+          },
+          {
+            "age": 21.7,
+            "distance": 463.9623,
+            "stores": 9.0,
+            "latitude": 24.9703,
+            "longitude": 121.54458,
+            "price": 42.0
+          },
+          {
+            "age": 31.5,
+            "distance": 258.186,
+            "stores": 9.0,
+            "latitude": 24.96867,
+            "longitude": 121.54331,
+            "price": 36.3
+          },
+          {
+            "age": 16.2,
+            "distance": 2288.011,
+            "stores": 3.0,
+            "latitude": 24.95885,
+            "longitude": 121.51359,
+            "price": 24.4
+          },
+          {
+            "age": 12.7,
+            "distance": 187.4823,
+            "stores": 1.0,
+            "latitude": 24.97388,
+            "longitude": 121.52981,
+            "price": 28.5
+          },
+          {
+            "age": 27.6,
+            "distance": 515.1122,
+            "stores": 5.0,
+            "latitude": 24.96299,
+            "longitude": 121.5432,
+            "price": 37.4
+          },
+          {
+            "age": 2.7,
+            "distance": 533.4762,
+            "stores": 4.0,
+            "latitude": 24.97445,
+            "longitude": 121.54765,
+            "price": 53.9
+          },
+          {
+            "age": 1.8,
+            "distance": 1455.798,
+            "stores": 1.0,
+            "latitude": 24.9512,
+            "longitude": 121.549,
+            "price": 27.0
+          },
+          {
+            "age": 37.3,
+            "distance": 587.8877,
+            "stores": 8.0,
+            "latitude": 24.97077,
+            "longitude": 121.54634,
+            "price": 37.4
+          },
+          {
+            "age": 0.0,
+            "distance": 185.4296,
+            "stores": 0.0,
+            "latitude": 24.9711,
+            "longitude": 121.5317,
+            "price": 55.3
+          },
+          {
+            "age": 40.1,
+            "distance": 123.7429,
+            "stores": 8.0,
+            "latitude": 24.97635,
+            "longitude": 121.54329,
+            "price": 44.3
+          },
+          {
+            "age": 7.1,
+            "distance": 2175.03,
+            "stores": 3.0,
+            "latitude": 24.96305,
+            "longitude": 121.51254,
+            "price": 32.1
+          },
+          {
+            "age": 25.9,
+            "distance": 4519.69,
+            "stores": 0.0,
+            "latitude": 24.94826,
+            "longitude": 121.49587,
+            "price": 22.1
+          },
+          {
+            "age": 16.9,
+            "distance": 4066.587,
+            "stores": 0.0,
+            "latitude": 24.94297,
+            "longitude": 121.50342,
+            "price": 18.3
+          },
+          {
+            "age": 30.3,
+            "distance": 4510.359,
+            "stores": 1.0,
+            "latitude": 24.94925,
+            "longitude": 121.49542,
+            "price": 22.6
+          },
+          {
+            "age": 15.6,
+            "distance": 1756.411,
+            "stores": 2.0,
+            "latitude": 24.9832,
+            "longitude": 121.51812,
+            "price": 27.3
+          },
+          {
+            "age": 12.2,
+            "distance": 1360.139,
+            "stores": 1.0,
+            "latitude": 24.95204,
+            "longitude": 121.54842,
+            "price": 30.1
+          },
+          {
+            "age": 30.9,
+            "distance": 6396.283,
+            "stores": 1.0,
+            "latitude": 24.94375,
+            "longitude": 121.47883,
+            "price": 12.2
+          },
+          {
+            "age": 3.5,
+            "distance": 757.3377,
+            "stores": 3.0,
+            "latitude": 24.97538,
+            "longitude": 121.54971,
+            "price": 36.7
+          },
+          {
+            "age": 12.2,
+            "distance": 1360.139,
+            "stores": 1.0,
+            "latitude": 24.95204,
+            "longitude": 121.54842,
+            "price": 26.6
+          },
+          {
+            "age": 17.3,
+            "distance": 444.1334,
+            "stores": 1.0,
+            "latitude": 24.97501,
+            "longitude": 121.5273,
+            "price": 43.9
+          },
+          {
+            "age": 9.9,
+            "distance": 279.1726,
+            "stores": 7.0,
+            "latitude": 24.97528,
+            "longitude": 121.54541,
+            "price": 57.4
+          },
+          {
+            "age": 10.3,
+            "distance": 211.4473,
+            "stores": 1.0,
+            "latitude": 24.97417,
+            "longitude": 121.52999,
+            "price": 45.3
+          },
+          {
+            "age": 15.9,
+            "distance": 289.3248,
+            "stores": 5.0,
+            "latitude": 24.98203,
+            "longitude": 121.54348,
+            "price": 42.1
+          },
+          {
+            "age": 26.4,
+            "distance": 335.5273,
+            "stores": 6.0,
+            "latitude": 24.9796,
+            "longitude": 121.5414,
+            "price": 38.1
+          },
+          {
+            "age": 30.7,
+            "distance": 1264.73,
+            "stores": 0.0,
+            "latitude": 24.94883,
+            "longitude": 121.52954,
+            "price": 18.3
+          },
+          {
+            "age": 8.0,
+            "distance": 2216.612,
+            "stores": 4.0,
+            "latitude": 24.96007,
+            "longitude": 121.51361,
+            "price": 23.9
+          },
+          {
+            "age": 12.0,
+            "distance": 1360.139,
+            "stores": 1.0,
+            "latitude": 24.95204,
+            "longitude": 121.54842,
+            "price": 28.9
+          },
+          {
+            "age": 12.8,
+            "distance": 1449.722,
+            "stores": 3.0,
+            "latitude": 24.97289,
+            "longitude": 121.51728,
+            "price": 21.4
+          },
+          {
+            "age": 21.7,
+            "distance": 512.5487,
+            "stores": 4.0,
+            "latitude": 24.974,
+            "longitude": 121.53842,
+            "price": 44.2
+          },
+          {
+            "age": 31.3,
+            "distance": 1758.406,
+            "stores": 1.0,
+            "latitude": 24.95402,
+            "longitude": 121.55282,
+            "price": 20.7
+          }
+        ],
+        "test": [
+          {
+            "age": 25.3,
+            "distance": 2707.392,
+            "stores": 3.0,
+            "latitude": 24.96056,
+            "longitude": 121.50831
+          },
+          {
+            "age": 17.3,
+            "distance": 2261.432,
+            "stores": 4.0,
+            "latitude": 24.96182,
+            "longitude": 121.51222
+          },
+          {
+            "age": 11.9,
+            "distance": 1360.139,
+            "stores": 1.0,
+            "latitude": 24.95204,
+            "longitude": 121.54842
+          }
+        ],
+        "features": [
+          "age",
+          "distance",
+          "stores",
+          "latitude",
+          "longitude"
+        ],
+        "target": "price"
+      },
+      "output": {
+        "predictions": [
+          "برچسب یا عدد برای هر سطر test"
+        ]
+      }
+    },
+    "criteria": [
+      "MAE حداکثر 9.0",
+      "شکل و تعداد و نوع پیش‌بینی‌ها مطابق ورودی",
+      "ارزیابی روی دو تقسیم تصادفی مستقل؛ برچسب test به کد ارسال نمی‌شود.",
+      "بازیابی عددی model.json بدون اجرای pickle؛ پیش‌بینی بازسازی‌شده باید با result.json برابر باشد."
+    ],
+    "dependencies": [
+      "pandas",
+      "scikit-learn",
+      "numpy"
+    ],
+    "notes": "تقسیم داده را داور هم مستقل انجام می‌دهد؛ موفقیت صرف اجرای برنامه یا metric چاپ‌شده کافی نیست. random_state=42 را برای بازتولیدپذیری تنظیم کن.",
+    "topic": "Applied AI",
+    "level": "کاربردی"
+  }
+]

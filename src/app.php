@@ -4,6 +4,8 @@ require_once __DIR__.'/data.php';
 require_once dirname(__DIR__).'/database/connection.php';
 require_once __DIR__.'/auth.php';
 require_once __DIR__.'/workspace.php';
+require_once __DIR__.'/learning_projects.php';
+require_once __DIR__.'/learning_project_views.php';
 require_once __DIR__.'/payments.php';
 require_once __DIR__.'/seo.php';
 require_once __DIR__.'/course_admin.php';
@@ -345,10 +347,9 @@ function handle_post(string $path): void {
     if ($path==='projects/start') {
         $index=filter_var($_POST['index'] ?? '',FILTER_VALIDATE_INT);
         if ($index===false || $index<0 || !isset(PROJECTS[$index])) { http_response_code(404); exit; }
-        $template=q("SELECT id FROM workspace_templates WHERE catalog_index=? AND status='published'",[$index])->fetchColumn();
-        try { $projectId=ws_create((int)$u['id'],(int)($template ?: 0),PROJECTS[$index]['title'],$index); }
+        try { ws_create((int)$u['id'],0,PROJECTS[$index]['title'],100+$index,lp_starter(PROJECTS[$index])); }
         catch (InvalidArgumentException $e) { flash($e->getMessage(),'error'); redirect('project/'.$index); }
-        redirect('dashboard/workspace/'.$projectId);
+        redirect('project/'.$index);
     }
     if ($path==='community/create' || $path==='community/reply') {
         $body=trim((string)($_POST['body'] ?? ''));
