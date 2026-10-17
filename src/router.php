@@ -31,6 +31,22 @@ function route(): void {
     if ($path==='community') { page_community(); return; }
     if ($path==='terms') { head_page('قوانین و مقررات','شرایط استفاده از سایت، پنل، میزکار کد و انجمن Noventix به زبان ساده.'); notice(); page_terms(); foot_page(); return; }
     if ($path==='privacy') { head_page('حریم خصوصی','نحوه نگهداری و استفاده از اطلاعات شما در Noventix.'); notice(); page_privacy(); foot_page(); return; }
+    if ($path==='learners') {
+        $query=trim((string)($_GET['q'] ?? ''));
+        if (mb_strlen($query)>60) $query=mb_substr($query,0,60);
+        $page=filter_var($_GET['page'] ?? 1,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]) ?: 1;
+        $directory=learner_directory($query,(int)$page);
+        $viewer=user();
+        $indexable=$query==='' && (int)$page===1 && $viewer===null;
+        head_page('جامعه یادگیرندگان',$query!=='' ? 'اعضای جامعه Noventix با نام '.$query.' و پیشرفت مهارتی ثبت‌شدهٔ آن‌ها.' : 'پروفایل مهارتی اعضای انجمن Noventix؛ پیشرفت واقعی هر یادگیرنده بر اساس پروژه‌های تأییدشده.',false,$indexable);
+        notice(); page_learners($directory,$query,(bool)user()); foot_page(); return;
+    }
+    if ($path==='messages') { $u=require_user(); head_page('پیام‌های من','گفت‌وگوهای مستقیم میان اعضای جامعه Noventix.',true); notice(); page_messages((int)$u['id']); foot_page(); return; }
+    if (preg_match('~^messages/([1-9][0-9]*)$~D',$path,$match)) {
+        $u=require_user(); head_page('گفت‌وگو','گفت‌وگوی مستقیم با یک عضو جامعه Noventix.',true); notice();
+        if (!page_message_thread((int)$u['id'],(int)$match[1])) { page_not_found(); return; }
+        foot_page(); return;
+    }
     if (preg_match('~^member/([1-9][0-9]*)$~D',$path,$match)) { page_member((int)$match[1]); return; }
     if ($path==='login') { page_login(); return; }
     if ($path==='verify') { page_verify(); return; }
@@ -172,19 +188,13 @@ function page_privacy(): void {
     echo '<div class="terms-contact"><div><h2>پرسشی درباره اطلاعات خود دارید؟</h2><p>برای توضیح درباره داده‌های حساب یا درخواست اصلاح آن با پشتیبانی تماس بگیرید.</p></div>'; linkto('contact','تماس با ما ←','btn btn-primary'); echo '</div></div></div></main>';
 }
 function page_member(int $id): void {
-    $member=q('SELECT id,name,created_at FROM users WHERE id=?',[$id])->fetch();
-    if (!$member) { page_not_found(); return; }
-    $posts=(int)q('SELECT COUNT(*) FROM community_posts WHERE user_id=?',[$id])->fetchColumn();
-    $followers=(int)q('SELECT COUNT(*) FROM user_follows WHERE followed_id=?',[$id])->fetchColumn();
-    head_page('پروفایل '.($member['name'] ?: 'عضو انجمن'),'عضو انجمن Noventix'); notice();
-    echo '<main class="container section"><section class="panel-card member-profile"><span class="profile-avatar">'.h(mb_substr($member['name'] ?: 'ن',0,1)).'</span><div><span class="eyebrow">عضو انجمن</span><h1>'.h($member['name'] ?: 'عضو انجمن').'</h1><p class="muted">'.fa($posts).' پست · '.fa($followers).' دنبال‌کننده</p></div>';
+    $profile=skill_profile_for($id);
+    if (!$profile) { page_not_found(); return; }
     $viewer=user();
-    if ($viewer && (int)$viewer['id']!==$id) {
-        $following=q('SELECT 1 FROM user_follows WHERE follower_id=? AND followed_id=?',[$viewer['id'],$id])->fetchColumn();
-        if ($following) echo '<span class="pill">دنبال می‌کنید</span>';
-        else { form_start('community/follow'); echo '<input type="hidden" name="user_id" value="'.$id.'"><button class="btn btn-primary">دنبال کردن</button></form>'; }
-    }
-    echo '</section><div class="panel-list">'; foreach (q('SELECT title,body,created_at FROM community_posts WHERE user_id=? ORDER BY id DESC LIMIT 20',[$id])->fetchAll() as $post) echo '<article class="post-card"><small>'.h(jdate($post['created_at'])).'</small><h2>'.h($post['title']).'</h2><p>'.nl2br(h($post['body'])).'</p></article>'; echo '</div></main>'; foot_page();
+    $own=$viewer && (int)$viewer['id']===$id;
+    $description='پروفایل مهارتی '.$profile['name'].' در Noventix؛ '.fa($profile['level']['xp']).' XP و '.fa(count($profile['completions'])).' پروژه تکمیل‌شده.';
+    head_page('پروفایل مهارتی '.$profile['name'],$description,false,!$own); notice();
+    page_skill_profile($profile,$own,(bool)$viewer); foot_page(!$own);
 }
 function page_community(): void {
     global $me;
@@ -192,7 +202,7 @@ function page_community(): void {
     head_page('انجمن','پرسش، تجربه و گفت‌وگو میان یادگیرندگان و متخصصان Noventix.'); notice(); echo '<main><section class="page-hero container"><span class="eyebrow">انجمن</span><h1>کنار هم یاد می‌گیریم</h1><p>سؤال‌هایت را بپرس، تجربه‌ات را به اشتراک بگذار و مسیر یادگیری دیگران را بهتر کن.</p></section><section class="section container">';
     if ($me) { echo '<div class="panel-card narrow-left">'; form_start('community/create','stack-form'); echo '<label>عنوان<input name="title" required minlength="5" maxlength="180"></label><label>متن<textarea name="body" required minlength="10" maxlength="5000" rows="5"></textarea></label><button class="btn btn-primary">ثبت در انجمن</button></form></div>'; } else { echo '<div class="panel-card">'; linkto('login','برای مشارکت در انجمن وارد شوید ←','btn btn-primary'); echo '</div>'; }
     echo '<div class="community-list">'; if (!$posts) echo '<div class="empty-state">هنوز گفت‌وگویی ثبت نشده است. اولین نفر باشید.</div>';
-    foreach ($posts as $p) { echo '<article class="post-card"><div class="meta-row"><span class="pill">'.h($p['created_at']).'</span><a class="profile-link" href="'.h(url('member/'.$p['user_id'])).'">'.h($p['name'] ?: mb_substr($p['phone'],0,4).'****').'</a></div><h2>'.h($p['title']).'</h2><p>'.nl2br(h($p['body'])).'</p>'; $replies=q('SELECT r.body,r.created_at,u.name,u.phone FROM community_replies r JOIN users u ON u.id=r.user_id WHERE r.post_id=? ORDER BY r.id',[$p['id']])->fetchAll(); if ($replies) { echo '<div class="replies">'; foreach ($replies as $r) echo '<div class="reply"><strong>'.h($r['name'] ?: mb_substr($r['phone'],0,4).'****').'</strong><p>'.nl2br(h($r['body'])).'</p></div>'; echo '</div>'; } if ($me) { form_start('community/reply','reply-form'); echo '<input type="hidden" name="post_id" value="'.(int)$p['id'].'"><textarea name="body" required minlength="10" maxlength="5000" rows="3" placeholder="پاسخ شما"></textarea><button class="btn btn-outline">ارسال پاسخ</button></form>'; } echo '</article>'; } echo '</div></section></main>'; foot_page();
+    foreach ($posts as $p) { echo '<article class="post-card"><div class="meta-row"><span class="pill">'.h($p['created_at']).'</span><a class="profile-link" href="'.h(url('member/'.$p['user_id'])).'">'.h($p['name'] ?: mb_substr($p['phone'],0,4).'****').'</a>'.($me && (int)$p['user_id']!==(int)$me['id'] ? '<a class="text-button" href="'.h(url('member/'.$p['user_id'])).'">پروفایل مهارتی</a>' : '').'</div><h2>'.h($p['title']).'</h2><p>'.nl2br(h($p['body'])).'</p>'; $replies=q('SELECT r.body,r.created_at,u.name,u.phone FROM community_replies r JOIN users u ON u.id=r.user_id WHERE r.post_id=? ORDER BY r.id',[$p['id']])->fetchAll(); if ($replies) { echo '<div class="replies">'; foreach ($replies as $r) echo '<div class="reply"><strong>'.h($r['name'] ?: mb_substr($r['phone'],0,4).'****').'</strong><p>'.nl2br(h($r['body'])).'</p></div>'; echo '</div>'; } if ($me) { form_start('community/reply','reply-form'); echo '<input type="hidden" name="post_id" value="'.(int)$p['id'].'"><textarea name="body" required minlength="10" maxlength="5000" rows="3" placeholder="پاسخ شما"></textarea><button class="btn btn-outline">ارسال پاسخ</button></form>'; } echo '</article>'; } echo '</div></section></main>'; foot_page();
 }
 function page_login(): void {
     if (user() && trim((string)user()['name'])!=='') redirect('dashboard');

@@ -289,7 +289,7 @@ class PublicCoursesTest(unittest.TestCase):
         self.assertIn('data-safe-back hidden', missing)
         self.assertIn("page_not_found();", route)
         self.assertIn("require_admin();", route)
-        self.assertIn("if (!$member) { page_not_found(); return; }", body(ROUTER, "page_member"))
+        self.assertIn("if (!$profile) { page_not_found(); return; }", body(ROUTER, "page_member"))
         self.assertIn("page_not_found(); return;", body(ROUTER, "page_project"))
         self.assertIn('id="noventix-loading"', body(VIEWS, "head_page"))
         js = (ROOT / "public/assets/app.js").read_text(encoding="utf-8")

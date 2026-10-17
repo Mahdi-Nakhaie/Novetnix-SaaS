@@ -170,7 +170,7 @@ def course_cards():
 
 
 NAV_ITEMS = [("", "خانه"), ("courses", "مسیر یادگیری"), ("projects", "پروژه‌ها"),
-             ("community", "انجمن"), ("about", "درباره ما"),
+             ("learners", "جامعه"), ("community", "انجمن"), ("about", "درباره ما"),
              ("contact", "تماس با ما")]
 
 
@@ -209,7 +209,8 @@ def footer_html():
         f'<div><a href="{h(href(""))}" class="footer-brand">Noventix <span>N</span></a>'
         '<p>از یاد گرفتن تا توانایی ساختن؛ یک قدم واقعی در هر پروژه.</p></div>'
         "<div><h3>یادگیری</h3>"
-        + linkto("courses", "مقاله‌ها") + linkto("projects", "پروژه‌ها") + linkto("community", "انجمن")
+        + linkto("courses", "مقاله‌ها") + linkto("projects", "پروژه‌ها")
+        + linkto("learners", "جامعه یادگیرندگان") + linkto("community", "انجمن")
         + "</div><div><h3>Noventix</h3>"
         + linkto("about", "درباره ما") + linkto("contact", "تماس با ما")
         + linkto("help", "مرکز راهنما") + linkto("support", "پشتیبانی") + linkto("terms", "قوانین و مقررات")
@@ -682,6 +683,21 @@ def view_community():
               '<p class="form-note" hidden></p></div>'
               '<div class="community-list" data-community-list></div></section>'
             + '<section class="section container">' + live_chat() + "</section></main>")
+
+
+def view_learners():
+    card = ('<li class="learner-card"><span class="profile-avatar">ن</span><strong>نمونه یادگیرنده</strong>'
+            '<span class="muted">سطح ۲ · ۷۸۰ XP</span><span class="muted">۲ پروژه تکمیل‌شده</span></li>')
+    return ('<main class="profile-page"><div class="container"><section class="profile-hero"><div>'
+            '<span class="eyebrow">جامعه یادگیرندگان</span><h1>یک پروفایل برای هر یادگیرنده</h1>'
+            '<p class="lead">پیشرفت واقعی اعضای انجمن را ببین؛ از هر پروفایل می‌توانی گفت‌وگو را شروع کنی.</p>'
+            '</div></section>'
+            '<div class="panel-card"><span class="eyebrow">نسخه نمایشی</span>'
+            '<h2>پروفایل مهارتی به حساب متصل است</h2>'
+            '<p class="muted">در نسخهٔ سروری، این فهرست از اعضای تأییدشدهٔ جامعه ساخته می‌شود؛ سطح و XP هر عضو فقط از '
+            'پروژه‌های ارزیابی‌شده و درس‌های تکمیل‌شده محاسبه می‌شود و شماره تماس هرگز نمایش داده نمی‌شود. '
+            'پیام مستقیم هم پس از ثبت‌نام و با پذیرش درخواست گیرنده فعال می‌شود.</p>'
+            '<ul class="learner-grid">' + card + '</ul></div></div></main>')
 
 
 def live_chat():
@@ -1343,6 +1359,8 @@ def view_body(route):
         return view_contact()
     if view == "community":
         return view_community()
+    if view == "learners":
+        return view_learners()
     if view == "help":
         return view_help()
     if view == "support":
@@ -1417,6 +1435,8 @@ def build_routes():
          "description": "راه‌های ارتباط با تیم Noventix و شبکه‌های اجتماعی."},
         {"path": "community", "title": "انجمن", "view": "community", "nav": "community",
          "description": "پرسش، تجربه و گفت‌وگو میان یادگیرندگان و متخصصان Noventix."},
+        {"path": "learners", "title": "جامعه یادگیرندگان", "view": "learners", "nav": "learners",
+         "description": "پروفایل مهارتی اعضای انجمن Noventix؛ پیشرفت واقعی هر یادگیرنده بر اساس پروژه‌های تأییدشده."},
         {"path": "help", "title": "مرکز راهنما", "view": "help", "nav": "",
          "description": "راهنمای استفاده از Noventix."},
         {"path": "support", "title": "پشتیبانی", "view": "support", "nav": "",

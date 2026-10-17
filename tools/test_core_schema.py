@@ -25,7 +25,8 @@ class CoreSchemaTest(unittest.TestCase):
         self.assertTrue({"users", "courses", "lessons", "lesson_quizzes"} <= tables(SQLITE_SCHEMA))
         self.assertTrue({'workspace_templates', 'project_workspaces', 'workspace_runs', 'workspace_dataset_imports', 'workspace_hub_rates'} <= tables(SQLITE_SCHEMA))
         self.assertIn('project_completions', tables(SQLITE_SCHEMA))
-        self.assertEqual(len(tables(SQLITE_SCHEMA)), 32)
+        self.assertTrue({'direct_messages', 'message_requests'} <= tables(SQLITE_SCHEMA))
+        self.assertEqual(len(tables(SQLITE_SCHEMA)), 34)
 
     def test_quiz_schema_links_each_lesson_to_one_valid_threshold(self):
         self.db.execute("INSERT INTO courses(slug,title,description) VALUES ('main','Main','')")

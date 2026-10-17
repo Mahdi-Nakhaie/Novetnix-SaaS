@@ -9,6 +9,10 @@ require_once __DIR__.'/learning_project_views.php';
 require_once __DIR__.'/payments.php';
 require_once __DIR__.'/seo.php';
 require_once __DIR__.'/course_admin.php';
+require_once __DIR__.'/skill_profile.php';
+require_once __DIR__.'/messaging.php';
+require_once __DIR__.'/profile_views.php';
+require_once __DIR__.'/message_views.php';
 function h(mixed $value): string { return htmlspecialchars((string)$value, ENT_QUOTES|ENT_SUBSTITUTE, 'UTF-8'); }
 // Array form is required: three-argument strtr() maps bytes, which corrupts multibyte Persian digits.
 function fa(int|string $v): string { return strtr((string)$v,['0'=>'۰','1'=>'۱','2'=>'۲','3'=>'۳','4'=>'۴','5'=>'۵','6'=>'۶','7'=>'۷','8'=>'۸','9'=>'۹']); }
@@ -394,6 +398,22 @@ function handle_post(string $path): void {
         if (db()->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql') q('INSERT IGNORE INTO user_follows(follower_id,followed_id) VALUES (?,?)',[$u['id'],$target]);
         else q('INSERT OR IGNORE INTO user_follows(follower_id,followed_id) VALUES (?,?)',[$u['id'],$target]);
         flash('این کاربر به فهرست دنبال‌شده‌ها اضافه شد.'); redirect('dashboard/community');
+    }
+    if ($path==='messages/send') {
+        $recipient=filter_var($_POST['recipient'] ?? '',FILTER_VALIDATE_INT);
+        $recipient=$recipient ? (int)$recipient : 0;
+        $returnTo=(string)($_POST['return_to'] ?? '');
+        $returnTo=preg_match('~^(member|messages)/[1-9][0-9]*$~D',$returnTo) && (int)substr($returnTo,strpos($returnTo,'/')+1)===$recipient ? $returnTo : ($recipient ? 'member/'.$recipient : 'messages');
+        $result=message_send((int)$u['id'],$recipient,(string)($_POST['body'] ?? ''),(string)($_POST['form_token'] ?? ''));
+        $_SESSION['message_notice']=$result ?? (message_peer_state((int)$u['id'],$recipient)==='request' ? 'request' : 'sent');
+        redirect($returnTo);
+    }
+    if ($path==='messages/accept' || $path==='messages/decline') {
+        $requester=filter_var($_POST['requester'] ?? '',FILTER_VALIDATE_INT);
+        if (!$requester) { http_response_code(404); exit; }
+        if ($path==='messages/accept') { message_accept((int)$requester,(int)$u['id']); $_SESSION['message_notice']='accepted'; }
+        else q('DELETE FROM message_requests WHERE sender_id=? AND recipient_id=?',[$requester,$u['id']]);
+        redirect('messages');
     }
     if ($path==='tickets/reply') {
         $ticket=filter_var($_POST['ticket_id'] ?? '',FILTER_VALIDATE_INT); $body=trim((string)($_POST['body'] ?? ''));
