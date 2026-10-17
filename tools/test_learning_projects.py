@@ -28,6 +28,14 @@ def reference_executor(job, image, cancelled):
 
 
 class ReferenceTests(unittest.TestCase):
+    def test_student_image_excludes_hidden_grader(self):
+        dockerfile = (ROOT / 'services/python-runner/Dockerfile').read_text()
+        for line in dockerfile.splitlines():
+            if line.startswith(('COPY ', 'ADD ')):
+                self.assertNotIn('curriculum', line)
+                self.assertNotIn('grading', line)
+                self.assertNotIn('solutions', line)
+
     def test_all_references(self):
         for definition in grading.definitions():
             with self.subTest(project=definition['key']):
