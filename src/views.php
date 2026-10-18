@@ -41,7 +41,7 @@ function panel_nav(): void {
     global $me,$path;
     $role=$me['role'];
     $items=$role==='admin'
-        ? ['dashboard'=>'Overview','dashboard/users'=>'کاربران','dashboard/users-new'=>'کاربران جدید','dashboard/courses'=>'Courses & Lessons','dashboard/catalog'=>'پروژه‌ها','dashboard/challenges'=>'چالش‌ها','dashboard/subscriptions'=>'اشتراک‌ها','dashboard/payments'=>'پرداخت‌ها','dashboard/community'=>'Community','dashboard/support'=>'پشتیبانی','dashboard/announcements'=>'اعلان‌ها','dashboard/gamification'=>'Gamification','dashboard/analytics'=>'Analytics','dashboard/content'=>'Content','dashboard/profile'=>'پروفایل','dashboard/settings'=>'System Settings']
+        ? ['dashboard'=>'Overview','dashboard/users'=>'کاربران','dashboard/users-new'=>'کاربران جدید','dashboard/courses'=>'Courses & Lessons','dashboard/catalog'=>'پروژه‌ها','dashboard/challenges'=>'چالش‌ها','dashboard/subscriptions'=>'اشتراک‌ها','dashboard/payments'=>'پرداخت‌ها','dashboard/community'=>'Community','dashboard/support'=>'پشتیبانی','dashboard/announcements'=>'اعلان‌ها','dashboard/gamification'=>'Gamification','dashboard/analytics'=>'Analytics','dashboard/content'=>'Content','dashboard/glossary'=>'واژه‌نامه','dashboard/profile'=>'پروفایل','dashboard/settings'=>'System Settings']
         : ['dashboard'=>'نمای کلی','dashboard/learning'=>'مسیر یادگیری','dashboard/projects'=>'پروژه‌ها','dashboard/challenges'=>'چالش‌ها','dashboard/community'=>'Community','messages'=>'پیام‌ها','dashboard/nova'=>'Nova AI','dashboard/subscription'=>'اشتراک','dashboard/support'=>'پشتیبانی','dashboard/gamification'=>'Gamification','dashboard/activity'=>'فعالیت و Streak','dashboard/profile'=>'پروفایل','dashboard/settings'=>'تنظیمات'];
     $items['dashboard/workspace']='میزکار پایتون';
     if ($role!=='admin') $items['member/'.$me['id']]='پروفایل مهارتی';
@@ -501,6 +501,8 @@ function admin_panel(string $sub): void {
         if (!$rows) $rows=array_map(fn($c)=>['id'=>null,'title'=>$c['title'],'kind'=>$c['kind'],'status'=>$c['status']],CONTENT_ITEMS);
         foreach ($rows as $c) { echo '<div class="content-row"><div><h3>'.h($c['title']).'</h3><span class="muted">'.h($c['kind']).' · '.h($c['status']).'</span></div><div class="content-actions">'; if ($c['id'] && $c['status']!=='منتشرشده') { form_start('content/publish'); echo '<input type="hidden" name="id" value="'.(int)$c['id'].'"><button class="btn btn-small btn-outline">انتشار</button></form>'; } echo '<span class="icon-btn" aria-hidden="true">✎</span></div></div>'; }
         echo '</div></div>';
+    } elseif ($sub==='glossary' || str_starts_with($sub,'glossary/')) {
+        admin_glossary_panel($sub);
     } elseif ($sub==='settings') {
         panel_head('System Settings','مدیریت تنظیمات مرتبط با هر بخش.');
         echo '<div class="settings-grid">'; foreach (SETTINGS_GROUPS as $g) { $cur=(string)q('SELECT svalue FROM settings WHERE skey=?',[$g['key']])->fetchColumn(); echo '<article class="setting-card"><div><h3>'.h($g['title']).'</h3><span class="muted">'.h($g['hint']).'</span></div>'; form_start('settings/save','setting-form'); echo '<input type="hidden" name="key" value="'.h($g['key']).'"><input name="value" value="'.h($cur).'" placeholder="مقدار تنظیم"><button class="btn btn-small btn-outline">ذخیره</button></form></article>'; }

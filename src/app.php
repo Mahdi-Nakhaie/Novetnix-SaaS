@@ -14,6 +14,7 @@ require_once __DIR__.'/messaging.php';
 require_once __DIR__.'/profile_views.php';
 require_once __DIR__.'/message_views.php';
 require_once __DIR__.'/glossary.php';
+require_once __DIR__.'/glossary_admin.php';
 function h(mixed $value): string { return htmlspecialchars((string)$value, ENT_QUOTES|ENT_SUBSTITUTE, 'UTF-8'); }
 // Array form is required: three-argument strtr() maps bytes, which corrupts multibyte Persian digits.
 function fa(int|string $v): string { return strtr((string)$v,['0'=>'۰','1'=>'۱','2'=>'۲','3'=>'۳','4'=>'۴','5'=>'۵','6'=>'۶','7'=>'۷','8'=>'۸','9'=>'۹']); }
@@ -321,7 +322,8 @@ function handle_post(string $path): void {
         q('INSERT INTO contact_messages(name,email,message) VALUES (?,?,?)',[$name,$email,$message]); flash('پیام شما ثبت شد.'); redirect('contact');
     }
     $u=require_user(); $plan=plan_for($u);
-    if (in_array($path,['admin/course-save','admin/lesson-save','admin/quiz-save'],true)) course_admin_save($path);
+    if (glossary_admin_post($path)) return;
+    if ($path==='admin/course-save' || $path==='admin/lesson-save' || $path==='admin/quiz-save') course_admin_save($path);
     if ($path==='progress/save') { save_lesson_progress($u); }
     if ($path==='payment/start') payment_start($u);
     if ($path==='payment/retry') {

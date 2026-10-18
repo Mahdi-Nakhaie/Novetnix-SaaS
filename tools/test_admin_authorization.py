@@ -30,7 +30,7 @@ class AdminAuthorizationTest(unittest.TestCase):
         self.assertIn("$u['role']==='admin'", body(AUTH, "user"))
 
     def test_admin_dashboard_routes_are_server_side_protected(self):
-        guard = "preg_match('~^dashboard/(users|users-new|courses|catalog|subscriptions|messages|analytics|payments|announcements|content|settings)$~D',$path)"
+        guard = "preg_match('~^dashboard/(users|users-new|courses|catalog|subscriptions|messages|analytics|payments|announcements|content|settings|glossary|glossary/new|glossary/edit)$~D',$path)"
         self.assertIn(guard, ROUTER)
         self.assertIn("require_admin();", ROUTER)
         self.assertIn("if (str_starts_with($path,'dashboard/')", ROUTER)

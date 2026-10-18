@@ -97,11 +97,11 @@ function route(): void {
         if (!$u || trim($u['name'])==='') progress_response(401,['error'=>'برای مشاهده پیشرفت وارد شوید.']);
         lesson_progress_for_user($u,$match[1]);
     }
-    if (preg_match('~^dashboard/(users|users-new|courses|catalog|subscriptions|messages|analytics|payments|announcements|content|settings)$~D',$path)) require_admin();
+    if (preg_match('~^dashboard/(users|users-new|courses|catalog|subscriptions|messages|analytics|payments|announcements|content|settings|glossary|glossary/new|glossary/edit)$~D',$path)) require_admin();
     if ($path==='dashboard' || str_starts_with($path,'dashboard/')) {
         $u=require_user();
         if ($u['phone']===(config_value('ADMIN_PHONE') ?: '') && $u['role']!=='admin') redirect('admin-login');
-        $allowed=['profile','learning','projects','community','nova','subscription','users','users-new','courses','catalog','subscriptions','messages','analytics','challenges','payments','support','announcements','gamification','activity','content','settings'];
+        $allowed=['profile','learning','projects','community','nova','subscription','users','users-new','courses','catalog','subscriptions','messages','analytics','challenges','payments','support','announcements','gamification','activity','content','settings','glossary','glossary/new','glossary/edit'];
         if (str_starts_with($path,'dashboard/') && !in_array(substr($path,10),$allowed,true)) { page_not_found(); return; }
         if (!COMMERCE_ENABLED && in_array($path,['dashboard/subscription','dashboard/subscriptions','dashboard/payments'],true)) {
             head_page('یادگیری رایگان','',true); notice(); commerce_paused(); foot_page(true); return;
