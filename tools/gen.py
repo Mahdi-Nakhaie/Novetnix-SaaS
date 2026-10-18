@@ -1539,7 +1539,7 @@ def build_routes():
 
 def main():
     preserved_fonts = {p.name: p.read_bytes() for p in OUT.glob("Estedad-*.ttf")} if OUT.exists() else {}
-    static_assets = {name: (OUT / 'assets' / name).read_bytes() for name in ('app.js', 'style.css', 'playback-events.js', 'python-runner.js', 'python-worker.js') if (OUT / 'assets' / name).is_file()}
+    static_assets = {name: (OUT / 'assets' / name).read_bytes() for name in ('playback-events.js',) if (OUT / 'assets' / name).is_file()}
     if OUT.exists():
         shutil.rmtree(OUT)
     OUT.mkdir(parents=True)
