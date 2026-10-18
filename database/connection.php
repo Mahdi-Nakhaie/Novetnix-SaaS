@@ -16,7 +16,7 @@ function glossary_backfill_legacy(PDO $db): void {
     $db->beginTransaction();
     try {
         $taxonomy=[
-            'ai-fundamentals'=>'مبانی هوش مصنوعی','python'=>'Python','math-statistics'=>'ریاضیات و آمار','machine-learning'=>'یادگیری ماشین','deep-learning'=>'یادگیری عمیق','neural-networks'=>'شبکه‌های عصبی','nlp'=>'پردازش زبان طبیعی','llm'=>'مدل‌های زبانی بزرگ','generative-ai'=>'هوش مصنوعی مولد','prompt-engineering'=>'مهندسی پرامپت','ai-agents'=>'عامل‌های هوش مصنوعی','rag'=>'RAG','embedding'=>'Embedding','vector-database'=>'Vector Database','computer-vision'=>'بینایی ماشین','audio-processing'=>'پردازش صوت','data-science'=>'علم داده','fine-tuning-peft'=>'Fine-tuning و PEFT','model-evaluation'=>'ارزیابی مدل‌ها','quantization'=>'Quantization','deployment'=>'استقرار مدل‌ها','mlops-llmops'=>'MLOps و LLMOps','ai-safety'=>'امنیت و ایمنی هوش مصنوعی','ai-infrastructure'=>'زیرساخت هوش مصنوعی'
+            'ai-fundamentals'=>'مبانی هوش مصنوعی','python'=>'Python','math-statistics'=>'ریاضیات و آمار','machine-learning'=>'یادگیری ماشین','deep-learning'=>'یادگیری عمیق','neural-networks'=>'شبکه‌های عصبی','transformers'=>'ترنسفورمرها','nlp'=>'پردازش زبان طبیعی','llm'=>'مدل‌های زبانی بزرگ','generative-ai'=>'هوش مصنوعی مولد','prompt-engineering'=>'مهندسی پرامپت','ai-agents'=>'عامل‌های هوش مصنوعی','rag'=>'RAG','embedding'=>'Embedding','vector-database'=>'Vector Database','computer-vision'=>'بینایی ماشین','audio-processing'=>'پردازش صوت','data-science'=>'علم داده','fine-tuning-peft'=>'Fine-tuning و PEFT','model-evaluation'=>'ارزیابی مدل‌ها','quantization'=>'Quantization','deployment'=>'استقرار مدل‌ها','mlops-llmops'=>'MLOps و LLMOps','ai-safety'=>'امنیت و ایمنی هوش مصنوعی','ai-infrastructure'=>'زیرساخت هوش مصنوعی'
         ];
         $legacyMap=['fundamentals'=>'ai-fundamentals','ml'=>'machine-learning','dl'=>'deep-learning','generative'=>'generative-ai','llm'=>'llm','prompt'=>'prompt-engineering','agents'=>'ai-agents','rag'=>'rag','training'=>'fine-tuning-peft','evaluation'=>'model-evaluation','ethics'=>'ai-safety','security'=>'ai-safety','application'=>'data-science','software'=>'mlops-llmops','hardware'=>'ai-infrastructure','math'=>'math-statistics','reinforcement'=>'machine-learning','deployment'=>'deployment','alignment'=>'ai-safety'];
         $categoryInsert=$db->prepare('INSERT INTO glossary_categories(slug,name) VALUES (?,?)');
@@ -55,6 +55,47 @@ function glossary_backfill_legacy(PDO $db): void {
     }
 }
 
+function glossary_seed_initial_drafts(PDO $db): void {
+    $source=dirname(__DIR__).'/curriculum/glossary_initial_drafts.json';
+    if (!is_file($source)) return;
+    $data=json_decode((string)file_get_contents($source),true,512,JSON_THROW_ON_ERROR);
+    if (($data['status'] ?? '')!=='draft' || !is_array($data['entries'] ?? null)) return;
+    $db->beginTransaction();
+    try {
+        $categoryIds=[];
+        foreach ($db->query('SELECT id,slug FROM glossary_categories')->fetchAll() as $category) $categoryIds[$category['slug']]=(int)$category['id'];
+        $termExists=$db->prepare('SELECT id FROM glossary_terms WHERE slug=? OR canonical_key=?');
+        $termInsert=$db->prepare('INSERT INTO glossary_terms(slug,term_en,term_fa,letter,alternative_translations,abbreviation,short_definition,full_definition,beginner_explanation,technical_explanation,advanced_explanation,how_it_works,practical_example,code_example,use_cases,advantages,limitations,search_text,difficulty_level,canonical_key,publication_status,reviewed_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NULL)');
+        $categoryInsert=$db->prepare('INSERT INTO glossary_term_categories(term_id,category_id) VALUES (?,?)');
+        $sourceLookup=$db->prepare('SELECT id FROM glossary_sources WHERE identifier=?');
+        $sourceInsert=$db->prepare('INSERT INTO glossary_sources(title,publisher,source_type,url,identifier) VALUES (?,?,?,?,?)');
+        $termSourceInsert=$db->prepare('INSERT INTO glossary_term_sources(term_id,source_id,citation_order) VALUES (?,?,0)');
+        $revisionInsert=$db->prepare('INSERT INTO glossary_revisions(term_id,editor_id,snapshot_json) VALUES (?,NULL,?)');
+        foreach ($data['entries'] as $entry) {
+            $key=(string)$entry['key'];
+            $termExists->execute([$key,$key]);
+            if ($termExists->fetchColumn()) continue;
+            $search=db_glossary_normalize(implode(' ',[(string)$entry['term'],(string)$entry['title'],(string)$entry['short_definition'],implode(' ',(array)$entry['alternative_translations'])]));
+            $termInsert->execute([$key,(string)$entry['term'],(string)$entry['title'],strtoupper(substr((string)$entry['term'],0,1)),json_encode($entry['alternative_translations'],JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE),(string)$entry['abbreviation'],(string)$entry['short_definition'],(string)$entry['full_definition'],(string)$entry['beginner_explanation'],(string)$entry['technical_explanation'],(string)$entry['advanced_explanation'],(string)$entry['how_it_works'],(string)$entry['practical_example'],(string)$entry['code_example'],json_encode($entry['use_cases'],JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE),json_encode($entry['advantages'],JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE),json_encode($entry['limitations'],JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE),$search,(string)$entry['difficulty_level'],$key,'draft']);
+            $termId=(int)$db->lastInsertId();
+            if (isset($categoryIds[$entry['category']])) $categoryInsert->execute([$termId,$categoryIds[$entry['category']]]);
+            $sourceData=$entry['source'];
+            $sourceLookup->execute([(string)$sourceData['url']]);
+            $sourceId=(int)$sourceLookup->fetchColumn();
+            if (!$sourceId) {
+                $sourceInsert->execute([(string)$sourceData['title'],(string)$sourceData['publisher'],str_contains((string)$sourceData['url'],'arxiv.org')?'paper':'documentation',(string)$sourceData['url'],(string)$sourceData['url']]);
+                $sourceId=(int)$db->lastInsertId();
+            }
+            $termSourceInsert->execute([$termId,$sourceId]);
+            $revisionInsert->execute([$termId,json_encode($entry,JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE)]);
+        }
+        $db->commit();
+    } catch (Throwable $e) {
+        if ($db->inTransaction()) $db->rollBack();
+        throw $e;
+    }
+}
+
 function db(): PDO {
     static $db;
     if ($db instanceof PDO) return $db;
@@ -74,6 +115,7 @@ function db(): PDO {
         $migration=$driver==='mysql' ? '/database/migrations/001_glossary.mysql.sql' : '/database/migrations/001_glossary.sqlite.sql';
         $db->exec(file_get_contents(dirname(__DIR__).$migration));
         glossary_backfill_legacy($db);
+        glossary_seed_initial_drafts($db);
         $columns=$db->query('SELECT * FROM otp_codes LIMIT 0');
         $names=[];
         for ($i=0; $i<$columns->columnCount(); $i++) $names[]=$columns->getColumnMeta($i)['name'];
