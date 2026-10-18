@@ -115,6 +115,18 @@ function send_verification_code(string $phone, string $code): bool {
     error_log('SMS.ir verify send failed: HTTP '.$status.', status '.(is_array($body) ? (string)($body['status'] ?? 'unknown') : 'invalid-response'));
     return false;
 }
+function logout_user(): void {
+    $_SESSION=[];
+    if (ini_get('session.use_cookies')) {
+        $params=session_get_cookie_params();
+        setcookie(session_name(),'',['expires'=>time()-42000,'path'=>$params['path'],'domain'=>$params['domain'],'secure'=>$params['secure'],'httponly'=>$params['httponly'],'samesite'=>$params['samesite'] ?? 'Lax']);
+    }
+    session_destroy();
+    session_start();
+    session_regenerate_id(true);
+    $_SESSION['authenticated_at']=time();
+    $_SESSION['last_seen']=time();
+}
 function handle_auth_post(string $path): bool {
     if (!in_array($path,['auth/request','auth/resend','auth/login','auth/verify','auth/admin','logout'],true)) return false;
     validate_csrf();
@@ -227,6 +239,6 @@ function handle_auth_post(string $path): bool {
         session_regenerate_id(true); $_SESSION['authenticated_at']=time(); $_SESSION['last_seen']=time(); $_SESSION['admin_verified_uid']=(int)$u['id']; unset($_SESSION['admin_attempts']);
         redirect('dashboard');
     }
-    if ($path==='logout') { $_SESSION=[]; session_regenerate_id(true); $_SESSION['authenticated_at']=time(); $_SESSION['last_seen']=time(); flash('از حساب خود خارج شدید.'); redirect(''); }
+    if ($path==='logout') { logout_user(); flash('از حساب خود خارج شدید.'); redirect(''); }
     return true;
 }

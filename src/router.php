@@ -250,7 +250,13 @@ function page_help(): void {
     echo '</div></section><section class="section help-faq-section"><div class="container"><div class="section-header"><span class="eyebrow">سؤال‌های متداول</span><h2>پاسخ کوتاه به شروع‌های رایج</h2></div><div class="help-faq"><details open><summary>برای شروع یادگیری از کجا بروم؟</summary><p>اگر تازه شروع کرده‌ای، یک دورهٔ پایه را انتخاب کن و هم‌زمان یکی از پروژه‌های کوچک را در میزکار اجرا کن. هدف این است که هر جلسه به یک خروجی قابل مشاهده ختم شود.</p></details><details><summary>چرا پیشرفت من ذخیره نشده است؟</summary><p>ذخیرهٔ پیشرفت به حساب واردشده و ثبت موفق فعالیت وابسته است. یک‌بار از فعال‌بودن نشست مطمئن شو و اگر مشکل ادامه داشت، نام دوره، زمان و پیام خطا را برای پشتیبانی بفرست.</p></details><details><summary>آیا فایل‌های میزکار عمومی هستند؟</summary><p>فایل‌های میزکار سروری فقط برای مالک حساب در دسترس‌اند؛ اما برای امنیت، رمزها، کلیدها و دادهٔ شخصی دیگران را در هیچ پروژه‌ای قرار نده.</p></details><details><summary>چطور سؤال بهتری در انجمن بپرسم؟</summary><p>عنوان مشخص، هدف، کد کوتاه قابل اجرا، ورودی نمونه و متن کامل خطا را بنویس. اطلاعات حساس و شماره تماس را حذف کن.</p></details></div></div></section><section class="section container"><div class="help-contact"><div><span class="eyebrow">هنوز پاسخ را پیدا نکردی؟</span><h2>با جامعه یا پشتیبانی ادامه بده</h2><p>برای سؤال آموزشی به انجمن برو و برای مشکل حساب یا سرویس، درخواست پشتیبانی ثبت کن.</p></div><div class="hero-actions">'; linkto('community','رفتن به انجمن','btn btn-outline'); linkto('dashboard/support','ثبت درخواست پشتیبانی','btn btn-primary'); echo '</div></div></section></main>';
 }
 function page_login(): void {
-    if (user() && trim((string)user()['name'])!=='') redirect('dashboard');
+    $existing=user();
+    if ($existing && trim((string)$existing['name'])!=='') {
+        head_page('ورود','مدیریت نشست و ورود یا ثبت‌نام دوباره در Noventix.'); notice();
+        echo '<main class="auth-page"><div class="auth-card"><img src="/assets/nova.png" alt="مسکات Nova" width="70" height="70"><h1>حساب شما فعال است</h1><p class="muted">برای ثبت‌نام با حساب دیگری، ابتدا به‌طور کامل خارج شوید.</p>';
+        form_start('logout','stack-form'); echo '<button class="btn btn-outline" type="submit">خروج کامل از حساب</button></form>'; linkto('dashboard','بازگشت به پنل ←','btn btn-primary');
+        echo '</div></main>'; foot_page(); return;
+    }
     $captcha=captcha_code();
     $registration=$_SESSION['registration_form'] ?? [];
     unset($_SESSION['registration_form']);
