@@ -115,7 +115,7 @@ function page_course_workspace(?array $course,string $requestedLesson): void {
     $hasVideo=$course['slug']==='ai-foundations' && (int)$current['position']===1;
     echo '<div class="workspace-layout"><section class="workspace-main"><div class="video-placeholder'.($hasVideo?' has-aparat':'').'" aria-label="ویدیوی جلسه">';
     if ($hasVideo) {
-        echo '<div id="31969839874" class="aparat-embed"><script type="text/javascript" src="https://www.aparat.com/embed/lhu79lu?data[rnddiv]=31969839874&amp;data[responsive]=yes&amp;titleShow=true"></script></div>';
+        echo '<div id="63043856666" class="aparat-embed"><script type="text/javascript" src="https://www.aparat.com/embed/qbk51d2?data[rnddiv]=63043856666&amp;data[responsive]=yes&amp;titleShow=true&amp;recom=self"></script></div>';
     } else {
         echo '<div class="video-placeholder-inner"><strong>ویدیوی این جلسه هنوز اضافه نشده است</strong><span>تا زمان انتشار ویدیو، متن درس را در همین صفحه مطالعه کنید.</span></div>';
     }

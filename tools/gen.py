@@ -316,7 +316,7 @@ def view_courses():
 
 def view_demo_course(lesson):
     lessons = (
-        ("مبانی هوش مصنوعی", "با مفاهیم اصلی هوش مصنوعی و مسیر حل یک مسئله واقعی آشنا شو.", "۳۰ دقیقه", "course/ai-foundations"),
+        ("مبانی هوش مصنوعی", "با مفاهیم اصلی هوش مصنوعی و مسیر حل یک مسئله واقعی آشنا شو.", "۱۹ دقیقه", "course/ai-foundations"),
         ("پروژه تشخیص چهره", "یک نمونه پروژه عملی را از تعریف مسئله تا اجرای اولیه بررسی کن.", "۴۰ دقیقه", "course/ai-foundations/lesson-2"),
     )
     title, content, duration, _ = lessons[lesson - 1]
@@ -326,13 +326,13 @@ def view_demo_course(lesson):
            '<header class="workspace-header"><div><span class="eyebrow">پیش‌نمایش فضای یادگیری · دوره</span>'
            '<h1>دوره رایگان مقدماتی هوش مصنوعی</h1>'
            '<p>مفاهیم پایه هوش مصنوعی را با یک مسیر کوتاه و پروژه‌محور یاد بگیر.</p></div>'
-           '<div class="workspace-meta"><span>۲ جلسه</span><span>۷۰ دقیقه</span></div></header>'
+           '<div class="workspace-meta"><span>۲ جلسه</span><span>۵۹ دقیقه</span></div></header>'
            '<p class="demo-course-notice">این صفحه فقط پیش‌نمایش رابط دوره است؛ ثبت‌نام، ذخیرهٔ پیشرفت و ادامهٔ پخش در سایت نمایشی فعال نیست.</p>'
            '<div class="workspace-layout"><section class="workspace-main">')
     if lesson == 1:
         out += ('<div class="video-placeholder has-aparat" aria-label="ویدیوی جلسهٔ اول">'
-                '<div id="31969839874" class="aparat-embed"><script type="text/javascript" '
-                'src="https://www.aparat.com/embed/lhu79lu?data[rnddiv]=31969839874&amp;data[responsive]=yes&amp;titleShow=true"></script>'
+                '<div id="63043856666" class="aparat-embed"><script type="text/javascript" '
+                'src="https://www.aparat.com/embed/qbk51d2?data[rnddiv]=63043839874&amp;data[responsive]=yes&amp;titleShow=true&amp;recom=self"></script>'
                 '</div></div><p class="workspace-video-note">ویدیو از آپارات بارگیری می‌شود؛ در این نسخه زمان تماشا ثبت نمی‌شود.</p>')
     else:
         out += ('<div class="video-placeholder" aria-label="ویدیوی جلسه">'

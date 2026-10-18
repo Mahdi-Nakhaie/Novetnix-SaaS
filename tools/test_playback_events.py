@@ -114,7 +114,7 @@ process.stdout.write(JSON.stringify(cases.map(([position, duration]) => calculat
 
     def test_aparat_embed_does_not_pretend_to_provide_player_state(self):
         workspace = function_body(VIEWS, "page_course_workspace")
-        self.assertIn("www.aparat.com/embed/lhu79lu", workspace)
+        self.assertIn("www.aparat.com/embed/qbk51d2", workspace)
         self.assertNotIn("NoqtePlaybackEvents.attach", workspace)
         self.assertNotIn("connectProgress(", workspace)
         self.assertNotIn("/progress/save", workspace)

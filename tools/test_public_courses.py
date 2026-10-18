@@ -99,8 +99,8 @@ class PublicCoursesTest(unittest.TestCase):
 
     def test_embed_is_scoped_to_first_demo_lesson_and_csp_to_workspace(self):
         self.assertIn("$course['slug']==='ai-foundations' && (int)$current['position']===1", self.workspace_view)
-        self.assertIn('id="31969839874"', self.workspace_view)
-        self.assertIn('https://www.aparat.com/embed/lhu79lu?data[rnddiv]=31969839874&amp;data[responsive]=yes&amp;titleShow=true', self.workspace_view)
+        self.assertIn('id="63043856666"', self.workspace_view)
+        self.assertIn('https://www.aparat.com/embed/qbk51d2?data[rnddiv]=63043856666&amp;data[responsive]=yes&amp;titleShow=true&amp;recom=self', self.workspace_view)
         self.assertIn('ویدیوی این جلسه هنوز اضافه نشده است', self.workspace_view)
         self.assertIn('جلسهٔ بعدی', self.workspace_view)
         self.assertIn('aria-current="true"', self.workspace_view)
@@ -127,8 +127,8 @@ class PublicCoursesTest(unittest.TestCase):
         self.assertIn(gen.href("course/ai-foundations"), gen.render_page(paths[""]))
         self.assertIn(gen.href("course/ai-foundations"), gen.render_page(paths["courses"]))
         self.assertNotIn("data-protected=", first)
-        self.assertIn("www.aparat.com/embed/lhu79lu", first)
-        self.assertNotIn("www.aparat.com/embed/lhu79lu", second)
+        self.assertIn("www.aparat.com/embed/qbk51d2", first)
+        self.assertNotIn("www.aparat.com/embed/qbk51d2", second)
         self.assertIn("ویدیوی این جلسه هنوز اضافه نشده است", second)
         self.assertIn(gen.href("course/ai-foundations/lesson-2"), first)
         self.assertIn(gen.href("course/ai-foundations"), second)

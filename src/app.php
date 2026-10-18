@@ -22,10 +22,14 @@ function latin_digits(string $v): string { return strtr($v,['۰'=>'0','۱'=>'1',
 function published_courses(): array { return q("SELECT slug,title,description FROM courses WHERE status='published' ORDER BY id ASC")->fetchAll(); }
 function seed_demo_courses(): void {
     $course=q("SELECT id FROM courses WHERE slug=?",['ai-foundations'])->fetchColumn();
-    if ($course) return;
-    q('INSERT INTO courses(slug,title,description,estimated_duration_minutes,status) VALUES (?,?,?,?,?)',['ai-foundations','دوره رایگان مقدماتی هوش مصنوعی','مفاهیم پایه هوش مصنوعی را با یک مسیر کوتاه و پروژه‌محور یاد بگیر.',70,'published']);
+    if ($course) {
+        q('UPDATE courses SET estimated_duration_minutes=? WHERE id=?',[59,$course]);
+        q('UPDATE lessons SET duration_minutes=? WHERE course_id=? AND position=?',[19,$course,1]);
+        return;
+    }
+    q('INSERT INTO courses(slug,title,description,estimated_duration_minutes,status) VALUES (?,?,?,?,?)',['ai-foundations','دوره رایگان مقدماتی هوش مصنوعی','مفاهیم پایه هوش مصنوعی را با یک مسیر کوتاه و پروژه‌محور یاد بگیر.',59,'published']);
     $course=(int)db()->lastInsertId();
-    q('INSERT INTO lessons(course_id,title,content,position,duration_minutes,status) VALUES (?,?,?,?,?,?)',[$course,'مبانی هوش مصنوعی','با مفاهیم اصلی هوش مصنوعی و مسیر حل یک مسئله واقعی آشنا شو.',1,30,'published']);
+    q('INSERT INTO lessons(course_id,title,content,position,duration_minutes,status) VALUES (?,?,?,?,?,?)',[$course,'مبانی هوش مصنوعی','با مفاهیم اصلی هوش مصنوعی و مسیر حل یک مسئله واقعی آشنا شو.',1,19,'published']);
     q('INSERT INTO lessons(course_id,title,content,position,duration_minutes,status) VALUES (?,?,?,?,?,?)',[$course,'پروژه تشخیص چهره','یک نمونه پروژه عملی را از تعریف مسئله تا اجرای اولیه بررسی کن.',2,40,'published']);
 }
 function verified_lesson_completion(?array $progress,?array $quiz): bool {
