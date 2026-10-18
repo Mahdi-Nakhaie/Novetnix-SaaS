@@ -22,16 +22,20 @@ class GlossaryTest(unittest.TestCase):
         self.assertTrue(all(entry['definition'].strip() and entry['title'].strip() for entry in entries))
         self.assertTrue(all(related in keys for entry in entries for related in entry['related']))
 
-    def test_search_uses_normalized_catalog_field_and_bound_parameters_are_not_needed(self):
-        self.assertIn("str_contains(glossary_normalize($entry['search']),$query)", GLOSSARY)
+    def test_search_uses_database_fields_and_bound_parameters(self):
+        self.assertIn("glossary_search_parts", GLOSSARY)
+        self.assertIn("t.search_text LIKE ?", GLOSSARY)
+        self.assertIn("t.term_en LIKE ?", GLOSSARY)
+        self.assertIn("t.term_fa LIKE ?", GLOSSARY)
         self.assertIn("glossary_normalize", GLOSSARY)
+        self.assertIn("q($sql,array_merge($params,$orderParams,[$perPage,$offset]))", GLOSSARY)
         self.assertNotIn("$_POST", GLOSSARY)
 
     def test_routes_include_indexable_directory_and_detail_pages(self):
         self.assertIn("if ($path==='glossary')", ROUTER)
         self.assertIn("^glossary/([a-z0-9-]+)$", ROUTER)
         self.assertIn("page_glossary_entry($entry)", ROUTER)
-        self.assertIn("$indexable=$query==='' && $category===''", ROUTER)
+        self.assertIn("$indexable=$query==='' && $category==='' && $letter===''", ROUTER)
 
     def test_rendered_terms_and_related_links_are_escaped(self):
         self.assertIn("h($entry['title'])", GLOSSARY)

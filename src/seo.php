@@ -8,8 +8,8 @@ function seo_origin(): ?string {
     return $value;
 }
 function seo_public_path(string $path): bool {
-    return in_array($path,['','courses','projects','pricing','about','contact','terms','privacy'],true)
-        || (bool)preg_match('~^(course/[a-z0-9-]+|project/[0-9]+)$~D',$path);
+    return in_array($path,['','courses','projects','pricing','about','contact','terms','privacy','glossary'],true)
+        || (bool)preg_match('~^(course/[a-z0-9-]+|project/[0-9]+|glossary/[a-z0-9-]+)$~D',$path);
 }
 function seo_head(string $title,string $description,bool $panel): void {
     global $path;
@@ -27,14 +27,19 @@ function seo_head(string $title,string $description,bool $panel): void {
             $course=q("SELECT c.id FROM courses c WHERE c.slug=? AND c.status='published' AND EXISTS (SELECT 1 FROM lessons l WHERE l.course_id=c.id AND l.status='published')",[substr($path,7)])->fetchColumn();
             if ($course) $data['@type']='Course';
         }
+        if (str_starts_with($path,'glossary/')) {
+            $term=q("SELECT id FROM glossary_terms WHERE slug=? AND publication_status='published'",[substr($path,9)])->fetchColumn();
+            if ($term) { $data['@type']='DefinedTerm'; $data['termCode']=substr($path,9); $data['inDefinedTermSet']=$origin.'/glossary'; }
+        }
         global $seoNonce;
         if (!empty($seoNonce)) echo '<script type="application/ld+json" nonce="'.h($seoNonce).'">'.json_encode($data,JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE|JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT).'</script>';
     }
 }
 function seo_routes(): array {
-    $paths=['','courses','projects','pricing','about','contact','terms','privacy'];
+    $paths=['','courses','projects','pricing','about','contact','terms','privacy','glossary'];
     foreach (published_courses() as $course) $paths[]='course/'.$course['slug'];
     foreach (array_keys(PROJECTS) as $index) $paths[]='project/'.$index;
+    foreach (q("SELECT slug FROM glossary_terms WHERE publication_status='published' ORDER BY slug")->fetchAll(PDO::FETCH_COLUMN) as $slug) $paths[]='glossary/'.$slug;
     return $paths;
 }
 function seo_route(string $path): bool {

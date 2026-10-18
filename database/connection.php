@@ -3,6 +3,58 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__).'/config/config.php';
 
+function db_glossary_normalize(string $value): string {
+    $value=strtr(mb_strtolower($value),['ي'=>'ی','ك'=>'ک']);
+    return trim(preg_replace('/\s+/u',' ',$value) ?? '');
+}
+
+function glossary_backfill_legacy(PDO $db): void {
+    $hasTerms=(int)$db->query('SELECT COUNT(*) FROM glossary_terms')->fetchColumn()>0;
+    $source=dirname(__DIR__).'/curriculum/glossary.json';
+    if (!is_file($source)) return;
+    $data=json_decode((string)file_get_contents($source),true,512,JSON_THROW_ON_ERROR);
+    $db->beginTransaction();
+    try {
+        $taxonomy=[
+            'ai-fundamentals'=>'مبانی هوش مصنوعی','python'=>'Python','math-statistics'=>'ریاضیات و آمار','machine-learning'=>'یادگیری ماشین','deep-learning'=>'یادگیری عمیق','neural-networks'=>'شبکه‌های عصبی','nlp'=>'پردازش زبان طبیعی','llm'=>'مدل‌های زبانی بزرگ','generative-ai'=>'هوش مصنوعی مولد','prompt-engineering'=>'مهندسی پرامپت','ai-agents'=>'عامل‌های هوش مصنوعی','rag'=>'RAG','embedding'=>'Embedding','vector-database'=>'Vector Database','computer-vision'=>'بینایی ماشین','audio-processing'=>'پردازش صوت','data-science'=>'علم داده','fine-tuning-peft'=>'Fine-tuning و PEFT','model-evaluation'=>'ارزیابی مدل‌ها','quantization'=>'Quantization','deployment'=>'استقرار مدل‌ها','mlops-llmops'=>'MLOps و LLMOps','ai-safety'=>'امنیت و ایمنی هوش مصنوعی','ai-infrastructure'=>'زیرساخت هوش مصنوعی'
+        ];
+        $legacyMap=['fundamentals'=>'ai-fundamentals','ml'=>'machine-learning','dl'=>'deep-learning','generative'=>'generative-ai','llm'=>'llm','prompt'=>'prompt-engineering','agents'=>'ai-agents','rag'=>'rag','training'=>'fine-tuning-peft','evaluation'=>'model-evaluation','ethics'=>'ai-safety','security'=>'ai-safety','application'=>'data-science','software'=>'mlops-llmops','hardware'=>'ai-infrastructure','math'=>'math-statistics','reinforcement'=>'machine-learning','deployment'=>'deployment','alignment'=>'ai-safety'];
+        $categoryInsert=$db->prepare('INSERT INTO glossary_categories(slug,name) VALUES (?,?)');
+        $categoryIds=[];
+        foreach ($taxonomy as $slug=>$name) {
+            $existing=$db->prepare('SELECT id FROM glossary_categories WHERE slug=?');
+            $existing->execute([$slug]);
+            $categoryIds[$slug]=(int)$existing->fetchColumn();
+            if (!$categoryIds[$slug]) { $categoryInsert->execute([$slug,$name]); $categoryIds[$slug]=(int)$db->lastInsertId(); }
+        }
+        if ($hasTerms) { $db->commit(); return; }
+        $termInsert=$db->prepare('INSERT INTO glossary_terms(slug,term_en,term_fa,letter,alternative_translations,short_definition,full_definition,canonical_key,search_text,publication_status) VALUES (?,?,?,?,?,?,?,?,?,?)');
+        $termCategoryInsert=$db->prepare('INSERT INTO glossary_term_categories(term_id,category_id) VALUES (?,?)');
+        $termIds=[];
+        foreach ($data['entries'] as $entry) {
+            $term=(string)$entry['term'];
+            $title=(string)$entry['title'];
+            $definition=(string)$entry['definition'];
+            $termInsert->execute([(string)$entry['key'],$term,$title,strtoupper(substr($term,0,1)),'[]',$definition,$definition,db_glossary_normalize($term.' '.$title),db_glossary_normalize((string)($entry['search'] ?? $term.' '.$title.' '.$definition)),'published']);
+            $termId=(int)$db->lastInsertId();
+            $termIds[(string)$entry['key']]=$termId;
+            if (isset($legacyMap[$entry['category']],$categoryIds[$legacyMap[$entry['category']]])) $termCategoryInsert->execute([$termId,$categoryIds[$legacyMap[$entry['category']]]]);
+        }
+        $relationInsert=$db->prepare("INSERT INTO glossary_term_relations(term_id,related_term_id,relation_type) VALUES (?,?, 'related')");
+        $relationKeys=[];
+        foreach ($data['entries'] as $entry) foreach (($entry['related'] ?? []) as $related) if (isset($termIds[$entry['key']],$termIds[$related]) && $termIds[$entry['key']]!==$termIds[$related]) {
+            $relationKey=$termIds[$entry['key']].':'.$termIds[$related];
+            if (isset($relationKeys[$relationKey])) continue;
+            $relationKeys[$relationKey]=true;
+            $relationInsert->execute([$termIds[$entry['key']],$termIds[$related]]);
+        }
+        $db->commit();
+    } catch (Throwable $e) {
+        if ($db->inTransaction()) $db->rollBack();
+        throw $e;
+    }
+}
+
 function db(): PDO {
     static $db;
     if ($db instanceof PDO) return $db;
@@ -19,6 +71,9 @@ function db(): PDO {
         if ($driver==='sqlite') $db->exec('PRAGMA foreign_keys=ON');
         $schema=$driver==='mysql' ? '/database/schema.mysql.sql' : '/database/schema.sqlite.sql';
         $db->exec(file_get_contents(dirname(__DIR__).$schema));
+        $migration=$driver==='mysql' ? '/database/migrations/001_glossary.mysql.sql' : '/database/migrations/001_glossary.sqlite.sql';
+        $db->exec(file_get_contents(dirname(__DIR__).$migration));
+        glossary_backfill_legacy($db);
         $columns=$db->query('SELECT * FROM otp_codes LIMIT 0');
         $names=[];
         for ($i=0; $i<$columns->columnCount(); $i++) $names[]=$columns->getColumnMeta($i)['name'];

@@ -145,4 +145,75 @@
       });
     }
   }
+  var glossaryForm = document.querySelector("[data-glossary-search]");
+  if (glossaryForm) {
+    var glossaryInput = glossaryForm.querySelector("[data-glossary-input]");
+    var glossaryClear = glossaryForm.querySelector("[data-glossary-clear]");
+    var glossarySuggestions = glossaryForm.querySelector("[data-glossary-suggestions]");
+    var glossaryTimer;
+    var glossaryController;
+    function showGlossaryMessage(message, retry) {
+      glossarySuggestions.hidden = false;
+      glossarySuggestions.innerHTML = "";
+      var text = document.createElement("span");
+      text.textContent = message;
+      glossarySuggestions.appendChild(text);
+      if (retry) {
+        var button = document.createElement("button");
+        button.type = "button";
+        button.className = "glossary-retry";
+        button.textContent = "تلاش دوباره";
+        button.addEventListener("click", loadGlossarySuggestions);
+        glossarySuggestions.appendChild(button);
+      }
+    }
+    function loadGlossarySuggestions() {
+      var query = glossaryInput.value.trim();
+      glossaryClear.hidden = query === "";
+      if (glossaryController) glossaryController.abort();
+      if (query.length < 2) {
+        glossarySuggestions.hidden = true;
+        glossarySuggestions.innerHTML = "";
+        return;
+      }
+      glossarySuggestions.hidden = false;
+      glossarySuggestions.textContent = "در حال جست‌وجو…";
+      glossaryController = new AbortController();
+      var endpoint = new URL(glossaryForm.action, window.location.origin);
+      endpoint.pathname = endpoint.pathname.replace(/\/$/, "") + "/suggest";
+      endpoint.search = "q=" + encodeURIComponent(query);
+      fetch(endpoint.toString(), { headers: { Accept: "application/json" }, signal: glossaryController.signal })
+        .then(function (response) { if (!response.ok) throw new Error("search"); return response.json(); })
+        .then(function (payload) {
+          if (!payload.suggestions || !payload.suggestions.length) { showGlossaryMessage("پیشنهادی پیدا نشد.", false); return; }
+          glossarySuggestions.innerHTML = "";
+          payload.suggestions.forEach(function (suggestion) {
+            var link = document.createElement("a");
+            link.href = glossaryForm.action.replace(/\/$/, "") + "/" + encodeURIComponent(suggestion.key);
+            link.innerHTML = "<strong></strong><span></span>";
+            link.querySelector("strong").textContent = suggestion.title;
+            link.querySelector("span").textContent = suggestion.term;
+            glossarySuggestions.appendChild(link);
+          });
+        })
+        .catch(function (error) { if (error.name !== "AbortError") showGlossaryMessage("جست‌وجو موقتاً در دسترس نیست.", true); });
+    }
+    glossaryInput.addEventListener("input", function () {
+      window.clearTimeout(glossaryTimer);
+      glossaryTimer = window.setTimeout(loadGlossarySuggestions, 280);
+    });
+    glossaryClear.addEventListener("click", function () {
+      glossaryInput.value = "";
+      glossaryInput.focus();
+      glossarySuggestions.hidden = true;
+      glossarySuggestions.innerHTML = "";
+      glossaryClear.hidden = true;
+      if (glossaryController) glossaryController.abort();
+    });
+    glossaryForm.addEventListener("submit", function () {
+      if (glossaryController) glossaryController.abort();
+      glossarySuggestions.hidden = true;
+    });
+  }
+
 })();

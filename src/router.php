@@ -32,20 +32,29 @@ function route(): void {
     if ($path==='help') { head_page('مرکز راهنما','راهنمای شروع حساب، مسیر یادگیری، میزکار کد، انجمن و پشتیبانی Noventix.'); notice(); page_help(); foot_page(); return; }
     if ($path==='terms') { head_page('قوانین و مقررات','شرایط استفاده از سایت، پنل، میزکار کد و انجمن Noventix به زبان ساده.'); notice(); page_terms(); foot_page(); return; }
     if ($path==='privacy') { head_page('حریم خصوصی','نحوه نگهداری و استفاده از اطلاعات شما در Noventix.'); notice(); page_privacy(); foot_page(); return; }
+    if ($path==='glossary/suggest') {
+        header('Content-Type: application/json; charset=utf-8');
+        $query=trim((string)($_GET['q'] ?? ''));
+        if (mb_strlen($query)>80) $query=mb_substr($query,0,80);
+        try { echo json_encode(['suggestions'=>glossary_suggestions($query)],JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE|JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT); }
+        catch (Throwable $e) { http_response_code(503); echo json_encode(['error'=>'جست‌وجو موقتاً در دسترس نیست.'],JSON_UNESCAPED_UNICODE); }
+        return;
+    }
     if ($path==='glossary') {
         $query=trim((string)($_GET['q'] ?? ''));
         if (mb_strlen($query)>80) $query=mb_substr($query,0,80);
         $category=preg_match('/^[a-z0-9-]+$/',(string)($_GET['category'] ?? '')) ? (string)$_GET['category'] : '';
+        $letter=preg_match('/^[a-z]$/i',(string)($_GET['letter'] ?? '')) ? strtoupper((string)$_GET['letter']) : '';
         $page=filter_var($_GET['page'] ?? 1,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]) ?: 1;
-        $result=glossary_entries($query,$category,(int)$page);
-        $indexable=$query==='' && $category==='' && (int)$page===1 && user()===null;
+        $result=glossary_entries($query,$category,$letter,(int)$page);
+        $indexable=$query==='' && $category==='' && $letter==='' && (int)$page===1 && user()===null;
         head_page('لغت‌نامهٔ هوش مصنوعی','۳۴۵ اصطلاح هوش مصنوعی، یادگیری ماشین و علم داده با تعریف روشن و مفاهیم مرتبط.',false,$indexable);
-        notice(); page_glossary($result,$query,$category); foot_page(); return;
+        notice(); page_glossary($result,$query,$category,$letter); foot_page(); return;
     }
     if (preg_match('~^glossary/([a-z0-9-]+)$~D',$path,$match)) {
         $entry=glossary_entry($match[1]);
         if (!$entry) { page_not_found(); return; }
-        head_page($entry['title'].' | لغت‌نامهٔ هوش مصنوعی',$entry['definition'],false,true);
+        head_page($entry['term_en'].' | لغت‌نامهٔ هوش مصنوعی',$entry['short_definition'],false,true);
         page_glossary_entry($entry); foot_page(); return;
     }
     if ($path==='learners') {

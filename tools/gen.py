@@ -701,15 +701,38 @@ def view_learners():
 
 
 def view_glossary():
+    letter_counts = {}
+    for entry in GLOSSARY["entries"]:
+        letter = str(entry.get("term", ""))[:1].upper()
+        letter_counts[letter] = letter_counts.get(letter, 0) + 1
+    categories = ''.join(
+        f'<a href="{h(href("glossary"))}" class="active">{h(c["label"])} <small>{fa(c["count"])}</small></a>'
+        for c in GLOSSARY["categories"]
+    )
+    alphabet = '<a href="' + h(href("glossary")) + '" class="active">همه اصطلاحات <small>' + fa(len(GLOSSARY["entries"])) + '</small></a>' + ''.join(
+        f'<a href="{h(href("glossary"))}#letter-{letter}" class="{"is-empty" if letter_counts.get(letter, 0) == 0 else ""}" aria-label="اصطلاحات حرف {letter}، {fa(letter_counts.get(letter, 0))} مورد">{letter} <small>{fa(letter_counts.get(letter, 0))}</small></a>'
+        for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    )
     cards = ''.join(
-        f'<article class="glossary-card"><div class="meta-row"><span class="pill">{h(next((c["label"] for c in GLOSSARY["categories"] if c["key"] == e["category"]), e["category"]))}</span><span dir="ltr">{h(e["term"])}</span></div><h2>{h(e["title"])}</h2><p>{h(e["definition"])}</p></article>'
+        f'<article class="glossary-card"><div class="glossary-card-top"><span class="glossary-letter" aria-hidden="true">{h(e.get("letter", ""))}</span><span class="pill">{h(next((c["label"] for c in GLOSSARY["categories"] if c["key"] == e["category"]), e["category"]))}</span></div><span class="glossary-term" dir="ltr">{h(e["term"])}</span><h3><a href="{h(href("glossary/" + e["key"]))}">{h(e["title"])}</a></h3><p>{h(e["definition"])}</p><a class="inline-link" href="{h(href("glossary/" + e["key"]))}">مشاهدهٔ جزئیات <span aria-hidden="true">←</span></a></article>'
         for e in GLOSSARY["entries"][:24]
     )
-    return ('<main class="glossary-page"><div class="container"><section class="page-hero">'
-            '<span class="eyebrow">دانش‌نامهٔ هوش مصنوعی</span><h1>لغت‌نامه‌ای برای فهمیدن، نه حفظ کردن</h1>'
-            '<p>۳۴۵ اصطلاح مهم هوش مصنوعی، یادگیری ماشین و علم داده را با تعریف روشن و دسته‌بندی پیدا کن.</p>'
-            '</section><div class="panel-card"><p class="muted">نسخهٔ ایستا ۲۴ اصطلاح منتخب را نشان می‌دهد؛ جست‌وجو، فهرست کامل و پیوند مفاهیم مرتبط در نسخهٔ سروری فعال است.</p>'
-            '<div class="glossary-grid">' + cards + '</div></div></div></main>')
+    return ('<main class="glossary-page"><section class="glossary-hero"><div class="container"><span class="eyebrow">دانش‌نامهٔ Noventix</span><h1>واژه‌نامهٔ هوش مصنوعی</h1><p>مفاهیم و اصطلاحات هوش مصنوعی را عمیق‌تر بشناس.</p><div class="glossary-hero-stats"><span><strong>۳۴۵</strong> اصطلاح آموزشی</span><span><strong>۱۸</strong> حوزهٔ موضوعی</span><span><strong>رایگان</strong> برای همه</span></div></div></section><div class="container glossary-content"><div class="glossary-search glossary-search-panel"><div class="glossary-search-field"><span aria-hidden="true">⌕</span><label class="sr-only" for="static-glossary-q">جست‌وجوی اصطلاح</label><input id="static-glossary-q" placeholder="جست‌وجوی اصطلاحات هوش مصنوعی..." disabled><button class="btn btn-primary" type="button" disabled>جست‌وجو</button></div></div><section class="glossary-browse"><div class="section-header compact"><span class="eyebrow">مرور سریع</span><h2>از الفبا شروع کن</h2></div><nav class="glossary-alphabet" aria-label="مرور الفبایی">' + alphabet + '</nav></section><section class="glossary-directory"><div class="glossary-directory-head"><div><span class="eyebrow">دسته‌بندی‌ها</span><h2>موضوع موردنظرت را انتخاب کن</h2></div><span class="glossary-result-count">نسخهٔ ایستا</span></div><nav class="glossary-categories" aria-label="دسته‌بندی واژه‌نامه"><a href="' + h(href("glossary")) + '" class="active">همه حوزه‌ها</a>' + categories + '</nav></section><div class="panel-card"><p class="muted">نسخهٔ ایستا ۲۴ اصطلاح منتخب را نشان می‌دهد؛ جست‌وجو و فهرست کامل در نسخهٔ سروری فعال است.</p><div class="glossary-grid">' + cards + '</div></div></div></main>')
+
+
+def view_glossary_entry(slug):
+    entry = next((item for item in GLOSSARY["entries"] if item["key"] == slug), None)
+    if entry is None:
+        return view_notfound()
+    category = next((item["label"] for item in GLOSSARY["categories"] if item["key"] == entry["category"]), entry["category"])
+    related = ''.join(
+        f'<a class="related-term-card" href="{h(href("glossary/" + related_entry["key"]))}"><strong>{h(related_entry["title"])}</strong><span dir="ltr">{h(related_entry["term"])}</span></a>'
+        for related_key in entry.get("related", [])
+        for related_entry in GLOSSARY["entries"]
+        if related_entry["key"] == related_key
+    )
+    related_section = f'<section class="glossary-detail-section"><h2>اصطلاحات مرتبط</h2><div class="related-terms">{related}</div></section>' if related else ""
+    return (f'<main class="glossary-page"><div class="container"><nav class="profile-crumb" aria-label="مسیر صفحه"><a href="{h(href("glossary"))}">لغت‌نامه</a><span aria-current="page">{h(entry["term"])}</span></nav><article class="glossary-entry"><header class="glossary-entry-header"><span class="eyebrow">اصطلاح هوش مصنوعی</span><h1 dir="ltr">{h(entry["term"])}</h1><p class="glossary-term-fa">{h(entry["title"])}</p><p class="glossary-definition">{h(entry["definition"])}</p><div class="glossary-entry-meta"><span class="pill">{h(category)}</span></div></header><div class="glossary-entry-body"><section class="glossary-detail-section"><h2>تعریف کوتاه</h2><div class="glossary-detail-copy">{h(entry["definition"])}</div></section>{related_section}</div><a class="btn btn-outline" href="{h(href("glossary"))}">بازگشت به واژه‌نامه</a></article></div></main>')
 
 
 def live_chat():
@@ -1375,6 +1398,8 @@ def view_body(route):
         return view_learners()
     if view == "glossary":
         return view_glossary()
+    if view == "glossary-entry":
+        return view_glossary_entry(route["slug"])
     if view == "help":
         return view_help()
     if view == "support":
@@ -1475,6 +1500,8 @@ def build_routes():
     for i, (title, _t, _l, desc, _s) in enumerate(PROJECTS):
         routes.append({"path": f"project/{i}", "title": title, "view": "project",
                        "index": i, "nav": "projects", "description": desc})
+    for entry in GLOSSARY["entries"]:
+        routes.append({"path": f"glossary/{entry['key']}", "title": entry["term"], "view": "glossary-entry", "slug": entry["key"], "nav": "glossary", "description": entry["definition"]})
     for role, items in (("student", STUDENT_ITEMS), ("admin", ADMIN_ITEMS)):
         for key, label in items:
             routes.append({"path": f"panel/{role}" + (f"/{key}" if key else ""),
