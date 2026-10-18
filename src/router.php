@@ -48,7 +48,7 @@ function route(): void {
         $page=filter_var($_GET['page'] ?? 1,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]) ?: 1;
         $result=glossary_entries($query,$category,$letter,(int)$page);
         $indexable=$query==='' && $category==='' && $letter==='' && (int)$page===1 && user()===null;
-        head_page('لغت‌نامهٔ هوش مصنوعی','۳۴۵ اصطلاح هوش مصنوعی، یادگیری ماشین و علم داده با تعریف روشن و مفاهیم مرتبط.',false,$indexable);
+        head_page('لغت‌نامهٔ هوش مصنوعی',fa((int)$result['total']).' اصطلاح منتشرشدهٔ هوش مصنوعی، یادگیری ماشین و علم داده با تعریف روشن و مفاهیم مرتبط.',false,$indexable);
         notice(); page_glossary($result,$query,$category,$letter); foot_page(); return;
     }
     if (preg_match('~^glossary/([a-z0-9-]+)$~D',$path,$match)) {

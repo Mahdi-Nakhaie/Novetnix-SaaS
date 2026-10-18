@@ -1343,20 +1343,43 @@ def render_page(route):
     full = "Noventix | از یادگیری تا ساختن" if title == "خانه" else f"{h(title)} | Noventix"
     body = view_body(route)
     guard = (f' data-protected="{h(route["path"])}"' if view in ("courses", "course", "projects", "project", "community", "panel") else '')
+    indexable = view in ("glossary", "glossary-entry")
+    canonical = href(route["path"])
+    seo_image = asset("logo.png")
+    json_ld = ""
+    if view == "glossary-entry":
+        entry = next(item for item in GLOSSARY["entries"] if item["key"] == route["slug"])
+        defined_term = {
+            "@context": "https://schema.org",
+            "@type": "DefinedTerm",
+            "name": entry["term"],
+            "alternateName": entry["title"],
+            "description": entry["definition"],
+            "url": canonical,
+            "inLanguage": "fa-IR",
+            "termCode": entry["key"],
+            "inDefinedTermSet": href("glossary"),
+        }
+        json_ld = '<script type="application/ld+json">' + json.dumps(defined_term, ensure_ascii=False).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026") + '</script>'
+    robots = "index,follow" if indexable else "noindex,follow"
     out = (
         '<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
         '<meta name="theme-color" content="#201a35">'
-        '<meta name="robots" content="noindex,follow">'
-        '<meta name="twitter:card" content="summary">'
-        f'<meta name="twitter:title" content="{h(title)}">'
+        f'<meta name="robots" content="{robots}">'
+        '<meta name="twitter:card" content="summary_large_image">'
+        f'<meta name="twitter:title" content="{h(full)}">'
         f'<meta name="twitter:description" content="{h(desc or title)}">'
+        f'<meta name="twitter:image" content="{h(seo_image)}">'
         f"<title>{full}</title>"
         f'<meta name="description" content="{h(desc or "Noventix؛ آموزش پروژه‌محور پایتون، علم داده و هوش مصنوعی از مطالعه تا ساختن.")}">'
-        f'<meta property="og:title" content="{h(title)}">'
-        f'<meta property="og:description" content="{h(desc)}">'
+        f'<meta property="og:title" content="{h(full)}">'
+        f'<meta property="og:description" content="{h(desc or title)}">'
         '<meta property="og:type" content="website"><meta property="og:locale" content="fa_IR">'
-        f'<link rel="icon" type="image/png" href="{h(asset("favicon.png"))}">'
+        f'<meta property="og:image" content="{h(seo_image)}">'
+        + (f'<link rel="canonical" href="{h(canonical)}"><meta property="og:url" content="{h(canonical)}">' if indexable else '')
+        + json_ld
+        + f'<link rel="icon" type="image/png" href="{h(asset("favicon.png"))}">'
         f'<link rel="stylesheet" href="{h(asset("style.css"))}">'
         + seed_script()
         + f'<script src="{h(asset("app.js"))}" defer></script>'
@@ -1541,7 +1564,12 @@ def main():
             shutil.copy2(item, assets_dst / item.name)
     for name, data in static_assets.items():
         (assets_dst / name).write_bytes(data)
-    (OUT / 'robots.txt').write_text('User-agent: *\nAllow: /\n', encoding='utf-8')
+    glossary_routes = [route for route in routes if route["view"] in ("glossary", "glossary-entry")]
+    sitemap = ['<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+    sitemap.extend(f'<url><loc>{h(href(route["path"]))}</loc></url>' for route in glossary_routes)
+    sitemap.append('</urlset>')
+    (OUT / 'sitemap.xml').write_text(''.join(sitemap), encoding='utf-8')
+    (OUT / 'robots.txt').write_text('User-agent: *\nAllow: /\nDisallow: /panel\nDisallow: /login\nDisallow: /verify\nDisallow: /admin-login\nSitemap: ' + href('sitemap.xml') + '\n', encoding='utf-8')
     shutil.copy2(ROOT / "tools" / "demo.js", assets_dst / "demo.js")
     (OUT / ".nojekyll").write_text("", encoding="utf-8")
     (ROOT / "index.html").write_text((OUT / "index.html").read_text(encoding="utf-8"), encoding="utf-8")

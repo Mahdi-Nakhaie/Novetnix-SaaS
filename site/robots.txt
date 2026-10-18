@@ -1,2 +1,7 @@
 User-agent: *
 Allow: /
+Disallow: /panel
+Disallow: /login
+Disallow: /verify
+Disallow: /admin-login
+Sitemap: /Novetnix-SaaS/site/sitemap.xml

@@ -11,9 +11,9 @@ function seo_public_path(string $path): bool {
     return in_array($path,['','courses','projects','pricing','about','contact','terms','privacy','glossary'],true)
         || (bool)preg_match('~^(course/[a-z0-9-]+|project/[0-9]+|glossary/[a-z0-9-]+)$~D',$path);
 }
-function seo_head(string $title,string $description,bool $panel): void {
+function seo_head(string $title,string $description,bool $panel,bool $indexable): void {
     global $path;
-    $indexable=!$panel && seo_public_path($path) && http_response_code()!==404;
+    $indexable=$indexable && !$panel && seo_public_path($path) && http_response_code()!==404;
     echo '<meta name="robots" content="'.($indexable?'index,follow':'noindex,follow').'">';
     $full=$title==='خانه' ? 'Noventix | از یادگیری تا ساختن' : $title.' | Noventix';
     foreach (['og:title'=>$full,'og:description'=>$description,'og:type'=>'website','og:locale'=>'fa_IR','og:site_name'=>'Noventix'] as $property=>$value) echo '<meta property="'.h($property).'" content="'.h($value).'">';
@@ -21,15 +21,26 @@ function seo_head(string $title,string $description,bool $panel): void {
     $origin=seo_origin();
     if ($origin && $indexable) {
         $canonical=$origin.'/'.implode('/',array_map('rawurlencode',explode('/',$path)));
-        echo '<link rel="canonical" href="'.h($canonical).'"><meta property="og:url" content="'.h($canonical).'">';
+        $image=$origin.'/assets/logo.png';
+        echo '<link rel="canonical" href="'.h($canonical).'">';
+        echo '<meta property="og:url" content="'.h($canonical).'">';
+        echo '<meta property="og:image" content="'.h($image).'">';
+        echo '<meta name="twitter:image" content="'.h($image).'">';
         $data=['@context'=>'https://schema.org','@type'=>'WebPage','name'=>$title,'description'=>$description,'url'=>$canonical,'inLanguage'=>'fa-IR'];
         if (str_starts_with($path,'course/')) {
             $course=q("SELECT c.id FROM courses c WHERE c.slug=? AND c.status='published' AND EXISTS (SELECT 1 FROM lessons l WHERE l.course_id=c.id AND l.status='published')",[substr($path,7)])->fetchColumn();
             if ($course) $data['@type']='Course';
         }
         if (str_starts_with($path,'glossary/')) {
-            $term=q("SELECT id FROM glossary_terms WHERE slug=? AND publication_status='published'",[substr($path,9)])->fetchColumn();
-            if ($term) { $data['@type']='DefinedTerm'; $data['termCode']=substr($path,9); $data['inDefinedTermSet']=$origin.'/glossary'; }
+            $entry=q("SELECT term_en,term_fa,short_definition,slug FROM glossary_terms WHERE slug=? AND publication_status='published'",[substr($path,9)])->fetch();
+            if ($entry) {
+                $data['@type']='DefinedTerm';
+                $data['name']=$entry['term_en'];
+                if (trim((string)$entry['term_fa'])!=='') $data['alternateName']=$entry['term_fa'];
+                $data['description']=$entry['short_definition'];
+                $data['termCode']=$entry['slug'];
+                $data['inDefinedTermSet']=$origin.'/glossary';
+            }
         }
         global $seoNonce;
         if (!empty($seoNonce)) echo '<script type="application/ld+json" nonce="'.h($seoNonce).'">'.json_encode($data,JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE|JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT).'</script>';

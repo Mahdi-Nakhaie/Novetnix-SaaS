@@ -10,8 +10,7 @@ function head_page(string $title,string $description='',bool $panel=false,bool $
     if ($panel) header('Cache-Control: private, no-store');
     $full=($title==='خانه' ? 'Noventix | از یادگیری تا ساختن' : h($title).' | Noventix');
     echo '<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#201a35"><title>'.$full.'</title><meta name="description" content="'.h($description ?: 'Noventix؛ آموزش پروژه‌محور پایتون، علم داده و هوش مصنوعی از مطالعه تا ساختن.').'">';
-    seo_head($title,$description ?: 'Noventix؛ آموزش پروژه‌محور پایتون، علم داده و هوش مصنوعی از مطالعه تا ساختن.',$panel);
-    if ($indexable && !$panel && seo_public_path($path) && http_response_code()!==404) echo '<meta name="robots" content="index,follow">';
+    seo_head($title,$description ?: 'Noventix؛ آموزش پروژه‌محور پایتون، علم داده و هوش مصنوعی از مطالعه تا ساختن.',$panel,$indexable);
     echo '<link rel="stylesheet" href="/assets/style.css"><script src="/assets/app.js" defer></script><script src="/assets/playback-events.js" defer></script></head><body class="'.($panel?'is-panel':'').'">';
     echo '<div class="noventix-loading" id="noventix-loading" role="status" aria-live="polite" hidden><div class="noventix-loading-card"><span class="noventix-loading-mark" aria-hidden="true">N</span><strong>Noventix</strong><span class="noventix-loading-track" aria-hidden="true"><span></span></span><p>در حال آماده‌سازی...</p></div></div>';
     if ($panel) { panel_nav(); return; }
