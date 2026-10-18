@@ -21,6 +21,37 @@ def function_body(name):
 
 
 class OtpFlowTest(unittest.TestCase):
+    def test_phone_validation_accepts_supported_display_formats_consistently(self):
+        app_js = (ROOT / 'public/assets/app.js').read_text(encoding='utf-8')
+        login = AUTH[AUTH.index("if ($path==='auth/login')"):AUTH.index("if ($path==='auth/verify')")]
+        request = AUTH[AUTH.index("if ($path==='auth/request')"):AUTH.index("if ($path==='auth/resend')")]
+        for source in (login, request):
+            self.assertIn('normalized_phone(', source)
+        self.assertEqual(ROUTER.count('data-validation="phone"'), 2)
+        self.assertNotIn('pattern="0?9[0-9]{9}"', ROUTER)
+        self.assertIn('function normalizedPhone(value)', app_js)
+        self.assertIn('/^(\\+98|98)/', app_js)
+        self.assertIn('/^09[0-9]{9}$/', app_js)
+        mapping = str.maketrans('۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩', '01234567890123456789')
+        def normalize(value):
+            return re.sub(r'^(\+98|98)', '0', re.sub(r'[\s-]+', '', value.translate(mapping)))
+        accepted = ('09123456789', '۰۹۱۲۳۴۵۶۷۸۹', '٠٩١٢٣٤٥٦٧٨٩', '+989123456789', '98 912-345-6789')
+        for value in accepted:
+            with self.subTest(value=value):
+                self.assertRegex(normalize(value), r'^09[0-9]{9}$')
+        for value in ('0912345678', '08123456789', '+971501234567', '09123abc456'):
+            with self.subTest(value=value):
+                self.assertNotRegex(normalize(value), r'^09[0-9]{9}$')
+
+    def test_password_is_verified_without_normalization(self):
+        login = AUTH[AUTH.index("if ($path==='auth/login')"):AUTH.index("if ($path==='auth/verify')")]
+        request = AUTH[AUTH.index("if ($path==='auth/request')"):AUTH.index("if ($path==='auth/resend')")]
+        self.assertIn("$password=registration_input('password');", request)
+        self.assertIn("password_hash($password,PASSWORD_DEFAULT)", request)
+        self.assertIn("$password=registration_input('password') ?? '';", login)
+        self.assertIn('password_verify($password,$hash)', login)
+        self.assertNotRegex(request, r'(?i)strtolower\(\$password|trim\(\$password|str_replace\([^;]*\$password')
+
     def test_campaign_is_optional_validated_and_bound_to_otp(self):
         public = (ROOT / 'public/index.php').read_text(encoding='utf-8')
         request = AUTH[AUTH.index("if ($path==='auth/request')"):AUTH.index("if ($path==='auth/resend')")]

@@ -59,10 +59,21 @@
     minlength: "مقدار واردشده کوتاه است.",
     maxlength: "مقدار واردشده بیش از حد طولانی است.",
     pattern: "مقدار واردشده معتبر نیست.",
+    phone: "شماره موبایل معتبر وارد کنید.",
     password: "رمز باید دست‌کم ۸ نویسه و شامل حرف انگلیسی و عدد باشد."
   };
 
+  function normalizedPhone(value) {
+    return value
+      .replace(/[۰-۹٠-٩]/g, function (digit) {
+        return "۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩".indexOf(digit) % 10;
+      })
+      .replace(/[\s-]+/g, "")
+      .replace(/^(\+98|98)/, "0");
+  }
+
   function fieldMessage(field) {
+    if (field.dataset.validation === "phone" && !/^09[0-9]{9}$/.test(normalizedPhone(field.value))) return messages.phone;
     if (field.dataset.validation === "password" && (!/[A-Za-z]/.test(field.value) || !/[0-9]/.test(field.value))) return messages.password;
     if (field.required && !field.value.trim()) return messages.required;
     if (field.minLength > -1 && field.value.length < field.minLength) return messages.minlength;
