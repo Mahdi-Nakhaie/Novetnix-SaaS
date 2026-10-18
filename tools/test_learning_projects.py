@@ -28,6 +28,14 @@ def reference_executor(job, image, cancelled):
 
 
 class ReferenceTests(unittest.TestCase):
+    def test_catalog_contains_twelve_dataset_backed_ml_projects(self):
+        catalog = json.loads((ROOT / 'curriculum/catalog.json').read_text(encoding='utf-8'))
+        self.assertEqual(len(catalog), 12)
+        self.assertTrue(all(item['topic'] == 'Machine Learning' for item in catalog))
+        self.assertTrue(all(item['datasets'] for item in catalog))
+        self.assertTrue(all((ROOT / 'curriculum/data' / name).is_file() for item in catalog for name in item['datasets']))
+        self.assertEqual({item['key'] for item in catalog}, {item['key'] for item in grading.definitions()})
+
     def test_student_image_excludes_hidden_grader(self):
         dockerfile = (ROOT / 'services/python-runner/Dockerfile').read_text()
         for line in dockerfile.splitlines():

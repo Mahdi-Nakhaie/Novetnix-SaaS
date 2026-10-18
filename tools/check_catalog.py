@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Diff tools/catalog.py against src/data.php so the two cannot drift."""
+import json
 import pathlib
 import re
 import sys
@@ -90,11 +91,16 @@ for slug, c in catalog.COURSES.items():
                 failures.append(f"course {slug} section text missing from PHP: {part[:40]}…")
 
 # --- projects
-php_projects = strings_in("PROJECTS")
-for title, topic, level, desc, skills in catalog.PROJECTS:
-    for part in (title, topic, level, desc, skills):
-        if part not in php_projects:
-            failures.append(f"project text missing from PHP: {part[:40]}…")
+curriculum_path = pathlib.Path(__file__).resolve().parent.parent / 'curriculum' / 'catalog.json'
+project_catalog = json.loads(curriculum_path.read_text(encoding='utf-8'))
+if len(project_catalog) != 12:
+    failures.append(f"curriculum project count is {len(project_catalog)}, expected 12")
+for project in project_catalog:
+    for field in ('key','title','topic','description','skills','datasets'):
+        if not project.get(field): failures.append(f"project {project.get('key', '?')} missing {field}")
+    if project.get('topic') != 'Machine Learning': failures.append(f"project {project.get('key', '?')} is not Machine Learning")
+    for dataset_name in project.get('datasets',[]):
+        if not (curriculum_path.parent / 'data' / dataset_name).is_file(): failures.append(f"project dataset missing: {dataset_name}")
 
 # --- challenges, badges, tracks, announcements, content, settings
 php_ch = strings_in("CHALLENGES")

@@ -106,6 +106,23 @@
     field.removeAttribute("aria-invalid");
     if (error) error.remove();
   });
+  var loading = document.getElementById("noventix-loading");
+  var loadingDelay;
+  var loadingTimeout;
+  function hideLoading() {
+    window.clearTimeout(loadingDelay);
+    window.clearTimeout(loadingTimeout);
+    if (loading) loading.hidden = true;
+  }
+  document.addEventListener("submit", function (event) {
+    if (!loading || event.defaultPrevented || event.target.method.toLowerCase() !== "post") return;
+    hideLoading();
+    loadingDelay = window.setTimeout(function () { loading.hidden = false; }, 180);
+    loadingTimeout = window.setTimeout(hideLoading, 10000);
+  });
+  window.addEventListener("pageshow", hideLoading);
+  window.addEventListener("pagehide", hideLoading);
+
   var backLink = document.querySelector("[data-safe-back]");
   if (backLink && document.referrer && window.history.length > 1) {
     var previous = new URL(document.referrer);

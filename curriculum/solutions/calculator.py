@@ -1,14 +1,26 @@
 import json
 from pathlib import Path
+import numpy as np
+
+
+def matrix(rows, features):
+    values=[]
+    for row in rows:
+        values.append([float(row.get(name, 0) or 0) for name in features])
+    return np.asarray(values, dtype=float)
 
 
 def solve(data):
-    a, b, op = data['a'], data['b'], data['operator']
-    if op not in ('+', '-', '*', '/'):
-        return {'error': 'invalid_operator'}
-    if op == '/' and b == 0:
-        return {'error': 'division_by_zero'}
-    return {'value': {'+': lambda: a+b, '-': lambda: a-b, '*': lambda: a*b, '/': lambda: a/b}[op]()}
+    features, target = data['features'], data['target']
+    train, test = data['train'], data['test']
+    x, y = matrix(train, features), np.asarray([float(row[target]) for row in train])
+    center, scale = x.mean(0), x.std(0); scale[scale == 0] = 1
+    xz = (x-center)/scale
+    design = np.c_[np.ones(len(xz)), xz]
+    ridge = 0.1*np.eye(design.shape[1]); ridge[0,0] = 0
+    coef = np.linalg.solve(design.T@design+ridge, design.T@y)
+    predictions = np.c_[np.ones(len(test)), (matrix(test,features)-center)/scale]@coef
+    return {'predictions': predictions.tolist()}
 
 
 if __name__ == '__main__':

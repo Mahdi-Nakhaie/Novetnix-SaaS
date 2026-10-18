@@ -69,6 +69,42 @@ def sales_summary(rows):
 
 def cases(key, seed):
     rng = random.Random(seed)
+    ml_aliases = {
+        'calculator': ('housing.csv', 'price', 'regression'),
+        'grades': ('iris.csv', 'species', 'classification'),
+        'sales': ('diabetes.csv', 'class', 'classification'),
+        'cleaning': ('sentiment.csv', 'label', 'classification'),
+        'advanced-sales': ('flights.csv', 'arr_delay', 'regression'),
+    }
+    if key in ml_aliases:
+        name, target, role = ml_aliases[key]
+        rows = dataset(name)
+        features = [k for k in rows[0] if k != target and k != 'date']
+        result = []
+        for _ in range(2):
+            groups = {}
+            if role == 'classification':
+                for row in rows: groups.setdefault(row[target], []).append(row)
+            else: groups['all'] = rows
+            train, test = [], []
+            for group in groups.values():
+                group = group.copy(); rng.shuffle(group); cut = int(len(group)*0.75)
+                train.extend(group[:cut]); test.extend(group[cut:])
+            rng.shuffle(train); rng.shuffle(test)
+            def value(k, v): return v if k in ('text','species') else float(v)
+            training = [{k: value(k,r[k]) for k in features+[target]} for r in train]
+            testing = [{k: value(k,r[k]) for k in features} for r in test]
+            result.append(({'train': training, 'test': testing, 'features': features, 'target': target}, [value(target,r[target]) for r in test]))
+        return result
+    if key == 'weather':
+        rows = dataset('weather.csv')
+        result = []
+        for start in (0, 120):
+            train_rows, test_rows = rows[start:start+500], rows[start+500:start+560]
+            training = [{'day_index': float(start+i), 'condition': {'clear':0.0,'cloudy':1.0,'rain':2.0}.get(r['condition'],0.0), 'temperature': float(r['temperature'])} for i,r in enumerate(train_rows)]
+            testing = [{'day_index': float(start+500+i), 'condition': {'clear':0.0,'cloudy':1.0,'rain':2.0}.get(r['condition'],0.0)} for i,r in enumerate(test_rows)]
+            result.append(({'train':training,'test':testing,'features':['day_index','condition'],'target':'temperature'}, [float(r['temperature']) for r in test_rows]))
+        return result
     if key == 'calculator':
         a, b = rng.randint(-100, 100), rng.randint(1, 99)
         return [({'a': a, 'b': b, 'operator': op}, {'value': value}) for op, value in [('+', a+b), ('-', a-b), ('*', a*b), ('/', a/b)]] + [({'a': 7, 'b': 0, 'operator': '/'}, {'error': 'division_by_zero'}), ({'a': 1, 'b': 2, 'operator': '?'}, {'error': 'invalid_operator'})]
@@ -155,14 +191,16 @@ def png_valid(raw):
 
 
 def validate(key, payload, actual, expected, files):
-    if key in ('housing','iris','diabetes','flights','sentiment','pipeline'):
+    regression_keys = {'housing','flights','pipeline','calculator','advanced-sales','weather'}
+    classification_keys = {'iris','diabetes','sentiment','grades','sales','cleaning'}
+    if key in regression_keys | classification_keys:
         if not isinstance(actual, dict) or set(actual) != {'predictions'}: return False
         predictions = actual['predictions']
         if not isinstance(predictions,list) or len(predictions)!=len(expected): return False
-        if key in ('housing','flights','pipeline'):
+        if key in regression_keys:
             if any(type(v) not in (int,float) or not math.isfinite(v) for v in predictions): return False
             mae = sum(abs(a-b) for a,b in zip(predictions, expected))/len(expected)
-            if mae > {'housing':8,'flights':15,'pipeline':9}[key]: return False
+            if mae > {'housing':8,'flights':15,'pipeline':9,'calculator':8,'advanced-sales':15,'weather':5}[key]: return False
         else:
             labels = set(expected)
             if any(type(v) not in (int,float,str) or v not in labels for v in predictions): return False
@@ -173,7 +211,7 @@ def validate(key, payload, actual, expected, files):
                 fp = sum(a==label and b!=label for a,b in zip(predictions,expected))
                 fn = sum(a!=label and b==label for a,b in zip(predictions,expected))
                 scores.append(2*tp/(2*tp+fp+fn) if 2*tp+fp+fn else 0)
-            if min(accuracy,sum(scores)/len(scores)) < {'iris':0.85,'diabetes':0.80,'sentiment':0.72}[key]: return False
+            if min(accuracy,sum(scores)/len(scores)) < {'iris':0.85,'diabetes':0.80,'sentiment':0.72,'grades':0.85,'sales':0.80,'cleaning':0.72}[key]: return False
         if key=='pipeline':
             model=json.loads(unpack(files,'model.json'))
             if set(model)!={'median','mean','scale','coef','intercept'}: return False

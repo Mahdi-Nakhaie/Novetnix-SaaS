@@ -1,258 +1,237 @@
 [
   {
     "key": "calculator",
-    "title": "ماشین‌حساب ساده",
-    "topic": "Python",
+    "title": "پیش‌بینی قیمت خانه با رگرسیون",
+    "topic": "Machine Learning",
     "level": "مقدماتی",
-    "description": "دو عدد و یک عملگر را دریافت کن و نتیجه یا خطای روشن برگردان.",
-    "goal": "استفاده از شرط، تابع و مدیریت تقسیم بر صفر",
-    "skills": "Python · Functions · Conditions",
-    "minutes": 30,
+    "description": "یک مدل رگرسیون قابل توضیح برای پیش‌بینی قیمت واحد مسکونی بساز و خطای آن را روی دادهٔ ندیده اندازه بگیر.",
+    "goal": "شناخت مسئلهٔ رگرسیون، جداسازی train و test و گزارش MAE",
+    "skills": "Python · NumPy · Regression · MAE",
+    "minutes": 75,
     "xp": 60,
-    "datasets": [],
-    "dependencies": [],
-    "input": "شیء JSON شامل a و b عددی و operator یکی از + - * /",
-    "output": "فایل result.json با {value: number} یا {error: division_by_zero|invalid_operator}",
+    "datasets": [
+      "housing.csv"
+    ],
+    "dependencies": [
+      "pandas",
+      "numpy"
+    ],
+    "input": "request.json شامل train، test، features و target است؛ train قیمت را دارد و test فقط ویژگی‌ها را دارد.",
+    "output": "result.json با predictions برای تمام سطرهای test؛ مقدارها باید عددی باشند.",
     "steps": [
-      "request.json را با json و pathlib بخوان.",
-      "تابع solve را برای چهار عمل اصلی پیاده‌سازی کن.",
-      "پیش از تقسیم، صفر بودن مخرج و معتبر بودن عملگر را بررسی کن.",
-      "خروجی را در result.json ذخیره کن؛ با تغییر ورودی دوباره اجرا کن."
+      "request.json و دادهٔ train/test را بخوان.",
+      "دادهٔ آموزش و آزمون را جدا نگه دار و ویژگی‌ها را عددی کن.",
+      "یک رگرسیون خطی یا مدل همسایه‌ای بساز و روی train کامل آموزش بده.",
+      "MAE را روی test محاسبه و predictions را در result.json ذخیره کن."
     ],
     "example": {
       "input": {
-        "a": 8,
-        "b": 2,
-        "operator": "/"
+        "train": "housing.csv با ستون price",
+        "test": "سطرهای بدون price"
       },
-      "output": {
-        "value": 4
-      }
+      "output": "predictions"
     },
     "criteria": [
-      "چهار عمل روی اعداد مثبت و منفی",
-      "خطای division_by_zero برای تقسیم بر صفر",
-      "خطای invalid_operator برای عملگر ناشناخته"
+      "تعداد predictions با test برابر است",
+      "هیچ برچسبی از test برای آموزش استفاده نمی‌شود",
+      "MAE روی دو تقسیم تصادفی از حد پذیرش کمتر است"
     ],
-    "notes": "عملگر را با eval اجرا نکن؛ شرط‌های روشن کافی‌اند."
+    "notes": "قیمت هدف را از ویژگی‌های test استخراج نکن؛ test شبیه دادهٔ واقعی آینده است."
   },
   {
     "key": "grades",
-    "title": "تحلیل نمرات دانشجویان",
-    "description": "آمار نمرات و تعداد قبول و مردود را محاسبه کن.",
-    "goal": "کار با لیست، توابع آماری و اعتبارسنجی",
-    "skills": "Python · Lists · Statistics",
-    "minutes": 40,
+    "title": "دسته‌بندی چندکلاسهٔ گل‌ها",
+    "description": "با دادهٔ کامل Iris یک دسته‌بند چندکلاسه بساز و کیفیت هر کلاس را جداگانه بررسی کن.",
+    "goal": "شناخت classification، ویژگی‌ها، برچسب‌ها و macro-F1",
+    "skills": "Python · Classification · KNN · Macro-F1",
+    "minutes": 80,
     "xp": 80,
-    "datasets": [],
-    "input": "grades: لیست عددی از صفر تا بیست؛ حد قبولی ۱۰ است.",
-    "output": "result.json: mean, min, max, passed, failed؛ لیست خالی: error=empty_grades؛ نمره خارج بازه: error=invalid_grade",
+    "datasets": [
+      "iris.csv"
+    ],
+    "input": "request.json شامل train، test، features و target=species است.",
+    "output": "result.json با برچسب پیش‌بینی‌شدهٔ هر سطر test.",
     "steps": [
-      "لیست grades را از request.json بخوان.",
-      "خالی بودن و بازه نمره‌ها را پیش از محاسبه بررسی کن.",
-      "میانگین، کمینه و بیشینه را محاسبه کن.",
-      "قبولی را برای نمره حداقل ۱۰ بشمار و JSON ذخیره کن."
+      "ویژگی‌ها را مقیاس‌بندی کن و داده را فقط با train آموزش بده.",
+      "یک KNN یا دسته‌بند فاصله‌ای بساز.",
+      "پیش‌بینی هر سه گونه را تولید کن و نتیجه را ذخیره کن.",
+      "accuracy و macro-F1 را روی test گزارش کن."
     ],
     "example": {
       "input": {
-        "grades": [
-          8,
-          12,
-          16
-        ]
+        "train": "سطرهای Iris با species",
+        "test": "سطرهای بدون species"
       },
-      "output": {
-        "mean": 12,
-        "min": 8,
-        "max": 16,
-        "passed": 2,
-        "failed": 1
-      }
+      "output": "predictions"
     },
     "criteria": [
-      "میانگین و حدود درست",
-      "قبولی مرزی نمره ۱۰",
-      "مدیریت لیست خالی و نمره نامعتبر"
+      "هر prediction یکی از برچسب‌های train است",
+      "macro-F1 حداقل ۰٫۸۵ است",
+      "اطلاعات test وارد آموزش نمی‌شود"
     ],
-    "dependencies": [],
-    "notes": "",
-    "topic": "Python",
+    "dependencies": [
+      "pandas",
+      "numpy"
+    ],
+    "notes": "برای مقایسهٔ منصفانه، معیار هر کلاس را جداگانه بررسی کن.",
+    "topic": "Machine Learning",
     "level": "مقدماتی"
   },
   {
     "key": "sales",
-    "title": "تحلیل داده‌های فروش",
-    "description": "از CSV فروش، جمع کل و فروش هر محصول را گزارش کن.",
-    "goal": "خواندن CSV و تجمیع داده",
-    "skills": "Python · csv · Aggregation",
-    "minutes": 50,
+    "title": "تشخیص ریسک دیابت",
+    "description": "با دادهٔ علائم بیماران یک مدل طبقه‌بندی بساز؛ معیارها را طوری گزارش کن که خطای منفی کاذب پنهان نماند.",
+    "goal": "پیش‌پردازش ویژگی‌های دودویی و ارزیابی recall در مسئلهٔ سلامت",
+    "skills": "Python · Classification · Recall · Confusion Matrix",
+    "minutes": 90,
     "xp": 100,
     "datasets": [
-      "sales.csv"
+      "diabetes.csv"
     ],
-    "input": "csv: متن CSV با ستون‌های product, quantity, price, month؛ تعداد و قیمت غیرمنفی‌اند.",
-    "output": "result.json: total و by_product (نگاشت نام محصول به مبلغ فروش)؛ CSV خالی error=empty_data؛ قیمت یا تعداد نامعتبر error=invalid_row",
+    "input": "request.json شامل train، test، features و target=class است.",
+    "output": "result.json با برچسب ریسک پیش‌بینی‌شدهٔ هر سطر test.",
     "steps": [
-      "متن csv در request.json را با csv.DictReader و io.StringIO بخوان.",
-      "برای هر سطر quantity × price را حساب کن.",
-      "فروش تکراری هر محصول را جمع کن.",
-      "جمع کل و نگاشت محصولات را ذخیره کن."
+      "مقادیر yes/no را به ویژگی عددی تبدیل کن.",
+      "مدل KNN یا فاصله‌ای را فقط روی train آموزش بده.",
+      "confusion matrix و recall کلاس پرخطر را بررسی کن.",
+      "predictions را ذخیره کن."
     ],
     "example": {
       "input": {
-        "csv": "product,quantity,price,month\nbook,2,10,2026-01\npen,3,2,2026-01\n"
+        "train": "diabetes.csv با class",
+        "test": "سطرهای بدون class"
       },
-      "output": {
-        "total": 26,
-        "by_product": {
-          "book": 20,
-          "pen": 6
-        }
-      }
+      "output": "predictions"
     },
     "criteria": [
-      "فروش کل و تجمیع محصولات تکراری",
-      "اعشار و سطرهای صفر",
-      "رد داده نامعتبر و خالی"
-    ],
-    "dependencies": [],
-    "notes": "",
-    "topic": "Python",
-    "level": "مقدماتی"
-  },
-  {
-    "key": "cleaning",
-    "title": "پاک‌سازی داده‌های ناقص",
-    "description": "مقادیر گمشده ستون‌های عددی را شناسایی و با میانگین جایگزین کن.",
-    "goal": "مدیریت missing و ذخیره خروجی پاک",
-    "skills": "Pandas · Missing values · CSV",
-    "minutes": 60,
-    "xp": 130,
-    "datasets": [
-      "missing.csv"
-    ],
-    "input": "csv با name, age, score؛ خانه خالی در age/score گمشده است.",
-    "output": "result.json: missing_before و means شامل age/score؛ cleaned.csv با همان ترتیب سطر و ستون؛ ستون کاملاً خالی error=all_missing بدون فایل پاک",
-    "steps": [
-      "CSV را با pandas.read_csv بخوان.",
-      "تعداد خانه‌های خالی عددی را ثبت کن.",
-      "میانگین هر ستون عددی را فقط از خانه‌های غیرخالی حساب کن.",
-      "اگر ستونی هیچ عددی ندارد خطای all_missing برگردان؛ در غیر این صورت fillna و to_csv را اجرا کن."
-    ],
-    "example": {
-      "input": {
-        "csv": "name,age,score\nA,20,80\nB,,60\nC,40,\n"
-      },
-      "output": {
-        "missing_before": 2,
-        "means": {
-          "age": 30,
-          "score": 70
-        }
-      }
-    },
-    "criteria": [
-      "شمارش missing و میانگین بدون نشت از مقادیر جایگزین",
-      "خروجی cleaned.csv بدون خانه گمشده و حفظ نام‌ها",
-      "مدیریت ستون تماماً خالی"
-    ],
-    "dependencies": [
-      "pandas"
-    ],
-    "notes": "",
-    "topic": "Data Science",
-    "level": "تحلیل داده"
-  },
-  {
-    "key": "advanced-sales",
-    "title": "تحلیل داده‌های فروش پیشرفته",
-    "description": "فروش ماهانه و شاخص‌های کلیدی را همراه نمودار بساز.",
-    "goal": "گروه‌بندی زمانی و تجسم داده",
-    "skills": "Pandas · GroupBy · Matplotlib",
-    "minutes": 70,
-    "xp": 160,
-    "datasets": [
-      "sales.csv"
-    ],
-    "input": "csv با ستون‌های product, quantity, price, month، حداقل یک سطر معتبر.",
-    "output": "result.json: total, by_month, orders, average_order؛ chart.png نمودار ستونی فروش ماهانه حداقل ۳۲۰×۲۰۰ پیکسل",
-    "steps": [
-      "ستون revenue = quantity × price بساز.",
-      "با groupby فروش هر ماه را جمع بزن.",
-      "تعداد سطرها را orders و total/orders را average_order قرار بده.",
-      "نمودار by_month را با matplotlib ذخیره کن؛ plt.close را فراموش نکن."
-    ],
-    "example": {
-      "input": {
-        "csv": "product,quantity,price,month\nbook,2,10,2026-01\npen,3,2,2026-02\n"
-      },
-      "output": {
-        "total": 26,
-        "by_month": {
-          "2026-01": 20,
-          "2026-02": 6
-        },
-        "orders": 2,
-        "average_order": 13
-      }
-    },
-    "criteria": [
-      "مجموع ماهانه و کل",
-      "تعداد و میانگین سفارش‌ها",
-      "فایل PNG واقعی غیرخالی"
+      "همهٔ سطرهای test پیش‌بینی می‌شوند",
+      "macro-F1 حداقل ۰٫۸۰ است",
+      "برای کلاس‌ها برچسب معتبر تولید می‌شود"
     ],
     "dependencies": [
       "pandas",
-      "matplotlib"
+      "numpy"
     ],
-    "notes": "",
-    "topic": "Data Science",
-    "level": "تحلیل داده"
+    "notes": "این خروجی آموزشی است و تشخیص پزشکی محسوب نمی‌شود.",
+    "topic": "Machine Learning",
+    "level": "متوسط"
+  },
+  {
+    "key": "cleaning",
+    "title": "تحلیل احساسات با متن",
+    "description": "یک مدل متن‌محور بساز که بدون نشت داده، نظرهای مثبت و منفی را دسته‌بندی کند.",
+    "goal": "توکن‌سازی، شمارش واژه‌ها و ارزیابی مدل روی دادهٔ ندیده",
+    "skills": "Python · NLP · Text Features · F1",
+    "minutes": 90,
+    "xp": 130,
+    "datasets": [
+      "sentiment.csv"
+    ],
+    "input": "request.json شامل train، test، features=[text] و target=label است.",
+    "output": "result.json با برچسب مثبت یا منفی برای هر متن test.",
+    "steps": [
+      "متن را نرمال و به توکن‌های ساده تبدیل کن.",
+      "واژه‌ها را فقط از train یاد بگیر.",
+      "یک Naive Bayes یا روش شمارش واژه بساز.",
+      "F1 هر کلاس را بررسی و predictions را ذخیره کن."
+    ],
+    "example": {
+      "input": {
+        "train": "نظرهای برچسب‌دار",
+        "test": "نظرهای بدون برچسب"
+      },
+      "output": "predictions"
+    },
+    "criteria": [
+      "از واژه‌های test برای ساخت واژگان استفاده نمی‌شود",
+      "macro-F1 حداقل ۰٫۷۲ است",
+      "تعداد خروجی با test برابر است"
+    ],
+    "dependencies": [
+      "pandas",
+      "numpy"
+    ],
+    "notes": "قبل از ارزیابی، داده را با اطلاعات آینده نرمال نکن.",
+    "topic": "Machine Learning",
+    "level": "متوسط"
+  },
+  {
+    "key": "advanced-sales",
+    "title": "پیش‌بینی تأخیر پرواز",
+    "description": "تأخیر رسیدن پرواز را از روی زمان، مسافت و تأخیر مبدأ پیش‌بینی و خطای مدل را تحلیل کن.",
+    "goal": "ساخت مدل رگرسیون برای دادهٔ عملیاتی و تحلیل MAE",
+    "skills": "Python · Regression · Feature Engineering · MAE",
+    "minutes": 100,
+    "xp": 160,
+    "datasets": [
+      "flights.csv"
+    ],
+    "input": "request.json شامل train، test، features و target=arr_delay است.",
+    "output": "result.json با مقدار عددی تأخیر برای هر پرواز test.",
+    "steps": [
+      "ویژگی‌های زمان و مسافت را پاک‌سازی کن.",
+      "یک رگرسیون خطی یا همسایه‌ای را روی train آموزش بده.",
+      "MAE را روی پروازهای ندیده اندازه بگیر.",
+      "predictions را ذخیره کن."
+    ],
+    "example": {
+      "input": {
+        "train": "پروازهای دارای arr_delay",
+        "test": "پروازهای بدون arr_delay"
+      },
+      "output": "predictions"
+    },
+    "criteria": [
+      "مقدارهای خروجی عددی و متناهی‌اند",
+      "MAE کمتر از حد پذیرش است",
+      "برچسب هدف test در آموزش استفاده نمی‌شود"
+    ],
+    "dependencies": [
+      "pandas",
+      "numpy"
+    ],
+    "notes": "در دادهٔ عملیاتی، خطاهای بزرگ را جداگانه تحلیل کن.",
+    "topic": "Machine Learning",
+    "level": "متوسط"
   },
   {
     "key": "weather",
-    "title": "تحلیل داده‌های آب‌وهوا",
-    "description": "دماهای روزانه واقعی را خلاصه و تغییراتشان را رسم کن.",
-    "goal": "تحلیل سری روزانه و اختلاف متوالی",
-    "skills": "Pandas · Time series · Matplotlib",
-    "minutes": 70,
+    "title": "پیش‌بینی دمای روزهای آینده",
+    "description": "از تاریخچهٔ آب‌وهوا ویژگی بساز و دمای بازهٔ آینده را با یک مدل رگرسیون پیش‌بینی کن.",
+    "goal": "تفکیک زمانی داده، ساخت ویژگی و پرهیز از استفاده از آینده در آموزش",
+    "skills": "Python · Time Series · Regression · Temporal Split",
+    "minutes": 100,
     "xp": 170,
     "datasets": [
       "weather.csv"
     ],
-    "input": "csv با date, temperature, condition؛ حداقل یک ردیف؛ تاریخ‌ها به ترتیب صعودی هستند.",
-    "output": "result.json: mean, min, max, changes (اختلاف دمای هر روز با روز قبل؛ طول n−1) و chart.png نمودار خطی حداقل ۳۲۰×۲۰۰",
+    "input": "request.json شامل train، test، features=[day_index,condition] و target=temperature است.",
+    "output": "result.json با دمای پیش‌بینی‌شده برای بازهٔ آینده.",
     "steps": [
-      "CSV را بخوان و ستون temperature را عددی در نظر بگیر.",
-      "میانگین و کمینه و بیشینه را محاسبه کن.",
-      "با diff و حذف مقدار اول، تغییرات متوالی را بساز.",
-      "تاریخ و دما را روی نمودار خطی رسم و chart.png ذخیره کن."
+      "داده را بر اساس زمان جدا نگه دار.",
+      "condition را به ویژگی عددی تبدیل کن.",
+      "مدل را روی بازهٔ گذشته آموزش بده.",
+      "MAE بازهٔ آینده و predictions را ذخیره کن."
     ],
     "example": {
       "input": {
-        "csv": "date,temperature,condition\n2026-01-01,10,1\n2026-01-02,13,2\n"
+        "train": "۵۰۰ روز گذشته",
+        "test": "۶۰ روز آینده"
       },
-      "output": {
-        "mean": 11.5,
-        "min": 10,
-        "max": 13,
-        "changes": [
-          3
-        ]
-      }
+      "output": "predictions"
     },
     "criteria": [
-      "آمار دمای واقعی",
-      "تغییرات روزانه و حالت تک‌روز",
-      "تولید PNG معتبر"
+      "پیش‌بینی برای کل بازه تولید می‌شود",
+      "MAE کمتر از ۵ درجه است",
+      "هیچ روز آینده وارد train نشده است"
     ],
     "dependencies": [
       "pandas",
-      "matplotlib"
+      "numpy"
     ],
-    "notes": "",
-    "topic": "Data Science",
-    "level": "تحلیل داده"
+    "notes": "برای سری زمانی، shuffle کردن کل تاریخچه باعث نشت اطلاعات می‌شود.",
+    "topic": "Machine Learning",
+    "level": "متوسط"
   },
   {
     "key": "housing",
@@ -2319,7 +2298,7 @@
       "numpy"
     ],
     "notes": "تقسیم داده را داور هم مستقل انجام می‌دهد؛ موفقیت صرف اجرای برنامه یا metric چاپ‌شده کافی نیست. random_state=42 را برای بازتولیدپذیری تنظیم کن.",
-    "topic": "Applied AI",
+    "topic": "Machine Learning",
     "level": "کاربردی"
   },
   {
@@ -2620,7 +2599,7 @@
       "numpy"
     ],
     "notes": "تقسیم داده را داور هم مستقل انجام می‌دهد؛ موفقیت صرف اجرای برنامه یا metric چاپ‌شده کافی نیست. random_state=42 را برای بازتولیدپذیری تنظیم کن.",
-    "topic": "Applied AI",
+    "topic": "Machine Learning",
     "level": "کاربردی"
   },
   {
@@ -3019,7 +2998,7 @@
       "numpy"
     ],
     "notes": "تقسیم داده را داور هم مستقل انجام می‌دهد؛ موفقیت صرف اجرای برنامه یا metric چاپ‌شده کافی نیست. random_state=42 را برای بازتولیدپذیری تنظیم کن.",
-    "topic": "Applied AI",
+    "topic": "Machine Learning",
     "level": "کاربردی"
   }
 ]

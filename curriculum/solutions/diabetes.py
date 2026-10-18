@@ -1,23 +1,20 @@
 import json
 from pathlib import Path
-import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import f1_score
+from collections import Counter
+import numpy as np
 
 
 def solve(data):
-    train, test = pd.DataFrame(data['train']), pd.DataFrame(data['test'])
-    features, target = data['features'], data['target']
-    x_train, x_valid, y_train, y_valid = train_test_split(train[features], train[target], test_size=0.2, stratify=train[target], random_state=42)
-    model = RandomForestClassifier(n_estimators=80, class_weight='balanced', random_state=42, n_jobs=1)
-    model.fit(x_train, y_train)
-    print('Educational local validation macro-F1:', f1_score(y_valid, model.predict(x_valid), average='macro'))
-    model.fit(train[features], train[target])
-    return {'predictions': model.predict(test[features]).tolist()}
+    features,target=data['features'],data['target']; train,test=data['train'],data['test']
+    def value(row,name):
+        try:return float(row.get(name,0) or 0)
+        except (ValueError,TypeError): return 1.0 if str(row.get(name)).lower() in ('yes','positive','true') else 0.0
+    x=np.asarray([[value(row,name) for name in features] for row in train]); xt=np.asarray([[value(row,name) for name in features] for row in test]); y=[row[target] for row in train]
+    scale=x.std(0); scale[scale==0]=1; predictions=[]
+    for row in ((xt[:,None,:]-x[None,:,:])/scale):
+        d=(row*row).sum(1); nearest=np.argsort(d)[:9]; predictions.append(Counter(y[i] for i in nearest).most_common(1)[0][0])
+    return {'predictions':predictions}
 
 
 if __name__ == '__main__':
-    result = solve(json.loads(Path('request.json').read_text()))
-    Path('result.json').write_text(json.dumps(result, allow_nan=False))
-    print(result)
+    result=solve(json.loads(Path('request.json').read_text())); Path('result.json').write_text(json.dumps(result,allow_nan=False)); print(result)
