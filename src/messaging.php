@@ -80,7 +80,7 @@ function message_accept(int $requester,int $recipient): bool {
 }
 
 function messages_inbox(int $userId): array {
-    $rows=q('SELECT id,sender_id,recipient_id,body,created_at,read_at FROM direct_messages WHERE recipient_id=? OR sender_id=? ORDER BY id DESC LIMIT 400',[$userId,$userId])->fetchAll();
+    $rows=q('SELECT dm.id,dm.sender_id,dm.recipient_id,dm.body,dm.created_at,dm.read_at FROM direct_messages dm WHERE (dm.recipient_id=? AND NOT EXISTS (SELECT 1 FROM message_requests mr WHERE mr.sender_id=dm.sender_id AND mr.recipient_id=dm.recipient_id)) OR dm.sender_id=? ORDER BY dm.id DESC LIMIT 400',[$userId,$userId])->fetchAll();
     $threads=[];
     foreach ($rows as $row) {
         $peer=(int)$row['sender_id']===$userId ? (int)$row['recipient_id'] : (int)$row['sender_id'];
@@ -101,7 +101,7 @@ function messages_inbox(int $userId): array {
 }
 
 function messages_thread(int $userId,int $peer,int $limit=60): array {
-    return q('SELECT id,sender_id,body,created_at,read_at FROM direct_messages WHERE (recipient_id=? AND sender_id=?) OR (sender_id=? AND recipient_id=?) ORDER BY id DESC LIMIT '.(int)$limit,[$userId,$peer,$userId,$peer]);
+    return q('SELECT dm.id,dm.sender_id,dm.body,dm.created_at,dm.read_at FROM direct_messages dm WHERE ((dm.recipient_id=? AND dm.sender_id=? AND NOT EXISTS (SELECT 1 FROM message_requests mr WHERE mr.sender_id=dm.sender_id AND mr.recipient_id=dm.recipient_id)) OR (dm.sender_id=? AND dm.recipient_id=?)) ORDER BY dm.id DESC LIMIT '.(int)$limit,[$userId,$peer,$userId,$peer])->fetchAll();
 }
 
 function messages_mark_read(int $userId,int $peer): void {

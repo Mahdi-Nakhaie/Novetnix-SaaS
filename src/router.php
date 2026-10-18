@@ -31,6 +31,22 @@ function route(): void {
     if ($path==='community') { page_community(); return; }
     if ($path==='terms') { head_page('قوانین و مقررات','شرایط استفاده از سایت، پنل، میزکار کد و انجمن Noventix به زبان ساده.'); notice(); page_terms(); foot_page(); return; }
     if ($path==='privacy') { head_page('حریم خصوصی','نحوه نگهداری و استفاده از اطلاعات شما در Noventix.'); notice(); page_privacy(); foot_page(); return; }
+    if ($path==='glossary') {
+        $query=trim((string)($_GET['q'] ?? ''));
+        if (mb_strlen($query)>80) $query=mb_substr($query,0,80);
+        $category=preg_match('/^[a-z0-9-]+$/',(string)($_GET['category'] ?? '')) ? (string)$_GET['category'] : '';
+        $page=filter_var($_GET['page'] ?? 1,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]) ?: 1;
+        $result=glossary_entries($query,$category,(int)$page);
+        $indexable=$query==='' && $category==='' && (int)$page===1 && user()===null;
+        head_page('لغت‌نامهٔ هوش مصنوعی','۳۴۵ اصطلاح هوش مصنوعی، یادگیری ماشین و علم داده با تعریف روشن و مفاهیم مرتبط.',false,$indexable);
+        notice(); page_glossary($result,$query,$category); foot_page(); return;
+    }
+    if (preg_match('~^glossary/([a-z0-9-]+)$~D',$path,$match)) {
+        $entry=glossary_entry($match[1]);
+        if (!$entry) { page_not_found(); return; }
+        head_page($entry['title'].' | لغت‌نامهٔ هوش مصنوعی',$entry['definition'],false,true);
+        page_glossary_entry($entry); foot_page(); return;
+    }
     if ($path==='learners') {
         $query=trim((string)($_GET['q'] ?? ''));
         if (mb_strlen($query)>60) $query=mb_substr($query,0,60);
@@ -44,8 +60,11 @@ function route(): void {
     if ($path==='messages') { $u=require_user(); head_page('پیام‌های من','گفت‌وگوهای مستقیم میان اعضای جامعه Noventix.',true); notice(); page_messages((int)$u['id']); foot_page(); return; }
     if (preg_match('~^messages/([1-9][0-9]*)$~D',$path,$match)) {
         $u=require_user(); head_page('گفت‌وگو','گفت‌وگوی مستقیم با یک عضو جامعه Noventix.',true); notice();
-        if (!page_message_thread((int)$u['id'],(int)$match[1])) { page_not_found(); return; }
-        foot_page(); return;
+        if (!page_message_thread((int)$u['id'],(int)$match[1])) {
+            http_response_code(404);
+            echo '<main class="panel-content"><div class="empty-state"><h1>گفت‌وگو پیدا نشد</h1><p>این عضو وجود ندارد یا دیگر در دسترس نیست.</p>'; linkto('messages','بازگشت به پیام‌ها ←','btn btn-primary'); echo '</div></main>';
+        }
+        foot_page(true); return;
     }
     if (preg_match('~^member/([1-9][0-9]*)$~D',$path,$match)) { page_member((int)$match[1]); return; }
     if ($path==='login') { page_login(); return; }
@@ -194,7 +213,7 @@ function page_member(int $id): void {
     $own=$viewer && (int)$viewer['id']===$id;
     $description='پروفایل مهارتی '.$profile['name'].' در Noventix؛ '.fa($profile['level']['xp']).' XP و '.fa(count($profile['completions'])).' پروژه تکمیل‌شده.';
     head_page('پروفایل مهارتی '.$profile['name'],$description,false,!$own); notice();
-    page_skill_profile($profile,$own,(bool)$viewer); foot_page(!$own);
+    page_skill_profile($profile,$own,(bool)$viewer); foot_page();
 }
 function page_community(): void {
     global $me;

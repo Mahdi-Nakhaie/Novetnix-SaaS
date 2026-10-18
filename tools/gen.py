@@ -22,7 +22,8 @@ from catalog import (  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / "site"
-SITE_PATH = "/Novetnix-SaaS/site"  # GitHub Pages currently serves the main branch root
+SITE_PATH = "/Novetnix-SaaS/site" # GitHub Pages currently serves the main branch root
+GLOSSARY = json.loads((ROOT / "curriculum/glossary.json").read_text(encoding="utf-8"))
 
 YEAR = "۱۴۰۵"
 PROJECT_PLANS = ("free", "free", "bronze", "silver", "bronze", "gold", "silver", "gold", "titanium")
@@ -170,7 +171,7 @@ def course_cards():
 
 
 NAV_ITEMS = [("", "خانه"), ("courses", "مسیر یادگیری"), ("projects", "پروژه‌ها"),
-             ("learners", "جامعه"), ("community", "انجمن"), ("about", "درباره ما"),
+             ("learners", "جامعه"), ("community", "انجمن"), ("glossary", "لغت‌نامه"), ("about", "درباره ما"),
              ("contact", "تماس با ما")]
 
 
@@ -210,7 +211,7 @@ def footer_html():
         '<p>از یاد گرفتن تا توانایی ساختن؛ یک قدم واقعی در هر پروژه.</p></div>'
         "<div><h3>یادگیری</h3>"
         + linkto("courses", "مقاله‌ها") + linkto("projects", "پروژه‌ها")
-        + linkto("learners", "جامعه یادگیرندگان") + linkto("community", "انجمن")
+        + linkto("learners", "جامعه یادگیرندگان") + linkto("glossary", "لغت‌نامهٔ هوش مصنوعی") + linkto("community", "انجمن")
         + "</div><div><h3>Noventix</h3>"
         + linkto("about", "درباره ما") + linkto("contact", "تماس با ما")
         + linkto("help", "مرکز راهنما") + linkto("support", "پشتیبانی") + linkto("terms", "قوانین و مقررات")
@@ -698,6 +699,18 @@ def view_learners():
             'پروژه‌های ارزیابی‌شده و درس‌های تکمیل‌شده محاسبه می‌شود و شماره تماس هرگز نمایش داده نمی‌شود. '
             'پیام مستقیم هم پس از ثبت‌نام و با پذیرش درخواست گیرنده فعال می‌شود.</p>'
             '<ul class="learner-grid">' + card + '</ul></div></div></main>')
+
+
+def view_glossary():
+    cards = ''.join(
+        f'<article class="glossary-card"><div class="meta-row"><span class="pill">{h(next((c["label"] for c in GLOSSARY["categories"] if c["key"] == e["category"]), e["category"]))}</span><span dir="ltr">{h(e["term"])}</span></div><h2>{h(e["title"])}</h2><p>{h(e["definition"])}</p></article>'
+        for e in GLOSSARY["entries"][:24]
+    )
+    return ('<main class="glossary-page"><div class="container"><section class="page-hero">'
+            '<span class="eyebrow">دانش‌نامهٔ هوش مصنوعی</span><h1>لغت‌نامه‌ای برای فهمیدن، نه حفظ کردن</h1>'
+            '<p>۳۴۵ اصطلاح مهم هوش مصنوعی، یادگیری ماشین و علم داده را با تعریف روشن و دسته‌بندی پیدا کن.</p>'
+            '</section><div class="panel-card"><p class="muted">نسخهٔ ایستا ۲۴ اصطلاح منتخب را نشان می‌دهد؛ جست‌وجو، فهرست کامل و پیوند مفاهیم مرتبط در نسخهٔ سروری فعال است.</p>'
+            '<div class="glossary-grid">' + cards + '</div></div></div></main>')
 
 
 def live_chat():
@@ -1361,6 +1374,8 @@ def view_body(route):
         return view_community()
     if view == "learners":
         return view_learners()
+    if view == "glossary":
+        return view_glossary()
     if view == "help":
         return view_help()
     if view == "support":
@@ -1437,6 +1452,8 @@ def build_routes():
          "description": "پرسش، تجربه و گفت‌وگو میان یادگیرندگان و متخصصان Noventix."},
         {"path": "learners", "title": "جامعه یادگیرندگان", "view": "learners", "nav": "learners",
          "description": "پروفایل مهارتی اعضای انجمن Noventix؛ پیشرفت واقعی هر یادگیرنده بر اساس پروژه‌های تأییدشده."},
+        {"path": "glossary", "title": "لغت‌نامهٔ هوش مصنوعی", "view": "glossary", "nav": "glossary",
+         "description": "۳۴۵ اصطلاح هوش مصنوعی، یادگیری ماشین و علم داده با تعریف روشن."},
         {"path": "help", "title": "مرکز راهنما", "view": "help", "nav": "",
          "description": "راهنمای استفاده از Noventix."},
         {"path": "support", "title": "پشتیبانی", "view": "support", "nav": "",
