@@ -96,7 +96,8 @@ function page_skill_profile(array $profile,bool $own,bool $signedIn): void {
 
 // Identity of the message control (ids, labels) lives here so the compact form on
 // cards and the full form on a profile stay the same component.
-function member_message_form(int $memberId,bool $signedIn,string $returnTo='member/'.$memberId,string $class='message-compose'): string {
+function member_message_form(int $memberId,bool $signedIn,?string $returnTo=null,string $class='message-compose'): string {
+    $returnTo ??= 'member/'.$memberId;
     $me=user();
     if (!$signedIn || !$me) return '<a class="btn btn-small btn-outline" href="'.h(url('login')).'">برای پیام دادن وارد شوید</a>';
     if ((int)$me['id']===$memberId) return '';
