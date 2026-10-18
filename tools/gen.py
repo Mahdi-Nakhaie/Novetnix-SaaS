@@ -461,27 +461,10 @@ def view_pricing():
 
 
 def view_about():
-    blocks = [
-        ("مسئله‌ای که دیدیم", "فاصله میان دانستن و ساختن، بزرگ‌ترین مشکل یادگیری برنامه‌نویسی است. بسیاری پایتون را می‌دانند، اما در برابر یک مسئله تازه نمی‌دانند از کجا شروع کنند."),
-        ("رویکرد ما", "یادگیری باید با عمل گره بخورد. به همین دلیل هر مفهوم با یک پروژه واقعی همراه است و ارزیابی بر پایه انتقال مهارت انجام می‌شود."),
-        ("تعهد ما", "شفافیت در آنچه ارائه می‌دهیم، پرهیز از وعده‌های بزرگ و احترام به زمان یادگیرنده؛ سه اصل ساده‌ای که به آن پایبندیم."),
-    ]
-    out = ('<main>' + page_hero("درباره ما", "ما Noventix را برای ساختن ساختیم",
-                                "اینجا فقط دوره نمی‌بینی؛ با یک مسیر روشن، مهارتت را در پروژه‌های واقعی می‌سازی.")
-           + '<section class="section container"><div class="split">')
-    for i, (heading, body) in enumerate(blocks):
-        out += f'<div class="article-section"><h2><span>{fa(i + 1)}</span>{h(heading)}</h2><p>{h(body)}</p></div>'
-    out += ('</div></section><section class="section container"><div class="section-header">'
-            '<span class="eyebrow">تجربه یادگیری</span><h2>سه اصل راهنمای ما</h2></div>'
-            '<div class="features-grid">'
-            '<article class="feature"><div class="feature-icon">◇</div><h3>شفافیت</h3>'
-            "<p>هر مقاله هدف، پیش‌نیاز و نتیجه‌اش را از ابتدا روشن می‌کند.</p></article>"
-            '<article class="feature"><div class="feature-icon">⌘</div><h3>کاربردپذیری</h3>'
-            "<p>محتوایی می‌نویسیم که در پروژه واقعی به کار بیاید، نه فقط در آزمون.</p></article>"
-            '<article class="feature"><div class="feature-icon">✳</div><h3>احترام به یادگیرنده</h3>'
-            "<p>بدون وعده‌های غیرواقعی؛ مسیر و انتظارات روشن است.</p></article>"
-            "</div></section></main>")
-    return out
+    return ('<main><header class="about-hero"><div class="container about-hero-grid"><div><span class="eyebrow">درباره Noventix</span><h1>یادگیری را به توانایی ساختن تبدیل می‌کنیم.</h1><p class="lead">Noventix برای کسانی ساخته شده که نمی‌خواهند فقط ویدیو ببینند؛ می‌خواهند مسئله را بفهمند، کد بنویسند و نتیجه‌ای قابل ارائه بسازند.</p><div class="hero-actions">'
+            + linkto("projects", "دیدن پروژه‌ها ←", "btn btn-primary") + linkto("courses", "مسیرهای یادگیری", "btn btn-outline")
+            + '</div></div><div class="about-hero-card"><span class="about-card-mark">N</span><strong>از مفهوم تا اجرا</strong><p>محتوای فارسی، تمرین واقعی، میزکار کد و بازخورد مرحله‌به‌مرحله در یک مسیر واحد.</p><div class="about-mini-stats"><span><b>۳۴۵+</b> اصطلاح آموزشی</span><span><b>۱۲</b> پروژه داده‌محور</span></div></div></div></header><section class="section container"><div class="about-intro"><div><span class="eyebrow">چرا ساخته شد؟</span><h2>فاصلهٔ بین دانستن و ساختن</h2></div><div><p>خیلی از مسیرهای آموزشی با توضیح تمام می‌شوند؛ درست جایی که یادگیرنده باید تصمیم بگیرد، خطا کند و راه‌حل خودش را بسازد. Noventix این فاصله را با پروژه، تمرین و بازخورد پر می‌کند.</p><p>ما تلاش می‌کنیم هر مفهوم یک خروجی روشن داشته باشد: یک برنامه، یک تحلیل، یک مدل یا مهارتی که بتوانی در پروژهٔ بعدی دوباره از آن استفاده کنی.</p></div></div></section><section class="section about-values-section"><div class="container"><div class="section-header"><span class="eyebrow">روش ما</span><h2>چه چیزی تجربهٔ Noventix را متفاوت می‌کند؟</h2><p>مسیر یادگیری باید روشن، قابل اندازه‌گیری و نزدیک به دنیای واقعی باشد.</p></div><div class="features-grid about-values"><article class="feature"><span class="feature-n">۰۱ · مسیر روشن</span><h3>از هدف شروع می‌کنیم</h3><p>پیش‌نیاز، خروجی و قدم بعدی هر درس و پروژه از ابتدا مشخص است.</p></article><article class="feature"><span class="feature-n">۰۲ · تمرین واقعی</span><h3>با ساختن یاد می‌گیریم</h3><p>با داده، کد و مسئله‌ای کار می‌کنی که نتیجهٔ آن قابل بررسی است.</p></article><article class="feature"><span class="feature-n">۰۳ · بازخورد معتبر</span><h3>پیشرفتت قابل مشاهده است</h3><p>ارزیابی پروژه‌ها کمک می‌کند بدانی چه چیزی را یاد گرفته‌ای و کجا باید بهتر شوی.</p></article><article class="feature"><span class="feature-n">۰۴ · صداقت</span><h3>بدون وعدهٔ غیرواقعی</h3><p>دربارهٔ سطح محتوا، محدودیت ابزارها و نتیجهٔ قابل انتظار شفاف صحبت می‌کنیم.</p></article></div></div></section><section class="section container"><div class="about-process"><div class="section-header"><span class="eyebrow">چرخهٔ یادگیری</span><h2>از اولین سؤال تا پروژهٔ قابل ارائه</h2></div><div class="about-process-grid"><div><span>۱</span><h3>یاد بگیر</h3><p>مفهوم را با توضیح کوتاه و مثال کاربردی می‌فهمی.</p></div><div><span>۲</span><h3>امتحان کن</h3><p>در تمرین و میزکار کد، ایده را به اجرا تبدیل می‌کنی.</p></div><div><span>۳</span><h3>ارزیابی کن</h3><p>خروجی را با معیار روشن بررسی و اصلاح می‌کنی.</p></div><div><span>۴</span><h3>به اشتراک بگذار</h3><p>در انجمن تجربه‌ات را مطرح می‌کنی و از مسیر دیگران یاد می‌گیری.</p></div></div></div></section><section class="section container"><div class="cta-panel about-cta"><span class="eyebrow">قدم بعدی</span><h2>یادگیری را با یک پروژه شروع کن</h2><p>مسیر مناسب خودت را انتخاب کن و اولین خروجی واقعی‌ات را بساز.</p>'
+            + linkto("projects", "شروع از پروژه‌ها ←", "btn btn-light") + '</div></section></main>')
 
 
 def view_contact():
@@ -508,12 +491,18 @@ def view_contact():
 
 
 def view_help():
-    return ('<main>' + page_hero("مرکز راهنما", "پاسخ‌های روشن برای شروع سریع", "راهنمای استفاده از مسیر یادگیری، میزکار کد و حساب کاربری.")
-            + '<section class="section container"><div class="help-grid">'
-            + '<article class="panel-card"><h2>شروع کار</h2><p>برای ورود به پنل، نام، نام خانوادگی و شماره موبایل خود را وارد کنید و کد تأیید را ثبت کنید.</p></article>'
-            + '<article class="panel-card"><h2>میزکار کد</h2><p>کد Python را در میزکار اجرا کنید. خروجی متنی، ماتریس و نمودار در همان صفحه نمایش داده می‌شود.</p></article>'
-            + '<article class="panel-card"><h2>نیاز به کمک دارید؟</h2><p>موضوع را از مسیر پشتیبانی ثبت کنید یا از صفحه تماس با ما پیام بفرستید.</p>'
-            + linkto("support", "رفتن به پشتیبانی ←", "btn btn-outline") + '</article></div></section></main>')
+    topics = [
+        ("account", "حساب و ورود", "ثبت‌نام، تأیید کد پیامکی، ورود با رمز و رفع خطاهای رایج حساب.", "login"),
+        ("learning", "مسیر یادگیری", "انتخاب دوره، ثبت پیشرفت درس‌ها و دنبال‌کردن رشد در پروفایل مهارتی.", "courses"),
+        ("workspace", "میزکار کد", "ساخت پروژه، افزودن فایل، اجرای Python و خواندن خروجی با نکات ایمنی داده.", "projects"),
+        ("community", "انجمن و پیام‌ها", "پرسیدن سؤال، پاسخ‌دادن و شروع گفت‌وگو با اعضای جامعه.", "community"),
+        ("privacy", "امنیت و حریم خصوصی", "اطلاعات نگهداری‌شده، محافظت از حساب و درخواست اصلاح یا حذف داده‌ها.", "privacy"),
+        ("support", "پشتیبانی", "ثبت مشکل فنی، پرداخت یا حساب با جزئیات کافی برای رسیدگی سریع‌تر.", "support"),
+    ]
+    out = ('<main><header class="help-hero"><div class="container help-hero-inner"><span class="eyebrow">مرکز راهنمای Noventix</span><h1>برای هر قدم، یک راهنمای روشن</h1><p>از شروع حساب تا اجرای اولین پروژه، پاسخ‌های کاربردی را سریع پیدا کن. اگر جواب سؤال خودت را پیدا نکردی، تیم پشتیبانی و جامعهٔ یادگیرندگان کنار تو هستند.</p><div class="help-search-hint"><span aria-hidden="true">⌕</span><span>موضوعت را انتخاب کن یا از جست‌وجوی مرورگر برای پیدا کردن واژه استفاده کن.</span></div></div></header><section class="section container"><div class="help-topic-grid">')
+    for icon, title, body, path in topics:
+        out += f'<article class="help-topic"><div class="help-topic-icon">{h(icon[0])}</div><div><span class="eyebrow">راهنمای {h(icon)}</span><h2>{h(title)}</h2><p>{h(body)}</p>{linkto(path, "مشاهدهٔ راهنما ←", "inline-link")}</div></article>'
+    return out + ('</div></section><section class="section help-faq-section"><div class="container"><div class="section-header"><span class="eyebrow">سؤال‌های متداول</span><h2>پاسخ کوتاه به شروع‌های رایج</h2></div><div class="help-faq"><details open><summary>برای شروع یادگیری از کجا بروم؟</summary><p>یک دورهٔ پایه را انتخاب کن و هم‌زمان یکی از پروژه‌های کوچک را در میزکار اجرا کن؛ هر جلسه باید به یک خروجی قابل مشاهده ختم شود.</p></details><details><summary>چرا پیشرفت من ذخیره نشده است؟</summary><p>ذخیرهٔ پیشرفت به حساب واردشده و ثبت موفق فعالیت وابسته است. اگر مشکل ادامه داشت، نام دوره، زمان و پیام خطا را برای پشتیبانی بفرست.</p></details><details><summary>آیا فایل‌های میزکار عمومی هستند؟</summary><p>فایل‌های میزکار سروری فقط برای مالک حساب در دسترس‌اند؛ رمزها، کلیدها و دادهٔ شخصی دیگران را در پروژه قرار نده.</p></details><details><summary>چطور سؤال بهتری در انجمن بپرسم؟</summary><p>عنوان مشخص، هدف، کد کوتاه، ورودی نمونه و متن کامل خطا را بنویس و اطلاعات حساس را حذف کن.</p></details></div></div></section><section class="section container"><div class="help-contact"><div><span class="eyebrow">هنوز پاسخ را پیدا نکردی؟</span><h2>با جامعه یا پشتیبانی ادامه بده</h2><p>برای سؤال آموزشی به انجمن برو و برای مشکل حساب یا سرویس، درخواست پشتیبانی ثبت کن.</p></div><div class="hero-actions">' + linkto("community", "رفتن به انجمن", "btn btn-outline") + linkto("support", "ثبت درخواست پشتیبانی", "btn btn-primary") + '</div></div></section></main>')
 
 
 def view_support():
@@ -640,7 +629,24 @@ def view_terms():
 
 
 def view_privacy():
-    return view_legal("حریم خصوصی", "نحوه نگهداری و استفاده از اطلاعات شما", [("اطلاعات حساب", "شماره موبایل و نام برای ایجاد حساب و ارائه خدمات استفاده می‌شود."), ("داده‌های آموزشی", "پیشرفت، ثبت‌نام‌ها و فعالیت‌های آموزشی برای نمایش داشبورد شما نگهداری می‌شوند."), ("امنیت", "اطلاعات حساس نباید در پیام‌ها یا کدهای آموزشی وارد شوند.")])
+    items = [
+        ("account", "اطلاعات حساب", "برای ساخت حساب و ورود، نام، شماره موبایل و رمز عبور دریافت می‌شود. شماره موبایل شناسهٔ حساب است و رمز عبور به‌صورت متن ساده نگهداری نمی‌شود.", ["رمز عبور با الگوریتم هش ذخیره می‌شود.", "شماره موبایل برای ورود و ارتباط ضروری است."]),
+        ("learning", "داده‌های یادگیری", "ثبت‌نام دوره‌ها، پیشرفت درس‌ها، پروژه‌های تکمیل‌شده و فعالیت‌های آموزشی برای نمایش مسیر شخصی و محاسبهٔ پیشرفت نگهداری می‌شوند.", ["پیشرفت به حساب خودتان متصل است.", "پروژهٔ تأییدشده می‌تواند در پروفایل مهارتی نمایش داده شود."]),
+        ("workspace", "میزکار کد و فایل‌ها", "فایل‌های میزکار در نسخهٔ سروری در فضای خصوصی حساب ذخیره می‌شوند و اجرای کد در سرویس ایزولهٔ پیکربندی‌شده انجام می‌شود. اطلاعات حساس را بارگذاری نکنید.", ["دسترسی فایل‌ها به مالک حساب محدود است.", "برای کارهای مهم نسخهٔ پشتیبان نگه دارید."]),
+        ("community", "انجمن و پروفایل مهارتی", "پست‌ها، پاسخ‌ها، نام نمایشی و بخش‌های عمومی پروفایل برای اعضای انجمن قابل مشاهده است. شماره موبایل و اطلاعات ورود عمومی نمی‌شود.", ["محتوای انجمن عمومی است.", "شماره موبایل نمایش داده نمی‌شود."]),
+        ("messages", "پیام‌های مستقیم", "گفت‌وگوهای مستقیم پس از پذیرش درخواست ارتباط شکل می‌گیرد. متن پیام‌ها برای ارائهٔ پیام‌رسانی و رسیدگی به گزارش‌های سوءاستفاده نگهداری می‌شود.", ["درخواست پیام پیش از گفت‌وگو نیاز به پذیرش دارد.", "اطلاعات حساس را در پیام‌ها ننویسید."]),
+        ("security", "امنیت و نشست", "برای محافظت از حساب، نشست‌ها با کوکی‌های امن، محدودیت زمانی، توکن CSRF و تأیید شماره مدیریت می‌شوند. کدهای یک‌بارمصرف به‌صورت هش نگهداری می‌شوند.", ["کد تأیید و رمز را با کسی به اشتراک نگذارید.", "ورود مشکوک را سریع گزارش کنید."]),
+        ("usage", "استفاده از داده", "اطلاعات برای ورود، ارائهٔ دوره‌ها، اجرای پروژه، نمایش داشبورد، پشتیبانی و بهبود پایداری سرویس استفاده می‌شود و برای فروش یا تبلیغات نامرتبط در اختیار دیگران قرار نمی‌گیرد.", ["استفاده از داده باید با ارائهٔ خدمت مرتبط باشد.", "اطلاعات شما فروخته نمی‌شود."]),
+        ("rights", "حقوق شما", "می‌توانید دربارهٔ داده‌های حساب توضیح بخواهید، اصلاح اطلاعات را درخواست کنید یا برای حذف حساب و داده‌های مرتبط با پشتیبانی تماس بگیرید.", ["درخواست اصلاح یا حذف را از پشتیبانی ارسال کنید.", "پاسخ پس از بررسی مالکیت حساب انجام می‌شود."]),
+        ("changes", "تغییرات این صفحه", "اگر شیوهٔ نگهداری یا استفاده از داده‌ها تغییر کند، متن این صفحه به‌روزرسانی می‌شود و تغییرات مهم از مسیر اعلان‌های سایت اطلاع داده می‌شود.", ["نسخهٔ منتشرشده در همین صفحه مرجع اطلاع‌رسانی است."]),
+    ]
+    out = ('<main><header class="terms-hero privacy-hero"><div class="container terms-hero-inner"><span class="eyebrow">شفافیت دربارهٔ داده‌ها</span><h1>حریم خصوصی</h1><p>در Noventix می‌خواهیم بدانید چه اطلاعاتی دریافت می‌شود، چرا به آن نیاز داریم، چه کسانی به آن دسترسی دارند و برای کنترل آن چه گزینه‌هایی دارید.</p><div class="terms-hero-facts"><span>۹ موضوع روشن</span><span>رمزها به‌صورت هش</span><span>عدم فروش اطلاعات</span></div></div></header><div class="container terms-layout"><nav class="terms-nav" aria-label="فهرست حریم خصوصی"><strong>در این صفحه</strong><ol>')
+    for anchor, title, _body, _points in items:
+        out += f'<li><a href="#privacy-{h(anchor)}">{h(title)}</a></li>'
+    out += ('</ol></nav><div class="terms-content"><div class="terms-intro"><strong>خلاصهٔ سریع</strong><p>اطلاعات لازم برای ارائهٔ خدمت را جمع‌آوری می‌کنیم، دسترسی را محدود نگه می‌داریم و اطلاعات ورود را به‌صورت قابل خواندن ذخیره نمی‌کنیم.</p><ul class="terms-points"><li>شماره موبایل شناسهٔ ورود و تأیید حساب است.</li><li>محتوای انجمن عمومی است؛ فایل‌های میزکار سروری خصوصی‌اند.</li><li>برای اصلاح یا حذف اطلاعات، از مسیر پشتیبانی درخواست بدهید.</li></ul></div>')
+    for number, (anchor, title, body, points) in enumerate(items, 1):
+        out += f'<section id="privacy-{h(anchor)}" class="terms-section" aria-labelledby="privacy-heading-{h(anchor)}"><div class="terms-section-heading"><span aria-hidden="true">{fa(f"{number:02}")}</span><h2 id="privacy-heading-{h(anchor)}">{h(title)}</h2></div><p>{h(body)}</p><ul class="terms-points">' + ''.join(f'<li>{h(point)}</li>' for point in points) + '</ul></section>'
+    return out + ('<div class="terms-contact"><div><h2>دربارهٔ اطلاعات حسابتان پرسشی دارید؟</h2><p>درخواست توضیح، اصلاح یا حذف اطلاعات را از مسیر امن پشتیبانی ارسال کنید.</p></div>' + linkto("contact", "تماس با ما ←", "btn btn-primary") + '</div></div></div></main>')
 
 
 def view_login():
@@ -676,16 +682,7 @@ def view_verify():
 
 
 def view_community():
-    return ('<main>' + page_hero("انجمن", "کنار هم یاد می‌گیریم",
-                                 "سؤال‌هایت را بپرس، تجربه‌ات را به اشتراک بگذار و مسیر یادگیری دیگران را بهتر کن.")
-            + '<section class="section container"><div class="panel-card narrow-left">'
-              '<form class="stack-form" data-form="post">'
-              '<label>عنوان<input name="title" required minlength="5" maxlength="180"></label>'
-              '<label>متن<textarea name="body" required minlength="10" maxlength="5000" rows="5"></textarea></label>'
-              '<button class="btn btn-primary">ثبت در انجمن</button></form>'
-              '<p class="form-note" hidden></p></div>'
-              '<div class="community-list" data-community-list></div></section>'
-            + '<section class="section container">' + live_chat() + "</section></main>")
+    return ('<main><header class="community-hero"><div class="container community-hero-grid"><div><span class="eyebrow">جامعهٔ Noventix</span><h1>یادگیری وقتی عمیق‌تر می‌شود که با دیگران ادامه پیدا کند.</h1><p class="lead">اینجا جایی برای پرسیدن سؤال، نشان‌دادن مسیر حل مسئله و پیدا کردن هم‌مسیرهای یادگیری است؛ محترمانه، کاربردی و نزدیک به پروژه.</p><div class="hero-actions">' + linkto("learners", "دیدن پروفایل‌های مهارتی ←", "btn btn-primary") + linkto("login", "عضویت در جامعه", "btn btn-outline") + '</div></div><div class="community-hero-card"><span class="about-card-mark">◇</span><strong>یک سؤال خوب، شروع یک مسیر است.</strong><p>قبل از پرسیدن، مسئله و خطایی را که دیده‌ای بنویس؛ پاسخ‌های دقیق‌تری می‌گیری و دیگران هم بهتر یاد می‌گیرند.</p><div class="about-mini-stats"><span><b>۱۰۰٪</b> یادگیری مشارکتی</span><span><b>۱</b> جامعهٔ همراه</span></div></div></div></header><section class="section container"><div class="community-guidelines"><div><span class="eyebrow">راهنمای مشارکت</span><h2>چطور عضو مفیدتری برای جامعه باشیم؟</h2><p class="muted">جامعه زمانی ارزشمند است که هر پست، یا مسئله‌ای را روشن کند یا تجربه‌ای را به تجربهٔ دیگران اضافه کند.</p></div><div class="guideline-list"><article><span>۱</span><div><h3>مسئله را دقیق بنویس</h3><p>موضوع، تلاش‌های انجام‌شده و متن خطا را بدون اطلاعات حساس اضافه کن.</p></div></article><article><span>۲</span><div><h3>به تجربه‌ها احترام بگذار</h3><p>پاسخ را نقد کن، نه شخص را؛ راه‌حل جایگزین را با دلیل توضیح بده.</p></div></article><article><span>۳</span><div><h3>نتیجه را برگردان</h3><p>اگر راه‌حل جواب داد یا نداد، نتیجه را بنویس تا برای نفر بعد هم مفید بماند.</p></div></article></div></div></section><section class="section community-feed-section"><div class="container"><div class="section-header"><span class="eyebrow">فضای گفت‌وگو</span><h2>از تجربه‌های هم یاد می‌گیریم</h2><p>نسخهٔ نمایشی جامعه برای آشنایی با مسیر مشارکت آماده شده است.</p></div><div class="community-join panel-card"><div><span class="eyebrow">عضویت رایگان</span><h2>برای پرسیدن و پاسخ‌دادن وارد شوید</h2><p class="muted">با یک حساب تأییدشده می‌توانی پست بسازی، پاسخ بدهی و پروفایل مهارتی داشته باشی.</p></div>' + linkto("login", "ورود یا ثبت‌نام ←", "btn btn-primary") + '</div><div class="panel-card narrow-left community-compose"><span class="eyebrow">نسخهٔ نمایشی</span><h2>یک گفت‌وگو را شروع کن</h2><form class="stack-form" data-form="post"><label>عنوان<input name="title" required minlength="5" maxlength="180" placeholder="عنوان پرسش یا تجربه"></label><label>متن<textarea name="body" required minlength="10" maxlength="5000" rows="5" placeholder="زمینه و سؤال اصلی را بنویسید"></textarea></label><button class="btn btn-primary">ثبت در انجمن</button></form><p class="form-note" hidden></p></div><div class="community-list" data-community-list></div>' + '<section class="section container">' + live_chat() + "</section></div></section></main>")
 
 
 def view_learners():
