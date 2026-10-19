@@ -2,10 +2,17 @@
 declare(strict_types=1);
 require_once __DIR__.'/app.php';
 require_once __DIR__.'/workspace_views.php';
+require_once __DIR__.'/darycheh_views.php';
 
 function route(): void {
     global $path,$me,$plan;
     if (seo_route($path)) return;
+    if (in_array($path,['darycheh/state','darycheh/progress'],true)) dr_api($path);
+    if ($path==='dashboard/darycheh' || preg_match('~^dashboard/darycheh/([1-9][0-9]*)$~D',$path,$darychehMatch)) {
+        $u=require_user();
+        head_page('دریچه','تمرین تصمیم‌گیری و حل مسئله',true); notice();
+        dr_page($u,isset($darychehMatch[1])?(int)$darychehMatch[1]:null); foot_page(true); return;
+    }
     if ($path==='payment/zarinpal/callback') payment_callback();
     if ($path==='dashboard/payment-history') { $u=require_user(); head_page('تاریخچه پرداخت','',true); notice(); echo '<main class="panel-content">'; payment_history($u); echo '</main>'; foot_page(true); return; }
     if (in_array($path,['workspace/project-solution','workspace/data','workspace/download','workspace/run-state','workspace/runtime','workspace/datasets-search','workspace/datasets-detail','workspace/datasets-state'],true)) ws_get($path);
@@ -84,7 +91,7 @@ function route(): void {
     }
     if (preg_match('~^member/([1-9][0-9]*)$~D',$path,$match)) { page_member((int)$match[1]); return; }
     if ($path==='login' || $path==='register') {
-        if (($_GET['next'] ?? null)==='course/'.FREE_COURSE_SLUG) $_SESSION['auth_return_to']='course/'.FREE_COURSE_SLUG;
+        if (($_GET['next'] ?? null)==='course/'.FREE_COURSE_SLUG || (is_string($_GET['next'] ?? null) && preg_match('~^dashboard/darycheh(?:/[1-9][0-9]*)?$~D',$_GET['next']))) $_SESSION['auth_return_to']=$_GET['next'];
         page_login($path==='register'); return;
     }
     if ($path==='verify') { page_verify(); return; }

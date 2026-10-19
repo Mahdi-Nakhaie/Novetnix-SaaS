@@ -49,6 +49,7 @@ function panel_nav(): void {
         ? ['dashboard'=>'Overview','dashboard/users'=>'کاربران','dashboard/users-new'=>'کاربران جدید','dashboard/courses'=>'Courses & Lessons','dashboard/catalog'=>'پروژه‌ها','dashboard/challenges'=>'چالش‌ها','dashboard/subscriptions'=>'اشتراک‌ها','dashboard/payments'=>'پرداخت‌ها','dashboard/community'=>'Community','dashboard/support'=>'پشتیبانی','dashboard/announcements'=>'اعلان‌ها','dashboard/gamification'=>'Gamification','dashboard/analytics'=>'Analytics','dashboard/content'=>'Content','dashboard/glossary'=>'واژه‌نامه','dashboard/profile'=>'پروفایل','dashboard/settings'=>'System Settings']
         : ['dashboard'=>'نمای کلی','dashboard/learning'=>'مسیر یادگیری','dashboard/projects'=>'پروژه‌ها','dashboard/challenges'=>'چالش‌ها','dashboard/community'=>'Community','messages'=>'پیام‌ها','dashboard/nova'=>'Nova AI','dashboard/subscription'=>'اشتراک','dashboard/support'=>'پشتیبانی','dashboard/gamification'=>'Gamification','dashboard/activity'=>'فعالیت و Streak','dashboard/profile'=>'پروفایل','dashboard/settings'=>'تنظیمات'];
     $items['dashboard/workspace']='میزکار پایتون';
+    $items['dashboard/darycheh']='دریچه';
     if ($role!=='admin') $items['member/'.$me['id']]='پروفایل مهارتی';
     if ($role==='admin') $items['dashboard/workspace-templates']='تمرین‌های پایتون';
     if (!COMMERCE_ENABLED) unset($items['dashboard/subscription'],$items['dashboard/subscriptions'],$items['dashboard/payments']);
