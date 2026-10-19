@@ -175,6 +175,7 @@ function ws_run_sync(array $run,int $userId): array {
     $result=ws_runner('GET','/jobs/'.$run['remote_id'].'?owner='.$userId);
     $states=['queued','running','cancelling','cancelled','succeeded','program_error','timeout','output_limit','artifact_limit','dependency_error','memory_limit','cpu_limit','infrastructure_error'];
     if (!in_array($result['state'] ?? '',$states,true)) throw new RuntimeException('Invalid run state.');
+    if ($run['entrypoint']==='noventix_terminal.py' && isset($result['files'])) unset($result['files']['noventix_terminal.py']);
     if (isset($result['files'])) $result['files']=ws_manifest(hf_local($result['files'],(int)$run['project_id']))['files'];
     q('UPDATE workspace_runs SET state=?,result_json=? WHERE id=?',[$result['state'],json_encode($result,JSON_THROW_ON_ERROR),$run['id']]);
     $awarded=!empty($run['assessment_key']) && lp_grant($run,$result,$userId);
@@ -253,6 +254,9 @@ function ws_post(string $path): never {
         if ($path==='workspace/run') {
             if (!ws_runner_ready()) ws_fail('موتور اجرای ایزوله هنوز راه‌اندازی نشده است؛ خروجی ساختگی نمایش داده نمی‌شود.',503);
             $key=(string)($_POST['request_key'] ?? ''); $entry=(string)($_POST['entrypoint'] ?? 'main.py');
+            $terminal=trim((string)($_POST['terminal_command'] ?? ''));
+            if (strlen($terminal)>2000 || str_contains($terminal,"\0")) throw new InvalidArgumentException('فرمان حداکثر ۲۰۰۰ نویسه و بدون کاراکتر تهی باشد.');
+            if ($terminal!=='') $entry='noventix_terminal.py';
             if (!preg_match('/^[a-f0-9-]{36}$/D',$key) || !ws_path($entry) || !str_ends_with($entry,'.py')) throw new InvalidArgumentException('شناسه اجرا یا فایل ورودی معتبر نیست.');
             $definition=lp_definition((int)$row['catalog_index']);
             $assessment=($_POST['assess'] ?? '')==='1';
@@ -265,7 +269,16 @@ function ws_post(string $path): never {
                 if (!$run) {
                     $row=ws_owned($userId,$id);
                     if ((int)$row['revision']!==$revision) { $pdo->rollBack(); ws_fail('ابتدا آخرین نسخه فایل‌ها را ذخیره کنید.',409); }
+                    if ($entry==='noventix_terminal.py' && $terminal==='') throw new InvalidArgumentException('این نام فایل برای اجرای ترمینال رزرو شده است.');
                     $files=json_decode($row['files_json'],true,512,JSON_THROW_ON_ERROR);
+                    if ($terminal!=='') {
+                        if (isset($files[$entry])) throw new InvalidArgumentException('نام noventix_terminal.py برای ترمینال رزرو شده است.');
+                        $program=file_get_contents(dirname(__DIR__).'/services/python-runner/terminal.py');
+                        if ($program===false) throw new RuntimeException('Terminal program unavailable.');
+                        $program.="\nimport base64\nterminal(base64.b64decode('".base64_encode($terminal)."').decode('utf-8'))\n";
+                        $files[$entry]=['kind'=>'file','data'=>base64_encode($program)];
+                        $files=ws_manifest($files)['files'];
+                    }
                     if (!isset($files[$entry]) || $files[$entry]['kind']!=='file') throw new InvalidArgumentException('فایل ورودی موجود نیست.');
                     if ((int)q('SELECT COUNT(*) FROM workspace_runs r JOIN projects p ON p.id=r.project_id WHERE p.user_id=?',[$userId])->fetchColumn()>=100) throw new InvalidArgumentException('سقف تاریخچه اجرا تکمیل است؛ مدیر باید نگهداری تاریخچه را بررسی کند.');
                     $history=(int)q('SELECT COALESCE(SUM(LENGTH(r.snapshot_json)+COALESCE(LENGTH(r.result_json),0)),0) FROM workspace_runs r JOIN projects p ON p.id=r.project_id WHERE p.user_id=?',[$userId])->fetchColumn();

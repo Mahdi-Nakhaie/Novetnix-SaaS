@@ -7,7 +7,9 @@ PROJECT_BYTES = 5_242_880
 FILE_COUNT = 100
 EXTENSIONS = {'py', 'txt', 'csv', 'json', 'md', 'png', 'joblib', 'pkl', 'npy', 'npz'}
 PACKAGES = {'numpy': '2.2.3', 'pandas': '2.2.3', 'scipy': '1.15.2',
-            'scikit-learn': '1.6.1', 'matplotlib': '3.10.1', 'joblib': '1.4.2'}
+            'scikit-learn': '1.6.1', 'matplotlib': '3.10.1', 'joblib': '1.4.2',
+            'seaborn': '0.13.2', 'sympy': '1.13.3', 'networkx': '3.4.2',
+            'openpyxl': '3.1.5', 'requests': '2.32.3'}
 
 
 def valid_path(path):

@@ -46,7 +46,7 @@ def main():
         while process.poll() is None:
             if os.fstat(out.fileno()).st_size + os.fstat(err.fileno()).st_size > 131_072:
                 state = 'output_limit'
-            elif time.monotonic() - started > 15:
+            elif time.monotonic() - started > 25:
                 state = 'timeout'
             if state:
                 try:

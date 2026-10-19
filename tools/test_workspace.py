@@ -75,7 +75,7 @@ class PolicyTests(unittest.TestCase):
     def test_container_plan_has_mandatory_isolation_and_no_host_mount(self):
         image = 'noventix/python@sha256:' + 'a' * 64
         command = runner.docker_command(image, 'noventix-' + str(uuid.uuid4()))
-        for required in ('--runtime=runsc', '--network=none', '--read-only', '--user=65532:65532', '--cap-drop=ALL', '--security-opt=no-new-privileges', '--pids-limit=64', '--memory=512m', '--memory-swap=512m', '--cpus=1', '--pull=never', '--log-driver=none'):
+        for required in ('--runtime=runsc', '--network=none', '--read-only', '--user=65532:65532', '--cap-drop=ALL', '--security-opt=no-new-privileges', '--pids-limit=64', '--memory=512m', '--memory-swap=512m', '--cpus=1', '--ulimit=cpu=20:21', '--pull=never', '--log-driver=none'):
             self.assertIn(required, command)
         for prohibited in ('--privileged', '--volume', '-v', '--mount', '--env-file', '--pid=host', '--network=host'):
             self.assertNotIn(prohibited, command)

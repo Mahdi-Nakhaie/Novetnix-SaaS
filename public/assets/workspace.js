@@ -41,6 +41,15 @@
   const output = root.querySelector('[data-ws-output]');
   const download = root.querySelector('[data-ws-download]');
   const lines = root.querySelector('[data-ws-lines]');
+  const commandInput = root.querySelector('[data-ws-command]');
+  const commandSubmit = root.querySelector('[data-ws-terminal-submit]');
+  const terminalLog = root.querySelector('[data-ws-terminal-log]');
+  const history = [];
+  let historyIndex = 0, historyDraft = '', pendingCommand = '', terminalRun = false;
+  const terminalPrint = text => {
+    terminalLog.textContent = (terminalLog.textContent + '\n' + text).slice(-60000);
+    terminalLog.scrollTop = terminalLog.scrollHeight;
+  };
   const buttons = Object.fromEntries(Array.from(root.querySelectorAll('[data-ws-action]'), node => [node.dataset.wsAction, node]));
   let files = {}, selected = '', revision = 0, dirty = false, busy = false, ready = false, runner = false;
   let runId = null, requestKey = null, pendingEntry = '', result = null, timer = null;
@@ -59,6 +68,7 @@
     buttons.cancel.disabled = !ready || locked || !active();
     buttons.apply.disabled = !ready || locked || active() || dirty || !result || !['succeeded', 'program_error'].includes(result.state) || result.revision !== revision;
     buttons['remove-file'].disabled = !ready || locked || !selected || datasetPaths.has(selected);
+    commandInput.disabled = commandSubmit.disabled = !ready || locked || !runner || active() || requestKey !== null;
     buttons.rename.disabled = !ready || locked || !selected || datasetPaths.has(selected);
   }
   function updateLines() { lines.textContent = Array.from({length: code.value.split('\n').length}, (_, i) => i + 1).join('\n'); }
@@ -98,7 +108,8 @@
     const state = await request('/workspace/data?id=' + project);
     selected = ''; files = {...state.files}; datasetPaths = new Set(state.dataset_paths || []); revision = state.revision; runner = state.runner_ready; dirty = false; ready = true;
     if (state.pending_run) {
-      if (state.pending_run.remote_id) runId = state.pending_run.id;
+      terminalRun = state.pending_run.entrypoint === 'noventix_terminal.py';
+      if (state.pending_run.remote_id) runId = Number(state.pending_run.id);
       else { requestKey = state.pending_run.request_key; pendingEntry = state.pending_run.entrypoint; }
     }
     select(files['main.py'] ? 'main.py' : Object.keys(files)[0] || '');
@@ -127,10 +138,48 @@
       runState.textContent = labels[state.state] || state.state;
       output.textContent = 'stdout\n' + (state.stdout || '') + '\n\nstderr / Traceback\n' + (state.stderr || '');
       if (['queued', 'running', 'cancelling'].includes(state.state)) timer = setTimeout(poll, 2000);
-      else { result = state; runId = null; requestKey = null; message('اجرا پایان یافت؛ برای نگهداری فایل‌های تولیدشده دکمه ذخیره خروجی را بزنید.'); }
+      else {
+        if (terminalRun) terminalPrint((state.stdout || '') + (state.stderr ? '\n' + state.stderr : '') + '\n[' + (labels[state.state] || state.state) + ']');
+        result = state; runId = null; requestKey = null; pendingCommand = ''; terminalRun = false;
+        message('اجرا پایان یافت؛ برای نگهداری فایل‌های تولیدشده دکمه ذخیره خروجی را بزنید.');
+      }
     } catch (error) { message(error.message + ' برای ادامه، بررسی وضعیت اجرا را بزنید؛ اجرای جدیدی ارسال نمی‌شود.'); }
     refreshButtons();
   }
+  async function startRun(command = '') {
+    if (runId) { await poll(); return; }
+    if (!requestKey) {
+      const target = entry.value.trim();
+      if (!command && (!pathValid(target) || !target.endsWith('.py') || files[target]?.kind !== 'file')) throw new Error('فایل اجرایی پایتون موجود و معتبر انتخاب کنید.');
+      await save(); requestKey = crypto.randomUUID(); pendingEntry = target; pendingCommand = command; terminalRun = Boolean(command);
+    }
+    const state = await request('/workspace/run', form({request_key: requestKey, entrypoint: pendingEntry, terminal_command: pendingCommand}));
+    runId = state.local_id; result = null; runState.textContent = 'در صف اجرا'; await poll();
+  }
+  root.querySelector('[data-ws-terminal-form]').addEventListener('submit', async event => {
+    event.preventDefault();
+    const command = commandInput.value.trim();
+    if (!command || busy || !ready || !runner || runId || requestKey || downloading !== null) return;
+    history.push(command); historyIndex = history.length; historyDraft = ''; commandInput.value = '';
+    terminalPrint('/workspace $ ' + command);
+    if (command === 'clear' || command === 'cls') { terminalLog.textContent = ''; return; }
+    if (command === 'help') {
+      terminalPrint('python main.py [args]\npython -c "print(2 + 2)"\npython --version\npip list\nls / dir\ncat filename / type filename\npwd\nclear / cls\n\nهر فرمان اجرای مستقل است؛ متغیرها بین اجراها باقی نمی‌مانند. فایل خروجی را با دکمهٔ ذخیره خروجی نگه دارید. نصب اینترنتی و shell غیرفعال است.');
+      return;
+    }
+    busy = true; refreshButtons();
+    try { await startRun(command); }
+    catch (error) { terminalPrint(error.message); message(error.message); }
+    finally { busy = false; refreshButtons(); if (!commandInput.disabled) commandInput.focus(); }
+  });
+  commandInput.addEventListener('keydown', event => {
+    if (!['ArrowUp', 'ArrowDown'].includes(event.key)) return;
+    event.preventDefault();
+    if (historyIndex === history.length) historyDraft = commandInput.value;
+    historyIndex = Math.max(0, Math.min(history.length, historyIndex + (event.key === 'ArrowUp' ? -1 : 1)));
+    commandInput.value = history[historyIndex] ?? historyDraft;
+  });
+  root.querySelector('[data-ws-terminal-clear]').addEventListener('click', () => { terminalLog.textContent = ''; });
   async function act(action) {
     if (busy || !ready || downloading !== null) return;
     busy = true; refreshButtons();
@@ -165,16 +214,7 @@
         await request('/workspace/upload', data); await load();
         root.querySelector('[data-ws-upload]').value = ''; root.querySelector('[data-ws-zip]').value = '';
       }
-      if (action === 'run') {
-        if (runId) { await poll(); return; }
-        if (!requestKey) {
-          const target = entry.value.trim();
-          if (!pathValid(target) || !target.endsWith('.py') || files[target]?.kind !== 'file') throw new Error('فایل اجرایی پایتون موجود و معتبر انتخاب کنید.');
-          await save(); requestKey = crypto.randomUUID(); pendingEntry = target;
-        }
-        const state = await request('/workspace/run', form({request_key: requestKey, entrypoint: pendingEntry}));
-        runId = state.local_id; result = null; await poll();
-      }
+      if (action === 'run') await startRun();
       if (action === 'cancel' && runId) { await request('/workspace/cancel', form({run_id: runId})); await poll(); }
       if (action === 'apply' && result) {
         if (dirty) throw new Error('ابتدا تغییرات را ذخیره کنید؛ خروجی روی نسخه جدید بازنویسی نمی‌شود.');

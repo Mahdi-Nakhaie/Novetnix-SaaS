@@ -37,7 +37,7 @@ def docker_command(image, container):
             '--read-only', '--user=65532:65532', '--cap-drop=ALL',
             '--security-opt=no-new-privileges', '--pids-limit=64',
             '--memory=512m', '--memory-swap=512m', '--cpus=1', '--cgroupns=private',
-            '--ulimit=core=0:0', '--ulimit=nofile=64:64', '--ulimit=cpu=10:10',
+            '--ulimit=core=0:0', '--ulimit=nofile=64:64', '--ulimit=cpu=20:21',
             '--tmpfs=/workspace:rw,noexec,nosuid,nodev,size=16m,uid=65532,gid=65532,mode=0700',
             '--tmpfs=/tmp:rw,noexec,nosuid,nodev,size=16m,uid=65532,gid=65532,mode=0700',
             '--workdir=/workspace', '--log-driver=none', '-i', image,
@@ -97,7 +97,7 @@ def execute(job, image, cancelled):
             while True:
                 if cancelled():
                     state = 'cancelled'; break
-                if time.monotonic() - started > 30:
+                if time.monotonic() - started > 40:
                     state = 'timeout'; break
                 ready = selector.select(0.1)
                 if ready:
