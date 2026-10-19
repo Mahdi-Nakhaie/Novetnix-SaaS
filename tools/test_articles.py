@@ -1,0 +1,205 @@
+import ast
+import collections
+import importlib.util
+import json
+import pathlib
+import re
+import sqlite3
+import tempfile
+import unittest
+import urllib.parse
+import xml.etree.ElementTree as ET
+from html.parser import HTMLParser
+
+from tools import test_release
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+CONTENT = ROOT / 'content/articles'
+CATALOG = json.loads((CONTENT / 'catalog.json').read_text())
+
+
+def prose(text):
+    return re.sub(r'```.*?```', '', text, flags=re.S)
+
+
+class Document(HTMLParser):
+    def __init__(self, source):
+        super().__init__()
+        self.ids = []
+        self.links = []
+        self.json_ld = []
+        self.in_json = False
+        self.feed(source)
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if 'id' in attrs:
+            self.ids.append(attrs['id'])
+        if tag == 'a':
+            self.links.append(attrs.get('href', ''))
+        if tag == 'script' and attrs.get('type') == 'application/ld+json':
+            self.in_json = True
+
+    def handle_endtag(self, tag):
+        if tag == 'script':
+            self.in_json = False
+
+    def handle_data(self, data):
+        if self.in_json:
+            self.json_ld.append(json.loads(data))
+
+
+class ArticleContentTest(unittest.TestCase):
+    def test_twelve_independent_long_form_articles_and_metadata(self):
+        self.assertEqual(len(CATALOG), 12)
+        for key in ('slug', 'title', 'seo_title', 'description'):
+            self.assertEqual(len({a[key] for a in CATALOG}), 12)
+        for article in CATALOG:
+            with self.subTest(article=article['slug']):
+                self.assertRegex(article['slug'], r'^[a-z0-9-]+$')
+                text = (CONTENT / (article['slug'] + '.txt')).read_text()
+                words = prose(text).split()
+                self.assertGreaterEqual(len(words), 1850)
+                self.assertLessEqual(len(words), 2200)
+                self.assertGreaterEqual(len(article['description']), 140)
+                self.assertLessEqual(len(article['description']), 160)
+                self.assertLessEqual(len(article['seo_title'] + ' | Noventix'), 65)
+                self.assertGreaterEqual(text.count('\n## '), 12)
+                self.assertGreaterEqual(text.count('\n### '), 2)
+                paragraphs = [p for p in prose(text).split('\n\n') if len(p.split()) > 30]
+                self.assertEqual(len(paragraphs), len(set(paragraphs)))
+                self.assertNotIn('TODO', text)
+                for slug in article['related']:
+                    self.assertIn(slug, {a['slug'] for a in CATALOG})
+                    self.assertNotEqual(slug, article['slug'])
+                for source in article['sources']:
+                    self.assertEqual(urllib.parse.urlparse(source['url']).scheme, 'https')
+
+    def test_python_examples_compile(self):
+        for article in CATALOG:
+            text = (CONTENT / (article['slug'] + '.txt')).read_text()
+            for number, code in enumerate(re.findall(r'```python\n(.*?)```', text, re.S)):
+                with self.subTest(article=article['slug'], example=number):
+                    ast.parse(code)
+
+    def test_small_examples_execute(self):
+        dependencies = {'python-for-data': [], 'math-for-ml': ['numpy'], 'numpy-arrays': ['numpy'], 'pandas-cleaning': ['pandas']}
+        for slug, modules in dependencies.items():
+            with self.subTest(article=slug):
+                missing = [module for module in modules if importlib.util.find_spec(module) is None]
+                if missing:
+                    self.skipTest('Example dependencies unavailable: ' + ', '.join(missing))
+                namespace = {}
+                text = (CONTENT / (slug + '.txt')).read_text()
+                for code in re.findall(r'```python\n(.*?)```', text, re.S):
+                    exec(compile(code, slug, 'exec'), namespace)
+
+    def test_research_does_not_disguise_unavailable_sources_as_completed(self):
+        report = json.loads((ROOT / 'outputs/research/reviews.json').read_text())
+        counts = collections.Counter(r['topic'] for r in report['reviews'])
+        self.assertEqual(set(counts), {a['slug'] for a in CATALOG})
+        self.assertTrue(all(count == 10 for count in counts.values()))
+        allowed = {'extracted', 'unavailable', 'insufficient_content', 'not_html'}
+        self.assertTrue(all(r['review_status'] in allowed for r in report['reviews']))
+        brief = json.loads((ROOT / 'outputs/research/editorial-review.json').read_text())
+        self.assertEqual(brief['coverage']['usable_extractions'], sum(r['review_status'] == 'extracted' for r in report['reviews']))
+
+
+class ArticleHttpTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        test_release.ReleaseHttpTest.setUpClass()
+        cls.base = test_release.ReleaseHttpTest.base
+
+    @classmethod
+    def tearDownClass(cls):
+        test_release.ReleaseHttpTest.tearDownClass()
+
+    def test_index_redirect_and_public_home(self):
+        client = test_release.Client(self.base)
+        status, headers, _ = client.request('/courses')
+        self.assertEqual(status, 301)
+        self.assertEqual(headers['Location'], '/articles')
+        status, headers, text = client.request('/articles')
+        self.assertEqual(status, 200)
+        self.assertEqual(test_release.Head(text).h1, 1)
+        self.assertEqual(test_release.Head(text).canonical, 'https://release.invalid/articles')
+        self.assertEqual(test_release.Head(text).meta['robots'], 'index,follow')
+        self.assertNotIn('noindex', headers.get('X-Robots-Tag', ''))
+        for article in CATALOG:
+            self.assertIn('/articles/' + article['slug'], text)
+        self.assertNotIn('/course/ai-foundations', text)
+        self.assertNotIn('article-course-note', text)
+        with sqlite3.connect(test_release.ReleaseHttpTest.database) as connection:
+            connection.execute("INSERT OR IGNORE INTO courses(slug,title,description,status) VALUES ('ai-foundations','دورهٔ رایگان','دورهٔ منتشرشده','published')")
+        status, _, with_course = client.request('/articles')
+        self.assertEqual(status, 200)
+        self.assertIn('/course/ai-foundations', with_course)
+        self.assertIn('article-course-note', with_course)
+        status, _, home = client.request('/')
+        self.assertEqual(status, 200)
+        self.assertIn('href="/articles"', home)
+        self.assertIn('/articles/ai-foundations', home)
+        self.assertIn('/assets/articles.css', home)
+
+    def test_every_article_metadata_schema_toc_sources_and_links(self):
+        client = test_release.Client(self.base)
+        for article in CATALOG:
+            with self.subTest(article=article['slug']):
+                path = '/articles/' + article['slug']
+                status, headers, text = client.request(path)
+                self.assertEqual(status, 200)
+                head = test_release.Head(text)
+                self.assertEqual(head.h1, 1)
+                self.assertEqual(head.meta['description'], article['description'])
+                self.assertEqual(head.meta['robots'], 'index,follow')
+                self.assertEqual(head.meta['og:type'], 'article')
+                self.assertEqual(head.canonical, 'https://release.invalid' + path)
+                self.assertNotIn('noindex', headers.get('X-Robots-Tag', ''))
+                document = Document(text)
+                self.assertEqual(len(document.ids), len(set(document.ids)))
+                for link in document.links:
+                    self.assertTrue(link and link != '#')
+                    if link.startswith('#'):
+                        self.assertIn(link[1:], document.ids)
+                self.assertEqual(len(document.json_ld), 1)
+                schema, breadcrumbs = document.json_ld[0]['@graph']
+                self.assertEqual(schema['@type'], 'Article')
+                self.assertEqual(schema['headline'], article['title'])
+                self.assertGreaterEqual(schema['wordCount'], 1850)
+                self.assertEqual(breadcrumbs['@type'], 'BreadcrumbList')
+                self.assertEqual(breadcrumbs['itemListElement'][-1]['item'], head.canonical)
+                for source in article['sources']:
+                    self.assertIn(source['url'].replace('&', '&amp;'), text)
+
+    def test_missing_articles_are_404_and_not_indexable(self):
+        client = test_release.Client(self.base)
+        for path in ('/articles/missing', '/articles/../../missing', '/articles/ai-foundations/extra'):
+            status, headers, text = client.request(path)
+            self.assertEqual(status, 404)
+            self.assertIn('noindex', headers.get('X-Robots-Tag', ''))
+            self.assertIsNone(test_release.Head(text).canonical)
+
+    def test_sitemap_and_course_authorization_remain_valid(self):
+        client = test_release.Client(self.base)
+        status, _, xml = client.request('/sitemap.xml')
+        self.assertEqual(status, 200)
+        urls = [node.text for node in ET.fromstring(xml).iter('{http://www.sitemaps.org/schemas/sitemap/0.9}loc')]
+        self.assertEqual(len(urls), len(set(urls)))
+        self.assertNotIn('https://release.invalid/courses', urls)
+        for article in CATALOG:
+            self.assertIn('https://release.invalid/articles/' + article['slug'], urls)
+        status, headers, _ = client.request('/dashboard/learning')
+        self.assertEqual(status, 303)
+        self.assertTrue(headers['Location'].startswith('/login'))
+        fixture = test_release.ReleaseHttpTest
+        with sqlite3.connect(fixture.database) as connection:
+            connection.execute("INSERT OR IGNORE INTO courses(slug,title,description,status) VALUES ('article-regression','دورهٔ مستقل','محتوای دوره','published')")
+        status, _, text = client.request('/course/article-regression')
+        self.assertEqual(status, 200)
+        self.assertIn('دورهٔ مستقل', text)
+        self.assertIn('href="/login', text)
+
+
+if __name__ == '__main__':
+    unittest.main()

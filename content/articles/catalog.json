@@ -1,0 +1,110 @@
+[
+  {
+    "slug": "ai-foundations",
+    "title": "هوش مصنوعی چیست؟ راهنمای شروع از مفهوم تا پروژه",
+    "seo_title": "هوش مصنوعی چیست؟ راهنمای عملی شروع یادگیری",
+    "description": "هوش مصنوعی را با مثال روشن بشناسید؛ تفاوت AI و یادگیری ماشین، مهارت‌های لازم، انتخاب پروژه، خط مبنا و محدودیت‌های مدل را قدم‌به‌قدم بررسی کنید.",
+    "category": "مبانی هوش مصنوعی",
+    "sources": [{"title": "CramAI؛ سازوکار هوش مصنوعی", "url": "https://www.cramai.net/fa/blog/ai-how-does-it-work-a-beginners-guide/"}, {"title": "هوش نو؛ معرفی مفاهیم پایه", "url": "https://hoosheno.com/blog/what-is-artificial-intelligence-beginners-guide"}],
+    "related": ["python-for-data", "machine-learning", "model-evaluation"]
+  },
+  {
+    "slug": "python-for-data",
+    "title": "آموزش پایتون برای تحلیل داده؛ از صفر تا گزارش فروش",
+    "seo_title": "آموزش پایتون برای تحلیل داده با پروژهٔ فروش",
+    "description": "پایتون را با یک پروژهٔ فروش یاد بگیرید؛ محیط مجازی، متغیر، شرط، حلقه، تابع، CSV و آزمون را تمرین کنید و برای کار با NumPy و Pandas آماده شوید.",
+    "category": "پایتون",
+    "sources": [{"title": "یول آکادمی؛ مسیر مقدماتی پایتون", "url": "https://yolacademy.ir/python-course.html"}, {"title": "آی‌آر سورس کد؛ تابع و دیکشنری", "url": "https://irsourcecode.com/python-basics-part-3/"}],
+    "related": ["numpy-arrays", "pandas-cleaning", "sql-for-analysis"]
+  },
+  {
+    "slug": "math-for-ml",
+    "title": "ریاضیات یادگیری ماشین؛ آمار، احتمال و جبر خطی کاربردی",
+    "seo_title": "ریاضیات یادگیری ماشین؛ راهنمای کاربردی مبتدیان",
+    "description": "ریاضیات لازم برای یادگیری ماشین را با مثال عملی بفهمید؛ بردار، ماتریس، آمار، احتمال شرطی، گرادیان و خطا را به پروژه و ارزیابی درست مدل وصل کنید.",
+    "category": "ریاضی و آمار",
+    "sources": [{"title": "دیتایاد؛ مرور ریاضیات یادگیری ماشین", "url": "https://datayad.com/math-for-machine-learning-summary/"}, {"title": "پارس اینفوتک؛ پیش‌نیازهای ریاضی", "url": "https://parsinfotech.com/teaching-mathematics-for-machine-learning/"}],
+    "related": ["numpy-arrays", "machine-learning", "model-evaluation"]
+  },
+  {
+    "slug": "numpy-arrays",
+    "title": "آموزش NumPy؛ آرایه، محور و Broadcasting با مثال",
+    "seo_title": "آموزش NumPy؛ آرایه و Broadcasting به زبان ساده",
+    "description": "NumPy را با جدول فروش تمرین کنید؛ shape، dtype، محور، برش، Broadcasting، کپی و استانداردسازی را یاد بگیرید و از خطاهای عددی و نشت داده دور بمانید.",
+    "category": "محاسبات عددی",
+    "sources": [{"title": "مستندات NumPy؛ قوانین Broadcasting", "url": "https://numpy.org/doc/stable/user/basics.broadcasting.html?highlight=indices"}, {"title": "Programiz؛ مثال‌های Broadcasting", "url": "https://www.programiz.com/python-programming/numpy/broadcasting"}],
+    "related": ["math-for-ml", "pandas-cleaning", "machine-learning"]
+  },
+  {
+    "slug": "pandas-cleaning",
+    "title": "پاک‌سازی داده با Pandas؛ از فایل خام تا جدول قابل‌اعتماد",
+    "seo_title": "پاک‌سازی داده با Pandas؛ راهنمای عملی و اصولی",
+    "description": "پاک‌سازی داده با Pandas را اصولی انجام دهید؛ نوع ستون، مقدار خالی، تکرار، متن فارسی، مقدار پرت و merge را با مثال عملی و گزارش کیفیت بررسی کنید.",
+    "category": "تحلیل داده",
+    "sources": [{"title": "راهنمای رسمی pandas", "url": "https://pandas.pydata.org/docs/user_guide/index.html?highlight=reset"}, {"title": "Programiz؛ پاک‌سازی داده", "url": "https://www.programiz.com/python-programming/pandas/data-cleaning"}],
+    "related": ["python-for-data", "sql-for-analysis", "data-visualization"]
+  },
+  {
+    "slug": "data-visualization",
+    "title": "مصورسازی داده با Matplotlib و Seaborn؛ نمودار درست بسازید",
+    "seo_title": "مصورسازی داده با Matplotlib و Seaborn؛ راهنمای عملی",
+    "description": "برای سؤال تحلیلی خود نمودار درست انتخاب کنید؛ رسم با Matplotlib و Seaborn، محور، رنگ، تجمیع، متن فارسی و خطاهای رایج گزارش را کاربردی بیاموزید.",
+    "category": "مصورسازی داده",
+    "sources": [{"title": "مستندات Seaborn؛ معرفی و تخمین آماری", "url": "https://seaborn.pydata.org/tutorial/introduction.html"}, {"title": "آکادمی آی‌تی؛ نمودار تحلیلی", "url": "https://academyit.net/articles/diagram-building-tutorial-for-data-analysis-in-python"}],
+    "related": ["pandas-cleaning", "sql-for-analysis", "model-evaluation"]
+  },
+  {
+    "slug": "sql-for-analysis",
+    "title": "آموزش SQL برای تحلیل داده؛ گزارش درست با JOIN و GROUP BY",
+    "seo_title": "آموزش SQL برای تحلیل داده؛ JOIN و گزارش‌گیری دقیق",
+    "description": "SQL را برای تحلیل داده یاد بگیرید؛ SELECT، NULL، GROUP BY، JOIN و توابع پنجره‌ای را تمرین کنید و از دوباره‌شماری فروش در گزارش‌ها جلوگیری کنید.",
+    "category": "پایگاه داده",
+    "sources": [{"title": "SQL Visualizer؛ ترتیب اجرا و اتصال‌ها", "url": "https://sqlvisualizer.pydev.in/learn/"}, {"title": "Knowxis؛ مبانی SQL", "url": "https://knowxis.ir/blog/database/sql-basics-for-devs"}],
+    "related": ["pandas-cleaning", "data-visualization", "python-for-data"]
+  },
+  {
+    "slug": "machine-learning",
+    "title": "یادگیری ماشین چیست؟ از تعریف مسئله تا اولین مدل پایتون",
+    "seo_title": "یادگیری ماشین چیست؟ ساخت اولین مدل با پایتون",
+    "description": "اولین پروژهٔ یادگیری ماشین را اصولی بسازید؛ ویژگی و برچسب، تقسیم داده، خط مبنا، Pipeline، بیش‌برازش و تحلیل خطا را با مثال پایتون تمرین کنید.",
+    "category": "یادگیری ماشین",
+    "sources": [{"title": "هوش نما؛ انواع یادگیری ماشین", "url": "https://hoshnuma.com/teaches/article/Machine-Learning/MachineLearning.html"}, {"title": "Knowxis؛ تعریف مسئله و پروژه", "url": "https://knowxis.ir/blog/artificial-intelligence/machine-learning-intro"}],
+    "related": ["math-for-ml", "model-evaluation", "deep-learning"]
+  },
+  {
+    "slug": "model-evaluation",
+    "title": "ارزیابی مدل و نشت داده؛ چرا دقت بالا همیشه معتبر نیست؟",
+    "seo_title": "ارزیابی مدل یادگیری ماشین و جلوگیری از نشت داده",
+    "description": "ارزیابی مدل را معتبر انجام دهید؛ نشت داده، تقسیم زمانی و گروهی، Precision، Recall، F1 و اعتبارسنجی متقاطع با Pipeline را کاربردی بررسی کنید.",
+    "category": "ارزیابی مدل",
+    "sources": [{"title": "scikit-learn؛ خطاهای متداول و Pipeline", "url": "https://scikit-learn.org/1.0/common_pitfalls.html"}, {"title": "AWS؛ جداسازی داده و نشت اطلاعات", "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/ml-operations-planning/splits-leakage.html"}, {"title": "استنفورد؛ راهنمای فارسی معیارها", "url": "https://web.stanford.edu/~shervine/l/fa/teaching/cs-229/cheatsheet-machine-learning-tips-and-tricks/"}],
+    "related": ["machine-learning", "persian-nlp", "fastapi-deployment"]
+  },
+  {
+    "slug": "deep-learning",
+    "title": "یادگیری عمیق چیست؟ شبکهٔ عصبی از مفهوم تا تمرین عملی",
+    "seo_title": "یادگیری عمیق چیست؟ آموزش شبکهٔ عصبی برای شروع",
+    "description": "یادگیری عمیق را با شبکهٔ کوچک بشناسید؛ نورون، فعال‌سازی، زیان، گرادیان، انتقال یادگیری و بیش‌برازش را همراه مثال و معیار ارزیابی درست بیاموزید.",
+    "category": "یادگیری عمیق",
+    "sources": [{"title": "هوش نما؛ معماری‌ها و کاربردها", "url": "https://hoshnuma.com/teaches/article/Deep-Learning/Deep-Learning.html"}, {"title": "هوسم؛ مبانی یادگیری عمیق", "url": "https://howsam.org/whats-deeplearning/"}],
+    "related": ["machine-learning", "model-evaluation", "persian-nlp"]
+  },
+  {
+    "slug": "persian-nlp",
+    "title": "آموزش NLP فارسی؛ از Hazm تا تحلیل احساسات قابل‌ارزیابی",
+    "seo_title": "آموزش NLP فارسی؛ Hazm و تحلیل احساسات با پایتون",
+    "description": "پردازش زبان فارسی را از داده تا مدل دنبال کنید؛ نرمال‌سازی با Hazm، نیم‌فاصله، TF-IDF، تحلیل احساسات، نشت متن و ارزیابی خطا را عملی بیاموزید.",
+    "category": "پردازش زبان طبیعی",
+    "sources": [{"title": "مستندات رسمی Hazm", "url": "https://www.roshan-ai.ir/hazm/index.html"}, {"title": "راهنمای عملی پیش‌پردازش فارسی", "url": "https://ikos-dighum.github.io/contents/htmls/persian_nlp.html"}],
+    "related": ["python-for-data", "model-evaluation", "fastapi-deployment"]
+  },
+  {
+    "slug": "fastapi-deployment",
+    "title": "استقرار مدل با FastAPI؛ از پیش‌بینی محلی تا API قابل‌اعتماد",
+    "seo_title": "استقرار مدل یادگیری ماشین با FastAPI؛ راهنمای عملی",
+    "description": "مدل را با FastAPI به API تبدیل کنید؛ قرارداد ورودی، Pydantic، بارگذاری مدل، آزمون HTTP، امنیت، نسخه‌بندی و پایش را با نمونهٔ آموزشی یاد بگیرید.",
+    "category": "استقرار مدل",
+    "sources": [{"title": "مستندات FastAPI؛ نخستین مسیرها", "url": "https://fastapi.tiangolo.com/tutorial/first-steps/"}, {"title": "KDnuggets؛ سرو مدل در API", "url": "https://www.kdnuggets.com/serve-machine-learning-models-via-rest-apis-in-under-10-minutes"}],
+    "related": ["machine-learning", "model-evaluation", "persian-nlp"]
+  }
+]

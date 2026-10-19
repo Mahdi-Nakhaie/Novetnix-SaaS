@@ -1,6 +1,7 @@
 import datetime
 import pathlib
 import shutil
+import sqlite3
 import subprocess
 import unittest
 from html.parser import HTMLParser
@@ -106,6 +107,8 @@ class FooterHttpTest(unittest.TestCase):
     def setUpClass(cls):
         test_release.ReleaseHttpTest.setUpClass()
         cls.base = test_release.ReleaseHttpTest.base
+        with sqlite3.connect(test_release.ReleaseHttpTest.database) as connection:
+            connection.execute("INSERT OR IGNORE INTO courses(slug,title,description,status) VALUES ('ai-foundations','دورهٔ رایگان','محتوای نمونهٔ آزمون','published')")
 
     @classmethod
     def tearDownClass(cls):
@@ -114,7 +117,7 @@ class FooterHttpTest(unittest.TestCase):
     def test_public_pages_and_each_internal_destination(self):
         client = test_release.Client(self.base)
         destinations = set()
-        for path in PUBLIC:
+        for path in tuple('articles' if path == 'courses' else path for path in PUBLIC):
             with self.subTest(path=path):
                 status, _, source = client.request('/' + path)
                 self.assertEqual(status, 200)

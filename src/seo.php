@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__.'/articles.php';
 
 function seo_origin(): ?string {
     $value=rtrim(trim((string)getenv('PUBLIC_SITE_URL')),'/');
@@ -8,15 +9,17 @@ function seo_origin(): ?string {
     return $value;
 }
 function seo_public_path(string $path): bool {
-    return in_array($path,['','courses','projects','pricing','about','contact','terms','privacy','glossary'],true)
-        || (bool)preg_match('~^(course/[a-z0-9-]+|project/[0-9]+|glossary/[a-z0-9-]+)$~D',$path);
+    return in_array($path,['','articles','projects','pricing','about','contact','terms','privacy','glossary'],true)
+        || (bool)preg_match('~^(course/[a-z0-9-]+|project/[0-9]+|glossary/[a-z0-9-]+)$~D',$path)
+        || (str_starts_with($path,'articles/') && article_entry(substr($path,9))!==null);
 }
 function seo_head(string $title,string $description,bool $panel,bool $indexable): void {
     global $path;
     $indexable=$indexable && !$panel && seo_public_path($path) && http_response_code()!==404;
     echo '<meta name="robots" content="'.($indexable?'index,follow':'noindex,follow').'">';
     $full=$title==='خانه' ? 'Noventix | از یادگیری تا ساختن' : $title.' | Noventix';
-    foreach (['og:title'=>$full,'og:description'=>$description,'og:type'=>'website','og:locale'=>'fa_IR','og:site_name'=>'Noventix'] as $property=>$value) echo '<meta property="'.h($property).'" content="'.h($value).'">';
+    $article=str_starts_with($path,'articles/') ? article_entry(substr($path,9)) : null;
+    foreach (['og:title'=>$full,'og:description'=>$description,'og:type'=>$article?'article':'website','og:locale'=>'fa_IR','og:site_name'=>'Noventix'] as $property=>$value) echo '<meta property="'.h($property).'" content="'.h($value).'">';
     foreach (['twitter:card'=>'summary','twitter:title'=>$full,'twitter:description'=>$description] as $name=>$value) echo '<meta name="'.h($name).'" content="'.h($value).'">';
     $origin=seo_origin();
     if ($origin && $indexable) {
@@ -42,12 +45,24 @@ function seo_head(string $title,string $description,bool $panel,bool $indexable)
                 $data['inDefinedTermSet']=$origin.'/glossary';
             }
         }
+        if ($article) {
+            echo '<meta property="article:published_time" content="'.h($article['published_at']).'">';
+            $data=['@context'=>'https://schema.org','@graph'=>[
+                ['@type'=>'Article','headline'=>$article['title'],'description'=>$description,'url'=>$canonical,'mainEntityOfPage'=>['@type'=>'WebPage','@id'=>$canonical],'inLanguage'=>'fa-IR','datePublished'=>$article['published_at'],'dateModified'=>$article['published_at'],'wordCount'=>$article['word_count'],'articleSection'=>$article['category'],'author'=>['@type'=>'Organization','name'=>'تحریریهٔ نوونتیکس'],'publisher'=>['@type'=>'Organization','name'=>'Noventix','url'=>$origin]],
+                ['@type'=>'BreadcrumbList','itemListElement'=>[
+                    ['@type'=>'ListItem','position'=>1,'name'=>'خانه','item'=>$origin.'/'],
+                    ['@type'=>'ListItem','position'=>2,'name'=>'مقاله‌ها','item'=>$origin.'/articles'],
+                    ['@type'=>'ListItem','position'=>3,'name'=>$article['title'],'item'=>$canonical]
+                ]]
+            ]];
+        }
         global $seoNonce;
         if (!empty($seoNonce)) echo '<script type="application/ld+json" nonce="'.h($seoNonce).'">'.json_encode($data,JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE|JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT).'</script>';
     }
 }
 function seo_routes(): array {
-    $paths=['','courses','projects','pricing','about','contact','terms','privacy','glossary'];
+    $paths=['','articles','projects','pricing','about','contact','terms','privacy','glossary'];
+    foreach (articles() as $article) $paths[]='articles/'.$article['slug'];
     foreach (published_courses() as $course) $paths[]='course/'.$course['slug'];
     foreach (array_keys(PROJECTS) as $index) $paths[]='project/'.$index;
     foreach (q("SELECT slug FROM glossary_terms WHERE publication_status='published' ORDER BY slug")->fetchAll(PDO::FETCH_COLUMN) as $slug) $paths[]='glossary/'.$slug;

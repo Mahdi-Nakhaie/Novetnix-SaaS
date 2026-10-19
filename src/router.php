@@ -21,7 +21,13 @@ function route(): void {
     }
     $public=[''=>'home','courses'=>'courses','course'=>'course','projects'=>'projects','project'=>'project','pricing'=>'pricing','about'=>'about','contact'=>'contact','community'=>'community','login'=>'login','verify'=>'verify'];
     if ($path==='' ) { head_page('خانه','Noventix؛ آموزش پروژه‌محور پایتون، علم داده، یادگیری ماشین و یادگیری عمیق به زبان فارسی.'); notice(); home(published_courses()); foot_page(); return; }
-    if ($path==='courses') { head_page('مسیر یادگیری','مقاله‌های کاربردی پایتون، علم داده، یادگیری ماشین، یادگیری عمیق و ارائه مدل.'); notice(); page_courses(published_courses()); foot_page(); return; }
+    if ($path==='courses') { header('Location: '.url('articles'),true,301); return; }
+    if ($path==='articles') { page_articles(); return; }
+    if (preg_match('~^articles/([a-z0-9-]+)$~D',$path,$articleMatch)) {
+        $article=article_entry($articleMatch[1]);
+        if (!$article) { page_not_found(); return; }
+        page_article($article); return;
+    }
     if (str_starts_with($path,'course/')) { page_course(trim(substr($path,7))); return; }
     if ($path==='projects') { head_page('پروژه‌ها','پروژه‌های واقعی پایتون، علم داده و هوش مصنوعی برای تبدیل دانش به مهارت.'); notice(); page_projects(); foot_page(); return; }
     if (str_starts_with($path,'project/')) { page_project(substr($path,8)); return; }
