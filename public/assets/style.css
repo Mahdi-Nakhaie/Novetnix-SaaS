@@ -533,6 +533,11 @@ input[aria-invalid="true"],textarea[aria-invalid="true"],select[aria-invalid="tr
 .auth-card .stack-form{text-align:start;margin-top:1.2rem}
 .auth-card .inline-link{display:inline-block;margin-top:1rem;font-size:.86rem}
 .auth-card .stack-form button{justify-self:stretch}
+.auth-card .stack-form h2{font-size:1.05rem;margin:0 0 -.1rem;text-align:start}
+.auth-switch{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:.45rem;margin-top:1.4rem;padding-top:1.25rem;border-top:1px solid var(--line);font-size:.86rem;color:var(--muted)}
+.auth-switch a{display:inline-flex;align-items:center;min-height:44px;padding:0 .65rem;border-radius:9px;color:var(--brand-2);font-weight:800;text-decoration:underline;text-underline-offset:5px}
+.auth-switch a:hover{background:var(--brand-soft);color:var(--brand);text-decoration:none}
+.auth-switch a:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
 
 .captcha-box{display:flex;align-items:center;justify-content:space-between;gap:.7rem;border:1px dashed var(--brand-line);border-radius:11px;background:var(--brand-soft);padding:.7rem .85rem;margin-top:.2rem}.captcha-box strong{letter-spacing:.22em;font:800 1.15rem ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--brand-2)}.captcha-box span{font-size:.72rem;color:var(--muted)}
 
