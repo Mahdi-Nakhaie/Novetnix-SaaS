@@ -126,7 +126,7 @@
     if (loading) loading.hidden = true;
   }
   document.addEventListener("submit", function (event) {
-    if (!loading || event.defaultPrevented || event.target.method.toLowerCase() !== "post") return;
+    if (!loading || event.defaultPrevented || event.target.matches("form.dr-form") || event.target.method.toLowerCase() !== "post") return;
     hideLoading();
     loadingDelay = window.setTimeout(function () { loading.hidden = false; }, 180);
     loadingTimeout = window.setTimeout(hideLoading, 10000);

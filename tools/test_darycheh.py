@@ -311,6 +311,8 @@ class DarychehHttpTests(unittest.TestCase):
             self.assertEqual(self.act(client, attempt)['step'], 'evidence')
             self.assertEqual(self.start(client)['step'], 'evidence')
             self.assertEqual(other.post('/darycheh/start', {'request_key': key()})[0], 409)
+            self.assertIn('هنوز سناریویی برای شروع در دسترس نیست', other.request('/dashboard/darycheh')[2])
+            self.assertIn('ادامهٔ تجربهٔ ذخیره‌شده', client.request('/dashboard/darycheh')[2])
         finally:
             self.change("UPDATE darycheh_releases SET availability='available' WHERE id=?", (release,))
 
@@ -352,6 +354,12 @@ class DarychehHttpTests(unittest.TestCase):
             status, _, page = client.request(location)
             self.assertEqual(status, 200)
             self.assertNotIn('PDOException', page)
+            ids = re.findall(r'\bid="([^"]+)"', page)
+            self.assertEqual(len(ids), len(set(ids)), 'IDs must be unique at every stage')
+            for targets in re.findall(r'aria-(?:describedby|labelledby)="([^"]+)"', page):
+                for target in targets.split():
+                    if target.startswith('dr-'):
+                        self.assertIn(target, ids)
             state = self.view(client, {'attempt_id': attempt_id})
             token = re.search(r'name="request_key" value="([^"]+)"', page)[1]
             data = {'id': attempt_id, 'revision': state['revision'], 'request_key': token, '_html': '1'}
@@ -361,6 +369,82 @@ class DarychehHttpTests(unittest.TestCase):
             self.assertEqual(response[0], 303, response[2])
             self.assertEqual(response[1].get('Location'), location)
         self.assertIn('شاهد عملکرد مستقل', client.request(location)[2])
+
+    def test_interface_assets_journey_resume_and_feedback(self):
+        client, _ = self.member()
+        home = client.request('/dashboard/darycheh')[2]
+        self.assertIn('دریچه؛ فراتر از یادگیری، به‌سوی توانایی ساختن.', home)
+        self.assertIn('class="dr-portal" aria-hidden="true"', home)
+        self.assertIn('/assets/darycheh.css?v=1', home)
+        self.assertIn('/assets/darycheh.js?v=1', home)
+        self.assertIn('هنوز قدم اول را ثبت نکرده‌ای.', home)
+        self.assertNotIn('/assets/darycheh.', client.request('/dashboard')[2])
+        attempt = self.start(client)
+        location = '/dashboard/darycheh/' + str(attempt['attempt_id'])
+        home = client.request('/dashboard/darycheh')[2]
+        self.assertIn('href="' + location + '"', home)
+        self.assertIn('ادامهٔ تجربهٔ ذخیره‌شده', home)
+        page = client.request(location)[2]
+        self.assertEqual(page.count('aria-current="step"'), 1)
+        steps = re.search(r'<ol class="dr-steps">(.*?)</ol>', page)[1]
+        self.assertEqual(steps.count('<li'), 8)
+        self.assertIn('id="dr-save-status"', page)
+        self.assertIn('id="dr-form-error"', page)
+        self.assertIn('id="dr-content" tabindex="-1"', page)
+        attempt = self.main_path(client)
+        page = client.request(location)[2]
+        self.assertEqual(page.count('class="dr-trace"'), 4)
+        self.assertEqual(page.count('پیش‌بینی تو:'), 4)
+        self.assertIn('بررسی سابقه', page)
+        self.assertIn('ظرفیت نهایی', page)
+        attempt = self.finish(client, self.enter_transfer(client, attempt))
+        page = client.request(location)[2]
+        self.assertEqual(page.count('<meter '), 5)
+        self.assertEqual(page.count('max="4" value="4"'), 5)
+        self.assertNotIn('aria-current="step"', page)
+        self.assertIn('تجربه پایان یافته', page)
+        self.assertNotIn('id="dr-edit-status"', page)
+
+    def test_interface_error_and_owned_invalid_html_return(self):
+        client, _ = self.member()
+        missing = client.request('/dashboard/darycheh/999999')
+        self.assertEqual(missing[0], 404)
+        self.assertIn('تجربه پیدا نشد', missing[2])
+        self.assertIn('role="alert"', missing[2])
+        attempt = self.act(client, self.start(client))
+        location = '/dashboard/darycheh/' + str(attempt['attempt_id'])
+        page = client.request(location)[2]
+        self.assertEqual(page.count('type="checkbox"'), 5)
+        response = client.post('/darycheh/act', {'id': attempt['attempt_id'], 'revision': attempt['revision'], 'request_key': key(), '_html': '1', 'payload[selected][]': ['same_id']})
+        self.assertEqual(response[0], 303)
+        self.assertEqual(response[1].get('Location'), location)
+        self.assertEqual(self.view(client, attempt)['step'], 'evidence')
+        other, _ = self.member()
+        self.assertEqual(other.request(location)[0], 404)
+        self.change("UPDATE darycheh_attempts SET state_json='{}' WHERE id=?", (attempt['attempt_id'],))
+        corrupt = client.request(location)
+        self.assertEqual(corrupt[0], 409)
+        self.assertIn('بارگذاری دوباره', corrupt[2])
+        self.assertNotIn('PDOException', corrupt[2])
+
+    def test_interface_unavailable_and_malformed_source(self):
+        client, _ = self.member()
+        content = ROOT / 'content/darycheh.php'
+        original = content.read_bytes()
+        moved = content.with_suffix('.ui-fixture-backup')
+        content.rename(moved)
+        try:
+            empty = client.request('/dashboard/darycheh')
+            self.assertEqual(empty[0], 200)
+            self.assertIn('هنوز سناریویی برای شروع در دسترس نیست', empty[2])
+            self.assertNotIn('ورود به اولین تجربه', empty[2])
+            content.write_text('<?php return [];')
+            malformed = client.request('/dashboard/darycheh')
+            self.assertIn('این سناریو فعلاً قابل بارگذاری نیست', malformed[2])
+            self.assertIn('role="alert"', malformed[2])
+        finally:
+            content.write_bytes(original)
+            moved.unlink()
 
     def test_database_failure_rolls_back_action_state_and_evaluation(self):
         client, _ = self.member()

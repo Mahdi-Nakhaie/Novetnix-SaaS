@@ -86,7 +86,7 @@ class ReleaseHttpTest(unittest.TestCase):
                    ADMIN_PHONE='09990000000', ADMIN_PASSWORD_HASH=admin_hash,
                    SMSIR_API_KEY='synthetic-test-only', SMSIR_TEMPLATE_ID='123',
                    ZARINPAL_MERCHANT_ID='', PAYMENT_BASE_URL='', PUBLIC_SITE_URL='https://release.invalid')
-        cls.server = subprocess.Popen([php, '-d', 'disable_functions=curl_init,curl_setopt_array,curl_setopt,curl_exec,curl_getinfo,curl_close',
+        cls.server = subprocess.Popen([php, '-d', 'opcache.enable=0', '-d', 'disable_functions=curl_init,curl_setopt_array,curl_setopt,curl_exec,curl_getinfo,curl_close',
                                        '-S', f'127.0.0.1:{port}', '-t', str(ROOT / 'public'), str(ROOT / 'tools/release_test_router.php')],
                                       env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         for _ in range(80):

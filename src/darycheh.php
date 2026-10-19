@@ -161,11 +161,29 @@ function dr_act(int $userId,int $id,int $revision,string $requestKey,string $act
         $db->commit(); return $receipt;
     } catch (Throwable $e) { if ($db->inTransaction()) $db->rollBack(); throw $e; }
 }
+function dr_available_scenario(): ?array {
+    $path=dirname(__DIR__).'/content/darycheh.php';
+    if (!is_file($path)) return null;
+    $d=require $path;
+    dr_require(is_array($d),'تعریف سناریو ناقص است.',409);
+    dr_validate_definition($d);
+    $release=q('SELECT availability,definition_hash FROM darycheh_releases WHERE scenario_key=? AND content_version=?',[$d['scenario_key'],$d['content_version']])->fetch();
+    if ($release) {
+        if ($release['availability']!=='available') return null;
+        dr_require(hash_equals($release['definition_hash'],dr_hash($d)),'این نسخه با محتوای منتشرشده سازگار نیست.',409);
+    }
+    return ['scenario_key'=>$d['scenario_key'],'title'=>$d['title'],'content_version'=>$d['content_version']];
+}
 function dr_view(int $userId,int $id): array {
     $attempt=dr_owned($userId,$id); $d=dr_release($attempt); $s=dr_state($attempt,$d); $step=$d['steps'][$attempt['current_step_key']];
     if ($step['kind']==='retry' && !($s['main']['passed'] ?? false)) unset($step['fields']['route']['options']['continue']);
-    $view=dr_receipt($attempt)+['title'=>$d['title'],'attempt_no'=>(int)$attempt['attempt_no'],'content_version'=>$d['content_version'],'stage'=>['kind'=>$step['kind'],'title'=>$step['title'],'text'=>$step['text'],'fields'=>$step['fields']],'answers'=>$s['answers'],'hint'=>$s['hint'],'help_level'=>$s['help'],'round'=>$s['round']];
-    if (in_array($step['kind'],['feedback','retry','transfer','transfer_feedback','report'],true)) $view['main']=$s['main'];
+    $view=dr_receipt($attempt)+['title'=>$d['title'],'context'=>$d['steps'][$d['entry_step_key']]['text'],'attempt_no'=>(int)$attempt['attempt_no'],'content_version'=>$d['content_version'],'stage'=>['kind'=>$step['kind'],'title'=>$step['title'],'text'=>$step['text'],'fields'=>$step['fields']],'answers'=>$s['answers'],'hint'=>$s['hint'],'help_level'=>$s['help'],'round'=>$s['round']];
+    if (in_array($step['kind'],['feedback','retry','transfer','transfer_feedback','report'],true)) {
+        $view['main']=$s['main'];
+        foreach ($d['steps'] as $source) if ($source['kind']==='consequence') {
+            foreach ($source['fields'] as $key=>$field) $view['predictions'][$key]=$field['options'][$s['answers']['consequence'][$key]];
+        }
+    }
     if (in_array($step['kind'],['transfer','transfer_feedback'],true)) {
         $bundle=$d['transfer_bundles'][$s['bundle']];
         $view['bundle']=['key'=>$s['bundle'],'label'=>$bundle['label'],'text'=>$bundle['text'],'previously_exposed'=>in_array($bundle['exposure_key'],dr_exposed($userId,$attempt['scenario_key']),true)];
@@ -214,7 +232,13 @@ function dr_api(string $path): never {
         echo dr_json($result);
     } catch (DarychehError $e) {
         if ($post ?? false) {
-            if (($_POST['_html'] ?? '')==='1') { header_remove('Content-Type'); flash($e->getMessage(),'error'); redirect('dashboard/darycheh'); }
+            if (($_POST['_html'] ?? '')==='1') {
+                header_remove('Content-Type'); flash($e->getMessage(),'error');
+                $return='dashboard/darycheh';
+                $id=filter_var($_POST['id'] ?? null,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]);
+                if (isset($uid) && $id && in_array($e->status,[409,422],true) && q('SELECT 1 FROM darycheh_attempts WHERE id=? AND user_id=?',[$id,$uid])->fetchColumn()) $return.='/'.$id;
+                redirect($return);
+            }
         }
         http_response_code($e->status); echo dr_json(['error'=>$e->getMessage()]);
     }
