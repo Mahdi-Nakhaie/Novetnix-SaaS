@@ -12,11 +12,11 @@ function head_page(string $title,string $description='',bool $panel=false,bool $
     echo '<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#201a35"><title>'.$full.'</title><meta name="description" content="'.h($description ?: 'Noventix؛ آموزش پروژه‌محور پایتون، علم داده و هوش مصنوعی از مطالعه تا ساختن.').'">';
     seo_head($title,$description ?: 'Noventix؛ آموزش پروژه‌محور پایتون، علم داده و هوش مصنوعی از مطالعه تا ساختن.',$panel,$indexable);
     if ($path==='course/'.FREE_COURSE_SLUG) {
-        echo '<link rel="stylesheet" href="/assets/free-course.css?v=2">';
+        echo '<link rel="stylesheet" href="/assets/free-course.css?v=3">';
         if ($me && trim($me['name'])!=='') echo '<script src="/assets/free-course.js?v=2" defer></script>';
     }
-    if ($path==='' || $path==='articles' || str_starts_with($path,'articles/')) echo '<link rel="stylesheet" href="/assets/articles.css">';
-    echo '<link rel="stylesheet" href="/assets/style.css?v=4">'.($path===''?'<script src="/assets/three.min.js" defer></script><script src="/assets/three-scene.js" defer></script>':'').'<script src="/assets/app.js" defer></script><script src="/assets/playback-events.js" defer></script></head><body class="'.($panel?'is-panel':'').'">';
+    if ($path==='' || $path==='articles' || str_starts_with($path,'articles/')) echo '<link rel="stylesheet" href="/assets/articles.css?v=2">';
+    echo '<link rel="stylesheet" href="/assets/style.css?v=5">'.($path===''?'<script src="/assets/three.min.js" defer></script><script src="/assets/three-scene.js" defer></script>':'').'<script src="/assets/app.js" defer></script><script src="/assets/playback-events.js" defer></script></head><body class="'.($panel?'is-panel':'').'">';
     echo '<div class="noventix-loading" id="noventix-loading" role="status" aria-live="polite" hidden><div class="noventix-loading-card"><span class="noventix-loading-mark" aria-hidden="true">N</span><strong>Noventix</strong><span class="noventix-loading-track" aria-hidden="true"><span></span></span><p>در حال آماده‌سازی...</p></div></div>';
     if ($panel) { panel_nav(); return; }
     echo '<header class="site-header"><div class="container header-inner"><a href="/" class="brand" aria-label="Noventix، صفحه اصلی"><img src="/assets/logo.png" alt="Noventix" width="171" height="55"></a><nav class="main-nav" aria-label="ناوبری اصلی">';

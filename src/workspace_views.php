@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 function ws_assets(): void {
-    echo '<link rel="stylesheet" href="/assets/workspace.css?v=5"><script src="/assets/workspace.js?v=5" defer></script>';
+    echo '<link rel="stylesheet" href="/assets/workspace.css?v=6"><script src="/assets/workspace.js?v=5" defer></script>';
 }
 function ws_form(string $action): void {
     echo '<form action="/workspace/'.h($action).'" method="post" enctype="multipart/form-data" class="stack-form" data-ws-form><input type="hidden" name="csrf" value="'.h(csrf()).'">';

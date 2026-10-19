@@ -94,6 +94,39 @@ class AutomaticPlotTests(unittest.TestCase):
                 capture.assert_called_once()
 
 
+class LayoutStyleTests(unittest.TestCase):
+    def test_functional_text_has_readable_minimum(self):
+        import re
+        for name in ('style.css', 'workspace.css', 'free-course.css', 'articles.css', 'learning-projects.css'):
+            source = (ROOT / 'public/assets' / name).read_text()
+            with self.subTest(stylesheet=name):
+                for value in re.findall(r'font-size:(\.\d+)rem', source):
+                    self.assertGreaterEqual(float(value), .8125)
+
+    def test_workspace_uses_available_width_and_stacks_before_cramping(self):
+        source = (ROOT / 'public/assets/workspace.css').read_text()
+        self.assertIn('.ws-index,.ws-editor{width:100%;', source)
+        self.assertIn('minmax(280px,320px) minmax(0,1fr)', source)
+        self.assertIn('@media(max-width:900px){.ws-layout{grid-template-columns:minmax(0,1fr)}', source)
+        self.assertIn('@media(min-width:901px) and (max-width:1200px)', source)
+        self.assertIn('min-height:clamp(360px,52vh,600px)', source)
+
+    def test_persian_headings_and_controls_have_room(self):
+        source = (ROOT / 'public/assets/style.css').read_text()
+        self.assertIn('h1,h2,h3,h4{line-height:1.65;', source)
+        self.assertIn('.btn{min-height:48px;', source)
+        self.assertIn('.stack-form{gap:1.25rem}', source)
+        self.assertIn('white-space:normal;overflow:visible;line-height:1.8', source)
+        self.assertNotIn('line-height:1.15', source)
+        self.assertNotIn('line-height:1.18', source)
+
+    def test_updated_styles_have_cache_versions(self):
+        source = (ROOT / 'src/views.php').read_text()
+        for asset in ('style.css?v=5', 'free-course.css?v=3', 'articles.css?v=2'):
+            self.assertIn(asset, source)
+        self.assertIn('workspace.css?v=6', (ROOT / 'src/workspace_views.php').read_text())
+
+
 class StudioHttpTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -136,7 +169,7 @@ class StudioHttpTests(unittest.TestCase):
         project = __import__('json').loads(client.post('/workspace/create', {'title': 'Studio test'})[2])['id']
         status, _, source = client.request('/dashboard/workspace/' + str(project))
         self.assertEqual(status, 200)
-        for hook in ('data-ws-terminal-form', 'data-ws-command', 'data-ws-terminal-log', 'data-ws-runtime', 'workspace.css?v=5'):
+        for hook in ('data-ws-terminal-form', 'data-ws-command', 'data-ws-terminal-log', 'data-ws-runtime', 'workspace.css?v=6'):
             self.assertIn(hook, source)
         self.assertNotIn('python-runner.js', source)
         self.assertNotIn('pyodide', source)
