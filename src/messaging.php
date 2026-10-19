@@ -54,7 +54,7 @@ function message_peer_state(int $viewer,int $peer): string {
 function message_send(int $sender,int $recipient,string $body,string $formToken): ?string {
     $body=trim($body);
     if ($sender===$recipient || $recipient<=0 || mb_strlen($body)<1 || mb_strlen($body)>2000) return MESSAGE_INVALID;
-    if (!q('SELECT id FROM users WHERE id=? AND phone_verified_at IS NOT NULL',[$recipient])->fetch()) return MESSAGE_INVALID;
+    if (!q('SELECT id FROM users WHERE id=? AND '.member_phone_condition(),[$recipient])->fetch()) return MESSAGE_INVALID;
     if (!message_rate_ok()) return MESSAGE_RATE_LIMITED;
     message_record_send();
     if (in_array(message_peer_state($sender,$recipient),['request','inbound'],true)) {

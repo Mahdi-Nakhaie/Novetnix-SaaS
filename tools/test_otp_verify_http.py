@@ -510,17 +510,17 @@ class OtpVerifyHttpTest(unittest.TestCase):
         self.assertEqual(otp("09120000117"), (None, 5))
         self.assertEqual(user_count("09120000117"), 0)
 
-    def test_18_registration_cooldown_applies_per_phone_across_sessions(self):
+    def test_18_repeated_registration_never_sends_sms_and_keeps_one_account(self):
         first = Browser()
-        self.assertEqual(register(first, "09120000118"), "/login")
-        self.assertIn("ارسال پیامک فعلاً امکان‌پذیر نیست", first.request("/login")[2])
+        self.assertEqual(register(first, "09120000118"), "/dashboard")
+        self.assertEqual(user_count("09120000118"), 1)
         second = Browser()
-        self.assertEqual(register(second, "09120000118", ignored_counter="0"), "/login")
-        html = second.request("/login")[2]
-        self.assertIn("ثانیه دیگر صبر کنید", html)
-        self.assertEqual(requests_row("09120000118")[1], 1)
+        self.assertEqual(register(second, "09120000118", ignored_counter="0"), "/register")
+        html = second.request("/register")[2]
+        self.assertIn("این شماره موبایل قبلاً ثبت شده است.", html)
+        self.assertEqual(db("SELECT COUNT(*) FROM otp_requests WHERE phone=?", ("09120000118",))[0][0], 0)
         self.assertEqual(db("SELECT COUNT(*) FROM otp_codes WHERE phone=?", ("09120000118",))[0][0], 0)
-        self.assertEqual(user_count("09120000118"), 0)
+        self.assertEqual(user_count("09120000118"), 1)
 
     def test_19_resend_limit_per_window_then_allowed_after_window(self):
         phone = "09120000119"
@@ -573,25 +573,29 @@ class OtpVerifyHttpTest(unittest.TestCase):
         self.assertEqual(db("SELECT course_slug FROM enrollments WHERE user_id=?", (user_id,)), [("python-foundations",)])
         self.assertEqual(db("SELECT status FROM lesson_progress WHERE user_id=?", (user_id,)), [("completed",)])
 
-    def test_22_unverified_and_unknown_users_do_not_gain_access(self):
+    def test_22_unknown_users_and_wrong_passwords_do_not_gain_access(self):
         owner = Browser()
         owner.pending("09120000123", "123123")
         self.assertEqual(owner.verify("123123")[1], "/dashboard")
         hash_value = db("SELECT password_hash FROM users WHERE phone='09120000123'")[0][0]
         db("INSERT INTO users(phone,name,password_hash) VALUES (?,?,?)", ("09120000124", "کاربر", hash_value))
-        for phone, password in (("09120000124", "Passw0rd1"), ("09120000125", "Passw0rd1"), ("09120000123", "wrong-password")):
+        for phone, password in (("09120000125", "Passw0rd1"), ("09120000123", "wrong-password")):
             b = Browser()
             status, location, _ = login(b, phone, password)
             self.assertEqual((status, location), (303, "/login"))
             self.assertIn("شماره موبایل یا رمز عبور صحیح نیست.", b.request("/login")[2])
             self.assertTrue(b.request("/dashboard")[1].startswith("/login"))
 
-    def test_23_unverified_session_cannot_open_dashboard(self):
+    def test_23_unverified_phone_still_needs_its_own_password(self):
+        # SMS is off, so an unverified account is usable with the password chosen at registration.
         b = Browser()
-        b.pending("09120000126", "126126")
-        self.assertEqual(b.verify("126126")[1], "/dashboard")
-        db("UPDATE users SET phone_verified_at=NULL WHERE phone='09120000126'")
-        self.assertTrue(b.request("/dashboard")[1].startswith("/login"))
+        self.assertEqual(register(b, "09120000126"), "/dashboard")
+        self.assertIsNone(db("SELECT phone_verified_at FROM users WHERE phone='09120000126'")[0][0])
+        self.assertEqual(b.request("/dashboard")[0], 200)
+        stranger = Browser()
+        self.assertEqual(login(stranger, "09120000126", "not-the-password")[1], "/login")
+        self.assertTrue(stranger.request("/dashboard")[1].startswith("/login"))
+        self.assertEqual(login(Browser(), "09120000126", "Passw0rd1")[1], "/dashboard")
 
     def test_24_login_identity_session_and_logout(self):
         owner = Browser()
@@ -641,7 +645,8 @@ def resend(browser):
 
 
 def register(browser, phone, **extra):
-    browser.csrf = browser.request("/__test/pending", {"phone": ""})[2].strip()
+    html = browser.request("/register")[2]
+    browser.csrf = re.search(r'name="csrf" value="([^"]+)"', html).group(1)
     data = {"csrf": browser.csrf, "first_name": "علی", "last_name": "رضایی", "phone": phone, "password": "Passw0rd1", **extra}
     return browser.request("/auth/request", data)[1]
 

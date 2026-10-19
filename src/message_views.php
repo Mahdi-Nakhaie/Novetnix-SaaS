@@ -48,7 +48,7 @@ function page_messages(int $userId): void {
 }
 
 function page_message_thread(int $userId,int $peer): bool {
-    $member=q('SELECT id,name FROM users WHERE id=? AND phone_verified_at IS NOT NULL',[$peer])->fetch();
+    $member=q('SELECT id,name FROM users WHERE id=? AND '.member_phone_condition(),[$peer])->fetch();
     if (!$member || $peer===$userId) return false;
     messages_mark_read($userId,$peer);
     $rows=array_reverse(messages_thread($userId,$peer));

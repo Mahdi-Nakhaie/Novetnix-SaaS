@@ -67,7 +67,7 @@ function skill_profile_for(int $userId): ?array {
 }
 
 function learner_directory(string $query,int $page): array {
-    $where=["u.phone_verified_at IS NOT NULL","trim(u.name)<>''","u.role<>'admin'"];
+    $where=[member_phone_condition('u.phone_verified_at'),"trim(u.name)<>''","u.role<>'admin'"];
     $params=[];
     if ($query!=='') {
         $where[]='(u.name LIKE ? OR EXISTS (SELECT 1 FROM projects p INNER JOIN project_completions c ON c.project_id=p.id WHERE p.user_id=u.id AND c.learning_key LIKE ?))';

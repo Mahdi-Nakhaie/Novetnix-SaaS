@@ -77,7 +77,9 @@ class SkillProfileSourceTest(unittest.TestCase):
 
     def test_directory_hides_admins_unverified_and_nameless_members(self):
         directory = body(SKILL, "learner_directory")
-        self.assertIn("u.phone_verified_at IS NOT NULL", directory)
+        self.assertIn("member_phone_condition('u.phone_verified_at')", directory)
+        auth = (ROOT / 'src/auth.php').read_text(encoding='utf-8')
+        self.assertIn("SMS_VERIFICATION_ENABLED ? $column.' IS NOT NULL' : '1=1'", auth)
         self.assertIn("trim(u.name)<>''", directory)
         self.assertIn("u.role<>'admin'", directory)
         self.assertIn("ORDER BY xp DESC,u.id ASC LIMIT '.$perPage.' OFFSET '", directory)

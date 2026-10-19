@@ -18,9 +18,13 @@ function flash(string $message, string $kind='success'): void { $_SESSION['flash
 function user(): ?array {
     if (empty($_SESSION['uid'])) return null;
     $u=q('SELECT id,phone,name,role,phone_verified_at FROM users WHERE id=?',[(int)$_SESSION['uid']])->fetch();
-    if (!$u || $u['phone_verified_at']===null) return null;
+    if (!$u || (SMS_VERIFICATION_ENABLED && $u['phone_verified_at']===null)) return null;
     if ($u && $u['role']==='admin' && (!hash_equals((string)config_value('ADMIN_PHONE'), $u['phone']) || ($_SESSION['admin_verified_uid'] ?? null)!==(int)$u['id'])) $u['role']='student';
     return $u ?: null;
+}
+// Members are visible to each other without an SMS round trip while verification is off.
+function member_phone_condition(string $column='phone_verified_at'): string {
+    return SMS_VERIFICATION_ENABLED ? $column.' IS NOT NULL' : '1=1';
 }
 function require_user(): array {
     $u=user();
@@ -127,6 +131,29 @@ function logout_user(): void {
     $_SESSION['authenticated_at']=time();
     $_SESSION['last_seen']=time();
 }
+// Phone verification is skipped while SMS is off: the account is created and signed in at once,
+// and phone_verified_at stays NULL so a later verification pass can find it.
+function sms_free_registration(string $phone, string $first, string $last, string $password): never {
+    $destination=$_SESSION['auth_return_to'] ?? 'dashboard';
+    unset($_SESSION['auth_return_to']);
+    $db=db();
+    $db->beginTransaction();
+    try {
+        q('INSERT INTO users(phone,name,password_hash,phone_verified_at,acquisition_source,acquisition_campaign) VALUES (?,?,?,NULL,?,?)',[$phone,$first.' '.$last,password_hash($password,PASSWORD_DEFAULT),acquisition_source($_SESSION['registration_source'] ?? null),acquisition_campaign($_SESSION['registration_campaign'] ?? null)]);
+        $userId=(int)$db->lastInsertId();
+        record_activity_event($userId,'user_registered');
+        $db->commit();
+    } catch (PDOException $e) {
+        if ($db->inTransaction()) $db->rollBack();
+        if ($e->getCode()!=='23000') throw $e;
+        registration_error('این شماره موبایل قبلاً ثبت شده است. برای ورود از فرم ورود استفاده کنید.',$first,$last,$phone);
+    }
+    unset($_SESSION['registration_source'],$_SESSION['registration_campaign']);
+    session_regenerate_id(true); $_SESSION['authenticated_at']=time(); $_SESSION['last_seen']=time(); $_SESSION['uid']=$userId; unset($_SESSION['admin_verified_uid']);
+    if ($phone===(config_value('ADMIN_PHONE') ?: '')) redirect('admin-login');
+    flash('خوش آمدی! حسابت ساخته شد. این شماره هنوز با پیامک تأیید نشده است.');
+    redirect($destination);
+}
 function handle_auth_post(string $path): bool {
     if (!in_array($path,['auth/request','auth/resend','auth/login','auth/verify','auth/admin','logout'],true)) return false;
     validate_csrf();
@@ -144,6 +171,7 @@ function handle_auth_post(string $path): bool {
         if ($password===null || strlen($password)<8 || strlen($password)>72) registration_error('رمز عبور باید بین ۸ تا ۷۲ نویسه باشد.',$first,$last,$phone);
         if (!preg_match('/[A-Za-z]/',$password) || !preg_match('/[0-9]/',$password)) registration_error('رمز عبور باید دست‌کم یک حرف انگلیسی و یک عدد داشته باشد.',$first,$last,$phone);
         if (q('SELECT 1 FROM users WHERE phone=?',[$phone])->fetchColumn()) registration_error('این شماره موبایل قبلاً ثبت شده است. برای ورود از فرم ورود استفاده کنید.',$first,$last,$phone);
+        if (!SMS_VERIFICATION_ENABLED) sms_free_registration($phone,$first,$last,$password);
         $wait=reserve_otp_send($phone,time());
         if ($wait!==null) registration_error($wait,$first,$last,$phone);
         $code=generate_otp();
@@ -177,7 +205,7 @@ function handle_auth_post(string $path): bool {
         $dummyHash=password_hash('invalid-account',PASSWORD_DEFAULT);
         $hash=$u && $u['password_hash']!=='' ? (string)$u['password_hash'] : $dummyHash;
         $passwordValid=password_verify($password,$hash);
-        if (!$u || $u['phone_verified_at']===null || !$passwordValid) { flash('شماره موبایل یا رمز عبور صحیح نیست.','error'); redirect('login'); }
+        if (!$u || (SMS_VERIFICATION_ENABLED && $u['phone_verified_at']===null) || !$passwordValid) { flash('شماره موبایل یا رمز عبور صحیح نیست.','error'); redirect('login'); }
         if (!session_regenerate_id(true)) throw new RuntimeException('Session renewal failed.');
         $_SESSION['uid']=(int)$u['id']; unset($_SESSION['admin_verified_uid']);
         record_activity_event((int)$u['id'],'user_logged_in');

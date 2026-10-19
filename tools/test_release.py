@@ -114,10 +114,8 @@ class ReleaseHttpTest(unittest.TestCase):
     def register(self, client, phone, first='اکبر'):
         self.assertEqual(client.request('/login')[0], 200)
         response = client.post('/auth/request', {'first_name': first, 'last_name': 'آزمایشی', 'phone': phone, 'password': 'FixturePass123'})
-        self.assertEqual((response[0], response[1].get('Location')), (303, '/verify'))
-        delivery = client.state()['delivery']
-        self.assertRegex(delivery, r'^\d{6}$')
-        self.assertEqual(client.post('/auth/verify', {'code': delivery})[0], 303)
+        self.assertEqual(response[0], 303)
+        self.assertEqual(response[1].get('Location'), '/admin-login' if phone == '09990000000' else '/dashboard')
 
     def login(self, client, phone, password='FixturePass123'):
         client.request('/login')
@@ -148,7 +146,7 @@ class ReleaseHttpTest(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertIn('href="/login"', landing)
         self.register(akbar, '09990000001')
-        uid = self.rows('SELECT id FROM users WHERE phone_verified_at IS NOT NULL AND phone=?', ('09990000001',))[0][0]
+        uid = self.rows('SELECT id FROM users WHERE phone=?', ('09990000001',))[0][0]
         self.assertEqual(akbar.post('/logout', {})[0], 303)
         self.assertEqual(akbar.request('/dashboard')[0], 303)
         self.assertEqual(self.login(akbar, '09990000001')[0], 303)

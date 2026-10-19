@@ -358,7 +358,10 @@ class PublicCoursesTest(unittest.TestCase):
     def test_anonymous_and_unverified_users_remain_blocked(self):
         auth = (ROOT / 'src/auth.php').read_text(encoding='utf-8')
         self.assertIn("if (empty($_SESSION['uid'])) return null;", body(auth, 'user'))
-        self.assertIn("if (!$u || $u['phone_verified_at']===null) return null;", body(auth, 'user'))
+        # Unverified phones are blocked again as soon as SMS verification is switched back on.
+        self.assertIn("if (!$u || (SMS_VERIFICATION_ENABLED && $u['phone_verified_at']===null)) return null;", body(auth, 'user'))
+        self.assertIn('const SMS_VERIFICATION_ENABLED = false;', (ROOT / 'src/data.php').read_text(encoding='utf-8'))
+        self.assertIn('if (!SMS_VERIFICATION_ENABLED) sms_free_registration(', auth)
         self.assertIn("redirect('login?next='", body(auth, 'require_user'))
         self.assertIn('$u=require_user()', body(ROUTER, 'route'))
         self.assertIn('validate_csrf();', body(APP, 'handle_post'))

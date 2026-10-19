@@ -253,6 +253,8 @@ class OtpFlowTest(unittest.TestCase):
         self.assertLess(store, send)
         self.assertIn("DELETE FROM otp_codes WHERE phone=? AND otp_hash=?", request)
         self.assertNotIn("INSERT INTO users", request)
+        self.assertIn("if (!SMS_VERIFICATION_ENABLED) sms_free_registration($phone,$first,$last,$password);", request)
+        self.assertLess(duplicate, request.index("if (!SMS_VERIFICATION_ENABLED) sms_free_registration("))
         verify = AUTH[AUTH.index("if ($path==='auth/verify')"):AUTH.index("if ($path==='auth/admin')")]
         self.assertIn("time()>(int)$entry['expires_at']", verify)
         self.assertIn("AND otp_hash=? AND used_at IS NULL AND expires_at>=?", verify)
@@ -289,7 +291,8 @@ class OtpFlowTest(unittest.TestCase):
         self.assertIn('session_regenerate_id(true);', verify)
         self.assertIn("$_SESSION['uid']=$userId;", verify)
         self.assertIn("$_SESSION['authenticated_at']=time();", verify)
-        self.assertIn("redirect('dashboard')", verify)
+        self.assertIn("$destination=$_SESSION['auth_return_to'] ?? 'dashboard';", verify)
+        self.assertIn("redirect($destination)", verify)
 
     def test_session_contains_no_credentials_or_otp(self):
         public = (ROOT / "public/index.php").read_text(encoding="utf-8")
@@ -301,7 +304,8 @@ class OtpFlowTest(unittest.TestCase):
         self.assertNotIn("$_SESSION['verify_password_hash']", AUTH)
         self.assertNotRegex(AUTH, r"\$_SESSION\['[^']*(password|otp|api_key)[^']*'\]")
         self.assertIn("$_SESSION['uid']=(int)$u['id']", AUTH)
-        self.assertIn("$_SESSION=[]; session_regenerate_id(true)", AUTH)
+        self.assertIn("$_SESSION=[];\n", AUTH)
+        self.assertIn("session_destroy();\n    session_start();\n    session_regenerate_id(true);", AUTH)
         self.assertIn("pending_password_hash", SCHEMA)
         self.assertIn("pending_password_hash", (ROOT / "database/schema.mysql.sql").read_text(encoding="utf-8"))
         self.assertIn("ADD COLUMN pending_password_hash", CONNECTION)
@@ -311,19 +315,42 @@ class OtpFlowTest(unittest.TestCase):
         self.assertIn("normalized_phone($phoneRaw)", login)
         self.assertIn("password_verify($password,$hash)", login)
         self.assertIn("$u['phone_verified_at']===null", login)
+        self.assertIn("(SMS_VERIFICATION_ENABLED && $u['phone_verified_at']===null)", login)
         self.assertLess(login.index('session_regenerate_id(true)'), login.index("$_SESSION['uid']=(int)$u['id']"))
         self.assertIn("شماره موبایل یا رمز عبور صحیح نیست.", login)
-        self.assertIn("$u['phone_verified_at']===null", function_body("user"))
+        self.assertIn("(SMS_VERIFICATION_ENABLED && $u['phone_verified_at']===null)", function_body("user"))
         verify = AUTH[AUTH.index("if ($path==='auth/verify')"):AUTH.index("if ($path==='auth/admin')")]
         self.assertIn("INSERT INTO users(phone,name,password_hash,phone_verified_at,acquisition_source,acquisition_campaign)", verify)
 
+    def test_sms_free_registration_waits_only_for_a_later_verification(self):
+        body = function_body("sms_free_registration")
+        self.assertIn("VALUES (?,?,?,NULL,?,?)", body)
+        self.assertIn("password_hash($password,PASSWORD_DEFAULT)", body)
+        self.assertIn("record_activity_event($userId,'user_registered')", body)
+        self.assertNotIn('user_verified', body)
+        self.assertNotIn("send_verification_code", body)
+        self.assertNotIn("reserve_otp_send", body)
+        self.assertNotIn("otp_codes", body)
+        self.assertIn("session_regenerate_id(true)", body)
+        self.assertIn("$_SESSION['uid']=$userId", body)
+        self.assertLess(body.index("$db->commit()"), body.index("session_regenerate_id(true)"))
+        self.assertLess(body.index("session_regenerate_id(true)"), body.index("flash("))
+        self.assertNotIn("$_SESSION['verify_phone']", body)
+        self.assertNotRegex(body, r"\$_(?:POST|GET)")
+
     def test_funnel_events_are_scoped_to_successful_auth_operations(self):
         request = AUTH[AUTH.index("if ($path==='auth/request')"):AUTH.index("if ($path==='auth/login')")]
+        register = function_body('sms_free_registration')
         login = AUTH[AUTH.index("if ($path==='auth/login')"):AUTH.index("if ($path==='auth/verify')")]
         verify = AUTH[AUTH.index("if ($path==='auth/verify')"):AUTH.index("if ($path==='auth/admin')")]
         admin = AUTH[AUTH.index("if ($path==='auth/admin')"):AUTH.index("if ($path==='logout')")]
         self.assertNotIn('record_activity_event(', request)
         self.assertNotIn('record_activity_event(', admin)
+        self.assertIn("record_activity_event($userId,'user_registered')", register)
+        self.assertNotIn('user_verified', register)
+        self.assertEqual(register.count('record_activity_event('), 1)
+        self.assertLess(register.index("INSERT INTO users("), register.index('record_activity_event($userId'))
+        self.assertLess(register.index('record_activity_event($userId'), register.index('$db->commit()'))
         self.assertIn("record_activity_event($userId,'user_registered')", verify)
         self.assertIn("record_activity_event($userId,'user_verified')", verify)
         self.assertEqual(verify.count('record_activity_event('), 2)
@@ -334,7 +361,7 @@ class OtpFlowTest(unittest.TestCase):
         self.assertLess(verify.index("record_activity_event($userId,'user_verified')"), verify.index('$db->commit()'))
         self.assertIn("record_activity_event((int)$u['id'],'user_logged_in')", login)
         self.assertEqual(login.count('record_activity_event('), 1)
-        self.assertLess(login.index('if (!$u || $u[\'phone_verified_at\']===null || !$passwordValid)'), login.index('session_regenerate_id(true)'))
+        self.assertLess(login.index("if (!$u || (SMS_VERIFICATION_ENABLED && $u['phone_verified_at']===null) || !$passwordValid)"), login.index('session_regenerate_id(true)'))
         self.assertLess(login.index("$_SESSION['uid']=(int)$u['id']"), login.index("record_activity_event((int)$u['id'],'user_logged_in')"))
         self.assertNotIn('record_activity_event(', AUTH[AUTH.index("if ($path==='logout')"):])
         recorder = CONNECTION[CONNECTION.index('function record_activity_event('):]

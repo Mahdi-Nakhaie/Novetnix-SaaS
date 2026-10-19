@@ -237,7 +237,8 @@ function lead_stage_for_user(int $userId): ?array {
     $user=q('SELECT phone_verified_at FROM users WHERE id=?',[$userId])->fetch();
     if (!$user) return null;
     $percentage=null;
-    if ($user['phone_verified_at']!==null) {
+    // While SMS is off every account is unverified, so its own password stands in for the phone check.
+    if ($user['phone_verified_at']!==null || !SMS_VERIFICATION_ENABLED) {
         $index=1;
         $percentage=lead_progress_percentage($userId);
         if ($percentage!==null) foreach (LEAD_STAGES as $i=>$rule) if ($i>=2 && $percentage>=$rule['threshold']) $index=$i;

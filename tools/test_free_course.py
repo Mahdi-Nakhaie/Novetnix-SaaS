@@ -84,10 +84,6 @@ class FreeCourseHttpTest(unittest.TestCase):
         client.request('/login?next=course%2Fai-foundations')
         status, headers, _ = client.post('/auth/request', {'first_name': 'هنرجو', 'last_name': 'آزمایشی', 'phone': phone, 'password': 'FixturePass123'})
         self.assertEqual(status, 303)
-        self.assertEqual(headers['Location'], '/verify')
-        self.assertNotIn('qbk51d2', client.request('/course/ai-foundations')[2])
-        status, headers, _ = client.post('/auth/verify', {'code': client.state()['delivery']})
-        self.assertEqual(status, 303)
         self.assertEqual(headers['Location'], '/course/ai-foundations')
         return client
 
@@ -121,13 +117,23 @@ class FreeCourseHttpTest(unittest.TestCase):
         self.assertEqual(status, 303)
         self.assertEqual(headers['Location'], '/dashboard')
 
-    def test_unverified_account_cannot_watch(self):
-        client = self.register_for_course('09990000182')
+    def test_registration_without_sms_creates_account_and_signs_in(self):
+        client = test_release.Client(self.base)
+        client.request('/login?next=course%2Fai-foundations')
+        status, headers, _ = client.post('/auth/request', {'first_name': 'هنرجو', 'last_name': 'بدون‌پیامک', 'phone': '09990000182', 'password': 'FixturePass123'})
+        self.assertEqual((status, headers['Location']), (303, '/course/ai-foundations'))
         with sqlite3.connect(test_release.ReleaseHttpTest.database) as connection:
-            connection.execute('UPDATE users SET phone_verified_at=NULL WHERE phone=?', ('09990000182',))
+            row = connection.execute('SELECT name,phone_verified_at FROM users WHERE phone=?', ('09990000182',)).fetchone()
+        self.assertEqual(row, ('هنرجو بدون‌پیامک', None))
         source = client.request('/course/ai-foundations')[2]
-        self.assertNotIn('qbk51d2', source)
-        self.assertEqual(CourseDocument(source).iframes, [])
+        self.assertNotIn('fc-access-gate', source)
+        self.assertEqual(len(CourseDocument(source).iframes), 1)
+        client.post('/logout', {})
+        self.assertEqual(CourseDocument(client.request('/course/ai-foundations')[2]).iframes, [])
+        client.request('/login')
+        wrong = client.post('/auth/login', {'phone': '09990000182', 'password': 'WrongPass123', 'captcha': client.state()['captcha']})
+        self.assertEqual((wrong[0], wrong[1]['Location']), (303, '/login'))
+        self.assertNotIn('qbk51d2', client.request('/course/ai-foundations')[2])
 
     def test_highlighted_course_navigation_on_other_public_pages(self):
         client = test_release.Client(self.base)
@@ -163,6 +169,8 @@ class FreeCourseHttpTest(unittest.TestCase):
         self.assertIn('<a href="/login">ورود به حساب</a>', registration)
         self.assertIn('ثبت‌نام در سایت', registration)
         self.assertNotIn('ارسال کد تأیید', registration)
+        self.assertNotIn('کد پیامک', registration)
+        self.assertIn('ارسال پیامک فعلاً غیرفعال است', registration)
         self.assertIn('هنوز حساب نداری؟', login)
         self.assertIn('<a href="/register">ساخت حساب جدید</a>', login)
         self.assertNotIn('class="btn btn-outline">ساخت حساب جدید', login)
@@ -187,8 +195,6 @@ class FreeCourseHttpTest(unittest.TestCase):
         client = test_release.Client(self.base)
         client.request('/register?next=course%2Fai-foundations')
         status, headers, _ = client.post('/auth/request', {'first_name': 'هنرجو', 'last_name': 'جدید', 'phone': '09990000183', 'password': 'FixturePass123'})
-        self.assertEqual((status, headers['Location']), (303, '/verify'))
-        status, headers, _ = client.post('/auth/verify', {'code': client.state()['delivery']})
         self.assertEqual((status, headers['Location']), (303, '/course/ai-foundations'))
         for path in ('/login', '/register'):
             source = client.request(path)[2]
