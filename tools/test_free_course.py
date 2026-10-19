@@ -137,6 +137,13 @@ class FreeCourseHttpTest(unittest.TestCase):
                 self.assertEqual(status, 200)
                 self.assertEqual(source.count('nav-free-course'), 2)
                 self.assertIn('href="/course/ai-foundations"', source)
+                for opening in ('<nav class="main-nav"', '<nav id="mobile-nav"'):
+                    navigation = source.split(opening, 1)[1].split('</nav>', 1)[0]
+                    self.assertLess(navigation.index('href="/"'), navigation.index('href="/course/ai-foundations"'))
+                    self.assertLess(navigation.index('href="/course/ai-foundations"'), navigation.index('href="/articles"'))
+        css = (ROOT / 'public/assets/style.css').read_text()
+        self.assertIn('.site-header .nav-free-course{color:var(--brand)}', css)
+        self.assertNotIn('.nav-free-course::before', css)
 
     def test_player_csp_is_limited_to_course_routes(self):
         client = test_release.Client(self.base)

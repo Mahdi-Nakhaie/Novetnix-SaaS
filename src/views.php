@@ -16,16 +16,16 @@ function head_page(string $title,string $description='',bool $panel=false,bool $
         if ($me && trim($me['name'])!=='') echo '<script src="/assets/free-course.js?v=2" defer></script>';
     }
     if ($path==='' || $path==='articles' || str_starts_with($path,'articles/')) echo '<link rel="stylesheet" href="/assets/articles.css">';
-    echo '<link rel="stylesheet" href="/assets/style.css?v=2">'.($path===''?'<script src="/assets/three.min.js" defer></script><script src="/assets/three-scene.js" defer></script>':'').'<script src="/assets/app.js" defer></script><script src="/assets/playback-events.js" defer></script></head><body class="'.($panel?'is-panel':'').'">';
+    echo '<link rel="stylesheet" href="/assets/style.css?v=3">'.($path===''?'<script src="/assets/three.min.js" defer></script><script src="/assets/three-scene.js" defer></script>':'').'<script src="/assets/app.js" defer></script><script src="/assets/playback-events.js" defer></script></head><body class="'.($panel?'is-panel':'').'">';
     echo '<div class="noventix-loading" id="noventix-loading" role="status" aria-live="polite" hidden><div class="noventix-loading-card"><span class="noventix-loading-mark" aria-hidden="true">N</span><strong>Noventix</strong><span class="noventix-loading-track" aria-hidden="true"><span></span></span><p>در حال آماده‌سازی...</p></div></div>';
     if ($panel) { panel_nav(); return; }
     echo '<header class="site-header"><div class="container header-inner"><a href="/" class="brand" aria-label="Noventix، صفحه اصلی"><img src="/assets/logo.png" alt="Noventix" width="171" height="55"></a><nav class="main-nav" aria-label="ناوبری اصلی">';
-    foreach ([''=>'خانه','articles'=>'مقاله‌ها','course/'.FREE_COURSE_SLUG=>'دورهٔ رایگان','projects'=>'پروژه‌ها','learners'=>'جامعه','community'=>'انجمن','glossary'=>'لغت‌نامه','about'=>'درباره ما','contact'=>'تماس با ما'] as $href=>$label) linkto($href,$label,trim(($path===$href?'active ':'').($href==='course/'.FREE_COURSE_SLUG?'nav-free-course':'')));
+    foreach ([''=>'خانه','course/'.FREE_COURSE_SLUG=>'دورهٔ رایگان','articles'=>'مقاله‌ها','projects'=>'پروژه‌ها','learners'=>'جامعه','community'=>'انجمن','glossary'=>'لغت‌نامه','about'=>'درباره ما','contact'=>'تماس با ما'] as $href=>$label) linkto($href,$label,trim(($path===$href?'active ':'').($href==='course/'.FREE_COURSE_SLUG?'nav-free-course':'')));
     echo '</nav><div class="header-actions">';
     if ($me) linkto('dashboard','پنل من','btn btn-small btn-outline'); else linkto('login','ورود','btn btn-small btn-outline');
     linkto($me?'dashboard':'login','شروع رایگان','btn btn-small btn-primary');
     echo '</div><button class="menu-toggle" type="button" aria-label="باز کردن فهرست" aria-expanded="false" aria-controls="mobile-nav">☰</button></div><nav id="mobile-nav" class="mobile-nav" aria-label="ناوبری موبایل">';
-    foreach ([''=>'خانه','articles'=>'مقاله‌ها','course/'.FREE_COURSE_SLUG=>'دورهٔ رایگان','projects'=>'پروژه‌ها','learners'=>'جامعه','community'=>'انجمن','glossary'=>'لغت‌نامه','about'=>'درباره ما','contact'=>'تماس با ما','dashboard'=>'پنل من'] as $href=>$label) linkto($href,$label,trim(($path===$href?'active ':'').($href==='course/'.FREE_COURSE_SLUG?'nav-free-course':'')));
+    foreach ([''=>'خانه','course/'.FREE_COURSE_SLUG=>'دورهٔ رایگان','articles'=>'مقاله‌ها','projects'=>'پروژه‌ها','learners'=>'جامعه','community'=>'انجمن','glossary'=>'لغت‌نامه','about'=>'درباره ما','contact'=>'تماس با ما','dashboard'=>'پنل من'] as $href=>$label) linkto($href,$label,trim(($path===$href?'active ':'').($href==='course/'.FREE_COURSE_SLUG?'nav-free-course':'')));
     echo '</nav></header>';
 }
 function commerce_paused(): void {
