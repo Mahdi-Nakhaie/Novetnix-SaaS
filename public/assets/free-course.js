@@ -2,7 +2,9 @@
     const player = document.getElementById('fc-video');
     const button = document.getElementById('fc-switch-player');
     const status = document.getElementById('fc-player-status');
-    if (!player || !button || !status) return;
+    const label = document.getElementById('fc-switch-label');
+    const description = document.getElementById('fc-switch-description');
+    if (!player || !button || !status || !label || !description) return;
     const iframe = player.querySelector('iframe');
     let alternative = false;
     button.hidden = false;
@@ -19,11 +21,13 @@
             player.replaceChildren(container);
             container.append(script);
             status.textContent = 'روش جایگزین آپارات انتخاب شد. در صورت مشکل، می‌توانید به پخش‌کنندهٔ اصلی برگردید.';
-            button.textContent = 'بازگشت به پخش‌کنندهٔ اصلی';
+            label.textContent = 'بازگشت به پخش‌کنندهٔ اصلی';
+            description.textContent = 'پخش ویدیو با روش پیش‌فرض';
         } else {
             player.replaceChildren(iframe);
             status.textContent = 'پخش‌کنندهٔ اصلی آپارات انتخاب شد.';
-            button.textContent = 'استفاده از پخش‌کنندهٔ جایگزین';
+            label.textContent = 'پخش‌کنندهٔ جایگزین';
+            description.textContent = 'تغییر روش پخش در همین صفحه';
         }
     });
 })();

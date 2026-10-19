@@ -83,7 +83,10 @@ function route(): void {
         foot_page(true); return;
     }
     if (preg_match('~^member/([1-9][0-9]*)$~D',$path,$match)) { page_member((int)$match[1]); return; }
-    if ($path==='login') { page_login(); return; }
+    if ($path==='login') {
+        if (($_GET['next'] ?? null)==='course/'.FREE_COURSE_SLUG) $_SESSION['auth_return_to']='course/'.FREE_COURSE_SLUG;
+        page_login(); return;
+    }
     if ($path==='verify') { page_verify(); return; }
     if ($path==='admin-login') { page_admin_login(); return; }
     if (preg_match('~^dashboard/course/([a-z0-9-]+)$~D',$path,$match)) {

@@ -182,7 +182,9 @@ function handle_auth_post(string $path): bool {
         $_SESSION['uid']=(int)$u['id']; unset($_SESSION['admin_verified_uid']);
         record_activity_event((int)$u['id'],'user_logged_in');
         if ($phone===(config_value('ADMIN_PHONE') ?: '')) redirect('admin-login');
-        flash('خوش آمدید!'); redirect('dashboard');
+        $destination=$_SESSION['auth_return_to'] ?? 'dashboard';
+        unset($_SESSION['auth_return_to']);
+        flash('خوش آمدید!'); redirect($destination);
     }
     if ($path==='auth/verify') {
         $phone=(string)($_SESSION['verify_phone'] ?? '');
@@ -224,7 +226,9 @@ function handle_auth_post(string $path): bool {
         }
         session_regenerate_id(true); $_SESSION['authenticated_at']=time(); $_SESSION['last_seen']=time(); $_SESSION['uid']=$userId; unset($_SESSION['verify_phone'],$_SESSION['verify_name'],$_SESSION['admin_verified_uid']);
         if ($phone!=='' && $phone===(config_value('ADMIN_PHONE') ?: '')) redirect('admin-login');
-        flash('خوش آمدید!'); redirect('dashboard');
+        $destination=$_SESSION['auth_return_to'] ?? 'dashboard';
+        unset($_SESSION['auth_return_to']);
+        flash('خوش آمدید!'); redirect($destination);
     }
     if ($path==='auth/admin') {
         $u=user();

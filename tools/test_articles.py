@@ -128,7 +128,7 @@ class ArticleHttpTest(unittest.TestCase):
         self.assertNotIn('noindex', headers.get('X-Robots-Tag', ''))
         for article in CATALOG:
             self.assertIn('/articles/' + article['slug'], text)
-        self.assertNotIn('/course/ai-foundations', text)
+        self.assertEqual(text.count('nav-free-course'), 2)
         self.assertNotIn('article-course-note', text)
         with sqlite3.connect(test_release.ReleaseHttpTest.database) as connection:
             connection.execute("INSERT OR IGNORE INTO courses(slug,title,description,status) VALUES ('ai-foundations','دورهٔ رایگان','دورهٔ منتشرشده','published')")
