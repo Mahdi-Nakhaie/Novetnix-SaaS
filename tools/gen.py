@@ -238,7 +238,7 @@ def view_home():
         '<div class="hero-proof"><span>✦ مسیر پروژه‌محور</span><span>✦ یادگیری به زبان فارسی</span><span>✦ شروع رایگان</span></div></div>'
         '<div class="hero-code-floats" aria-hidden="true"><span class="code-float code-float-a"><code>import numpy as np</code></span>'
         '<span class="code-float code-float-b"><code>model.fit(X, y)</code></span></div>'
-        '<div class="hero-display"><div class="hero-window"><div class="window-top">'
+        ' <div class="hero-display"><canvas class="hero-canvas" data-three-scene aria-hidden="true"></canvas><div class="scene-controls"><p data-scene-status>نمای ساده؛ تجربهٔ سه‌بعدی در صورت پشتیبانی دستگاه فعال می‌شود.</p><button type="button" class="btn btn-small btn-outline" data-scene-toggle aria-pressed="false" hidden>توقف حرکت</button></div><div class="hero-window"><div class="window-top">'
         '<span class="window-dots">● ● ●</span><span dir="ltr">noventix / your-next-project</span>'
         '<span class="code-label">PYTHON</span></div>'
         f'<div class="nova-bubble"><img src="{h(asset("nova.png"))}" alt="مسکات Nova" width="70" height="70">'
@@ -1382,6 +1382,7 @@ def render_page(route):
         + f'<link rel="icon" type="image/png" href="{h(asset("favicon.png"))}">'
         f'<link rel="stylesheet" href="{h(asset("style.css"))}">'
         + seed_script()
+        + (f'<script src="{h(asset("three.min.js"))}" defer></script><script src="{h(asset("three-scene.js"))}" defer></script>' if route["path"] == "" else "")
         + f'<script src="{h(asset("app.js"))}" defer></script>'
         + f'<script src="{h(asset("python-runner.js"))}" defer></script>'
         + f'<script src="{h(asset("demo.js"))}" defer></script></head><body{guard}>'
