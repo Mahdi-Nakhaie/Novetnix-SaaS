@@ -12,6 +12,7 @@ import json
 import pathlib
 import shutil
 import sys
+from datetime import datetime
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from catalog import (  # noqa: E402
@@ -208,20 +209,26 @@ SOCIALS = [
 
 def footer_html():
     return (
-        '<footer class="footer"><div class="container"><div class="footer-grid">'
-        f'<div><a href="{h(href(""))}" class="footer-brand">Noventix <span>N</span></a>'
-        '<p>از یاد گرفتن تا توانایی ساختن؛ یک قدم واقعی در هر پروژه.</p></div>'
-        "<div><h3>یادگیری</h3>"
-        + linkto("courses", "مقاله‌ها") + linkto("projects", "پروژه‌ها")
-        + linkto("learners", "جامعه یادگیرندگان") + linkto("glossary", "لغت‌نامهٔ هوش مصنوعی") + linkto("community", "انجمن")
-        + "</div><div><h3>Noventix</h3>"
-        + linkto("about", "درباره ما") + linkto("contact", "تماس با ما")
-        + linkto("help", "مرکز راهنما") + linkto("support", "پشتیبانی") + linkto("terms", "قوانین و مقررات")
-        + linkto("privacy", "حریم خصوصی")
-        + "</div><div><h3>همراه ما باشید</h3>"
-        + "".join(f'<a href="{u}" rel="noopener noreferrer" target="_blank">{n} ↗</a>' for u, n, _ in SOCIALS)
-        + f'</div></div><div class="footer-end"><span>© {YEAR} Noventix. همه حقوق محفوظ است.</span>'
-          "<span>یادگیری عمیق، ساختن واقعی.</span></div></div></footer>"
+        '<footer class="footer" dir="rtl"><div class="container footer-shell"><div class="footer-main"><div class="footer-intro">'
+        f'<a href="{h(href(""))}" class="footer-brand" aria-label="Noventix، صفحه اصلی"><span class="footer-mark" aria-hidden="true">N</span><span lang="en" dir="ltr">Noventix</span></a>'
+        '<p>یادگیری پروژه‌محور پایتون و هوش مصنوعی به زبان فارسی؛ از شناخت مفهوم تا ساختن و تمرین.</p>'
+        '<p class="footer-message">ما دنبال پیشرفتیم، نه فقط بیهوده تلاش کردن</p></div>'
+        '<nav class="footer-links" aria-label="راهنمای پایین صفحه"><section class="footer-column"><h2>یادگیری و منابع</h2>'
+        + linkto("courses", "دوره‌های آموزشی") + linkto("projects", "پروژه‌های عملی")
+        + linkto("glossary", "واژه‌نامهٔ هوش مصنوعی") + linkto("community", "انجمن یادگیری")
+        + '</section><section class="footer-column"><h2>دربارهٔ نوونتیکس</h2>'
+        + linkto("about", "دربارهٔ ما") + linkto("learners", "جامعهٔ یادگیرندگان")
+        + linkto("pricing", "پلن‌ها و امکانات")
+        + '</section><section class="footer-column"><h2>ارتباط و راهنما</h2>'
+        + linkto("contact", "تماس با ما") + linkto("help", "مرکز راهنما")
+        + linkto("support", "پشتیبانی حساب")
+        + '<div class="footer-socials"><a href="https://instagram.com/noventix.ir" lang="en" dir="ltr">Instagram</a>'
+          '<a href="https://t.me/noventix_ir" lang="en" dir="ltr">Telegram</a>'
+          '<a href="https://www.aparat.com/noventix.ir">آپارات</a></div></section></nav></div>'
+        + f'<div class="footer-bottom"><small>© {fa(datetime.now().year)} نوونتیکس؛ تمامی حقوق محفوظ است.</small>'
+        + '<nav class="footer-bottom-links" aria-label="قوانین استفاده">'
+        + linkto("terms", "قوانین و مقررات") + linkto("privacy", "حریم خصوصی")
+        + '</nav></div></div></footer>'
     )
 
 
