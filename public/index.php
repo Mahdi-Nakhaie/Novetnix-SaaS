@@ -23,7 +23,7 @@ unset($_SESSION['verify_password_hash']);
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: strict-origin-when-cross-origin');
 header('X-Frame-Options: DENY');
-$aparatPolicy=preg_match('~^dashboard/course/[a-z0-9-]+$~D',$path) ? ' https://www.aparat.com' : '';
+$aparatPolicy=($path==='course/ai-foundations' || preg_match('~^dashboard/course/[a-z0-9-]+$~D',$path)) ? ' https://www.aparat.com' : '';
 $seoNonce=base64_encode(random_bytes(18));
 header("Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self' 'nonce-".$seoNonce."'".$aparatPolicy."; frame-src 'self'".$aparatPolicy."; font-src 'self'; form-action 'self'; base-uri 'self'; frame-ancestors 'none'");
 require_once dirname(__DIR__).'/src/app.php';

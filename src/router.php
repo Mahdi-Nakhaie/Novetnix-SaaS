@@ -132,6 +132,7 @@ function page_course(string $slug): void {
     global $me;
     $course=q("SELECT id,slug,title,description,estimated_duration_minutes FROM courses WHERE slug=? AND status='published'",[$slug])->fetch();
     if (!$course) { page_not_found(); return; }
+    if ($slug===FREE_COURSE_SLUG) { page_free_course($course); return; }
     $lessons=q("SELECT title,position,duration_minutes,status FROM lessons WHERE course_id=? AND status='published' ORDER BY position ASC",[$course['id']])->fetchAll();
     $duration=$course['estimated_duration_minutes'];
     if ($duration===null) {
