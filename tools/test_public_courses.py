@@ -314,7 +314,7 @@ class PublicCoursesTest(unittest.TestCase):
 
     def test_free_course_access_is_explicit_and_independent_of_subscriptions(self):
         data = (ROOT / 'src/data.php').read_text(encoding='utf-8')
-        self.assertIn('const COMMERCE_ENABLED = true;', data)
+        self.assertIn('const COMMERCE_ENABLED = false;', data)
         self.assertIn("const FREE_COURSE_SLUG = 'ai-foundations';", data)
         access = body(APP, 'can_course')
         self.assertLess(access.index('$slug===FREE_COURSE_SLUG'), access.index('!COMMERCE_ENABLED'))

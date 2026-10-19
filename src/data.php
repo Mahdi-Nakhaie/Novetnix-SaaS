@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-const COMMERCE_ENABLED = true;
+const COMMERCE_ENABLED = false;
 // SMS OTP is off until the SMS.ir account is ready; registration then creates the account at once
 // and the phone stays unverified (users.phone_verified_at) for a later verification pass.
 const SMS_VERIFICATION_ENABLED = false;

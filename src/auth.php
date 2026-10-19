@@ -151,7 +151,7 @@ function sms_free_registration(string $phone, string $first, string $last, strin
     unset($_SESSION['registration_source'],$_SESSION['registration_campaign']);
     session_regenerate_id(true); $_SESSION['authenticated_at']=time(); $_SESSION['last_seen']=time(); $_SESSION['uid']=$userId; unset($_SESSION['admin_verified_uid']);
     if ($phone===(config_value('ADMIN_PHONE') ?: '')) redirect('admin-login');
-    flash('خوش آمدی! حسابت ساخته شد. این شماره هنوز با پیامک تأیید نشده است.');
+    flash('خوش آمدی! حسابت ساخته شد.');
     redirect($destination);
 }
 function handle_auth_post(string $path): bool {

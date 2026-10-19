@@ -46,7 +46,7 @@ class DashboardAccountTest(unittest.TestCase):
         self.assertNotIn("$_POST['user_id']", body(AUTH, "user"))
 
     def test_dashboard_account_uses_real_safe_fields(self):
-        for field in ("$me['name']", "$me['phone']", "$me['phone_verified_at']"):
+        for field in ("$me['name']", "$me['phone']"):
             self.assertIn(field, self.panel)
         self.assertIn("account-summary", self.panel)
         self.assertIn("ثبت نشده", self.panel)
@@ -62,7 +62,8 @@ class DashboardAccountTest(unittest.TestCase):
         self.db.execute("UPDATE users SET name='' WHERE id=1")
         row = self.db.execute(self.user_query, (1,)).fetchone()
         self.assertEqual(row[2], "")
-        self.assertIn("$me['phone_verified_at']!==null?'تأیید شده':'تأیید نشده'", self.panel)
+        self.assertNotIn('وضعیت شماره تلفن', self.panel)
+        self.assertNotIn('تأیید نشده', self.panel)
         self.assertIn("$role==='admin'", self.panel)
 
 

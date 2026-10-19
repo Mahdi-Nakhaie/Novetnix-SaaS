@@ -215,19 +215,13 @@ $out['matrix']=[];
 foreach (array_keys(PLANS) as $plan) $out['matrix'][$plan]=array_map(fn($slug)=>can_course($slug,$plan),['ai-foundations','python-foundations','data-analysis','nlp-practice','deep-learning','unknown']);
 echo json_encode($out);
 '''
+        code = code.replace("'/project/src/app.php'", repr(str(ROOT / 'src/app.php')))
         value = json.loads(subprocess.check_output([php, '-r', code], env=dict(os.environ, DB_DSN='sqlite:' + str(database)), text=True))
-        self.assertEqual(value['active'], [True, True, True])
-        for state in ('free', 'expired', 'inactive', 'future'):
+        for state in ('free', 'active', 'expired', 'inactive', 'future'):
             self.assertEqual(value[state], [False, False, False], state)
         self.assertFalse(value['mismatch'])
         self.assertTrue(value['free_survives'])
-        self.assertEqual(value['matrix'], {
-            'free': [True, True, False, False, False, False],
-            'bronze': [True, True, True, False, False, False],
-            'silver': [True, True, True, True, False, False],
-            'gold': [True, True, True, True, True, False],
-            'titanium': [True, True, True, True, True, False],
-        })
+        self.assertEqual(value['matrix'], {plan: [True, False, False, False, False, False] for plan in ('free', 'bronze', 'silver', 'gold', 'titanium')})
 
     def test_metadata_public_pages_404_and_private_policy(self):
         client = Client(self.base)

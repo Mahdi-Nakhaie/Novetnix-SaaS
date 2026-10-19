@@ -86,28 +86,23 @@ $_POST=$f['post']; $_GET=$f['query'];
         self.assertNotIn('url', out)
         self.assertEqual(self.scalar('SELECT COUNT(*) FROM payment_orders'), 0)
 
-    def test_request_uses_server_price_production_endpoint_and_persists_before_redirect(self):
+    def test_paused_commerce_never_requests_gateway_even_with_forged_amount(self):
         out = self.run_php("payment_start(['id'=>1,'phone'=>'09120000901']);",
                            {'data': {'code': 100, 'authority': AUTHORITY}},
                            {'plan': 'bronze', 'amount': '1', 'callback_url': 'https://invalid.test', 'request_key': 'a' * 32})
-        self.assertEqual(out['url'], 'https://payment.zarinpal.com/pg/v4/payment/request.json')
-        self.assertEqual(out['payload']['amount'], 1900000)
-        self.assertEqual(out['payload']['currency'], 'IRR')
-        self.assertEqual(out['payload']['callback_url'], 'https://shop.example.test/payment/zarinpal/callback')
-        self.assertEqual(out['header'], 'Location: https://payment.zarinpal.com/pg/StartPay/' + AUTHORITY)
-        self.assertEqual(self.scalar('SELECT authority FROM payment_orders'), AUTHORITY)
+        self.assertEqual(out['redirect'], 'dashboard/subscription')
+        self.assertNotIn('url', out)
+        self.assertNotIn('payload', out)
+        self.assertEqual(self.scalar('SELECT COUNT(*) FROM payment_orders'), 0)
         self.assertEqual(self.scalar('SELECT COUNT(*) FROM subscriptions'), 0)
-        repeat = self.run_php("payment_start(['id'=>1,'phone'=>'09120000901']);", post={'plan': 'gold', 'request_key': 'a' * 32})
-        self.assertNotIn('payload', repeat)
-        self.assertEqual(self.scalar('SELECT COUNT(*) FROM payment_orders'), 1)
 
     def test_request_transport_failure_does_not_redirect_to_gateway_or_grant(self):
         out = self.run_php("payment_start(['id'=>1,'phone'=>'09120000901']);",
                            {'transport_failure': True},
                            {'plan': 'bronze', 'request_key': 'a' * 32})
         self.assertNotIn('header', out)
-        self.assertEqual(out['redirect'], 'dashboard/payment-history')
-        self.assertEqual(self.scalar('SELECT status FROM payment_orders'), 'request_failed')
+        self.assertEqual(out['redirect'], 'dashboard/subscription')
+        self.assertEqual(self.scalar('SELECT COUNT(*) FROM payment_orders'), 0)
         self.assertEqual(self.scalar('SELECT COUNT(*) FROM subscriptions'), 0)
 
     def test_verification_transport_failure_keeps_order_recoverable(self):

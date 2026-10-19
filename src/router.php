@@ -106,7 +106,7 @@ function route(): void {
         if (!$u || trim($u['name'])==='') progress_response(401,['error'=>'برای مشاهده پیشرفت وارد شوید.']);
         lesson_progress_for_user($u,$match[1]);
     }
-    if (preg_match('~^dashboard/(users|users-new|courses|catalog|subscriptions|messages|analytics|payments|announcements|content|settings|glossary|glossary/new|glossary/edit)$~D',$path)) require_admin();
+    if (preg_match('~^dashboard/(users|users-new|courses|catalog|subscriptions|messages|analytics|payments|announcements|content|glossary|glossary/new|glossary/edit)$~D',$path)) require_admin();
     if ($path==='dashboard' || str_starts_with($path,'dashboard/')) {
         $u=require_user();
         if ($u['phone']===(config_value('ADMIN_PHONE') ?: '') && $u['role']!=='admin') redirect('admin-login');
@@ -125,7 +125,11 @@ function page_courses(array $courses): void {
 }
 function course_start_action(array $course,?array $me,bool $enrolled,string $class): void {
     if (!$me || trim($me['name'])==='') { linkto('login','برای شروع وارد شوید ←',$class); return; }
-    if (!can_course($course['slug'],plan_for($me))) { linkto('dashboard/subscription','مشاهده پلن موردنیاز ←',$class); return; }
+    if (!can_course($course['slug'],plan_for($me))) {
+        if (COMMERCE_ENABLED) linkto('dashboard/subscription','مشاهده پلن موردنیاز ←',$class);
+        else echo '<p class="muted">فعلاً فقط دورهٔ رایگان باز است؛ ثبت‌نام این دوره در دسترس نیست.</p>';
+        return;
+    }
     if ($enrolled) { linkto('dashboard/course/'.$course['slug'],'ورود به فضای یادگیری ←',$class); return; }
     if (!COMMERCE_ENABLED && $course['slug']!==FREE_COURSE_SLUG) { echo '<p class="muted">ثبت‌نام این دوره فعلاً در دسترس نیست.</p>'; return; }
     form_start('courses/enroll');
