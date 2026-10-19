@@ -392,6 +392,8 @@ function panel(string $sub): void {
         echo '<div class="panel-columns"><section class="panel-card"><h2>شکست فعالیت</h2><div class="panel-list">';
         foreach ($kinds as [$table,$label,$hint]) echo '<div class="usage-row"><span>'.h($label).'<small class="muted"> · '.h($hint).'</small></span><strong>'.fa($counts[$table]).'</strong></div>';
         echo '</div></section><section class="panel-card"><h2>Streak چطور محاسبه می‌شود؟</h2><ul class="check-list"><li>هر روزی که دست‌کم یک کار واقعی ثبت کنی، برای آن روز شمرده می‌شود.</li><li>اگر یک روز کامل بی‌فعالیت بماند، شمارنده به صفر برمی‌گردد؛ روزهای قبلی حفظ می‌شوند.</li><li>فعالیت امروز که هنوز ثبت نشده، Streak دیروز را از بین نمی‌برد.</li></ul></section></div>';
+    } elseif ($sub==='challenges') {
+        ws_challenges($me);
     } elseif ($sub==='settings') {
         panel_head('تنظیمات','مدیریت اطلاعات حساب و فضای یادگیری.');
         echo '<section class="panel-card narrow"><h2>اطلاعات حساب</h2>';
@@ -469,17 +471,6 @@ function admin_panel(string $sub): void {
         panel_head('پروژه‌ها','کاتالوگ پروژه‌های فعال پلتفرم.');
         echo '<div class="panel-card"><p class="muted">'.fa(count(PROJECTS)).' پروژه فعال در کاتالوگ برنامه.</p>'; linkto('projects','مشاهده کاتالوگ ←','btn btn-outline'); echo '</div>';
         echo '<div class="project-grid">'; foreach (PROJECTS as $i=>$p) echo '<article class="project-card"><div class="project-visual visual-'.($i%4).'"><span class="visual-number">'.fa(str_pad((string)($i+1),2,'0',STR_PAD_LEFT)).'</span><span class="visual-label">'.h(strtoupper($p['topic'])).'</span></div><div class="project-info"><div class="meta-row"><span class="pill">'.h($p['topic']).'</span><span>'.h($p['level']).'</span></div><h3>'.h($p['title']).'</h3></div></article>'; echo '</div>';
-    } elseif ($sub==='challenges') {
-        panel_head('چالش‌ها','مسئله‌های کوتاه برای تمرین روزانه و هفتگی.');
-        $mine=q('SELECT challenge_index FROM challenge_progress WHERE user_id=?',[$me['id']])->fetchAll(PDO::FETCH_COLUMN);
-        echo '<div class="challenge-grid">';
-        foreach (CHALLENGES as $i=>$c) {
-            echo '<article class="challenge-card"><div class="meta-row"><span class="pill">'.h($c['kind']).'</span><span class="xp">XP +'.fa($c['xp']).'</span></div><h3>'.h($c['title']).'</h3><span class="muted">'.h($c['topic']).'</span>';
-            if (in_array($i,$mine,true)) echo '<span class="btn btn-outline full is-done">در فهرست شما ✓</span>';
-            else { form_start('challenges/start'); echo '<input type="hidden" name="index" value="'.$i.'"><button class="btn btn-primary full">شروع چالش</button></form>'; }
-            echo '</article>';
-        }
-        echo '</div>';
     } elseif ($sub==='payments') {
         require_admin();
         panel_head('مدیریت پرداخت‌ها','تراکنش‌های واقعی زرین‌پال');

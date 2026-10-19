@@ -5,6 +5,11 @@ function lp_catalog(): array {
     static $catalog;
     return $catalog ??= json_decode(file_get_contents(dirname(__DIR__).'/curriculum/catalog.json'),true,512,JSON_THROW_ON_ERROR);
 }
+function lp_weekly_challenge(?int $now=null): array {
+    $today=gmdate('Y-m-d',$now ?? time());
+    $start=strtotime($today.' UTC')-(((int)gmdate('N',strtotime($today.' UTC'))-1)*86400);
+    return ['index'=>(int)floor($start/604800)%count(PROJECTS),'start'=>gmdate('Y-m-d H:i:s',$start),'end'=>gmdate('Y-m-d H:i:s',$start+604800)];
+}
 function lp_version(): string {
     $root=dirname(__DIR__).'/curriculum/';
     return hash('sha256',file_get_contents($root.'catalog.json').file_get_contents($root.'grading.py').file_get_contents($root.'data/manifest.json'));

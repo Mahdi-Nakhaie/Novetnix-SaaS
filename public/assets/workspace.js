@@ -52,7 +52,7 @@
   };
   const buttons = Object.fromEntries(Array.from(root.querySelectorAll('[data-ws-action]'), node => [node.dataset.wsAction, node]));
   let files = {}, selected = '', revision = 0, dirty = false, busy = false, ready = false, runner = false;
-  let runId = null, requestKey = null, pendingEntry = '', result = null, timer = null;
+  let runId = null, requestKey = null, pendingEntry = '', pendingAssess = false, result = null, timer = null;
   let datasetPaths = new Set(), downloading = null;
   const binary = name => /\.(png|joblib|pkl|npy|npz)$/i.test(name);
   const pathValid = path => typeof path === 'string' && path.length <= 160 && /^[A-Za-z0-9_][A-Za-z0-9_. /-]*$/.test(path) && path.split('/').every(p => p && !p.startsWith('.') && p.trim() === p);
@@ -66,6 +66,7 @@
     buttons.run.disabled = !ready || locked || !runner;
     buttons.run.textContent = active() ? 'بررسی وضعیت اجرا' : requestKey ? 'تلاش مجدد همان درخواست' : 'اجرای Python';
     buttons.cancel.disabled = !ready || locked || !active();
+    if (buttons.assess) buttons.assess.disabled = !ready || locked || !runner || active() || requestKey !== null;
     buttons.apply.disabled = !ready || locked || active() || dirty || !result || !['succeeded', 'program_error'].includes(result.state) || result.revision !== revision;
     buttons['remove-file'].disabled = !ready || locked || !selected || datasetPaths.has(selected);
     commandInput.disabled = commandSubmit.disabled = !ready || locked || !runner || active() || requestKey !== null;
@@ -140,20 +141,32 @@
       if (['queued', 'running', 'cancelling'].includes(state.state)) timer = setTimeout(poll, 2000);
       else {
         if (terminalRun) terminalPrint((state.stdout || '') + (state.stderr ? '\n' + state.stderr : '') + '\n[' + (labels[state.state] || state.state) + ']');
-        result = state; runId = null; requestKey = null; pendingCommand = ''; terminalRun = false;
+        const assessment = root.querySelector('[data-ws-assessment]');
+        assessment.hidden = !state.assessment;
+        const checks = root.querySelector('[data-ws-checks]'); checks.replaceChildren();
+        if (state.assessment) {
+          root.querySelector('[data-ws-assessment-title]').textContent = state.assessment.passed ? (state.xp_awarded ? 'ارزیابی موفق؛ امتیاز ثبت شد.' : 'ارزیابی موفق؛ امتیاز قبلاً ثبت شده یا نسخه تغییر کرده است.') : 'ارزیابی ناموفق؛ معیارها را بررسی و دوباره تلاش کن.';
+          for (const check of state.assessment.checks || []) {
+            const item = document.createElement('li');
+            item.textContent = (check.passed ? 'موفق' : 'ناموفق') + ' · ' + check.name + ' · ' + (labels[check.execution_state] || check.execution_state);
+            checks.append(item);
+          }
+        }
+        result = state; runId = null; requestKey = null; pendingCommand = ''; pendingAssess = false; terminalRun = false;
         message('اجرا پایان یافت؛ برای نگهداری فایل‌های تولیدشده دکمه ذخیره خروجی را بزنید.');
       }
     } catch (error) { message(error.message + ' برای ادامه، بررسی وضعیت اجرا را بزنید؛ اجرای جدیدی ارسال نمی‌شود.'); }
     refreshButtons();
   }
-  async function startRun(command = '') {
+  async function startRun(command = '', assess = false) {
     if (runId) { await poll(); return; }
     if (!requestKey) {
-      const target = entry.value.trim();
+      const target = assess ? 'main.py' : entry.value.trim();
       if (!command && (!pathValid(target) || !target.endsWith('.py') || files[target]?.kind !== 'file')) throw new Error('فایل اجرایی پایتون موجود و معتبر انتخاب کنید.');
-      await save(); requestKey = crypto.randomUUID(); pendingEntry = target; pendingCommand = command; terminalRun = Boolean(command);
+      await save(); requestKey = crypto.randomUUID(); pendingEntry = target; pendingCommand = command; pendingAssess = assess; terminalRun = Boolean(command);
     }
-    const state = await request('/workspace/run', form({request_key: requestKey, entrypoint: pendingEntry, terminal_command: pendingCommand}));
+    const state = await request('/workspace/run', form({request_key: requestKey, entrypoint: pendingEntry, terminal_command: pendingCommand, assess: pendingAssess ? '1' : '0'}));
+    root.querySelector('[data-ws-assessment]').hidden = true;
     runId = state.local_id; result = null; runState.textContent = 'در صف اجرا'; await poll();
   }
   root.querySelector('[data-ws-terminal-form]').addEventListener('submit', async event => {
@@ -215,6 +228,7 @@
         root.querySelector('[data-ws-upload]').value = ''; root.querySelector('[data-ws-zip]').value = '';
       }
       if (action === 'run') await startRun();
+      if (action === 'assess') await startRun('', true);
       if (action === 'cancel' && runId) { await request('/workspace/cancel', form({run_id: runId})); await poll(); }
       if (action === 'apply' && result) {
         if (dirty) throw new Error('ابتدا تغییرات را ذخیره کنید؛ خروجی روی نسخه جدید بازنویسی نمی‌شود.');
@@ -235,10 +249,11 @@
   const bytesLabel = bytes => bytes === null ? 'نامشخص' : Number(bytes).toLocaleString('fa-IR') + ' بایت';
   function hfMetadata(dataset, container) {
     const title = hfNode('h3', dataset.id); title.dir = 'ltr'; container.append(title);
-    container.append(hfNode('p', dataset.description || 'توضیحات مشخص نشده است.'));
-    container.append(hfNode('p', 'قالب‌ها: ' + (dataset.formats.join('، ') || 'نامشخص') + ' · اندازه تقریبی مخزن: ' + bytesLabel(dataset.approximate_bytes)));
-    container.append(hfNode('p', 'مجوز: ' + (Array.isArray(dataset.license) ? dataset.license.join('، ') : dataset.license || 'نامشخص') + ' · دسترسی: عمومی بدون احراز هویت'));
-    const source = hfNode('a', 'منبع و شرایط استفاده در Hugging Face'); source.href = dataset.source; source.target = '_blank'; source.rel = 'noopener noreferrer'; container.append(source);
+    const description = hfNode('p', dataset.description || 'توضیحی برای این دیتاست ثبت نشده است.'); description.className = 'ws-dataset-description'; container.append(description);
+    const metadata = hfNode('div', ''); metadata.className = 'ws-dataset-tags';
+    for (const text of [dataset.formats.join(' · ') || 'قالب نامشخص', bytesLabel(dataset.approximate_bytes), 'مجوز: ' + (Array.isArray(dataset.license) ? dataset.license.join('، ') : dataset.license || 'نامشخص')]) metadata.append(hfNode('span', text));
+    container.append(metadata);
+    const source = hfNode('a', 'منبع و شرایط استفاده'); source.className = 'ws-text-link'; source.href = dataset.source; source.target = '_blank'; source.rel = 'noopener noreferrer'; container.append(source);
   }
   async function hfShow(id) {
     hfText('در حال بررسی دسترسی، نسخه و فایل‌ها…');
@@ -251,7 +266,13 @@
       const text = hfNode('span', file.path + ' · ' + bytesLabel(file.size)); text.dir = 'ltr'; label.append(input, text); options.append(label);
     });
     hfDetail.append(options);
-    const add = hfNode('button', 'ذخیره پروژه و دریافت فایل‌های انتخابی'); add.type = 'button'; add.disabled = !data.files.length;
+    const add = hfNode('button', 'افزودن فایل‌های انتخابی به پروژه'); add.className = 'btn btn-primary'; add.type = 'button'; add.disabled = !data.files.length;
+    const selection = hfNode('p', 'هیچ فایلی انتخاب نشده است.'); selection.setAttribute('role', 'status');
+    options.addEventListener('change', () => {
+      const count = options.querySelectorAll('input:checked').length;
+      selection.textContent = count.toLocaleString('fa-IR') + ' فایل از حداکثر ۱۰ فایل انتخاب شده است.';
+    });
+    hfDetail.append(selection);
     add.addEventListener('click', async () => {
       if (busy || !ready || downloading) { hfText('ابتدا عملیات جاری را پایان دهید.'); return; }
       const chosen = Array.from(options.querySelectorAll('input:checked'), input => input.value);
@@ -286,6 +307,9 @@
   async function hfRefresh() {
     const state = await request('/workspace/datasets-state?id=' + project);
     hfImports.replaceChildren();
+    if (!state.imports.length) {
+      const empty = hfNode('p', 'هنوز دیتاستی اضافه نکرده‌ای. با جست‌وجوی بالا اولین دادهٔ پروژه را پیدا کن.'); empty.className = 'ws-dataset-empty'; hfImports.append(empty);
+    }
     state.imports.forEach(job => {
       const card = hfNode('article', ''); card.className = 'ws-dataset-import';
       const label = {downloading: 'در حال دریافت', succeeded: 'ذخیره و checksum تأیید شد', failed: 'ناموفق', cancelled: 'لغوشده'}[job.state] || job.state;
@@ -299,26 +323,27 @@
         resume.addEventListener('click', () => { if (busy || !ready) { hfText('ابتدا عملیات میزکار را پایان دهید.'); return; } hfContinue(job).then(hfRefresh).catch(error => hfText(error.message)); });
         const cancel = hfNode('button', 'لغو دریافت'); cancel.type = 'button';
         cancel.addEventListener('click', async () => { cancel.disabled = true; try { await request('/workspace/datasets-cancel', form({import_id: job.id})); await hfRefresh(); hfText('درخواست لغو ثبت شد.'); } catch (error) { hfText(error.message); cancel.disabled = false; } });
-        card.append(resume, cancel);
+        resume.className = 'btn btn-outline'; cancel.className = 'btn btn-outline'; card.append(resume, cancel);
       }
       hfImports.append(card);
     });
   }
   root.querySelector('[data-hf-search]').addEventListener('submit', async event => {
-    event.preventDefault(); const button = event.currentTarget.querySelector('button'); button.disabled = true; hfText('در حال جست‌وجوی منابع عمومی…');
+    event.preventDefault(); const button = event.currentTarget.querySelector('button'); button.disabled = true; button.textContent = 'در حال جست‌وجو…'; hfResults.setAttribute('aria-busy', 'true'); hfText('در حال جست‌وجوی منابع عمومی…');
     try {
       const query = root.querySelector('[data-hf-query]').value.trim();
       const data = await request('/workspace/datasets-search?id=' + project + '&q=' + encodeURIComponent(query));
       hfResults.replaceChildren(); hfDetail.hidden = true;
       data.datasets.forEach(dataset => {
         const card = hfNode('article', ''); hfMetadata(dataset, card);
-        const inspect = hfNode('button', 'بررسی فایل‌ها و امکان دریافت'); inspect.type = 'button';
+        const inspect = hfNode('button', 'بررسی فایل‌ها'); inspect.className = 'btn btn-outline'; inspect.type = 'button';
         inspect.addEventListener('click', async () => { inspect.disabled = true; try { await hfShow(dataset.id); } catch (error) { hfText(error.message); } finally { inspect.disabled = false; } });
         card.append(inspect); hfResults.append(card);
       });
-      hfText(data.datasets.length ? 'نتیجه جست‌وجو؛ امکان دریافت پس از بررسی فایل و سهمیه مشخص می‌شود.' : 'دیتاست عمومی سازگار با جست‌وجو پیدا نشد.');
+      if (!data.datasets.length) { const empty = hfNode('p', 'نتیجه‌ای پیدا نشد؛ یک نام کوتاه‌تر یا موضوع دیگری را امتحان کن.'); empty.className = 'ws-dataset-empty'; hfResults.append(empty); }
+      hfText(data.datasets.length ? data.datasets.length.toLocaleString('fa-IR') + ' دیتاست پیدا شد؛ برای انتخاب فایل‌ها، جزئیات را بررسی کن.' : 'دیتاست عمومی سازگار با جست‌وجو پیدا نشد.');
     } catch (error) { hfText(error.message); }
-    finally { button.disabled = false; }
+    finally { button.disabled = false; button.textContent = 'جست‌وجوی دیتاست'; hfResults.setAttribute('aria-busy', 'false'); }
   });
   root.querySelector('[data-hf-refresh]').addEventListener('click', () => hfRefresh().catch(error => hfText(error.message)));
   hfRefresh().catch(error => hfText(error.message));

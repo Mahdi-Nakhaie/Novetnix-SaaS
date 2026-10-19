@@ -234,7 +234,14 @@ function ws_post(string $path): never {
     try {
         if (str_starts_with($path,'workspace/datasets-')) hf_post($path,$userId);
         if ($path==='workspace/admin-template-save') ws_template_save();
-        if ($path==='workspace/create') ws_reply(201,['id'=>ws_create($userId,(int)($_POST['template_id'] ?? 0),trim((string)($_POST['title'] ?? 'پروژه پایتون')))]);
+        if ($path==='workspace/create') {
+            if (isset($_POST['challenge_index'])) {
+                $index=filter_var($_POST['challenge_index'],FILTER_VALIDATE_INT);
+                if ($index===false || $index<0 || !isset(PROJECTS[$index])) throw new InvalidArgumentException('چالش معتبر نیست.');
+                ws_reply(201,['id'=>ws_create($userId,0,PROJECTS[$index]['title'],100+$index,lp_starter(PROJECTS[$index]))]);
+            }
+            ws_reply(201,['id'=>ws_create($userId,(int)($_POST['template_id'] ?? 0),trim((string)($_POST['title'] ?? 'پروژه پایتون')))]);
+        }
         if ($path==='workspace/legacy') {
             $project=q('SELECT * FROM projects WHERE id=? AND user_id=?',[(int)($_POST['id'] ?? 0),$userId])->fetch();
             if (!$project || !isset(LEGACY_PROJECTS[$project['catalog_index']])) ws_fail('پروژه پیدا نشد.',404);
