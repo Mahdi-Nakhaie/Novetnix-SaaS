@@ -5,7 +5,7 @@ const {webcrypto} = require('node:crypto');
 const source = fs.readFileSync(require('node:path').join(__dirname, '../public/assets/workspace.js'), 'utf8');
 
 class Element {
-  constructor() { this.children = []; this.listeners = {}; this.dataset = {}; this.attributes = {}; this.value = ''; this.textContent = ''; this.disabled = false; this.hidden = false; }
+  constructor() { this.children = []; this.listeners = {}; this.dataset = {}; this.attributes = {}; this.value = ''; this.textContent = ''; this.disabled = false; this.hidden = false; this.files = []; }
   append(...items) { this.children.push(...items); }
   replaceChildren(...items) { this.children = items; }
   setAttribute(name, value) { this.attributes[name] = value; }
@@ -16,13 +16,15 @@ class Element {
   async emit(name, extra = {}) { return this.listeners[name]?.({preventDefault() {}, currentTarget: this, ...extra}); }
 }
 
-async function fixture({assessment = false, searchError = false, empty = false} = {}) {
+async function fixture({assessment = false, searchError = false, empty = false, plots = false, invalidPlot = false, stderr = ''} = {}) {
   const nodes = new Map();
   const get = selector => { if (!nodes.has(selector)) nodes.set(selector, new Element()); return nodes.get(selector); };
   const actions = ['save', 'reload', 'run', 'cancel', 'apply', 'new-file', 'new-folder', 'rename', 'remove-file', 'upload', 'delete', ...(assessment ? ['assess'] : [])];
   const buttons = Object.fromEntries(actions.map(action => { const button = new Element(); button.dataset.wsAction = action; return [action, button]; }));
   const root = new Element(); root.dataset = {wsProject: '7', csrf: 'test-csrf'};
-  root.querySelector = get; root.querySelectorAll = () => Object.values(buttons);
+  const tabs = ['output', 'plots', 'terminal'].map(name => { const tab = new Element(); tab.dataset.wsTab = name; return tab; });
+  const panes = ['output', 'plots', 'terminal'].map(name => { const pane = new Element(); pane.dataset.wsPane = name; return pane; });
+  root.querySelector = get; root.querySelectorAll = selector => selector === '[data-ws-tab]' ? tabs : selector === '[data-ws-pane]' ? panes : Object.values(buttons);
   const searchButton = new Element(); get('[data-hf-search]').querySelector = () => searchButton;
   get('[data-ws-entry]').value = 'main.py';
   const calls = [];
@@ -39,14 +41,14 @@ async function fixture({assessment = false, searchError = false, empty = false} 
     else if (url.startsWith('/workspace/datasets-detail')) response = {...dataset, revision: 'abc', notice: 'public', files: [{path: 'iris.csv', size: 50}]};
     else if (url === '/workspace/save') response = {revision: 2};
     else if (url === '/workspace/run') response = {local_id: 9};
-    else if (url.startsWith('/workspace/run-state')) response = {local_id: 9, revision: 2, state: 'succeeded', stdout: '42', ...(assessment ? {assessment: {passed: true, checks: [{name: 'quality', passed: true, execution_state: 'succeeded'}]}, xp_awarded: true} : {})};
+    else if (url.startsWith('/workspace/run-state')) response = {local_id: 9, revision: 2, state: 'succeeded', stdout: '42', stderr, files: plots ? {'figure-1.png': {kind: 'file', data: invalidPlot ? btoa('not-png') : 'iVBORw0KGgo='}} : {}, ...(assessment ? {assessment: {passed: true, checks: [{name: 'quality', passed: true, execution_state: 'succeeded'}]}, xp_awarded: true} : {})};
     else if (url === '/workspace/datasets-begin') response = {id: 1, state: 'succeeded', directory: 'datasets/example'};
     else throw new Error('Unexpected endpoint: ' + url);
     return {ok, headers: {get: () => 'application/json'}, json: async () => response};
   };
-  vm.runInNewContext(source, {document: {querySelector: selector => selector === '[data-ws-project]' ? root : get(selector), querySelectorAll: () => [], createElement: () => new Element()}, window: {addEventListener() {}}, location: {}, fetch, FormData, AbortController, TextEncoder, TextDecoder, Uint8Array, btoa, atob, crypto: webcrypto, setTimeout, clearTimeout, confirm: () => true});
+  vm.runInNewContext(source, {document: {querySelector: selector => selector === '[data-ws-project]' ? root : get(selector), querySelectorAll: () => [], createElement: () => new Element()}, window: {addEventListener() {}}, location: {}, fetch, FormData, Blob, URL, AbortController, TextEncoder, TextDecoder, Uint8Array, btoa, atob, crypto: webcrypto, setTimeout, clearTimeout, confirm: () => true});
   for (let i = 0; i < 5; i++) await new Promise(setImmediate);
-  return {get, buttons, calls, searchButton};
+  return {get, buttons, calls, searchButton, tabs, panes};
 }
 
 (async () => {
@@ -98,5 +100,33 @@ async function fixture({assessment = false, searchError = false, empty = false} 
   assert.equal(failed.searchButton.disabled, false);
   assert.match(failed.get('[data-hf-message]').textContent, /دسترس نیست/);
   assert.equal(failed.get('[data-hf-results]').attributes['aria-busy'], 'false');
-  console.log('Workspace UI: run, assessment, terminal help, dataset selection, empty and error states passed.');
+  const chart = await fixture({plots: true});
+  await chart.buttons.run.emit('click');
+  assert.equal(chart.get('[data-ws-plot-count]').textContent, '۱');
+  assert.match(chart.get('[data-ws-plots]').children[0].children[0].src, /^blob:/);
+  assert.equal(chart.panes[1].hidden, false);
+  await chart.tabs[1].emit('keydown', {key: 'ArrowLeft'});
+  assert.equal(chart.tabs[2].attributes['aria-selected'], 'true');
+  assert.equal(chart.panes[2].hidden, false);
+  const invalid = await fixture({plots: true, invalidPlot: true});
+  await invalid.buttons.run.emit('click');
+  assert.equal(invalid.get('[data-ws-plot-count]').textContent, '۰');
+  const errored = await fixture({stderr: 'ValueError: test'});
+  await errored.buttons.run.emit('click');
+  assert.equal(errored.get('[data-ws-error-panel]').hidden, false);
+  assert.match(errored.get('[data-ws-errors]').textContent, /ValueError/);
+  const upload = await fixture();
+  assert.equal(upload.buttons.upload.disabled, true);
+  upload.get('[data-ws-upload]').files = [{name: 'data.csv', size: 50}];
+  await upload.get('[data-ws-upload]').emit('change');
+  assert.equal(upload.buttons.upload.disabled, false);
+  assert.equal(upload.get('[data-ws-upload-list]').children[0].children[0].textContent, 'data.csv');
+  upload.get('[data-ws-upload]').files = [{name: 'large.csv', size: 1048577}];
+  await upload.get('[data-ws-upload]').emit('change');
+  assert.equal(upload.buttons.upload.disabled, true);
+  assert.equal(upload.get('[data-ws-upload-note]').dataset.error, 'true');
+  upload.get('[data-ws-upload]').files = [{name: 'bad.html', size: 20}];
+  await upload.get('[data-ws-upload]').emit('change');
+  assert.equal(upload.buttons.upload.disabled, true);
+  console.log('Workspace UI: plots, tabs, upload validation, output/errors, assessment, terminal and datasets passed.');
 })().catch(error => { console.error(error); process.exitCode = 1; });

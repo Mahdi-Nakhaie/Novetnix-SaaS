@@ -4,6 +4,7 @@ import io
 import json
 import shutil
 import subprocess
+import sys
 import pathlib
 import tempfile
 import unittest
@@ -57,6 +58,42 @@ class TerminalTests(unittest.TestCase):
             self.assertIn(name, policy.PACKAGES)
 
 
+class AutomaticPlotTests(unittest.TestCase):
+    def setUp(self):
+        spec = importlib.util.spec_from_file_location('studio_plotting', ROOT / 'services/python-runner/plotting.py')
+        self.plotting = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.plotting)
+
+    def test_no_scientific_import_for_plain_python(self):
+        with mock.patch.dict(sys.modules):
+            sys.modules.pop('matplotlib.pyplot', None)
+            with mock.patch.object(self.plotting.Path, 'cwd') as cwd:
+                self.plotting.save_figures()
+                cwd.assert_not_called()
+
+    def test_figures_are_saved_without_overwriting_user_files(self):
+        with tempfile.TemporaryDirectory(dir=ROOT / 'tools') as directory:
+            root = pathlib.Path(directory)
+            (root / 'figure-1.png').write_bytes(b'original')
+            first, empty, second = mock.Mock(axes=[1]), mock.Mock(axes=[]), mock.Mock(axes=[1])
+            pyplot = mock.Mock()
+            pyplot.get_fignums.return_value = [1, 2, 3]
+            pyplot.figure.side_effect = [first, empty, second]
+            with mock.patch.dict(sys.modules, {'matplotlib.pyplot': pyplot}), mock.patch.object(self.plotting.Path, 'cwd', return_value=root):
+                self.plotting.save_figures()
+            first.savefig.assert_called_once_with(root / 'figure-2.png', format='png', dpi=100)
+            empty.savefig.assert_not_called()
+            second.savefig.assert_called_once_with(root / 'figure-3.png', format='png', dpi=100)
+            self.assertEqual((root / 'figure-1.png').read_bytes(), b'original')
+
+    def test_figures_collected_even_when_user_code_fails(self):
+        for failure in (ZeroDivisionError('test'), SystemExit(0)):
+            with self.subTest(failure=type(failure).__name__), mock.patch.object(sys, 'argv', ['launcher', 'main.py']), mock.patch.object(self.plotting.runpy, 'run_path', side_effect=failure), mock.patch.object(self.plotting, 'save_figures') as capture:
+                with self.assertRaises(type(failure)):
+                    self.plotting.run('main.py')
+                capture.assert_called_once()
+
+
 class StudioHttpTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -99,7 +136,7 @@ class StudioHttpTests(unittest.TestCase):
         project = __import__('json').loads(client.post('/workspace/create', {'title': 'Studio test'})[2])['id']
         status, _, source = client.request('/dashboard/workspace/' + str(project))
         self.assertEqual(status, 200)
-        for hook in ('data-ws-terminal-form', 'data-ws-command', 'data-ws-terminal-log', 'data-ws-runtime', 'workspace.css?v=4'):
+        for hook in ('data-ws-terminal-form', 'data-ws-command', 'data-ws-terminal-log', 'data-ws-runtime', 'workspace.css?v=5'):
             self.assertIn(hook, source)
         self.assertNotIn('python-runner.js', source)
         self.assertNotIn('pyodide', source)
@@ -111,6 +148,8 @@ class StudioHttpTests(unittest.TestCase):
         self.assertEqual(source.count('data-ws-action="run"'), 1)
         self.assertIn('class="ws-dataset-search"', source)
         self.assertIn('چالش هفتگی', source)
+        for hook in ('data-ws-plots', 'data-ws-tab="plots"', 'data-ws-upload-list', 'data-ws-errors', 'data-ws-file-count'):
+            self.assertIn(hook, source)
         self.assertNotIn('data-ws-action="assess"', source)
         import json
         state = json.loads(client.request('/workspace/data?id=' + str(project))[2])

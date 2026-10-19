@@ -53,7 +53,66 @@
   const buttons = Object.fromEntries(Array.from(root.querySelectorAll('[data-ws-action]'), node => [node.dataset.wsAction, node]));
   let files = {}, selected = '', revision = 0, dirty = false, busy = false, ready = false, runner = false;
   let runId = null, requestKey = null, pendingEntry = '', pendingAssess = false, result = null, timer = null;
-  let datasetPaths = new Set(), downloading = null;
+  let datasetPaths = new Set(), downloading = null, previewUrl = null, artifactUrls = [], uploadsValid = false;
+  const tabs = Array.from(root.querySelectorAll('[data-ws-tab]'));
+  function showPane(name) {
+    tabs.forEach(tab => { const selected = tab.dataset.wsTab === name; tab.setAttribute('aria-selected', String(selected)); tab.tabIndex = selected ? 0 : -1; });
+    root.querySelectorAll('[data-ws-pane]').forEach(pane => { pane.hidden = pane.dataset.wsPane !== name; });
+  }
+  tabs.forEach((tab, index) => {
+    tab.addEventListener('click', () => showPane(tab.dataset.wsTab));
+    tab.addEventListener('keydown', event => {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+      event.preventDefault();
+      const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (index + (event.key === 'ArrowLeft' ? 1 : -1) + tabs.length) % tabs.length;
+      showPane(tabs[next].dataset.wsTab); tabs[next].focus();
+    });
+  });
+  function pngUrl(data) {
+    try {
+      const bytes = Uint8Array.from(atob(data), c => c.charCodeAt(0));
+      if (![137, 80, 78, 71, 13, 10, 26, 10].every((value, i) => bytes[i] === value)) return null;
+      return URL.createObjectURL(new Blob([bytes], {type: 'image/png'}));
+    } catch (_) { return null; }
+  }
+  function renderPlots(items) {
+    artifactUrls.forEach(url => URL.revokeObjectURL(url)); artifactUrls = [];
+    const gallery = root.querySelector('[data-ws-plots]'); gallery.replaceChildren();
+    for (const [name, file] of Object.entries(items || {})) {
+      if (file.kind !== 'file' || !/\.png$/i.test(name)) continue;
+      const url = pngUrl(file.data); if (!url) continue;
+      artifactUrls.push(url);
+      const card = document.createElement('figure');
+      const image = document.createElement('img'); image.src = url; image.alt = 'نمودار یا تصویر خروجی: ' + name; image.loading = 'lazy';
+      const caption = document.createElement('figcaption');
+      const title = document.createElement('span'); title.textContent = name; title.dir = 'ltr';
+      const download = document.createElement('a'); download.href = url; download.download = name.split('/').pop(); download.textContent = 'دانلود PNG';
+      caption.append(title, download); card.append(image, caption); gallery.append(card);
+    }
+    root.querySelector('[data-ws-plot-count]').textContent = artifactUrls.length.toLocaleString('fa-IR');
+    if (!artifactUrls.length) { const empty = document.createElement('p'); empty.className = 'ws-plots-empty'; empty.textContent = 'نموداری در خروجی این اجرا وجود ندارد. نمودار را باز نگه دار یا با plt.savefig("chart.png") ذخیره کن.'; gallery.append(empty); }
+    return artifactUrls.length;
+  }
+  function refreshUploads() {
+    const items = [...root.querySelector('[data-ws-upload]').files];
+    const zip = root.querySelector('[data-ws-zip]').files[0];
+    const list = root.querySelector('[data-ws-upload-list]'); list.replaceChildren();
+    let error = '';
+    for (const file of [...items, ...(zip ? [zip] : [])]) {
+      const item = document.createElement('li');
+      const name = document.createElement('span'); name.textContent = file.name; name.dir = 'ltr';
+      const size = document.createElement('small'); size.textContent = (file.size / 1024).toLocaleString('fa-IR', {maximumFractionDigits: 1}) + ' کیلوبایت';
+      item.append(name, size); list.append(item);
+    }
+    if (items.some(file => file.size > 1048576 || !pathValid(file.name) || !/\.(py|csv|json|txt|md|png|joblib|pkl|npy|npz)$/i.test(file.name))) error = 'نام، قالب یا حجم فایل معتبر نیست؛ هر فایل حداکثر ۱ مگابایت.';
+    if (zip && (!/\.zip$/i.test(zip.name) || zip.size > 5242880)) error = 'مجموعه باید ZIP و حداکثر ۵ مگابایت باشد.';
+    if (items.length > 100 || items.reduce((total, file) => total + file.size, 0) > 5242880) error = 'مجموع فایل‌ها بیشتر از سهمیهٔ ۵ مگابایتی یا ۱۰۰ فایل است.';
+    uploadsValid = Boolean(items.length || zip) && !error;
+    const note = root.querySelector('[data-ws-upload-note]'); note.textContent = error || (uploadsValid ? 'آمادهٔ بارگذاری؛ فایل هم‌نام جایگزین می‌شود. سهمیه و محتوای ZIP روی سرور بررسی می‌شوند.' : 'هر فایل حداکثر ۱ مگابایت؛ کل پروژه ۵ مگابایت.'); note.dataset.error = String(Boolean(error));
+    refreshButtons();
+  }
+  root.querySelector('[data-ws-upload]').addEventListener('change', refreshUploads);
+  root.querySelector('[data-ws-zip]').addEventListener('change', refreshUploads);
   const binary = name => /\.(png|joblib|pkl|npy|npz)$/i.test(name);
   const pathValid = path => typeof path === 'string' && path.length <= 160 && /^[A-Za-z0-9_][A-Za-z0-9_. /-]*$/.test(path) && path.split('/').every(p => p && !p.startsWith('.') && p.trim() === p);
   const encode = text => { const bytes = new TextEncoder().encode(text); let raw = ''; for (const byte of bytes) raw += String.fromCharCode(byte); return btoa(raw); };
@@ -71,8 +130,14 @@
     buttons['remove-file'].disabled = !ready || locked || !selected || datasetPaths.has(selected);
     commandInput.disabled = commandSubmit.disabled = !ready || locked || !runner || active() || requestKey !== null;
     buttons.rename.disabled = !ready || locked || !selected || datasetPaths.has(selected);
+    buttons.upload.disabled = !ready || locked || !uploadsValid;
+    buttons.upload.textContent = busy ? 'در حال پردازش…' : 'بارگذاری فایل‌های انتخابی';
   }
-  function updateLines() { lines.textContent = Array.from({length: code.value.split('\n').length}, (_, i) => i + 1).join('\n'); }
+  function updateLines() {
+    const count = code.value.split('\n').length;
+    lines.textContent = Array.from({length: count}, (_, i) => i + 1).join('\n');
+    root.querySelector('[data-ws-editor-status]').textContent = (selected ? selected.split('.').pop().toUpperCase() : 'Python') + (binary(selected) ? ' · فایل باینری' : ' · UTF-8 · ' + count.toLocaleString('fa-IR') + ' خط') + (datasetPaths.has(selected) ? ' · فقط‌خواندنی' : dirty ? ' · ذخیره‌نشده' : '');
+  }
   function commitEditor() {
     if (selected && files[selected] && files[selected].kind === 'file' && !code.disabled && !datasetPaths.has(selected)) files[selected].data = encode(code.value);
   }
@@ -89,13 +154,27 @@
     }
     download.hidden = !item || item.kind !== 'file';
     download.href = '/workspace/download?id=' + project + '&file=' + encodeURIComponent(name);
+    if (previewUrl) URL.revokeObjectURL(previewUrl); previewUrl = null;
+    const preview = root.querySelector('[data-ws-image-preview]'); preview.hidden = true;
+    root.querySelector('[data-ws-code-wrap]').hidden = false;
+    if (item?.kind === 'file' && /\.png$/i.test(name)) {
+      previewUrl = pngUrl(item.data);
+      if (previewUrl) { root.querySelector('[data-ws-image]').src = previewUrl; preview.hidden = false; root.querySelector('[data-ws-code-wrap]').hidden = true; }
+      else message('این فایل محتوای PNG معتبر ندارد؛ نسخهٔ اصلی را دانلود کنید.');
+    }
     updateLines(); renderTree(); refreshButtons();
   }
   function renderTree() {
     tree.replaceChildren();
+    root.querySelector('[data-ws-file-count]').textContent = Object.values(files).filter(file => file.kind === 'file').length.toLocaleString('fa-IR');
+    if (!Object.keys(files).length) { const empty = document.createElement('p'); empty.textContent = 'اولین فایل پروژه را بساز یا بارگذاری کن.'; empty.className = 'ws-tree-empty'; tree.append(empty); }
     Object.keys(files).sort().forEach(name => {
       const button = document.createElement('button');
-      button.type = 'button'; button.dir = 'ltr'; button.textContent = (files[name].kind === 'directory' ? '[folder] ' : '') + name;
+      button.type = 'button'; button.dir = 'ltr'; button.title = name;
+      const extension = document.createElement('span'); extension.className = 'ws-file-type'; extension.textContent = files[name].kind === 'directory' ? 'DIR' : name.split('.').pop().slice(0, 5).toUpperCase();
+      const path = document.createElement('span'); path.className = 'ws-file-path'; path.textContent = name;
+      button.append(extension, path);
+      if (datasetPaths.has(name)) { const lock = document.createElement('small'); lock.textContent = 'فقط‌خواندنی'; lock.dir = 'rtl'; button.append(lock); }
       button.setAttribute('aria-pressed', String(selected === name));
       button.addEventListener('click', () => select(name)); tree.append(button);
     });
@@ -126,7 +205,7 @@
   async function save() {
     commitEditor();
     const state = await request('/workspace/save', form({files: JSON.stringify(files)}));
-    revision = state.revision; dirty = false;
+    revision = state.revision; dirty = false; updateLines();
     message('فایل‌ها در حساب شما ذخیره شدند؛ نسخه ' + revision.toLocaleString('fa-IR') + '.');
     refreshButtons();
   }
@@ -136,8 +215,10 @@
     if (!runId) return;
     try {
       const state = await request('/workspace/run-state?id=' + runId);
-      runState.textContent = labels[state.state] || state.state;
-      output.textContent = 'stdout\n' + (state.stdout || '') + '\n\nstderr / Traceback\n' + (state.stderr || '');
+      runState.textContent = labels[state.state] || state.state; runState.dataset.state = state.state;
+      output.textContent = state.stdout || (['queued', 'running', 'cancelling'].includes(state.state) ? 'در انتظار نتیجهٔ اجرا…' : 'خروجی متنی برای این اجرا ثبت نشده است.');
+      root.querySelector('[data-ws-errors]').textContent = state.stderr || '';
+      root.querySelector('[data-ws-error-panel]').hidden = !state.stderr;
       if (['queued', 'running', 'cancelling'].includes(state.state)) timer = setTimeout(poll, 2000);
       else {
         if (terminalRun) terminalPrint((state.stdout || '') + (state.stderr ? '\n' + state.stderr : '') + '\n[' + (labels[state.state] || state.state) + ']');
@@ -152,6 +233,9 @@
             checks.append(item);
           }
         }
+        const plots = renderPlots(state.files);
+        if (plots) showPane('plots');
+        else if (state.stderr && !terminalRun) showPane('output');
         result = state; runId = null; requestKey = null; pendingCommand = ''; pendingAssess = false; terminalRun = false;
         message('اجرا پایان یافت؛ برای نگهداری فایل‌های تولیدشده دکمه ذخیره خروجی را بزنید.');
       }
@@ -167,7 +251,10 @@
     }
     const state = await request('/workspace/run', form({request_key: requestKey, entrypoint: pendingEntry, terminal_command: pendingCommand, assess: pendingAssess ? '1' : '0'}));
     root.querySelector('[data-ws-assessment]').hidden = true;
-    runId = state.local_id; result = null; runState.textContent = 'در صف اجرا'; await poll();
+    renderPlots({}); showPane(command ? 'terminal' : 'output');
+    root.querySelector('[data-ws-error-panel]').hidden = true;
+    output.textContent = 'در انتظار شروع اجرا…';
+    runId = state.local_id; result = null; runState.textContent = 'در صف اجرا'; runState.dataset.state = 'queued'; await poll();
   }
   root.querySelector('[data-ws-terminal-form]').addEventListener('submit', async event => {
     event.preventDefault();
@@ -219,13 +306,14 @@
         dirty = true; select(Object.keys(files)[0] || '');
       }
       if (action === 'upload') {
+        if (!uploadsValid) throw new Error('ابتدا فایل معتبر انتخاب کن.');
         await save();
         const data = form();
         for (const file of root.querySelector('[data-ws-upload]').files) data.append('files[]', file);
         const zip = root.querySelector('[data-ws-zip]').files[0];
         if (zip) data.append('archive', zip);
         await request('/workspace/upload', data); await load();
-        root.querySelector('[data-ws-upload]').value = ''; root.querySelector('[data-ws-zip]').value = '';
+        root.querySelector('[data-ws-upload]').value = ''; root.querySelector('[data-ws-zip]').value = ''; refreshUploads();
       }
       if (action === 'run') await startRun();
       if (action === 'assess') await startRun('', true);
@@ -263,9 +351,12 @@
     const options = hfNode('div', ''); options.className = 'ws-dataset-files';
     data.files.forEach(file => {
       const label = hfNode('label', ''); const input = document.createElement('input'); input.type = 'checkbox'; input.value = file.path;
-      const text = hfNode('span', file.path + ' · ' + bytesLabel(file.size)); text.dir = 'ltr'; label.append(input, text); options.append(label);
+      const text = hfNode('span', file.path); text.className = 'ws-dataset-file-name'; text.dir = 'ltr';
+      const size = hfNode('small', bytesLabel(file.size)); size.className = 'ws-dataset-file-size';
+      const kind = hfNode('span', file.path.split('.').pop().toUpperCase()); kind.className = 'ws-dataset-file-type';
+      label.append(input, kind, text, size); options.append(label);
     });
-    hfDetail.append(options);
+    const heading = hfNode('h4', data.files.length.toLocaleString('fa-IR') + ' فایل قابل دریافت'); heading.className = 'ws-dataset-file-heading'; hfDetail.append(heading, options);
     const add = hfNode('button', 'افزودن فایل‌های انتخابی به پروژه'); add.className = 'btn btn-primary'; add.type = 'button'; add.disabled = !data.files.length;
     const selection = hfNode('p', 'هیچ فایلی انتخاب نشده است.'); selection.setAttribute('role', 'status');
     options.addEventListener('change', () => {
@@ -355,5 +446,6 @@
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') { event.preventDefault(); act('save'); }
   });
   window.addEventListener('beforeunload', event => { if (dirty) { event.preventDefault(); event.returnValue = ''; } });
+  window.addEventListener('pagehide', () => { artifactUrls.forEach(url => URL.revokeObjectURL(url)); if (previewUrl) URL.revokeObjectURL(previewUrl); });
   load().catch(error => message(error.message));
 })();

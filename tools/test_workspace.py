@@ -265,6 +265,16 @@ class SandboxAcceptanceTests(unittest.TestCase):
         self.assertIn('plot.png', result['files'])
         self.assertGreaterEqual(float(result['stdout'].strip()), 0)
 
+    def test_seaborn_and_matplotlib_show_produce_pngs(self):
+        code = "import matplotlib.pyplot as plt\nimport seaborn as sns\nimport sklearn\nfrom sklearn.tree import DecisionTreeClassifier\nmodel=DecisionTreeClassifier(random_state=1).fit([[0],[1],[2],[3]],[0,0,1,1])\nprint(sklearn.__version__, model.predict([[3]])[0])\nplt.figure()\nplt.plot([1,2,3],[2,4,3])\nplt.show()\nplt.figure()\nsns.scatterplot(x=[1,2,3],y=[3,1,4])\nplt.show()\n"
+        result = self.execute(code)
+        self.assertEqual(result['state'], 'succeeded', result.get('stderr'))
+        self.assertIn('1.6.1 1', result['stdout'])
+        for name in ('figure-1.png', 'figure-2.png'):
+            raw = base64.b64decode(result['files'][name]['data'])
+            self.assertTrue(raw.startswith(b'\x89PNG\r\n\x1a\n'))
+            self.assertGreater(len(raw), 1000)
+
     def test_timeout_and_output_cap(self):
         self.assertIn(self.execute('while True: pass')['state'], ('timeout', 'cpu_limit'))
         self.assertEqual(self.execute("while True: print('x'*4096)")['state'], 'output_limit')

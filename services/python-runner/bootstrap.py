@@ -33,7 +33,7 @@ def main():
     entry = request['entrypoint']
     if not valid_path(entry) or entry not in files or not entry.endswith('.py'):
         raise ValueError('Invalid entrypoint.')
-    launcher = 'import os,runpy,sys;sys.path.insert(0,os.getcwd());runpy.run_path(sys.argv[1],run_name="__main__")'
+    launcher = 'import os,runpy,sys;sys.path.insert(0,os.getcwd());runpy.run_path("/opt/runner/plotting.py",run_name="__main__")'
     started = time.monotonic()
     state = None
     with open('/tmp/stdout', 'w+b') as out, open('/tmp/stderr', 'w+b') as err:
