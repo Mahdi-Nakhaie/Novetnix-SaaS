@@ -83,9 +83,9 @@ function route(): void {
         foot_page(true); return;
     }
     if (preg_match('~^member/([1-9][0-9]*)$~D',$path,$match)) { page_member((int)$match[1]); return; }
-    if ($path==='login') {
+    if ($path==='login' || $path==='register') {
         if (($_GET['next'] ?? null)==='course/'.FREE_COURSE_SLUG) $_SESSION['auth_return_to']='course/'.FREE_COURSE_SLUG;
-        page_login(); return;
+        page_login($path==='register'); return;
     }
     if ($path==='verify') { page_verify(); return; }
     if ($path==='admin-login') { page_admin_login(); return; }
@@ -260,7 +260,7 @@ function page_help(): void {
     foreach ($topics as $topic) { echo '<article class="help-topic"><div class="help-topic-icon">'.h($topic[0][0]).'</div><div><span class="eyebrow">راهنمای '.h($topic[0]).'</span><h2>'.h($topic[1]).'</h2><p>'.h($topic[2]).'</p>'; linkto($topic[3],'مشاهدهٔ راهنما ←','inline-link'); echo '</div></article>'; }
     echo '</div></section><section class="section help-faq-section"><div class="container"><div class="section-header"><span class="eyebrow">سؤال‌های متداول</span><h2>پاسخ کوتاه به شروع‌های رایج</h2></div><div class="help-faq"><details open><summary>برای شروع یادگیری از کجا بروم؟</summary><p>اگر تازه شروع کرده‌ای، یک دورهٔ پایه را انتخاب کن و هم‌زمان یکی از پروژه‌های کوچک را در میزکار اجرا کن. هدف این است که هر جلسه به یک خروجی قابل مشاهده ختم شود.</p></details><details><summary>چرا پیشرفت من ذخیره نشده است؟</summary><p>ذخیرهٔ پیشرفت به حساب واردشده و ثبت موفق فعالیت وابسته است. یک‌بار از فعال‌بودن نشست مطمئن شو و اگر مشکل ادامه داشت، نام دوره، زمان و پیام خطا را برای پشتیبانی بفرست.</p></details><details><summary>آیا فایل‌های میزکار عمومی هستند؟</summary><p>فایل‌های میزکار سروری فقط برای مالک حساب در دسترس‌اند؛ اما برای امنیت، رمزها، کلیدها و دادهٔ شخصی دیگران را در هیچ پروژه‌ای قرار نده.</p></details><details><summary>چطور سؤال بهتری در انجمن بپرسم؟</summary><p>عنوان مشخص، هدف، کد کوتاه قابل اجرا، ورودی نمونه و متن کامل خطا را بنویس. اطلاعات حساس و شماره تماس را حذف کن.</p></details></div></div></section><section class="section container"><div class="help-contact"><div><span class="eyebrow">هنوز پاسخ را پیدا نکردی؟</span><h2>با جامعه یا پشتیبانی ادامه بده</h2><p>برای سؤال آموزشی به انجمن برو و برای مشکل حساب یا سرویس، درخواست پشتیبانی ثبت کن.</p></div><div class="hero-actions">'; linkto('community','رفتن به انجمن','btn btn-outline'); linkto('dashboard/support','ثبت درخواست پشتیبانی','btn btn-primary'); echo '</div></div></section></main>';
 }
-function page_login(): void {
+function page_login(bool $register=false): void {
     $existing=user();
     if ($existing && trim((string)$existing['name'])!=='') {
         head_page('ورود','مدیریت نشست و ورود یا ثبت‌نام دوباره در Noventix.'); notice();
@@ -268,13 +268,19 @@ function page_login(): void {
         form_start('logout','stack-form'); echo '<button class="btn btn-outline" type="submit">خروج کامل از حساب</button></form>'; linkto('dashboard','بازگشت به پنل ←','btn btn-primary');
         echo '</div></main>'; foot_page(); return;
     }
-    $captcha=captcha_code();
-    $registration=$_SESSION['registration_form'] ?? [];
-    unset($_SESSION['registration_form']);
-    head_page('ورود','ورود یا ثبت‌نام با شماره موبایل در Noventix.'); notice();
-    echo '<main class="auth-page"><div class="auth-card"><img src="/assets/nova.png" alt="مسکات Nova" width="70" height="70"><h1>ورود یا ثبت‌نام</h1><p class="muted">برای ساخت حساب، فرم ثبت‌نام را کامل کنید. ورودهای بعدی با شماره، رمز و کپچا انجام می‌شود.</p>';
+    $captcha=$register ? '' : captcha_code();
+    $registration=$register ? ($_SESSION['registration_form'] ?? []) : [];
+    if ($register) unset($_SESSION['registration_form']);
+    head_page($register?'ثبت‌نام':'ورود به حساب',$register?'ساخت حساب کاربری با شماره موبایل در Noventix.':'ورود به حساب کاربری Noventix با شماره موبایل و رمز عبور.'); notice();
+    echo '<main class="auth-page"><div class="auth-card"><img src="/assets/nova.png" alt="مسکات Nova" width="70" height="70"><h1>'.($register?'ساخت حساب کاربری':'ورود به حساب').'</h1><p class="muted">'.($register?'برای شروع، مشخصات خود را وارد کنید و حساب جدید بسازید.':'خوش برگشتی! با شماره موبایل و رمز عبورت وارد حساب شو.').'</p>';
+    if ($register) {
     form_start('auth/request','stack-form',true); echo '<h2>ثبت‌نام</h2><label>نام<input name="first_name" required minlength="2" maxlength="50" autocomplete="given-name" value="'.h((string)($registration['first_name'] ?? '')).'" /></label><label>نام خانوادگی<input name="last_name" required minlength="2" maxlength="50" autocomplete="family-name" value="'.h((string)($registration['last_name'] ?? '')).'" /></label><label>شماره موبایل<input type="tel" dir="ltr" name="phone" required data-validation="phone" placeholder="09123456789 یا +989123456789" autocomplete="tel" value="'.h((string)($registration['phone'] ?? '')).'" /></label><label>رمز عبور<input type="password" name="password" required minlength="8" maxlength="72" autocomplete="new-password" data-validation="password"></label><p class="fine-print">رمز باید دست‌کم ۸ نویسه و شامل حرف انگلیسی و عدد باشد.</p><button class="btn btn-primary">ارسال کد تأیید</button></form>';
-    echo '<hr><h2>ورود به حساب</h2>'; form_start('auth/login','stack-form',true); echo '<label>شماره موبایل<input type="tel" dir="ltr" name="phone" required data-validation="phone" placeholder="09123456789 یا +989123456789" autocomplete="username"></label><label>رمز عبور<input type="password" name="password" required autocomplete="current-password"></label><div class="captcha-box"><strong dir="ltr">'.h($captcha).'</strong><span>کد امنیتی را وارد کنید</span></div><label>کپچا<input name="captcha" required maxlength="5" pattern="[A-Za-z0-9]{5}" dir="ltr" autocomplete="off"></label><button class="btn btn-outline">ورود به پنل</button></form></div></main>'; foot_page();
+    echo '<p class="auth-switch">قبلاً حساب ساخته‌ای؟</p>'; linkto('login','ورود به حساب','btn btn-outline');
+    } else {
+    form_start('auth/login','stack-form',true); echo '<label>شماره موبایل<input type="tel" dir="ltr" name="phone" required data-validation="phone" placeholder="09123456789 یا +989123456789" autocomplete="username"></label><label>رمز عبور<input type="password" name="password" required autocomplete="current-password"></label><div class="captcha-box"><strong dir="ltr">'.h($captcha).'</strong><span>کد امنیتی را وارد کنید</span></div><label>کپچا<input name="captcha" required maxlength="5" pattern="[A-Za-z0-9]{5}" dir="ltr" autocomplete="off"></label><button class="btn btn-primary">ورود به حساب</button></form>';
+    echo '<p class="auth-switch">هنوز حساب نداری؟</p>'; linkto('register','ساخت حساب جدید','btn btn-outline');
+    }
+    echo '</div></main>'; foot_page();
 }
 function page_admin_login(): void {
     $u=require_user();
@@ -289,5 +295,5 @@ function page_admin_login(): void {
 }
 function page_verify(): void {
     $phone=$_SESSION['verify_phone'] ?? ''; if (!$phone) redirect('login');
-    head_page('تأیید شماره','تأیید کد پیامک‌شده.'); notice(); echo '<main class="auth-page"><div class="auth-card"><h1>کد تأیید را وارد کنید</h1><p class="muted" dir="ltr">'.h($phone).'</p>'; form_start('auth/verify','stack-form',true); echo '<label>کد ۶ رقمی<input inputmode="numeric" dir="ltr" name="code" required pattern="[0-9۰-۹]{6}" autocomplete="one-time-code"></label><button class="btn btn-primary">تأیید و ورود</button></form>'; form_start('auth/resend','stack-form'); echo '<button class="btn btn-outline">ارسال دوباره کد</button></form>'; linkto('login','ویرایش شماره ←','inline-link'); echo '</div></main>'; foot_page();
+    head_page('تأیید شماره','تأیید کد پیامک‌شده.'); notice(); echo '<main class="auth-page"><div class="auth-card"><h1>کد تأیید را وارد کنید</h1><p class="muted" dir="ltr">'.h($phone).'</p>'; form_start('auth/verify','stack-form',true); echo '<label>کد ۶ رقمی<input inputmode="numeric" dir="ltr" name="code" required pattern="[0-9۰-۹]{6}" autocomplete="one-time-code"></label><button class="btn btn-primary">تأیید و ورود</button></form>'; form_start('auth/resend','stack-form'); echo '<button class="btn btn-outline">ارسال دوباره کد</button></form>'; linkto('register','ویرایش شماره ←','inline-link'); echo '</div></main>'; foot_page();
 }

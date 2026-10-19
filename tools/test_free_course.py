@@ -145,6 +145,46 @@ class FreeCourseHttpTest(unittest.TestCase):
         self.assertIn('.site-header .nav-free-course{color:var(--brand)}', css)
         self.assertNotIn('.nav-free-course::before', css)
 
+    def test_separate_login_registration_and_private_account(self):
+        client = test_release.Client(self.base)
+        status, headers, login = client.request('/login')
+        self.assertEqual(status, 200)
+        self.assertIn('action="/auth/login"', login)
+        self.assertNotIn('action="/auth/request"', login)
+        self.assertIn('href="/register"', login)
+        self.assertIn('noindex', headers.get('X-Robots-Tag', ''))
+        status, headers, registration = client.request('/register?next=course%2Fai-foundations')
+        self.assertEqual(status, 200)
+        self.assertIn('action="/auth/request"', registration)
+        self.assertNotIn('action="/auth/login"', registration)
+        self.assertNotIn('name="captcha"', registration)
+        self.assertIn('href="/login"', registration)
+        self.assertIn('noindex', headers.get('X-Robots-Tag', ''))
+        self.assertEqual(test_release.Head(registration).h1, 1)
+        status, headers, _ = client.post('/auth/request', {'first_name': 'آزمایش', 'last_name': 'کاربر', 'phone': 'invalid', 'password': 'FixturePass123'})
+        self.assertEqual((status, headers['Location']), (303, '/register'))
+        registration = client.request('/register')[2]
+        self.assertIn('شماره موبایل معتبر وارد کنید.', registration)
+        self.assertIn('value="آزمایش"', registration)
+        self.assertIn('value="invalid"', registration)
+        self.assertNotIn('value="FixturePass123"', registration)
+        status, headers, _ = client.request('/dashboard')
+        self.assertEqual(status, 303)
+        self.assertTrue(headers['Location'].startswith('/login'))
+
+    def test_registration_page_keeps_course_return_destination(self):
+        client = test_release.Client(self.base)
+        client.request('/register?next=course%2Fai-foundations')
+        status, headers, _ = client.post('/auth/request', {'first_name': 'هنرجو', 'last_name': 'جدید', 'phone': '09990000183', 'password': 'FixturePass123'})
+        self.assertEqual((status, headers['Location']), (303, '/verify'))
+        status, headers, _ = client.post('/auth/verify', {'code': client.state()['delivery']})
+        self.assertEqual((status, headers['Location']), (303, '/course/ai-foundations'))
+        for path in ('/login', '/register'):
+            source = client.request(path)[2]
+            self.assertIn('حساب شما فعال است', source)
+            self.assertNotIn('action="/auth/request"', source)
+            self.assertNotIn('action="/auth/login"', source)
+
     def test_player_csp_is_limited_to_course_routes(self):
         client = test_release.Client(self.base)
         _, headers, _ = client.request('/course/ai-foundations')

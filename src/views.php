@@ -23,9 +23,10 @@ function head_page(string $title,string $description='',bool $panel=false,bool $
     foreach ([''=>'خانه','course/'.FREE_COURSE_SLUG=>'دورهٔ رایگان','articles'=>'مقاله‌ها','projects'=>'پروژه‌ها','learners'=>'جامعه','community'=>'انجمن','glossary'=>'لغت‌نامه','about'=>'درباره ما','contact'=>'تماس با ما'] as $href=>$label) linkto($href,$label,trim(($path===$href?'active ':'').($href==='course/'.FREE_COURSE_SLUG?'nav-free-course':'')));
     echo '</nav><div class="header-actions">';
     if ($me) linkto('dashboard','پنل من','btn btn-small btn-outline'); else linkto('login','ورود','btn btn-small btn-outline');
-    linkto($me?'dashboard':'login','شروع رایگان','btn btn-small btn-primary');
+    linkto($me?'dashboard':'register','شروع رایگان','btn btn-small btn-primary');
     echo '</div><button class="menu-toggle" type="button" aria-label="باز کردن فهرست" aria-expanded="false" aria-controls="mobile-nav">☰</button></div><nav id="mobile-nav" class="mobile-nav" aria-label="ناوبری موبایل">';
     foreach ([''=>'خانه','course/'.FREE_COURSE_SLUG=>'دورهٔ رایگان','articles'=>'مقاله‌ها','projects'=>'پروژه‌ها','learners'=>'جامعه','community'=>'انجمن','glossary'=>'لغت‌نامه','about'=>'درباره ما','contact'=>'تماس با ما','dashboard'=>'پنل من'] as $href=>$label) linkto($href,$label,trim(($path===$href?'active ':'').($href==='course/'.FREE_COURSE_SLUG?'nav-free-course':'')));
+    if (!$me) { linkto('login','ورود به حساب'); linkto('register','ثبت‌نام'); }
     echo '</nav></header>';
 }
 function commerce_paused(): void {
@@ -132,7 +133,8 @@ function course_workspace_lesson_link(string $slug,array $lesson): string { retu
 function free_course_player(bool $canWatch): void {
     if (!$canWatch) {
         echo '<div class="fc-access-gate"><span class="fc-lock-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg></span><span class="fc-kicker">یک قدم تا شروع یادگیری</span><h3>برای تماشای دوره، ثبت‌نام کن</h3><p>با شمارهٔ موبایل ثبت‌نام کن و کد پیامک‌شده را تأیید کن؛ سپس جلسهٔ اول همین‌جا برایت باز می‌شود.</p>';
-        linkto('login?next='.rawurlencode('course/'.FREE_COURSE_SLUG),'ورود / ثبت‌نام با شماره موبایل','btn btn-primary');
+        linkto('register?next='.rawurlencode('course/'.FREE_COURSE_SLUG),'ثبت‌نام با شماره موبایل','btn btn-primary');
+        linkto('login?next='.rawurlencode('course/'.FREE_COURSE_SLUG),'حساب دارم؛ ورود به حساب','fc-text-link');
         echo '<small>کاملاً رایگان · بدون نیاز به پرداخت</small></div>';
         return;
     }
@@ -149,7 +151,7 @@ function page_free_course(array $course): void {
     free_course_player($canWatch);
     echo '<div class="fc-lesson-description"><h3>از همین‌جا شروع کن</h3><p>در جلسهٔ اول با مبانی هوش مصنوعی آشنا می‌شوی. ویدیو را با سرعت خودت دنبال کن و هرجا پرسشی داشتی، مکث کن و یادداشت بردار.</p><p class="fc-note">تماشای جلسه‌ها فقط پس از ثبت‌نام و تأیید شمارهٔ موبایل امکان‌پذیر است. پخش ویدیو به‌تنهایی پیشرفت آموزشی را ثبت نمی‌کند.</p></div></section><section class="fc-about" aria-labelledby="fc-about-title"><span class="fc-kicker">برای شروع، نه پیچیده‌تر کردن</span><h2 id="fc-about-title">این دوره برای توست اگر…</h2><div class="fc-audience"><article><span aria-hidden="true">۰۱</span><h3>تازه شروع کرده‌ای</h3><p>می‌خواهی مفاهیم پایه را بشناسی و برای اولین قدم، نقطهٔ شروع روشنی داشته باشی.</p></article><article><span aria-hidden="true">۰۲</span><h3>دنبال توضیح ساده‌ای</h3><p>ترجیح می‌دهی پیش از رفتن سراغ ابزارها و اصطلاحات تخصصی، اصل موضوع را بفهمی.</p></article></div></section></div><aside class="fc-sidebar"><section id="course-sessions" class="fc-sessions" aria-labelledby="fc-sessions-title"><div class="fc-sessions-header"><span class="fc-kicker">قدم‌به‌قدم جلو برو</span><h2 id="fc-sessions-title">جلسه‌های دوره</h2><p>۱ جلسه منتشرشده · ادامهٔ مسیر به‌زودی</p></div><ol><li class="fc-session-current"><a href="#lesson-1"><span class="fc-session-number">۰۱</span><span><strong>مبانی هوش مصنوعی</strong><small>جلسهٔ اول · تماشای رایگان</small></span><span class="fc-play-icon" aria-hidden="true">▶</span></a></li><li class="fc-session-soon"><span class="fc-session-number">۰۲</span><span><strong>جلسهٔ دوم</strong><small>به‌زودی</small></span><span class="fc-soon-tag">به‌زودی</span></li></ol><p class="fc-session-note">جلسهٔ دوم هنوز منتشر نشده است؛ پس از آماده‌شدن، همین‌جا در دسترس خواهد بود.</p></section><section class="fc-account"><span class="fc-kicker">ادامه در فضای یادگیری</span><h2>مسیرت را دنبال کن</h2><p>برای تماشای جلسه‌ها و دسترسی به فضای یادگیری دوره، باید با شمارهٔ موبایل ثبت‌نام کرده و شماره‌ات را تأیید کنی.</p>';
     if ($canWatch) course_start_action($course,$me,$enrolled,'btn btn-outline');
-    else linkto('login?next='.rawurlencode('course/'.FREE_COURSE_SLUG),'ثبت‌نام با شماره موبایل','btn btn-outline');
+    else linkto('register?next='.rawurlencode('course/'.FREE_COURSE_SLUG),'ثبت‌نام با شماره موبایل','btn btn-outline');
     echo '</section></aside></section><section class="container fc-bottom-note"><p>لازم نیست از همه جلوتر باشی؛ کافی‌ست اولین قدم را برداری.</p><a href="#lesson-1">شروع از جلسهٔ اول <span aria-hidden="true">↑</span></a></section></main>';
     foot_page();
 }

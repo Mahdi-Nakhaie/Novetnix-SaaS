@@ -49,7 +49,7 @@ function acquisition_campaign(mixed $value): ?string {
 function registration_error(string $message, string $first, string $last, string $phone): never {
     $_SESSION['registration_form']=['first_name'=>$first,'last_name'=>$last,'phone'=>$phone];
     flash($message,'error');
-    redirect('login');
+    redirect('register');
 }
 function normalized_phone(string $raw): ?string {
     $raw=latin_digits($raw);
@@ -150,7 +150,7 @@ function handle_auth_post(string $path): bool {
         $source=acquisition_source($_SESSION['registration_source'] ?? null);
         $campaign=acquisition_campaign($_SESSION['registration_campaign'] ?? null);
         $hash=store_otp($phone,$code,time(),password_hash($password,PASSWORD_DEFAULT),$source,$campaign);
-        if (!send_verification_code($phone,$code)) { q('DELETE FROM otp_codes WHERE phone=? AND otp_hash=?',[$phone,$hash]); flash('ارسال پیامک فعلاً امکان‌پذیر نیست. کمی بعد دوباره تلاش کنید.','error'); redirect('login'); }
+        if (!send_verification_code($phone,$code)) { q('DELETE FROM otp_codes WHERE phone=? AND otp_hash=?',[$phone,$hash]); registration_error('ارسال پیامک فعلاً امکان‌پذیر نیست. کمی بعد دوباره تلاش کنید.',$first,$last,$phone); }
         $_SESSION['verify_phone']=$phone;
         $_SESSION['verify_name']=$first.' '.$last;
         unset($_SESSION['registration_source'],$_SESSION['registration_campaign']);
