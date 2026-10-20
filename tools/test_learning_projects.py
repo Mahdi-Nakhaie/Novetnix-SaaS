@@ -28,6 +28,19 @@ def reference_executor(job, image, cancelled):
 
 
 class ReferenceTests(unittest.TestCase):
+    def test_first_two_projects_use_original_named_images_with_alt_text(self):
+        source = (ROOT / 'src/views.php').read_text()
+        expected = {
+            'house-price-regression.jpg': 'House price regression prediction project',
+            'multiclass-flower-classification.jpg': 'Multiclass flower classification project',
+        }
+        for filename, alt in expected.items():
+            image = ROOT / 'public/assets' / filename
+            self.assertTrue(image.is_file())
+            self.assertIn("h($image)", source)
+            self.assertIn("h($alt)", source)
+        self.assertIn("$image=$i===0 ? 'house-price-regression.jpg' : ($i===1 ? 'multiclass-flower-classification.jpg' : null)", source)
+
     def test_catalog_preserves_ml_and_adds_beginner_projects(self):
         catalog = json.loads((ROOT / 'curriculum/catalog.json').read_text(encoding='utf-8'))
         self.assertEqual(len(catalog), 36)
