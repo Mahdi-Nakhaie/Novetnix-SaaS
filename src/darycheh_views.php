@@ -4,7 +4,7 @@ declare(strict_types=1);
 function dr_form(string $path,?array $view=null,string $action='submit'): void {
     form_start($path,'dr-form');
     echo '<input type="hidden" name="_html" value="1"><input type="hidden" name="request_key" value="'.h(bin2hex(random_bytes(16))).'">';
-    if ($view) echo '<input type="hidden" name="id" value="'.h($view['attempt_id']).'"><input type="hidden" name="revision" value="'.h($view['revision']).'"><input type="hidden" name="action" value="'.h($action).'">';
+    if ($view) echo '<input type="hidden" name="scenario_key" value="'.h($view['scenario_key']).'"><input type="hidden" name="id" value="'.h($view['attempt_id']).'"><input type="hidden" name="revision" value="'.h($view['revision']).'"><input type="hidden" name="action" value="'.h($action).'">';
 }
 function dr_stage_labels(): array {
     return ['intro'=>'ورود به موقعیت','evidence'=>'جمع‌آوری اطلاعات','problem'=>'تعریف مسئله','solution'=>'ساخت راه‌حل','consequence'=>'مشاهدهٔ پیامد','feedback'=>'بازخورد آموزشی','retry'=>'بازبینی و اصلاح','transfer'=>'انتقال آموخته','transfer_feedback'=>'بازخورد انتقال','report'=>'گزارش تجربه'];
@@ -112,8 +112,8 @@ function dr_landing(array $u): void {
     $active=null;
     foreach ($history as $row) if ($row['status']==='in_progress') { $active=$row; break; }
     $scenario=null; $availabilityError=null;
-    try { $scenario=dr_available_scenario(); }
-    catch (DarychehError $e) { $availabilityError=$e->getMessage(); }
+    try { $scenarios=dr_available_scenarios(); $scenario=$scenarios[0] ?? null; }
+    catch (DarychehError $e) { $scenarios=[]; $availabilityError=$e->getMessage(); }
     dr_hero();
     echo '<div class="dr-home-grid"><section class="dr-card dr-feature" aria-labelledby="dr-feature-title"><div class="dr-section-heading"><span class="dr-kicker">تجربهٔ اول / تفکر پیش از کدنویسی</span><span class="dr-badge">بدون پیش‌نیاز کدنویسی</span></div>';
     if ($active) {
@@ -122,14 +122,22 @@ function dr_landing(array $u): void {
         linkto('dashboard/darycheh/'.$active['id'],'ادامهٔ تجربهٔ ذخیره‌شده','btn dr-button dr-button-primary');
         echo '</div>';
     } elseif ($scenario) {
-        echo '<h2 id="dr-feature-title">'.h($scenario['title']).'</h2><p>یک کسب‌وکار کوچک در ثبت سفارش‌ها، پیگیری مشتریان و کاهش خطا مشکل دارد. با شواهد جلو برو، مسئله را تعریف کن، نمونهٔ اولیهٔ فرایند را بساز و آن را با چند وضعیت آزمایش کن.</p><ul class="dr-feature-facts"><li>حدود ۲۰ تا ۳۰ دقیقه</li><li>بدون تایمر و جریمهٔ سرعت</li><li>ذخیره در حساب فعلی</li></ul><div class="dr-actions">';
-        dr_form('darycheh/start'); echo '<button class="btn dr-button dr-button-primary" type="submit">ورود به اولین تجربه</button></form></div>';
+        echo '<h2 id="dr-feature-title">'.h($scenario['title']).'</h2><p>'.h($scenario['context']).'</p><ul class="dr-feature-facts"><li>حدود ۲۰ تا ۳۰ دقیقه</li><li>بدون تایمر و جریمهٔ سرعت</li><li>ذخیره در حساب فعلی</li></ul><div class="dr-actions">';
+        dr_form('darycheh/start'); echo '<input type="hidden" name="scenario_key" value="'.h($scenario['scenario_key']).'"><button class="btn dr-button dr-button-primary" type="submit">ورود به اولین تجربه</button></form></div>';
     } else {
         echo '<h2 id="dr-feature-title">'.($availabilityError?'این سناریو فعلاً قابل بارگذاری نیست':'هنوز سناریویی برای شروع در دسترس نیست').'</h2><p'.($availabilityError?' role="alert"':'').'>'.h($availabilityError ?? 'وقتی سناریوی معتبری منتشر شود، شروع آن از همین‌جا امکان‌پذیر است. تجربه‌های قبلی، در صورت وجود، از تاریخچه قابل دسترسی‌اند.').'</p>';
         linkto('dashboard/darycheh','بررسی دوبارهٔ دسترسی','btn dr-button dr-button-secondary');
     }
     echo '</section><aside class="dr-card dr-principles"><span class="dr-kicker">در این سوی دریچه</span><h2>جواب آماده کافی نیست.</h2><ol><li><strong>ببین</strong><span>نشانه را از فرضیه جدا کن.</span></li><li><strong>بساز</strong><span>تصمیمت را به یک روند تبدیل کن.</span></li><li><strong>بیازما</strong><span>پیامد را ببین و راهت را اصلاح کن.</span></li></ol><p class="dr-footnote">پیشرفت از عملکرد تو به دست می‌آید؛ نه از تعداد کلیک یا زمان حضور.</p></aside></div>';
     dr_journey();
+    if ($scenarios) {
+        echo '<section class="dr-card"><h2>سناریوهای منتشرشده</h2><div class="dr-progress-grid">';
+        foreach ($scenarios as $published) {
+            echo '<article class="dr-progress-card"><h3>'.h($published['title']).'</h3><p>نسخهٔ '.h($published['content_version']).'</p>';
+            dr_form('darycheh/start'); echo '<input type="hidden" name="scenario_key" value="'.h($published['scenario_key']).'"><button type="submit" class="btn dr-button dr-button-secondary">شروع یا ادامهٔ این سناریو</button></form></article>';
+        }
+        echo '</div></section>';
+    }
     echo '<section class="dr-card" aria-labelledby="dr-history-title"><div class="dr-section-heading"><div><span class="dr-kicker">تجربه‌های تو</span><h2 id="dr-history-title">هر تلاش، بخشی از مسیر</h2></div><span class="dr-badge">خصوصی</span></div>';
     if (!$history) echo '<div class="dr-empty"><span class="dr-empty-mark" aria-hidden="true"></span><h3>هنوز قدم اول را ثبت نکرده‌ای.</h3><p>با شروع اولین تجربه، تصمیم‌ها، بازخوردها و گزارش تو اینجا در دسترس خواهند بود.</p></div>';
     else {

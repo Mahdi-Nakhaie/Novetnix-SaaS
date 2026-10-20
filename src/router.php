@@ -7,6 +7,9 @@ require_once __DIR__.'/darycheh_views.php';
 function route(): void {
     global $path,$me,$plan;
     if (seo_route($path)) return;
+    if ($path==='dashboard/darycheh-manage') {
+        require_admin(); head_page('مدیریت سناریوهای دریچه','',true); notice(); dr_admin_page(); foot_page(true); return;
+    }
     if (in_array($path,['darycheh/state','darycheh/progress'],true)) dr_api($path);
     if ($path==='dashboard/darycheh' || preg_match('~^dashboard/darycheh/([1-9][0-9]*)$~D',$path,$darychehMatch)) {
         $u=require_user();

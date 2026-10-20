@@ -52,7 +52,10 @@ function panel_nav(): void {
     $items['dashboard/workspace']='میزکار پایتون';
     $items['dashboard/darycheh']='دریچه';
     if ($role!=='admin') $items['member/'.$me['id']]='پروفایل مهارتی';
-    if ($role==='admin') $items['dashboard/workspace-templates']='تمرین‌های پایتون';
+    if ($role==='admin') {
+        $items['dashboard/workspace-templates']='تمرین‌های پایتون';
+        $items['dashboard/darycheh-manage']='مدیریت سناریوهای دریچه';
+    }
     if (!COMMERCE_ENABLED) unset($items['dashboard/subscription'],$items['dashboard/subscriptions'],$items['dashboard/payments']);
     echo '<aside class="sidebar"><a class="panel-brand" href="/"><img src="/assets/favicon.png" alt="" width="42" height="42"><span>Noventix</span></a><div class="sidebar-caption">'.($role==='admin'?'مدیریت پلتفرم':($role==='owner'?'پنل مالک':'فضای یادگیری')).'</div><nav aria-label="ناوبری پنل">';
     foreach ($items as $href=>$label) linkto($href,$label,$path===$href?'selected':'');

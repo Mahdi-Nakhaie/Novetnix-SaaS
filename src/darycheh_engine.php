@@ -23,20 +23,20 @@ function dr_identifier(mixed $value): bool {
 function dr_validate_definition(array $d): void {
     foreach (['scenario_key','content_version','engine_version','assessment_version','entry_step_key'] as $key) dr_require(dr_identifier($d[$key] ?? null),'تعریف سناریو ناقص است.',409);
     dr_require(($d['definition_schema_version'] ?? null)===1 && $d['engine_version']==='1' && $d['assessment_version']==='1','نسخهٔ موتور یا ارزیابی پشتیبانی نمی‌شود.',409);
-    dr_require(is_string($d['title'] ?? null) && is_array($d['steps'] ?? null) && count($d['steps'])<=32,'تعریف مراحل ناقص است.',409);
+    dr_require(is_string($d['title'] ?? null) && trim($d['title'])!=='' && is_array($d['steps'] ?? null) && count($d['steps'])<=32,'تعریف مراحل ناقص است.',409);
     $kinds=['intro','evidence','problem','solution','consequence','feedback','retry','transfer','transfer_feedback','report'];
     $counts=[];
     foreach ($d['steps'] as $key=>$step) {
         dr_require(dr_identifier($key) && is_array($step) && in_array($step['kind'] ?? '',$kinds,true),'نوع مرحله معتبر نیست.',409);
         $counts[$step['kind']]=($counts[$step['kind']] ?? 0)+1;
-        dr_require(is_string($step['title'] ?? null) && is_string($step['text'] ?? null) && is_array($step['fields'] ?? null),'اطلاعات مرحله ناقص است.',409);
+        dr_require(is_string($step['title'] ?? null) && trim($step['title'])!=='' && is_string($step['text'] ?? null) && trim($step['text'])!=='' && is_array($step['fields'] ?? null),'اطلاعات مرحله ناقص است.',409);
         foreach ($step['fields'] as $field=>$spec) {
-            dr_require(dr_identifier($field) && is_array($spec) && in_array($spec['kind'] ?? '',['single','multi','order'],true) && is_string($spec['label'] ?? null) && is_array($spec['options'] ?? null) && count($spec['options'])>0,'گزینه‌های مرحله ناقص است.',409);
-            foreach ($spec['options'] as $option=>$label) dr_require(dr_identifier((string)$option) && is_string($label),'شناسهٔ گزینه نامعتبر است.',409);
+            dr_require(dr_identifier($field) && is_array($spec) && in_array($spec['kind'] ?? '',['single','multi','order'],true) && is_string($spec['label'] ?? null) && trim($spec['label'])!=='' && is_array($spec['options'] ?? null) && count($spec['options'])>0,'گزینه‌های مرحله ناقص است.',409);
+            foreach ($spec['options'] as $option=>$label) dr_require(dr_identifier((string)$option) && is_string($label) && trim($label)!=='','شناسهٔ گزینه نامعتبر است.',409);
             if ($spec['kind']!=='single') dr_require(is_int($spec['min'] ?? null) && is_int($spec['max'] ?? null) && $spec['min']>=0 && $spec['max']>=$spec['min'] && $spec['max']<=count($spec['options']),'محدودیت انتخاب معتبر نیست.',409);
         }
         dr_require(!isset($step['routes']) || is_array($step['routes']),'قواعد مسیر ناقص است.',409);
-        $targets=isset($step['routes']) ? array_values($step['routes']) : (isset($step['next'])?[$step['next']]:[]);
+        $targets=array_merge(array_values($step['routes'] ?? []),isset($step['next'])?[$step['next']]:[]);
         dr_require($step['kind']==='report' || count($targets)>0,'مسیر مرحله ناقص است.',409);
         foreach ($targets as $target) dr_require(is_string($target) && isset($d['steps'][$target]),'مقصد مرحله وجود ندارد.',409);
     }
@@ -54,9 +54,11 @@ function dr_validate_definition(array $d): void {
     dr_require(is_array($d['tests'] ?? null) && count($d['tests'])===4 && is_array($d['rubric'] ?? null) && is_array($d['transfer_bundles'] ?? null) && count($d['transfer_bundles'])===2,'قواعد ارزیابی ناقص است.',409);
     dr_require(is_array($d['rubric']['evidence'] ?? null) && is_array($d['rubric']['problem'] ?? null),'شواهد ارزیابی ناقص است.',409);
     dr_require(($d['rubric']['minimum_total'] ?? null)===16 && ($d['rubric']['minimum_dimension'] ?? null)===3 && count($d['rubric']['evidence'])===4 && count($d['rubric']['problem'])===4,'قرارداد ارزیابی نامعتبر است.',409);
-    foreach (['evidence','problem','algorithm','testing','transfer'] as $key) dr_require(is_string($d['objectives'][$key] ?? null) && is_string($d['skills'][$key] ?? null),'هدف یادگیری ناقص است.',409);
+    dr_require(is_array($d['objectives'] ?? null) && is_array($d['skills'] ?? null),'اهداف و مهارت‌ها ناقص است.',409);
+    foreach (array_merge(array_values($d['objectives']),array_values($d['skills'])) as $label) dr_require(is_string($label) && trim($label)!=='','برچسب هدف یا مهارت معتبر نیست.',409);
+    foreach (['evidence','problem','algorithm','testing','transfer'] as $key) dr_require(is_string($d['objectives'][$key] ?? null) && trim($d['objectives'][$key])!=='' && is_string($d['skills'][$key] ?? null) && trim($d['skills'][$key])!=='','هدف یادگیری ناقص است.',409);
     if (isset($d['skill_assessment'])) dr_require(is_array($d['skill_assessment']) && count($d['skill_assessment'])===9,'تعریف مهارت‌ها ناقص است.',409);
-    dr_require(is_array($d['hints'] ?? null) && count($d['hints'])===3 && count(array_filter($d['hints'],'is_string'))===3,'راهنمایی ناقص است.',409);
+    dr_require(is_array($d['hints'] ?? null) && array_is_list($d['hints']) && count($d['hints'])===3 && count(array_filter($d['hints'],'is_string'))===3,'راهنمایی ناقص است.',409);
     $testKeys=[];
     foreach ($d['tests'] as $test) {
         dr_require(is_array($test) && dr_identifier($test['key'] ?? null) && is_string($test['label'] ?? null) && is_int($test['capacity'] ?? null) && $test['capacity']>=0 && is_array($test['requests'] ?? null) && count($test['requests'])>0 && count($test['requests'])<=10 && is_string($test['expected'] ?? null),'آزمون سناریو ناقص است.',409);
@@ -71,7 +73,7 @@ function dr_validate_definition(array $d): void {
     foreach (($d['skill_assessment'] ?? []) as $skill=>$spec) {
         dr_require(dr_identifier($skill) && is_array($spec) && is_string($spec['label'] ?? null) && is_string($spec['description'] ?? null) && is_array($spec['criteria'] ?? null) && count($spec['criteria'])>0,'معیار مهارت ناقص است.',409);
         foreach ($spec['criteria'] as $criterion) {
-            dr_require(is_array($criterion) && isset($criterion['dimension'],$criterion['key'],$criterion['label']) && isset($criterionKeys[$criterion['dimension']]) && in_array($criterion['key'],$criterionKeys[$criterion['dimension']],true) && is_string($criterion['label']),'ارجاع معیار مهارت نامعتبر است.',409);
+            dr_require(is_array($criterion) && is_string($criterion['dimension'] ?? null) && is_string($criterion['key'] ?? null) && isset($criterionKeys[$criterion['dimension']]) && in_array($criterion['key'],$criterionKeys[$criterion['dimension']],true) && is_string($criterion['label'] ?? null),'ارجاع معیار مهارت نامعتبر است.',409);
         }
     }
     $contracts=['intro'=>[],'evidence'=>['selected'],'problem'=>array_keys($d['rubric']['problem']),'solution'=>['order'],'consequence'=>$testKeys,'feedback'=>[],'retry'=>['route'],'transfer'=>['cause','order','remaining','test'],'transfer_feedback'=>['route'],'report'=>[]];
@@ -85,10 +87,15 @@ function dr_validate_definition(array $d): void {
         dr_require(is_string($target) && ($d['steps'][$target]['kind'] ?? null)===$nextKind && !isset($byKind[$kind]['routes']),'ترتیب مراحل با قرارداد تجربه سازگار نیست.',409);
     }
     foreach (['retry'=>['revise'=>'solution','redefine'=>'evidence','continue'=>'transfer'],'transfer_feedback'=>['retry'=>'transfer','finish'=>'report']] as $kind=>$routes) {
-        dr_require(array_keys($byKind[$kind]['routes'] ?? [])===array_keys($routes),'شاخه‌های مرحله ناقص است.',409);
+        dr_require(array_keys($byKind[$kind]['routes'] ?? [])===array_keys($routes) && array_keys($byKind[$kind]['fields']['route']['options'])===array_keys($routes),'شاخه‌های مرحله ناقص است.',409);
         foreach ($routes as $route=>$targetKind) dr_require(($d['steps'][$byKind[$kind]['routes'][$route]]['kind'] ?? null)===$targetKind && isset($byKind[$kind]['fields']['route']['options'][$route]),'مقصد شاخه نامعتبر است.',409);
     }
     dr_require($byKind['evidence']['fields']['selected']['kind']==='multi' && $byKind['solution']['fields']['order']['kind']==='order','نوع ورودی مرحله نامعتبر است.',409);
+    foreach ($d['operations'] as $label) dr_require(is_string($label) && trim($label)!=='','برچسب عملیات ناقص است.',409);
+    dr_require(!isset($byKind['report']['next']) && !isset($byKind['report']['routes']),'گزارش باید پایان مسیر باشد.',409);
+    foreach (['problem','consequence','retry','transfer','transfer_feedback'] as $kind) foreach ($byKind[$kind]['fields'] as $field) dr_require($field['kind']==='single','نوع ورودی با قرارداد مرحله سازگار نیست.',409);
+    dr_require($byKind['evidence']['fields']['selected']['min']===4 && $byKind['evidence']['fields']['selected']['max']===4 && $byKind['solution']['fields']['order']['min']===1 && $byKind['solution']['fields']['order']['max']===5,'محدودیت ورودی با قرارداد ارزیابی سازگار نیست.',409);
+    dr_require(count(array_unique($d['rubric']['evidence'],SORT_REGULAR))===4,'شواهد ارزیابی باید مستقل باشند.',409);
     foreach ($d['rubric']['evidence'] as $id) dr_require(is_string($id) && isset($byKind['evidence']['fields']['selected']['options'][$id]),'ارجاع شاهد نامعتبر است.',409);
     foreach ($d['rubric']['problem'] as $field=>$correct) dr_require(is_string($correct) && isset($byKind['problem']['fields'][$field]['options'][$correct]),'ارجاع معیار مسئله نامعتبر است.',409);
     dr_require(array_keys($byKind['solution']['fields']['order']['options'])===array_keys($d['operations']),'کارت‌های روند با موتور سازگار نیست.',409);

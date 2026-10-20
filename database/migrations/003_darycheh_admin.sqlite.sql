@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS darycheh_drafts (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ definition_json TEXT NOT NULL CHECK(json_valid(definition_json)),
+ revision INTEGER NOT NULL DEFAULT 1 CHECK(revision>0),
+ updated_by INTEGER NOT NULL,
+ created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ FOREIGN KEY(updated_by) REFERENCES users(id)
+);

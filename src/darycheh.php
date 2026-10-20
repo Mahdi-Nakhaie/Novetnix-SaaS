@@ -66,7 +66,7 @@ function dr_append(array $attempt,string $requestKey,string $fingerprint,string 
 }
 function dr_start(int $userId,string $scenario,string $requestKey,?int $restartId=null,?int $expectedRevision=null): array {
     dr_request_key($requestKey);
-    dr_require($scenario==='first-real-problem','سناریو پیدا نشد.',404);
+    dr_require(dr_identifier($scenario),'سناریو پیدا نشد.',404);
     $fingerprint=dr_hash([$scenario,$restartId,$expectedRevision]); $db=db(); $db->beginTransaction();
     try {
         ws_lock_user($userId);
@@ -90,12 +90,16 @@ function dr_start(int $userId,string $scenario,string $requestKey,?int $restartI
             dr_append($active,$requestKey,$fingerprint,'resume_requested',$active['current_step_key'],[],$activeState,$receipt);
             $db->commit(); return $receipt;
         }
-        $path=dirname(__DIR__).'/content/darycheh.php';
-        dr_require(is_file($path),'تعریف سناریو در دسترس نیست.',404);
-        $d=require $path;
-        dr_require(is_array($d),'تعریف سناریو ناقص است.',409); dr_validate_definition($d);
-        dr_require($d['scenario_key']===$scenario,'شناسهٔ محتوای سناریو ناسازگار است.',409);
-        $release=q('SELECT * FROM darycheh_releases WHERE scenario_key=? AND content_version=?',[$scenario,$d['content_version']])->fetch();
+        $release=q("SELECT * FROM darycheh_releases WHERE scenario_key=? AND availability='available' ORDER BY id DESC LIMIT 1",[$scenario])->fetch();
+        if ($release) $d=dr_release(['release_id'=>$release['id'],'scenario_key'=>$scenario]);
+        else {
+            dr_require(!q('SELECT 1 FROM darycheh_releases WHERE scenario_key=?',[$scenario])->fetchColumn(),'این سناریو برای شروع تازه غیرفعال است.',409);
+            $path=dirname(__DIR__).'/content/darycheh.php';
+            dr_require(is_file($path),'تعریف سناریو در دسترس نیست.',404);
+            $d=require $path;
+            dr_require(is_array($d),'تعریف سناریو ناقص است.',409); dr_validate_definition($d);
+            dr_require($d['scenario_key']===$scenario,'سناریو پیدا نشد.',404);
+        }
         if (!$release) {
             $insert='INSERT INTO darycheh_releases(scenario_key,content_version,definition_schema_version,engine_version,assessment_version,definition_hash,definition_json,availability) VALUES (?,?,?,?,?,?,?,?)';
             $insert.=$db->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql'?' ON DUPLICATE KEY UPDATE id=id':' ON CONFLICT(scenario_key,content_version) DO NOTHING';
@@ -161,23 +165,25 @@ function dr_act(int $userId,int $id,int $revision,string $requestKey,string $act
         $db->commit(); return $receipt;
     } catch (Throwable $e) { if ($db->inTransaction()) $db->rollBack(); throw $e; }
 }
-function dr_available_scenario(): ?array {
-    $path=dirname(__DIR__).'/content/darycheh.php';
-    if (!is_file($path)) return null;
-    $d=require $path;
-    dr_require(is_array($d),'تعریف سناریو ناقص است.',409);
-    dr_validate_definition($d);
-    $release=q('SELECT availability,definition_hash FROM darycheh_releases WHERE scenario_key=? AND content_version=?',[$d['scenario_key'],$d['content_version']])->fetch();
-    if ($release) {
-        if ($release['availability']!=='available') return null;
-        dr_require(hash_equals($release['definition_hash'],dr_hash($d)),'این نسخه با محتوای منتشرشده سازگار نیست.',409);
+function dr_available_scenarios(): array {
+    $items=[];
+    foreach (q("SELECT id,scenario_key FROM darycheh_releases WHERE availability='available' ORDER BY id DESC")->fetchAll() as $row) {
+        if (isset($items[$row['scenario_key']])) continue;
+        $d=dr_release(['release_id'=>$row['id'],'scenario_key'=>$row['scenario_key']]);
+        $items[$row['scenario_key']]=['scenario_key'=>$d['scenario_key'],'title'=>$d['title'],'context'=>$d['steps'][$d['entry_step_key']]['text'],'content_version'=>$d['content_version']];
     }
-    return ['scenario_key'=>$d['scenario_key'],'title'=>$d['title'],'content_version'=>$d['content_version']];
+    $path=dirname(__DIR__).'/content/darycheh.php';
+    if (is_file($path) && !q('SELECT 1 FROM darycheh_releases WHERE scenario_key=?',['first-real-problem'])->fetchColumn()) {
+        $d=require $path;
+        dr_require(is_array($d),'تعریف سناریو ناقص است.',409); dr_validate_definition($d);
+        $items[$d['scenario_key']]=['scenario_key'=>$d['scenario_key'],'title'=>$d['title'],'context'=>$d['steps'][$d['entry_step_key']]['text'],'content_version'=>$d['content_version']];
+    }
+    return array_values($items);
 }
 function dr_view(int $userId,int $id): array {
     $attempt=dr_owned($userId,$id); $d=dr_release($attempt); $s=dr_state($attempt,$d); $step=$d['steps'][$attempt['current_step_key']];
     if ($step['kind']==='retry' && !($s['main']['passed'] ?? false)) unset($step['fields']['route']['options']['continue']);
-    $view=dr_receipt($attempt)+['title'=>$d['title'],'context'=>$d['steps'][$d['entry_step_key']]['text'],'attempt_no'=>(int)$attempt['attempt_no'],'content_version'=>$d['content_version'],'stage'=>['kind'=>$step['kind'],'title'=>$step['title'],'text'=>$step['text'],'fields'=>$step['fields']],'answers'=>$s['answers'],'hint'=>$s['hint'],'help_level'=>$s['help'],'round'=>$s['round']];
+    $view=dr_receipt($attempt)+['scenario_key'=>$attempt['scenario_key'],'title'=>$d['title'],'context'=>$d['steps'][$d['entry_step_key']]['text'],'attempt_no'=>(int)$attempt['attempt_no'],'content_version'=>$d['content_version'],'stage'=>['kind'=>$step['kind'],'title'=>$step['title'],'text'=>$step['text'],'fields'=>$step['fields']],'answers'=>$s['answers'],'hint'=>$s['hint'],'help_level'=>$s['help'],'round'=>$s['round']];
     if (in_array($step['kind'],['feedback','retry','transfer','transfer_feedback','report'],true)) {
         $view['main']=$s['main'];
         foreach ($d['steps'] as $source) if ($source['kind']==='consequence') {

@@ -40,6 +40,13 @@ class DarychehSchemaTests(unittest.TestCase):
                 db.execute(sql, args)
         with self.assertRaises(sqlite3.IntegrityError):
             db.execute("UPDATE darycheh_attempts SET release_id=999")
+        admin_migration = (ROOT / 'database/migrations/003_darycheh_admin.sqlite.sql').read_text()
+        db.executescript(admin_migration)
+        db.executescript(admin_migration)
+        db.execute("INSERT INTO darycheh_drafts(definition_json,updated_by) VALUES ('{}',1)")
+        for statement in ("UPDATE darycheh_drafts SET revision=0", "UPDATE darycheh_drafts SET updated_by=999", "UPDATE darycheh_drafts SET definition_json='invalid'"):
+            with self.assertRaises(sqlite3.IntegrityError):
+                db.execute(statement)
         self.assertEqual(db.execute('PRAGMA foreign_key_check').fetchall(), [])
         db.close()
 
@@ -60,11 +67,20 @@ $mutations=[
  function(&$d){unset($d['steps']['problem']['fields']['cause']);},
  function(&$d){$d['rubric']['evidence']='broken';},
  function(&$d){$d['engine_version']='unsupported';},
+ function(&$d){$d['steps']['report']['next']='intro';},
+ function(&$d){$d['steps']['problem']['fields']['person']['kind']='multi';$d['steps']['problem']['fields']['person']['min']=1;$d['steps']['problem']['fields']['person']['max']=1;},
+ function(&$d){$d['steps']['retry']['fields']['route']['options']['unsupported']='نامعتبر';},
+ function(&$d){$d['steps']['evidence']['fields']['selected']['min']=0;},
+ function(&$d){$d['steps']['solution']['fields']['order']['max']=4;},
+ function(&$d){$d['skill_assessment']['problem_definition']['criteria'][0]['dimension']=[];},
+ function(&$d){$d['operations']['duplicate']=[];},
+ function(&$d){$d['hints']=['a'=>'one','b'=>'two','c'=>'three'];},
+ function(&$d){$d['title']='';},
 ];
 $out=[]; foreach($mutations as $mutation){$copy=$d;$mutation($copy);try{dr_validate_definition($copy);$out[]=false;}catch(DarychehError $e){$out[]=$e->status===409;}}
 echo dr_json($out);
 ''')
-        self.assertEqual(result, [True] * 7)
+        self.assertEqual(result, [True] * 16)
 
     def test_skill_score_missing_evidence_and_snapshot_compatibility(self):
         result = self.php('''
@@ -126,8 +142,8 @@ class DarychehHttpTests(unittest.TestCase):
         client.request('/dashboard/darycheh')
         return client, phone
 
-    def start(self, client):
-        status, _, body = client.post('/darycheh/start', {'request_key': key()})
+    def start(self, client, scenario='first-real-problem'):
+        status, _, body = client.post('/darycheh/start', {'request_key': key(), 'scenario_key': scenario})
         self.assertEqual(status, 200, body)
         return json.loads(body)
 
@@ -141,8 +157,8 @@ class DarychehHttpTests(unittest.TestCase):
         self.assertEqual(response[0], status, response[2])
         return json.loads(response[2])
 
-    def main_path(self, client, order=None, help=False, evidence=None, problem=None):
-        attempt = self.start(client)
+    def main_path(self, client, order=None, help=False, evidence=None, problem=None, scenario='first-real-problem'):
+        attempt = self.start(client, scenario)
         attempt = self.act(client, attempt)
         attempt = self.act(client, attempt, evidence or EVIDENCE)
         attempt = self.act(client, attempt, problem or PROBLEM)
@@ -166,6 +182,157 @@ class DarychehHttpTests(unittest.TestCase):
     def finish(self, client, attempt):
         attempt = self.transfer(client, attempt)
         return self.act(client, attempt, {'route': 'finish'})
+
+    register = test_release.ReleaseHttpTest.register
+    login = test_release.ReleaseHttpTest.login
+    admin = test_release.ReleaseHttpTest.admin
+
+    def definition(self):
+        data = subprocess.check_output(['php', '-r', 'echo json_encode(require ' + json.dumps(str(ROOT / 'content/darycheh.php')) + ');'], text=True, timeout=15)
+        definition = json.loads(data)
+        definition['scenario_key'] = 'managed-' + key()
+        definition['content_version'] = '1.0'
+        definition['title'] = 'سناریوی مدیریت‌شده'
+        self.addCleanup(self.change, "UPDATE darycheh_releases SET availability='retired' WHERE scenario_key=?", (definition['scenario_key'],))
+        return definition
+
+    def save_draft(self, admin, definition, draft=0, revision=0):
+        response = admin.post('/darycheh/admin/save', {'id': draft, 'revision': revision, 'definition': json.dumps(definition, ensure_ascii=False)})
+        self.assertEqual(response[0], 303, response[2])
+        return int(response[1]['Location'].split('?id=')[1])
+
+    def publish(self, admin, draft, revision=None):
+        if revision is None:
+            revision = self.rows('SELECT revision FROM darycheh_drafts WHERE id=?', (draft,))[0][0]
+        response = admin.post('/darycheh/admin/publish', {'id': draft, 'revision': revision})
+        self.assertEqual(response[0], 303, response[2])
+        return admin.request(response[1]['Location'])[2]
+
+    def test_admin_permissions_are_enforced_on_server_and_csrf(self):
+        guest = test_release.Client(self.base)
+        self.assertEqual(guest.request('/dashboard/darycheh-manage')[0], 303)
+        member, phone = self.member()
+        uid = self.rows('SELECT id FROM users WHERE phone=?', (phone,))[0][0]
+        before = self.rows('SELECT COUNT(*) FROM darycheh_drafts')[0][0]
+        for role in ('student', 'owner'):
+            self.change('UPDATE users SET role=? WHERE id=?', (role, uid))
+            self.assertEqual(member.request('/dashboard/darycheh-manage')[0], 403)
+            for operation in ('save', 'publish', 'availability'):
+                self.assertEqual(member.post('/darycheh/admin/' + operation, {'id': 0, 'definition': '{}'})[0], 403)
+        self.assertEqual(self.rows('SELECT COUNT(*) FROM darycheh_drafts')[0][0], before)
+        admin = self.admin()
+        page = admin.request('/dashboard/darycheh-manage')
+        self.assertEqual(page[0], 200)
+        self.assertIn('مدیریت سناریوهای دریچه', page[2])
+        self.assertIn('تعریف JSON', page[2])
+        self.assertEqual(admin.request('/darycheh/admin/save', {'definition': '{}', 'csrf': 'wrong'})[0], 419)
+        self.assertEqual(self.rows('SELECT COUNT(*) FROM darycheh_drafts')[0][0], before)
+
+    def test_admin_draft_validation_preview_and_stale_writes(self):
+        admin = self.admin()
+        before = self.rows('SELECT COUNT(*) FROM darycheh_drafts')[0][0]
+        for value in ('{broken', '[]', 'null', 'x' * 131073):
+            self.assertEqual(admin.post('/darycheh/admin/save', {'definition': value})[0], 303)
+        self.assertEqual(self.rows('SELECT COUNT(*) FROM darycheh_drafts')[0][0], before)
+        draft = self.save_draft(admin, {'title': 'ناقص'})
+        self.assertIn('انتشار مجاز نیست', self.publish(admin, draft))
+        self.assertEqual(self.rows('SELECT revision FROM darycheh_drafts WHERE id=?', (draft,))[0][0], 1)
+        definition = self.definition()
+        self.save_draft(admin, definition, draft, 1)
+        original = self.rows('SELECT definition_json,revision FROM darycheh_drafts WHERE id=?', (draft,))[0]
+        self.save_draft(admin, {'title': 'stale'}, draft, 1)
+        self.assertEqual(self.rows('SELECT definition_json,revision FROM darycheh_drafts WHERE id=?', (draft,))[0], original)
+        self.publish(admin, draft, revision=1)
+        self.assertEqual(self.rows('SELECT COUNT(*) FROM darycheh_releases WHERE scenario_key=?', (definition['scenario_key'],))[0][0], 0)
+        counts = [self.rows('SELECT COUNT(*) FROM ' + table)[0][0] for table in ('darycheh_attempts', 'darycheh_evaluations')]
+        page = admin.request('/dashboard/darycheh-manage?id=' + str(draft))[2]
+        self.assertIn('پیش‌نمایش ساختاری معتبر', page)
+        self.assertIn('انتشار همین بازبینی بررسی‌شده', page)
+        self.assertEqual(counts, [self.rows('SELECT COUNT(*) FROM ' + table)[0][0] for table in ('darycheh_attempts', 'darycheh_evaluations')])
+        broken = json.loads(json.dumps(definition))
+        broken['steps']['intro']['next'] = 'missing'
+        self.save_draft(admin, broken, draft, 2)
+        self.assertIn('انتشار مجاز نیست', self.publish(admin, draft))
+        self.assertEqual(self.rows('SELECT COUNT(*) FROM darycheh_releases WHERE scenario_key=?', (definition['scenario_key'],))[0][0], 0)
+
+    def test_admin_invalid_definitions_cannot_be_published_or_activated(self):
+        admin = self.admin()
+        definition = self.definition()
+        for field, value in (('steps', []), ('rubric', {'evidence': [], 'problem': []}), ('operations', []), ('objectives', {'extra': []}), ('skill_assessment', [None] * 9), ('title', '')):
+            broken = dict(definition, **{field: value})
+            draft = self.save_draft(admin, broken)
+            page = self.publish(admin, draft)
+            self.assertIn('انتشار مجاز نیست', page)
+            self.assertNotIn('Fatal error', page)
+            self.assertNotIn('Warning:', page)
+        self.assertEqual(self.rows('SELECT COUNT(*) FROM darycheh_releases WHERE scenario_key=?', (definition['scenario_key'],))[0][0], 0)
+        draft = self.save_draft(admin, definition)
+        self.publish(admin, draft)
+        release, saved = self.rows('SELECT id,definition_json FROM darycheh_releases WHERE scenario_key=?', (definition['scenario_key'],))[0]
+        try:
+            self.change("UPDATE darycheh_releases SET availability='retired',definition_json='{}' WHERE id=?", (release,))
+            response = admin.post('/darycheh/admin/availability', {'id': release, 'availability': 'available'})
+            self.assertEqual(response[0], 303)
+            self.assertEqual(self.rows('SELECT availability FROM darycheh_releases WHERE id=?', (release,))[0][0], 'retired')
+        finally:
+            self.change('UPDATE darycheh_releases SET definition_json=? WHERE id=?', (saved, release))
+        self.publish(admin, draft)
+        self.assertEqual(self.rows('SELECT COUNT(*) FROM darycheh_releases WHERE scenario_key=?', (definition['scenario_key'],))[0][0], 1)
+        self.assertEqual(self.rows('SELECT availability FROM darycheh_releases WHERE id=?', (release,))[0][0], 'retired')
+
+    def test_admin_publish_execute_version_and_availability(self):
+        admin = self.admin()
+        definition = self.definition()
+        definition['steps']['intro']['text'] = '<script>not executable</script>'
+        draft = self.save_draft(admin, definition)
+        page = self.publish(admin, draft)
+        self.assertIn('نسخهٔ مستقل منتشر شد', page)
+        self.assertNotIn('<script>not executable</script>', page)
+        self.assertIn('&lt;script&gt;not executable&lt;/script&gt;', page)
+        release, digest = self.rows('SELECT id,definition_hash FROM darycheh_releases WHERE scenario_key=?', (definition['scenario_key'],))[0]
+        member, _ = self.member()
+        landing = member.request('/dashboard/darycheh')[2]
+        self.assertIn('name="scenario_key" value="' + definition['scenario_key'] + '"', landing)
+        attempt = self.start(member, definition['scenario_key'])
+        self.assertEqual(self.view(member, attempt)['content_version'], '1.0')
+        definition['title'] = 'نسخهٔ اصلاح‌شده'
+        revision = self.rows('SELECT revision FROM darycheh_drafts WHERE id=?', (draft,))[0][0]
+        self.save_draft(admin, definition, draft, revision)
+        self.assertIn('content_version', self.publish(admin, draft))
+        self.assertEqual(self.rows('SELECT COUNT(*) FROM darycheh_releases WHERE scenario_key=?', (definition['scenario_key'],))[0][0], 1)
+        definition['content_version'] = '2.0'
+        revision = self.rows('SELECT revision FROM darycheh_drafts WHERE id=?', (draft,))[0][0]
+        self.save_draft(admin, definition, draft, revision)
+        self.publish(admin, draft)
+        self.assertEqual(self.rows('SELECT definition_hash FROM darycheh_releases WHERE id=?', (release,))[0][0], digest)
+        self.assertEqual(self.view(member, attempt)['content_version'], '1.0')
+        newer, _ = self.member()
+        self.assertEqual(self.view(newer, self.start(newer, definition['scenario_key']))['content_version'], '2.0')
+        attempt = self.finish(member, self.enter_transfer(member, self.main_path(member, scenario=definition['scenario_key'])))
+        self.assertEqual(attempt['status'], 'completed')
+        report = member.request('/dashboard/darycheh/' + str(attempt['attempt_id']))[2]
+        self.assertIn('name="scenario_key" value="' + definition['scenario_key'] + '"', report)
+        running, _ = self.member()
+        active = self.start(running, definition['scenario_key'])
+        releases = self.rows('SELECT id FROM darycheh_releases WHERE scenario_key=?', (definition['scenario_key'],))
+        for row in releases:
+            self.assertEqual(admin.post('/darycheh/admin/availability', {'id': row[0], 'availability': 'retired'})[0], 303)
+        fresh, _ = self.member()
+        self.assertEqual(fresh.post('/darycheh/start', {'scenario_key': definition['scenario_key'], 'request_key': key()})[0], 409)
+        self.assertEqual(self.act(running, active)['step'], 'evidence')
+        self.assertEqual(self.start(running, definition['scenario_key'])['step'], 'evidence')
+        self.assertEqual(admin.post('/darycheh/admin/availability', {'id': release, 'availability': 'invalid'})[0], 303)
+        self.assertEqual(self.rows('SELECT availability FROM darycheh_releases WHERE id=?', (release,))[0][0], 'retired')
+        self.assertEqual(admin.post('/darycheh/admin/availability', {'id': release, 'availability': 'available'})[0], 303)
+        restarted = fresh.post('/darycheh/start', {'scenario_key': definition['scenario_key'], 'request_key': key()})
+        self.assertEqual(restarted[0], 200, restarted[2])
+        self.assertEqual(self.view(fresh, json.loads(restarted[2]))['content_version'], '1.0')
+        restarted = member.post('/darycheh/restart', {'scenario_key': definition['scenario_key'], 'id': attempt['attempt_id'], 'revision': attempt['revision'], 'request_key': key(), '_html': '1'})
+        self.assertEqual(restarted[0], 303)
+        new_id = int(restarted[1]['Location'].rsplit('/', 1)[1])
+        self.assertNotEqual(new_id, attempt['attempt_id'])
+        self.assertEqual(self.rows('SELECT scenario_key FROM darycheh_attempts WHERE id=?', (new_id,))[0][0], definition['scenario_key'])
+        self.assertEqual(self.rows('SELECT status FROM darycheh_attempts WHERE id=?', (attempt['attempt_id'],))[0][0], 'completed')
 
     def test_skill_progress_is_private_persistent_and_not_visit_based(self):
         client, phone = self.member()
@@ -419,7 +586,8 @@ class DarychehHttpTests(unittest.TestCase):
             self.assertEqual(self.act(client, attempt)['step'], 'evidence')
             self.assertEqual(self.start(client)['step'], 'evidence')
             other, _ = self.member()
-            self.assertEqual(other.post('/darycheh/start', {'request_key': key()})[0], 404)
+            self.assertEqual(other.post('/darycheh/start', {'request_key': key()})[0], 200)
+            self.assertIn('اولین مسئله واقعی تو', other.request('/dashboard/darycheh')[2])
         finally:
             moved.rename(content)
 
@@ -523,24 +691,26 @@ class DarychehHttpTests(unittest.TestCase):
         self.assertIn('بارگذاری دوباره', corrupt[2])
         self.assertNotIn('PDOException', corrupt[2])
 
-    def test_interface_unavailable_and_malformed_source(self):
+    def test_interface_uses_published_snapshot_and_rejects_corruption(self):
         client, _ = self.member()
+        attempt = self.start(client)
+        fresh, _ = self.member()
+        release = self.rows('SELECT release_id FROM darycheh_attempts WHERE id=?', (attempt['attempt_id'],))[0][0]
+        saved = self.rows('SELECT definition_json FROM darycheh_releases WHERE id=?', (release,))[0][0]
         content = ROOT / 'content/darycheh.php'
         original = content.read_bytes()
-        moved = content.with_suffix('.ui-fixture-backup')
-        content.rename(moved)
         try:
-            empty = client.request('/dashboard/darycheh')
-            self.assertEqual(empty[0], 200)
-            self.assertIn('هنوز سناریویی برای شروع در دسترس نیست', empty[2])
-            self.assertNotIn('ورود به اولین تجربه', empty[2])
             content.write_text('<?php return [];')
-            malformed = client.request('/dashboard/darycheh')
+            page = client.request('/dashboard/darycheh')
+            self.assertEqual(page[0], 200)
+            self.assertIn('اولین مسئله واقعی تو', page[2])
+            self.change("UPDATE darycheh_releases SET definition_json='{}' WHERE id=?", (release,))
+            malformed = fresh.request('/dashboard/darycheh')
             self.assertIn('این سناریو فعلاً قابل بارگذاری نیست', malformed[2])
             self.assertIn('role="alert"', malformed[2])
         finally:
             content.write_bytes(original)
-            moved.unlink()
+            self.change('UPDATE darycheh_releases SET definition_json=? WHERE id=?', (saved, release))
 
     def test_database_failure_rolls_back_action_state_and_evaluation(self):
         client, _ = self.member()

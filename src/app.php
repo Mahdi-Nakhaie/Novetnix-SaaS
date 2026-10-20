@@ -5,6 +5,7 @@ require_once dirname(__DIR__).'/database/connection.php';
 require_once __DIR__.'/auth.php';
 require_once __DIR__.'/workspace.php';
 require_once __DIR__.'/darycheh.php';
+require_once __DIR__.'/darycheh_admin.php';
 require_once __DIR__.'/learning_projects.php';
 require_once __DIR__.'/learning_project_views.php';
 require_once __DIR__.'/payments.php';
@@ -321,6 +322,7 @@ function save_lesson_progress(array $u): void {
 function handle_post(string $path): void {
     if (handle_auth_post($path)) return;
     validate_csrf();
+    if (str_starts_with($path,'darycheh/admin/')) dr_admin_post($path);
     if (str_starts_with($path,'darycheh/')) dr_api($path);
     if (str_starts_with($path,'workspace/')) ws_post($path);
     if ($path==='contact/send') {

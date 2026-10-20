@@ -116,6 +116,8 @@ function db(): PDO {
         $db->exec(file_get_contents(dirname(__DIR__).$migration));
         $darychehMigration=$driver==='mysql' ? '/database/migrations/002_darycheh.mysql.sql' : '/database/migrations/002_darycheh.sqlite.sql';
         $db->exec(file_get_contents(dirname(__DIR__).$darychehMigration));
+        $adminMigration=$driver==='mysql' ? '/database/migrations/003_darycheh_admin.mysql.sql' : '/database/migrations/003_darycheh_admin.sqlite.sql';
+        $db->exec(file_get_contents(dirname(__DIR__).$adminMigration));
         glossary_backfill_legacy($db);
         glossary_seed_initial_drafts($db);
         $columns=$db->query('SELECT * FROM otp_codes LIMIT 0');
