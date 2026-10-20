@@ -38,6 +38,11 @@ for name, entry in files.items():
     if name.endswith('.php'):
         run(['php', '-l', str(source)])
 
+runner_changed = 'curriculum/grading.py' in files
+if runner_changed:
+    code = "require '/var/www/noventix/src/app.php'; if ((int)q(\"SELECT COUNT(*) FROM workspace_runs WHERE state IN ('queued','running','cancelling')\")->fetchColumn()>0) exit(2);"
+    run(['php', '-r', code])
+
 backup.mkdir()
 for name, entry in files.items():
     if entry['before'] is not None:
@@ -66,6 +71,14 @@ def probe(path, expected):
             assert response.getheader('Location', '').startswith('/login?next='), path
         if path in ('/login', '/course/ai-foundations'):
             assert b'/assets/style.css?v=8' in body, 'Stale HTML: ' + path
+        if 'content/articles/catalog.json' in files and path in ('/', '/articles'):
+            assert b'<meta name="google-site-verification" content="ac80Ad6zRSLvvfcYFAMfV2JVVj8rUKlz49RpTpzwv70">' in body.split(b'</head>', 1)[0], 'Missing Google verification'
+        if path == '/articles' and 'content/articles/catalog.json' in files:
+            catalog = json.loads((STAGE / 'content/articles/catalog.json').read_text())
+            assert all(('/articles/' + a['slug']).encode() in body for a in catalog), 'Missing article cards'
+        if path == '/projects' and 'curriculum/catalog.json' in files:
+            catalog = json.loads((STAGE / 'curriculum/catalog.json').read_text())
+            assert all(('href="/project/' + str(i) + '"').encode() in body for i in range(len(catalog))), 'Missing project cards'
         if path.startswith('/assets/'):
             asset = ROOT / ('public' + path.split('?', 1)[0])
             assert hashlib.sha256(body).hexdigest() == digest(asset), 'Stale asset: ' + path
@@ -80,6 +93,9 @@ try:
     for name in ordered:
         install(STAGE / name, ROOT / name)
         installed.append(name)
+    if runner_changed:
+        run(['systemctl', 'restart', 'noventix-runner.service'])
+        run(['systemctl', 'is-active', 'noventix-runner.service'])
     run(['systemctl', 'reload', 'php8.2-fpm.service'])
     run(['systemctl', 'is-active', 'php8.2-fpm.service'])
     code = '''require '/var/www/noventix/src/app.php';
@@ -92,6 +108,17 @@ try:
     print('Database migrations and published lesson quiz verified.', flush=True)
     for path, expected in [('/', 200), ('/login', 200), ('/course/ai-foundations', 200), ('/articles', 200), ('/dashboard/course/ai-foundations', 303), ('/dashboard/darycheh', 303), ('/dashboard/darycheh-manage', 303), ('/darycheh/progress', 401), ('/assets/style.css?v=8', 200), ('/assets/darycheh.js?v=1', 200), ('/assets/darycheh.css?v=1', 200)]:
         probe(path, expected)
+    if 'content/articles/catalog.json' in files:
+        probe('/projects', 200)
+        catalog = json.loads((STAGE / 'content/articles/catalog.json').read_text())
+        for article in catalog:
+            if article.get('series') == 'python-basics':
+                probe('/articles/' + article['slug'], 200)
+                probe('/project/' + str(article['project_index']), 200)
+        probe('/sitemap.xml', 200)
+    if runner_changed:
+        run(['php', '-r', "require '/var/www/noventix/src/app.php'; $health=ws_runner('GET','/health'); if (($health['isolation'] ?? '')!=='gvisor') exit(2);"])
+        print('Isolated Python runner health verified through the application helper.', flush=True)
     for name, entry in files.items():
         assert digest(ROOT / name) == entry['sha256'], name
 except Exception:
@@ -100,6 +127,8 @@ except Exception:
             (ROOT / name).unlink()
         else:
             install(backup / name, ROOT / name)
+    if runner_changed:
+        run(['systemctl', 'restart', 'noventix-runner.service'])
     run(['systemctl', 'reload', 'php8.2-fpm.service'])
     print('Source rollback completed; additive database changes retained.', flush=True)
     raise
