@@ -779,9 +779,9 @@ body.is-panel{background:linear-gradient(180deg,var(--bg),#f4f0fa)}
   .course-overview-grid{grid-template-columns:1fr;gap:1.2rem}
   .metrics-inner{grid-template-columns:repeat(2,minmax(0,1fr))}
   body.is-panel{grid-template-columns:1fr}
-  .sidebar{position:fixed;inset-block:0;inset-inline-start:0;width:264px;z-index:80;transform:translateX(100%);transition:transform .22s ease}
+  .sidebar{position:fixed;inset-block:0;inset-inline-start:0;width:min(264px,100%);z-index:80;visibility:hidden;transform:translateX(100%);transition:transform .22s ease,visibility .22s ease}
   [dir=rtl] .sidebar{transform:translateX(100%)}
-  body.nav-open .sidebar{transform:translateX(0)}
+  body.nav-open .sidebar{transform:translateX(0);visibility:visible}
   .panel-menu{display:block}
   .panel-top{justify-content:flex-start}
 }
@@ -861,7 +861,13 @@ h3{font-size:1.1rem}
 :is(.lesson-nav-link,.workspace-lesson-copy) strong{white-space:normal;overflow:visible;line-height:1.8}
 :is(.workspace-header,.profile-identity)>div{min-width:0}
 :is(.panel-content,.panel-card){overflow:visible}
-.panel-content{gap:1.75rem}
+.panel-content{gap:1.75rem;min-inline-size:0}
+body.is-panel{max-inline-size:100%;overflow-x:clip}
+.panel-body,.panel-content>*{min-inline-size:0;max-inline-size:100%}
+.panel-content :is(p,li,dd,a){overflow-wrap:anywhere}
+.panel-content :is(img,video,canvas,svg){max-inline-size:100%}
+.panel-content pre{max-inline-size:100%;overflow-x:auto}
+.panel-content .table-wrap{max-inline-size:100%;min-inline-size:0}
 .panel-heading{margin-bottom:.25rem}
 .panel-heading p{max-width:75ch;line-height:2}
 .sidebar{height:100dvh;overflow-y:auto;min-height:0}

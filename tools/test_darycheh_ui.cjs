@@ -96,3 +96,8 @@ test('responsive stylesheet preserves motion preferences, focus, RTL and lightwe
   const app = fs.readFileSync(path.join(__dirname, '../public/assets/app.js'), 'utf8');
   assert.ok(app.includes('event.target.matches("form.dr-form")'));
 });
+
+test('panel confines overflow while preserving code and table scrolling', () => {
+  const css = fs.readFileSync(path.join(__dirname, '../public/assets/style.css'), 'utf8');
+  for (const rule of ['body.is-panel{max-inline-size:100%;overflow-x:clip}', '.panel-body,.panel-content>*{min-inline-size:0;max-inline-size:100%}', '.panel-content pre{max-inline-size:100%;overflow-x:auto}', 'width:min(264px,100%)', 'body.nav-open .sidebar{transform:translateX(0);visibility:visible}']) assert.ok(css.includes(rule));
+});

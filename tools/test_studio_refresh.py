@@ -122,7 +122,7 @@ class LayoutStyleTests(unittest.TestCase):
 
     def test_updated_styles_have_cache_versions(self):
         source = (ROOT / 'src/views.php').read_text()
-        for asset in ('style.css?v=5', 'free-course.css?v=3', 'articles.css?v=2'):
+        for asset in ('style.css?v=6', 'free-course.css?v=3', 'articles.css?v=2'):
             self.assertIn(asset, source)
         self.assertIn('workspace.css?v=6', (ROOT / 'src/workspace_views.php').read_text())
 
