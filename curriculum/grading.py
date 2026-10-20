@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parent
 
 
 def version():
-    return hashlib.sha256(b''.join((ROOT / name).read_bytes() for name in ('catalog.json', 'grading.py', 'data/manifest.json'))).hexdigest()
+    return hashlib.sha256(b''.join((ROOT / name).read_bytes() for name in ('catalog.json', 'grading.py', 'data/manifest.json', 'beginner_cases.json'))).hexdigest()
 
 
 def definitions():
@@ -36,6 +36,8 @@ def close(actual, expected):
         return isinstance(actual, dict) and actual.keys() == expected.keys() and all(close(actual[k], v) for k, v in expected.items())
     if isinstance(expected, list):
         return isinstance(actual, list) and len(actual) == len(expected) and all(close(a, b) for a, b in zip(actual, expected))
+    if isinstance(expected, bool):
+        return isinstance(actual, bool) and actual is expected
     if isinstance(expected, (int, float)):
         return type(actual) in (int, float) and math.isfinite(actual) and math.isclose(actual, expected, rel_tol=1e-5, abs_tol=1e-5)
     return actual == expected
@@ -69,6 +71,11 @@ def sales_summary(rows):
 
 def cases(key, seed):
     rng = random.Random(seed)
+    beginner = json.loads((ROOT / 'beginner_cases.json').read_text())
+    if key in beginner:
+        examples = beginner[key]
+        rng.shuffle(examples)
+        return examples
     ml_aliases = {
         'calculator': ('housing.csv', 'price', 'regression'),
         'grades': ('iris.csv', 'species', 'classification'),

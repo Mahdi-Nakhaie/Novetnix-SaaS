@@ -39,7 +39,7 @@ function route(): void {
         page_article($article); return;
     }
     if (str_starts_with($path,'course/')) { page_course(trim(substr($path,7))); return; }
-    if ($path==='projects') { head_page('پروژه‌ها','پروژه‌های واقعی پایتون، علم داده و هوش مصنوعی برای تبدیل دانش به مهارت.'); notice(); page_projects(); foot_page(); return; }
+    if ($path==='projects') { head_page('پروژه‌ها','پروژه‌های واقعی پایتون، علم داده و هوش مصنوعی برای تبدیل دانش به مهارت.',false,true); notice(); page_projects(); foot_page(); return; }
     if (str_starts_with($path,'project/')) { page_project(substr($path,8)); return; }
     if ($path==='pricing') { head_page('قیمت‌گذاری','امکانات فعال و وضعیت پلن‌های یادگیری Noventix.'); notice(); if (COMMERCE_ENABLED) page_pricing(); else commerce_paused(); foot_page(); return; }
     if ($path==='about') { head_page('درباره ما','داستان، رویکرد آموزشی و اصول تجربه یادگیری در Noventix.'); notice(); page_about(); foot_page(); return; }
@@ -164,7 +164,9 @@ function page_course(string $slug): void {
     echo '<div class="cta-panel course-final-cta"><span class="eyebrow">قدم بعدی</span><h2>آماده‌ای شروع کنی؟</h2><p>از اولین Lesson شروع کن و قدم‌به‌قدم جلو برو.</p>'; course_start_action($course,$me,$enrolled,'btn btn-light'); echo '</div></section></main>'; foot_page();
 }
 function page_projects(): void {
-    echo '<main><section class="page-hero container"><span class="eyebrow">پروژه‌ها</span><h1>یادگیری با ساختن، نه فقط خواندن</h1><p>هر پروژه یک مسئله واقعی با ورودی، خروجی و معیار موفقیت روشن است.</p></section><section class="section container">'; project_cards(); echo '</section></main>';
+    echo '<main><section class="page-hero container"><span class="eyebrow">پروژه‌ها</span><h1>یادگیری با ساختن، نه فقط خواندن</h1><p>'.fa(count(PROJECTS)).' پروژه؛ از ۲۴ تمرین پایتون مقدماتی تا یادگیری ماشین، با پیش‌نیاز، ورودی، خروجی و ارزیابی واقعی.</p>';
+    linkto('articles/python-basics-hello','اولین بار است پایتون می‌نویسید؟ از اینجا شروع کنید','btn btn-primary');
+    echo '</section><section class="section container">'; project_cards(); echo '</section></main>';
 }
 function page_project(string $index): void {
     global $me,$plan;

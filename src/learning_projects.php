@@ -12,7 +12,7 @@ function lp_weekly_challenge(?int $now=null): array {
 }
 function lp_version(): string {
     $root=dirname(__DIR__).'/curriculum/';
-    return hash('sha256',file_get_contents($root.'catalog.json').file_get_contents($root.'grading.py').file_get_contents($root.'data/manifest.json'));
+    return hash('sha256',file_get_contents($root.'catalog.json').file_get_contents($root.'grading.py').file_get_contents($root.'data/manifest.json').file_get_contents($root.'beginner_cases.json'));
 }
 function lp_definition(int $catalogIndex): ?array { return lp_catalog()[$catalogIndex-100] ?? null; }
 function lp_starter(array $definition): array {

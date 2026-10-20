@@ -5,8 +5,21 @@
     "seo_title": "هوش مصنوعی چیست؟ راهنمای عملی شروع یادگیری",
     "description": "هوش مصنوعی را با مثال روشن بشناسید؛ تفاوت AI و یادگیری ماشین، مهارت‌های لازم، انتخاب پروژه، خط مبنا و محدودیت‌های مدل را قدم‌به‌قدم بررسی کنید.",
     "category": "مبانی هوش مصنوعی",
-    "sources": [{"title": "CramAI؛ سازوکار هوش مصنوعی", "url": "https://www.cramai.net/fa/blog/ai-how-does-it-work-a-beginners-guide/"}, {"title": "هوش نو؛ معرفی مفاهیم پایه", "url": "https://hoosheno.com/blog/what-is-artificial-intelligence-beginners-guide"}],
-    "related": ["python-for-data", "machine-learning", "model-evaluation"]
+    "sources": [
+      {
+        "title": "CramAI؛ سازوکار هوش مصنوعی",
+        "url": "https://www.cramai.net/fa/blog/ai-how-does-it-work-a-beginners-guide/"
+      },
+      {
+        "title": "هوش نو؛ معرفی مفاهیم پایه",
+        "url": "https://hoosheno.com/blog/what-is-artificial-intelligence-beginners-guide"
+      }
+    ],
+    "related": [
+      "python-for-data",
+      "machine-learning",
+      "model-evaluation"
+    ]
   },
   {
     "slug": "python-for-data",
@@ -14,8 +27,21 @@
     "seo_title": "آموزش پایتون برای تحلیل داده با پروژهٔ فروش",
     "description": "پایتون را با یک پروژهٔ فروش یاد بگیرید؛ محیط مجازی، متغیر، شرط، حلقه، تابع، CSV و آزمون را تمرین کنید و برای کار با NumPy و Pandas آماده شوید.",
     "category": "پایتون",
-    "sources": [{"title": "یول آکادمی؛ مسیر مقدماتی پایتون", "url": "https://yolacademy.ir/python-course.html"}, {"title": "آی‌آر سورس کد؛ تابع و دیکشنری", "url": "https://irsourcecode.com/python-basics-part-3/"}],
-    "related": ["numpy-arrays", "pandas-cleaning", "sql-for-analysis"]
+    "sources": [
+      {
+        "title": "یول آکادمی؛ مسیر مقدماتی پایتون",
+        "url": "https://yolacademy.ir/python-course.html"
+      },
+      {
+        "title": "آی‌آر سورس کد؛ تابع و دیکشنری",
+        "url": "https://irsourcecode.com/python-basics-part-3/"
+      }
+    ],
+    "related": [
+      "numpy-arrays",
+      "pandas-cleaning",
+      "sql-for-analysis"
+    ]
   },
   {
     "slug": "math-for-ml",
@@ -23,8 +49,21 @@
     "seo_title": "ریاضیات یادگیری ماشین؛ راهنمای کاربردی مبتدیان",
     "description": "ریاضیات لازم برای یادگیری ماشین را با مثال عملی بفهمید؛ بردار، ماتریس، آمار، احتمال شرطی، گرادیان و خطا را به پروژه و ارزیابی درست مدل وصل کنید.",
     "category": "ریاضی و آمار",
-    "sources": [{"title": "دیتایاد؛ مرور ریاضیات یادگیری ماشین", "url": "https://datayad.com/math-for-machine-learning-summary/"}, {"title": "پارس اینفوتک؛ پیش‌نیازهای ریاضی", "url": "https://parsinfotech.com/teaching-mathematics-for-machine-learning/"}],
-    "related": ["numpy-arrays", "machine-learning", "model-evaluation"]
+    "sources": [
+      {
+        "title": "دیتایاد؛ مرور ریاضیات یادگیری ماشین",
+        "url": "https://datayad.com/math-for-machine-learning-summary/"
+      },
+      {
+        "title": "پارس اینفوتک؛ پیش‌نیازهای ریاضی",
+        "url": "https://parsinfotech.com/teaching-mathematics-for-machine-learning/"
+      }
+    ],
+    "related": [
+      "numpy-arrays",
+      "machine-learning",
+      "model-evaluation"
+    ]
   },
   {
     "slug": "numpy-arrays",
@@ -32,8 +71,21 @@
     "seo_title": "آموزش NumPy؛ آرایه و Broadcasting به زبان ساده",
     "description": "NumPy را با جدول فروش تمرین کنید؛ shape، dtype، محور، برش، Broadcasting، کپی و استانداردسازی را یاد بگیرید و از خطاهای عددی و نشت داده دور بمانید.",
     "category": "محاسبات عددی",
-    "sources": [{"title": "مستندات NumPy؛ قوانین Broadcasting", "url": "https://numpy.org/doc/stable/user/basics.broadcasting.html?highlight=indices"}, {"title": "Programiz؛ مثال‌های Broadcasting", "url": "https://www.programiz.com/python-programming/numpy/broadcasting"}],
-    "related": ["math-for-ml", "pandas-cleaning", "machine-learning"]
+    "sources": [
+      {
+        "title": "مستندات NumPy؛ قوانین Broadcasting",
+        "url": "https://numpy.org/doc/stable/user/basics.broadcasting.html?highlight=indices"
+      },
+      {
+        "title": "Programiz؛ مثال‌های Broadcasting",
+        "url": "https://www.programiz.com/python-programming/numpy/broadcasting"
+      }
+    ],
+    "related": [
+      "math-for-ml",
+      "pandas-cleaning",
+      "machine-learning"
+    ]
   },
   {
     "slug": "pandas-cleaning",
@@ -41,8 +93,21 @@
     "seo_title": "پاک‌سازی داده با Pandas؛ راهنمای عملی و اصولی",
     "description": "پاک‌سازی داده با Pandas را اصولی انجام دهید؛ نوع ستون، مقدار خالی، تکرار، متن فارسی، مقدار پرت و merge را با مثال عملی و گزارش کیفیت بررسی کنید.",
     "category": "تحلیل داده",
-    "sources": [{"title": "راهنمای رسمی pandas", "url": "https://pandas.pydata.org/docs/user_guide/index.html?highlight=reset"}, {"title": "Programiz؛ پاک‌سازی داده", "url": "https://www.programiz.com/python-programming/pandas/data-cleaning"}],
-    "related": ["python-for-data", "sql-for-analysis", "data-visualization"]
+    "sources": [
+      {
+        "title": "راهنمای رسمی pandas",
+        "url": "https://pandas.pydata.org/docs/user_guide/index.html?highlight=reset"
+      },
+      {
+        "title": "Programiz؛ پاک‌سازی داده",
+        "url": "https://www.programiz.com/python-programming/pandas/data-cleaning"
+      }
+    ],
+    "related": [
+      "python-for-data",
+      "sql-for-analysis",
+      "data-visualization"
+    ]
   },
   {
     "slug": "data-visualization",
@@ -50,8 +115,21 @@
     "seo_title": "مصورسازی داده با Matplotlib و Seaborn؛ راهنمای عملی",
     "description": "برای سؤال تحلیلی خود نمودار درست انتخاب کنید؛ رسم با Matplotlib و Seaborn، محور، رنگ، تجمیع، متن فارسی و خطاهای رایج گزارش را کاربردی بیاموزید.",
     "category": "مصورسازی داده",
-    "sources": [{"title": "مستندات Seaborn؛ معرفی و تخمین آماری", "url": "https://seaborn.pydata.org/tutorial/introduction.html"}, {"title": "آکادمی آی‌تی؛ نمودار تحلیلی", "url": "https://academyit.net/articles/diagram-building-tutorial-for-data-analysis-in-python"}],
-    "related": ["pandas-cleaning", "sql-for-analysis", "model-evaluation"]
+    "sources": [
+      {
+        "title": "مستندات Seaborn؛ معرفی و تخمین آماری",
+        "url": "https://seaborn.pydata.org/tutorial/introduction.html"
+      },
+      {
+        "title": "آکادمی آی‌تی؛ نمودار تحلیلی",
+        "url": "https://academyit.net/articles/diagram-building-tutorial-for-data-analysis-in-python"
+      }
+    ],
+    "related": [
+      "pandas-cleaning",
+      "sql-for-analysis",
+      "model-evaluation"
+    ]
   },
   {
     "slug": "sql-for-analysis",
@@ -59,8 +137,21 @@
     "seo_title": "آموزش SQL برای تحلیل داده؛ JOIN و گزارش‌گیری دقیق",
     "description": "SQL را برای تحلیل داده یاد بگیرید؛ SELECT، NULL، GROUP BY، JOIN و توابع پنجره‌ای را تمرین کنید و از دوباره‌شماری فروش در گزارش‌ها جلوگیری کنید.",
     "category": "پایگاه داده",
-    "sources": [{"title": "SQL Visualizer؛ ترتیب اجرا و اتصال‌ها", "url": "https://sqlvisualizer.pydev.in/learn/"}, {"title": "Knowxis؛ مبانی SQL", "url": "https://knowxis.ir/blog/database/sql-basics-for-devs"}],
-    "related": ["pandas-cleaning", "data-visualization", "python-for-data"]
+    "sources": [
+      {
+        "title": "SQL Visualizer؛ ترتیب اجرا و اتصال‌ها",
+        "url": "https://sqlvisualizer.pydev.in/learn/"
+      },
+      {
+        "title": "Knowxis؛ مبانی SQL",
+        "url": "https://knowxis.ir/blog/database/sql-basics-for-devs"
+      }
+    ],
+    "related": [
+      "pandas-cleaning",
+      "data-visualization",
+      "python-for-data"
+    ]
   },
   {
     "slug": "machine-learning",
@@ -68,8 +159,21 @@
     "seo_title": "یادگیری ماشین چیست؟ ساخت اولین مدل با پایتون",
     "description": "اولین پروژهٔ یادگیری ماشین را اصولی بسازید؛ ویژگی و برچسب، تقسیم داده، خط مبنا، Pipeline، بیش‌برازش و تحلیل خطا را با مثال پایتون تمرین کنید.",
     "category": "یادگیری ماشین",
-    "sources": [{"title": "هوش نما؛ انواع یادگیری ماشین", "url": "https://hoshnuma.com/teaches/article/Machine-Learning/MachineLearning.html"}, {"title": "Knowxis؛ تعریف مسئله و پروژه", "url": "https://knowxis.ir/blog/artificial-intelligence/machine-learning-intro"}],
-    "related": ["math-for-ml", "model-evaluation", "deep-learning"]
+    "sources": [
+      {
+        "title": "هوش نما؛ انواع یادگیری ماشین",
+        "url": "https://hoshnuma.com/teaches/article/Machine-Learning/MachineLearning.html"
+      },
+      {
+        "title": "Knowxis؛ تعریف مسئله و پروژه",
+        "url": "https://knowxis.ir/blog/artificial-intelligence/machine-learning-intro"
+      }
+    ],
+    "related": [
+      "math-for-ml",
+      "model-evaluation",
+      "deep-learning"
+    ]
   },
   {
     "slug": "model-evaluation",
@@ -77,8 +181,25 @@
     "seo_title": "ارزیابی مدل یادگیری ماشین و جلوگیری از نشت داده",
     "description": "ارزیابی مدل را معتبر انجام دهید؛ نشت داده، تقسیم زمانی و گروهی، Precision، Recall، F1 و اعتبارسنجی متقاطع با Pipeline را کاربردی بررسی کنید.",
     "category": "ارزیابی مدل",
-    "sources": [{"title": "scikit-learn؛ خطاهای متداول و Pipeline", "url": "https://scikit-learn.org/1.0/common_pitfalls.html"}, {"title": "AWS؛ جداسازی داده و نشت اطلاعات", "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/ml-operations-planning/splits-leakage.html"}, {"title": "استنفورد؛ راهنمای فارسی معیارها", "url": "https://web.stanford.edu/~shervine/l/fa/teaching/cs-229/cheatsheet-machine-learning-tips-and-tricks/"}],
-    "related": ["machine-learning", "persian-nlp", "fastapi-deployment"]
+    "sources": [
+      {
+        "title": "scikit-learn؛ خطاهای متداول و Pipeline",
+        "url": "https://scikit-learn.org/1.0/common_pitfalls.html"
+      },
+      {
+        "title": "AWS؛ جداسازی داده و نشت اطلاعات",
+        "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/ml-operations-planning/splits-leakage.html"
+      },
+      {
+        "title": "استنفورد؛ راهنمای فارسی معیارها",
+        "url": "https://web.stanford.edu/~shervine/l/fa/teaching/cs-229/cheatsheet-machine-learning-tips-and-tricks/"
+      }
+    ],
+    "related": [
+      "machine-learning",
+      "persian-nlp",
+      "fastapi-deployment"
+    ]
   },
   {
     "slug": "deep-learning",
@@ -86,8 +207,21 @@
     "seo_title": "یادگیری عمیق چیست؟ آموزش شبکهٔ عصبی برای شروع",
     "description": "یادگیری عمیق را با شبکهٔ کوچک بشناسید؛ نورون، فعال‌سازی، زیان، گرادیان، انتقال یادگیری و بیش‌برازش را همراه مثال و معیار ارزیابی درست بیاموزید.",
     "category": "یادگیری عمیق",
-    "sources": [{"title": "هوش نما؛ معماری‌ها و کاربردها", "url": "https://hoshnuma.com/teaches/article/Deep-Learning/Deep-Learning.html"}, {"title": "هوسم؛ مبانی یادگیری عمیق", "url": "https://howsam.org/whats-deeplearning/"}],
-    "related": ["machine-learning", "model-evaluation", "persian-nlp"]
+    "sources": [
+      {
+        "title": "هوش نما؛ معماری‌ها و کاربردها",
+        "url": "https://hoshnuma.com/teaches/article/Deep-Learning/Deep-Learning.html"
+      },
+      {
+        "title": "هوسم؛ مبانی یادگیری عمیق",
+        "url": "https://howsam.org/whats-deeplearning/"
+      }
+    ],
+    "related": [
+      "machine-learning",
+      "model-evaluation",
+      "persian-nlp"
+    ]
   },
   {
     "slug": "persian-nlp",
@@ -95,8 +229,21 @@
     "seo_title": "آموزش NLP فارسی؛ Hazm و تحلیل احساسات با پایتون",
     "description": "پردازش زبان فارسی را از داده تا مدل دنبال کنید؛ نرمال‌سازی با Hazm، نیم‌فاصله، TF-IDF، تحلیل احساسات، نشت متن و ارزیابی خطا را عملی بیاموزید.",
     "category": "پردازش زبان طبیعی",
-    "sources": [{"title": "مستندات رسمی Hazm", "url": "https://www.roshan-ai.ir/hazm/index.html"}, {"title": "راهنمای عملی پیش‌پردازش فارسی", "url": "https://ikos-dighum.github.io/contents/htmls/persian_nlp.html"}],
-    "related": ["python-for-data", "model-evaluation", "fastapi-deployment"]
+    "sources": [
+      {
+        "title": "مستندات رسمی Hazm",
+        "url": "https://www.roshan-ai.ir/hazm/index.html"
+      },
+      {
+        "title": "راهنمای عملی پیش‌پردازش فارسی",
+        "url": "https://ikos-dighum.github.io/contents/htmls/persian_nlp.html"
+      }
+    ],
+    "related": [
+      "python-for-data",
+      "model-evaluation",
+      "fastapi-deployment"
+    ]
   },
   {
     "slug": "fastapi-deployment",
@@ -104,7 +251,524 @@
     "seo_title": "استقرار مدل یادگیری ماشین با FastAPI؛ راهنمای عملی",
     "description": "مدل را با FastAPI به API تبدیل کنید؛ قرارداد ورودی، Pydantic، بارگذاری مدل، آزمون HTTP، امنیت، نسخه‌بندی و پایش را با نمونهٔ آموزشی یاد بگیرید.",
     "category": "استقرار مدل",
-    "sources": [{"title": "مستندات FastAPI؛ نخستین مسیرها", "url": "https://fastapi.tiangolo.com/tutorial/first-steps/"}, {"title": "KDnuggets؛ سرو مدل در API", "url": "https://www.kdnuggets.com/serve-machine-learning-models-via-rest-apis-in-under-10-minutes"}],
-    "related": ["machine-learning", "model-evaluation", "persian-nlp"]
+    "sources": [
+      {
+        "title": "مستندات FastAPI؛ نخستین مسیرها",
+        "url": "https://fastapi.tiangolo.com/tutorial/first-steps/"
+      },
+      {
+        "title": "KDnuggets؛ سرو مدل در API",
+        "url": "https://www.kdnuggets.com/serve-machine-learning-models-via-rest-apis-in-under-10-minutes"
+      }
+    ],
+    "related": [
+      "machine-learning",
+      "model-evaluation",
+      "persian-nlp"
+    ]
+  },
+  {
+    "slug": "python-basics-hello",
+    "title": "نصب و اجرای پایتون؛ اولین برنامه از صفر",
+    "seo_title": "نصب و اجرای پایتون؛ اولین برنامه از صفر",
+    "description": "آموزش قدم‌به‌قدم اجرای اولین تابع و ساخت رشته با نام ورودی؛ با توضیح کد، پیش‌نیازها، خطاهای رایج و تمرین عملی «کارت خوشامدگویی شخصی» برای شروع یادگیری پایتون.",
+    "category": "پایتون از صفر",
+    "series": "python-basics",
+    "sequence": 1,
+    "published_at": "2026-10-20",
+    "sources": [
+      {
+        "title": "مستندات رسمی Python",
+        "url": "https://docs.python.org/3/tutorial/"
+      }
+    ],
+    "related": [
+      "python-for-data",
+      "python-basics-receipt"
+    ],
+    "project_index": 12
+  },
+  {
+    "slug": "python-basics-receipt",
+    "title": "متغیر و عملگر در پایتون؛ محاسبهٔ یک رسید",
+    "seo_title": "متغیر و عملگر در پایتون؛ محاسبهٔ یک رسید",
+    "description": "آموزش قدم‌به‌قدم استفاده از متغیر، ضرب و گردکردن خروجی عددی؛ با توضیح کد، پیش‌نیازها، خطاهای رایج و تمرین عملی «محاسبه‌گر مبلغ خرید» برای شروع یادگیری پایتون.",
+    "category": "پایتون از صفر",
+    "series": "python-basics",
+    "sequence": 2,
+    "published_at": "2026-10-20",
+    "sources": [
+      {
+        "title": "مستندات رسمی Python",
+        "url": "https://docs.python.org/3/tutorial/"
+      }
+    ],
+    "related": [
+      "python-basics-hello",
+      "python-basics-temperature"
+    ],
+    "project_index": 13
+  },
+  {
+    "slug": "python-basics-temperature",
+    "title": "نوع داده و تبدیل واحد؛ از رشته تا عدد",
+    "seo_title": "نوع داده و تبدیل واحد؛ از رشته تا عدد",
+    "description": "آموزش قدم‌به‌قدم شناخت ورودی عددی و انتخاب فرمول با یک شرط؛ با توضیح کد، پیش‌نیازها، خطاهای رایج و تمرین عملی «مبدل دمای سانتی‌گراد و فارنهایت» برای شروع یادگیری پایتون.",
+    "category": "پایتون از صفر",
+    "series": "python-basics",
+    "sequence": 3,
+    "published_at": "2026-10-20",
+    "sources": [
+      {
+        "title": "مستندات رسمی Python",
+        "url": "https://docs.python.org/3/tutorial/"
+      }
+    ],
+    "related": [
+      "python-basics-receipt",
+      "python-basics-conditions"
+    ],
+    "project_index": 14
+  },
+  {
+    "slug": "python-basics-conditions",
+    "title": "شرط‌ها در پایتون؛ if و مرزهای تصمیم",
+    "seo_title": "شرط‌ها در پایتون؛ if و مرزهای تصمیم",
+    "description": "آموزش قدم‌به‌قدم نوشتن شرط با بازهٔ معتبر و آزمودن مرز قبولی؛ با توضیح کد، پیش‌نیازها، خطاهای رایج و تمرین عملی «تشخیص قبولی نمره» برای شروع یادگیری پایتون.",
+    "category": "پایتون از صفر",
+    "series": "python-basics",
+    "sequence": 4,
+    "published_at": "2026-10-20",
+    "sources": [
+      {
+        "title": "مستندات رسمی Python",
+        "url": "https://docs.python.org/3/tutorial/"
+      }
+    ],
+    "related": [
+      "python-basics-temperature",
+      "python-basics-loops"
+    ],
+    "project_index": 15
+  },
+  {
+    "slug": "python-basics-loops",
+    "title": "حلقهٔ for و باقیمانده؛ پردازش چند عدد",
+    "seo_title": "حلقهٔ for و باقیمانده؛ پردازش چند عدد",
+    "description": "آموزش قدم‌به‌قدم پیمایش لیست و ساخت خروجی بدون تغییر ورودی؛ با توضیح کد، پیش‌نیازها، خطاهای رایج و تمرین عملی «جداسازی و جمع اعداد زوج» برای شروع یادگیری پایتون.",
+    "category": "پایتون از صفر",
+    "series": "python-basics",
+    "sequence": 5,
+    "published_at": "2026-10-20",
+    "sources": [
+      {
+        "title": "مستندات رسمی Python",
+        "url": "https://docs.python.org/3/tutorial/"
+      }
+    ],
+    "related": [
+      "python-basics-conditions",
+      "python-basics-lists"
+    ],
+    "project_index": 16
+  },
+  {
+    "slug": "python-basics-lists",
+    "title": "لیست در پایتون؛ طول، کمینه، بیشینه و میانگین",
+    "seo_title": "لیست در پایتون؛ طول، کمینه، بیشینه و میانگین",
+    "description": "آموزش قدم‌به‌قدم استفاده از توابع داخلی با مدیریت لیست خالی؛ با توضیح کد، پیش‌نیازها، خطاهای رایج و تمرین عملی «خلاصه‌ساز فهرست اندازه‌گیری‌ها» برای شروع یادگیری پایتون.",
+    "category": "پایتون از صفر",
+    "series": "python-basics",
+    "sequence": 6,
+    "published_at": "2026-10-20",
+    "sources": [
+      {
+        "title": "مستندات رسمی Python",
+        "url": "https://docs.python.org/3/tutorial/"
+      }
+    ],
+    "related": [
+      "python-basics-loops",
+      "python-basics-strings"
+    ],
+    "project_index": 17
+  },
+  {
+    "slug": "python-basics-strings",
+    "title": "رشته‌ها و متن فارسی؛ شمارش واژه با split",
+    "seo_title": "رشته‌ها و متن فارسی؛ شمارش واژه با split",
+    "description": "آموزش قدم‌به‌قدم تبدیل متن به واژه و ساخت فراوانی با دیکشنری؛ با توضیح کد، پیش‌نیازها، خطاهای رایج و تمرین عملی «شمارندهٔ واژه‌های متن» برای شروع یادگیری پایتون.",
+    "category": "پایتون از صفر",
+    "series": "python-basics",
+    "sequence": 7,
+    "published_at": "2026-10-20",
+    "sources": [
+      {
+        "title": "مستندات رسمی Python",
+        "url": "https://docs.python.org/3/tutorial/"
+      }
+    ],
+    "related": [
+      "python-basics-lists",
+      "python-basics-search"
+    ],
+    "project_index": 18
+  },
+  {
+    "slug": "python-basics-search",
+    "title": "فیلترکردن لیست؛ جست‌وجوی متنی قابل پیش‌بینی",
+    "seo_title": "فیلترکردن لیست؛ جست‌وجوی متنی قابل پیش‌بینی",
+    "description": "آموزش قدم‌به‌قدم ترکیب شرط و پیمایش برای جست‌وجوی بدون حساسیت به حروف؛ با توضیح کد، پیش‌نیازها، خطاهای رایج و تمرین عملی «جست‌وجو در عنوان کتاب‌ها» برای شروع یادگیری پایتون.",
+    "category": "پایتون از صفر",
+    "series": "python-basics",
+    "sequence": 8,
+    "published_at": "2026-10-20",
+    "sources": [
+      {
+        "title": "مستندات رسمی Python",
+        "url": "https://docs.python.org/3/tutorial/"
+      }
+    ],
+    "related": [
+      "python-basics-strings",
+      "python-basics-dictionary"
+    ],
+    "project_index": 19
+  },
+  {
+    "slug": "python-basics-dictionary",
+    "title": "دیکشنری در پایتون؛ کلید، مقدار و تجمیع",
+    "seo_title": "دیکشنری در پایتون؛ کلید، مقدار و تجمیع",
+    "description": "آموزش قدم‌به‌قدم تجمیع تعداد کالاهای تکراری با کلید رشته‌ای؛ با توضیح کد، پیش‌نیازها، خطاهای رایج و تمرین عملی «دفتر موجودی کالا» برای شروع یادگیری پایتون.",
+    "category": "پایتون از صفر",
+    "series": "python-basics",
+    "sequence": 9,
+    "published_at": "2026-10-20",
+    "sources": [
+      {
+        "title": "مستندات رسمی Python",
+        "url": "https://docs.python.org/3/tutorial/"
+      }
+    ],
+    "related": [
+      "python-basics-search",
+      "python-basics-functions"
+    ],
+    "project_index": 20
+  },
+  {
+    "slug": "python-basics-functions",
+    "title": "تابع در پایتون؛ ورودی، خروجی و مسئولیت مشخص",
+    "seo_title": "تابع در پایتون؛ ورودی، خروجی و مسئولیت مشخص",
+    "description": "آموزش قدم‌به‌قدم جداکردن محاسبهٔ جمع و اعمال تخفیف در تابع؛ با توضیح کد، پیش‌نیازها، خطاهای رایج و تمرین عملی «سبد خرید با تخفیف» برای شروع یادگیری پایتون.",
+    "category": "پایتون از صفر",
+    "series": "python-basics",
+    "sequence": 10,
+    "published_at": "2026-10-20",
+    "sources": [
+      {
+        "title": "مستندات رسمی Python",
+        "url": "https://docs.python.org/3/tutorial/"
+      }
+    ],
+    "related": [
+      "python-basics-dictionary",
+      "python-basics-boolean"
+    ],
+    "project_index": 21
+  },
+  {
+    "slug": "python-basics-boolean",
+    "title": "منطق بولی و any؛ ساخت یک بررسی‌گر آموزشی",
+    "seo_title": "منطق بولی و any؛ ساخت یک بررسی‌گر آموزشی",
+    "description": "آموزش قدم‌به‌قدم ترکیب شرط‌ها و گزارش جداگانهٔ هر قاعده؛ با توضیح کد، پیش‌نیازها، خطاهای رایج و تمرین عملی «بررسی قواعد رشتهٔ آزمایشی» برای شروع یادگیری پایتون.",
+    "category": "پایتون از صفر",
+    "series": "python-basics",
+    "sequence": 11,
+    "published_at": "2026-10-20",
+    "sources": [
+      {
+        "title": "مستندات رسمی Python",
+        "url": "https://docs.python.org/3/tutorial/"
+      }
+    ],
+    "related": [
+      "python-basics-functions",
+      "python-basics-sets"
+    ],
+    "project_index": 22
+  },
+  {
+    "slug": "python-basics-sets",
+    "title": "مجموعه و حذف تکرار؛ حفظ ترتیب داده‌ها",
+    "seo_title": "مجموعه و حذف تکرار؛ حفظ ترتیب داده‌ها",
+    "description": "آموزش قدم‌به‌قدم استفاده از set برای تشخیص تکرار و list برای حفظ ترتیب؛ با توضیح کد، پیش‌نیازها، خطاهای رایج و تمرین عملی «فهرست یکتای شرکت‌کنندگان» برای شروع یادگیری پایتون.",
+    "category": "پایتون از صفر",
+    "series": "python-basics",
+    "sequence": 12,
+    "published_at": "2026-10-20",
+    "sources": [
+      {
+        "title": "مستندات رسمی Python",
+        "url": "https://docs.python.org/3/tutorial/"
+      }
+    ],
+    "related": [
+      "python-basics-boolean",
+      "python-basics-reports"
+    ],
+    "project_index": 23
+  },
+  {
+    "slug": "python-basics-reports",
+    "title": "شکستن مسئله به تابع‌ها؛ گزارش نمرات",
+    "seo_title": "شکستن مسئله به تابع‌ها؛ گزارش نمرات",
+    "description": "آموزش قدم‌به‌قدم ترکیب اعتبارسنجی، شمارش و میانگین در یک گزارش؛ با توضیح کد، پیش‌نیازها، خطاهای رایج و تمرین عملی «کارنامهٔ خلاصهٔ کلاس» برای شروع یادگیری پایتون.",
+    "category": "پایتون از صفر",
+    "series": "python-basics",
+    "sequence": 13,
+    "published_at": "2026-10-20",
+    "sources": [
+      {
+        "title": "مستندات رسمی Python",
+        "url": "https://docs.python.org/3/tutorial/"
+      }
+    ],
+    "related": [
+      "python-basics-sets",
+      "python-basics-unicode"
+    ],
+    "project_index": 24
+  },
+  {
+    "slug": "python-basics-unicode",
+    "title": "یونیکد و translate؛ عادی‌سازی رقم‌های فارسی",
+    "seo_title": "یونیکد و translate؛ عادی‌سازی رقم‌های فارسی",
+    "description": "آموزش قدم‌به‌قدم تبدیل رقم فارسی و عربی به انگلیسی بدون تغییر طول؛ با توضیح کد، پیش‌نیازها، خطاهای رایج و تمرین عملی «پاک‌ساز شناسهٔ عددی ساختگی» برای شروع یادگیری پایتون.",
+    "category": "پایتون از صفر",
+    "series": "python-basics",
+    "sequence": 14,
+    "published_at": "2026-10-20",
+    "sources": [
+      {
+        "title": "مستندات رسمی Python",
+        "url": "https://docs.python.org/3/tutorial/"
+      }
+    ],
+    "related": [
+      "python-basics-reports",
+      "python-basics-csv"
+    ],
+    "project_index": 25
+  },
+  {
+    "slug": "python-basics-csv",
+    "title": "کتابخانهٔ استاندارد csv؛ خواندن جدول بدون نصب بسته",
+    "seo_title": "کتابخانهٔ استاندارد csv؛ خواندن جدول بدون نصب بسته",
+    "description": "آموزش قدم‌به‌قدم خواندن جدول با DictReader و تبدیل صریح عددها؛ با توضیح کد، پیش‌نیازها، خطاهای رایج و تمرین عملی «گزارش فروش از متن CSV» برای شروع یادگیری پایتون.",
+    "category": "پایتون از صفر",
+    "series": "python-basics",
+    "sequence": 15,
+    "published_at": "2026-10-20",
+    "sources": [
+      {
+        "title": "مستندات رسمی Python",
+        "url": "https://docs.python.org/3/library/csv.html"
+      }
+    ],
+    "related": [
+      "python-basics-unicode",
+      "python-basics-json"
+    ],
+    "project_index": 26
+  },
+  {
+    "slug": "python-basics-json",
+    "title": "JSON و تنظیمات؛ تفاوت متن و ساختار داده",
+    "seo_title": "JSON و تنظیمات؛ تفاوت متن و ساختار داده",
+    "description": "آموزش قدم‌به‌قدم تبدیل JSON به دیکشنری و ادغام با مقدارهای پیش‌فرض؛ با توضیح کد، پیش‌نیازها، خطاهای رایج و تمرین عملی «بارگذاری تنظیمات برنامه» برای شروع یادگیری پایتون.",
+    "category": "پایتون از صفر",
+    "series": "python-basics",
+    "sequence": 16,
+    "published_at": "2026-10-20",
+    "sources": [
+      {
+        "title": "مستندات رسمی Python",
+        "url": "https://docs.python.org/3/library/json.html"
+      }
+    ],
+    "related": [
+      "python-basics-csv",
+      "python-basics-paths"
+    ],
+    "project_index": 27
+  },
+  {
+    "slug": "python-basics-paths",
+    "title": "pathlib و نام فایل؛ مسیر را مثل داده پردازش کنید",
+    "seo_title": "pathlib و نام فایل؛ مسیر را مثل داده پردازش کنید",
+    "description": "آموزش قدم‌به‌قدم شناخت stem و suffix بدون دسترسی به دیسک؛ با توضیح کد، پیش‌نیازها، خطاهای رایج و تمرین عملی «فهرست‌ساز پسوند فایل‌ها» برای شروع یادگیری پایتون.",
+    "category": "پایتون از صفر",
+    "series": "python-basics",
+    "sequence": 17,
+    "published_at": "2026-10-20",
+    "sources": [
+      {
+        "title": "مستندات رسمی Python",
+        "url": "https://docs.python.org/3/library/pathlib.html"
+      }
+    ],
+    "related": [
+      "python-basics-json",
+      "python-basics-exceptions"
+    ],
+    "project_index": 28
+  },
+  {
+    "slug": "python-basics-exceptions",
+    "title": "خطایابی در پایتون؛ try و except هدفمند",
+    "seo_title": "خطایابی در پایتون؛ try و except هدفمند",
+    "description": "آموزش قدم‌به‌قدم گزارش ورودی‌های نامعتبر بدون پنهان‌کردن خطاهای برنامه؛ با توضیح کد، پیش‌نیازها، خطاهای رایج و تمرین عملی «مبدل امن متن به عدد صحیح» برای شروع یادگیری پایتون.",
+    "category": "پایتون از صفر",
+    "series": "python-basics",
+    "sequence": 18,
+    "published_at": "2026-10-20",
+    "sources": [
+      {
+        "title": "مستندات رسمی Python",
+        "url": "https://docs.python.org/3/tutorial/errors.html"
+      }
+    ],
+    "related": [
+      "python-basics-paths",
+      "python-basics-dates"
+    ],
+    "project_index": 29
+  },
+  {
+    "slug": "python-basics-dates",
+    "title": "تاریخ در پایتون؛ محاسبهٔ فاصلهٔ روزها",
+    "seo_title": "تاریخ در پایتون؛ محاسبهٔ فاصلهٔ روزها",
+    "description": "آموزش قدم‌به‌قدم پردازش تاریخ ISO با کتابخانهٔ استاندارد datetime؛ با توضیح کد، پیش‌نیازها، خطاهای رایج و تمرین عملی «شمارندهٔ روز تا موعد» برای شروع یادگیری پایتون.",
+    "category": "پایتون از صفر",
+    "series": "python-basics",
+    "sequence": 19,
+    "published_at": "2026-10-20",
+    "sources": [
+      {
+        "title": "مستندات رسمی Python",
+        "url": "https://docs.python.org/3/library/datetime.html"
+      }
+    ],
+    "related": [
+      "python-basics-exceptions",
+      "python-basics-statistics"
+    ],
+    "project_index": 30
+  },
+  {
+    "slug": "python-basics-statistics",
+    "title": "ماژول statistics؛ میانگین و میانه چه فرقی دارند؟",
+    "seo_title": "ماژول statistics؛ میانگین و میانه چه فرقی دارند؟",
+    "description": "آموزش قدم‌به‌قدم مقایسهٔ mean و median روی دادهٔ دارای مقدار بزرگ؛ با توضیح کد، پیش‌نیازها، خطاهای رایج و تمرین عملی «گزارش مقاوم زمان مطالعه» برای شروع یادگیری پایتون.",
+    "category": "پایتون از صفر",
+    "series": "python-basics",
+    "sequence": 20,
+    "published_at": "2026-10-20",
+    "sources": [
+      {
+        "title": "مستندات رسمی Python",
+        "url": "https://docs.python.org/3/library/statistics.html"
+      }
+    ],
+    "related": [
+      "python-basics-dates",
+      "python-basics-decimal"
+    ],
+    "project_index": 31
+  },
+  {
+    "slug": "python-basics-decimal",
+    "title": "Decimal و دقت مالی؛ گردکردن را صریح تعریف کنید",
+    "seo_title": "Decimal و دقت مالی؛ گردکردن را صریح تعریف کنید",
+    "description": "آموزش قدم‌به‌قدم محاسبهٔ مبلغ با Decimal و قالب خروجی دو رقم اعشار؛ با توضیح کد، پیش‌نیازها، خطاهای رایج و تمرین عملی «فاکتور دقیق با اعشار ده‌دهی» برای شروع یادگیری پایتون.",
+    "category": "پایتون از صفر",
+    "series": "python-basics",
+    "sequence": 21,
+    "published_at": "2026-10-20",
+    "sources": [
+      {
+        "title": "مستندات رسمی Python",
+        "url": "https://docs.python.org/3/library/decimal.html"
+      }
+    ],
+    "related": [
+      "python-basics-statistics",
+      "python-basics-testing"
+    ],
+    "project_index": 32
+  },
+  {
+    "slug": "python-basics-testing",
+    "title": "تست تابع در پایتون؛ assert و مثال نقض",
+    "seo_title": "تست تابع در پایتون؛ assert و مثال نقض",
+    "description": "آموزش قدم‌به‌قدم ساخت تابع مستقل و بررسی ورودی‌های مرزی؛ با توضیح کد، پیش‌نیازها، خطاهای رایج و تمرین عملی «تشخیص عدد اول با آزمون مرزی» برای شروع یادگیری پایتون.",
+    "category": "پایتون از صفر",
+    "series": "python-basics",
+    "sequence": 22,
+    "published_at": "2026-10-20",
+    "sources": [
+      {
+        "title": "مستندات رسمی Python",
+        "url": "https://docs.python.org/3/library/unittest.html"
+      }
+    ],
+    "related": [
+      "python-basics-decimal",
+      "python-basics-numpy"
+    ],
+    "project_index": 33
+  },
+  {
+    "slug": "python-basics-numpy",
+    "title": "محیط مجازی، pip و شروع NumPy از صفر",
+    "seo_title": "محیط مجازی، pip و شروع NumPy از صفر",
+    "description": "آموزش قدم‌به‌قدم ساخت آرایه، محاسبهٔ برداری و تبدیل خروجی به نوع JSON؛ با توضیح کد، پیش‌نیازها، خطاهای رایج و تمرین عملی «گزارش عددی با آرایهٔ NumPy» برای شروع یادگیری پایتون.",
+    "category": "پایتون از صفر",
+    "series": "python-basics",
+    "sequence": 23,
+    "published_at": "2026-10-20",
+    "sources": [
+      {
+        "title": "مستندات رسمی numpy",
+        "url": "https://numpy.org/doc/stable/user/absolute_beginners.html"
+      }
+    ],
+    "related": [
+      "python-basics-testing",
+      "python-basics-pandas"
+    ],
+    "project_index": 34
+  },
+  {
+    "slug": "python-basics-pandas",
+    "title": "شروع Pandas؛ از دیکشنری تا DataFrame و groupby",
+    "seo_title": "شروع Pandas؛ از دیکشنری تا DataFrame و groupby",
+    "description": "آموزش قدم‌به‌قدم ساخت جدول و تجمیع مبلغ بر اساس دسته؛ با توضیح کد، پیش‌نیازها، خطاهای رایج و تمرین عملی «گزارش دسته‌های هزینه با Pandas» برای شروع یادگیری پایتون.",
+    "category": "پایتون از صفر",
+    "series": "python-basics",
+    "sequence": 24,
+    "published_at": "2026-10-20",
+    "sources": [
+      {
+        "title": "مستندات رسمی pandas",
+        "url": "https://pandas.pydata.org/docs/getting_started/intro_tutorials/index.html"
+      }
+    ],
+    "related": [
+      "python-basics-numpy",
+      "pandas-cleaning"
+    ],
+    "project_index": 35
   }
 ]

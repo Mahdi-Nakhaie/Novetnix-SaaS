@@ -15,7 +15,7 @@ PHP = os.environ.get('PHP_BIN') or shutil.which('php')
 
 
 def reference_executor(job, image, cancelled):
-    with tempfile.TemporaryDirectory(dir=ROOT / 'storage/tooling/tmp') as directory:
+    with tempfile.TemporaryDirectory(dir=ROOT / 'outputs') as directory:
         folder = Path(directory)
         for name, item in job['files'].items():
             if item['kind'] == 'file':
@@ -28,11 +28,13 @@ def reference_executor(job, image, cancelled):
 
 
 class ReferenceTests(unittest.TestCase):
-    def test_catalog_contains_twelve_dataset_backed_ml_projects(self):
+    def test_catalog_preserves_ml_and_adds_beginner_projects(self):
         catalog = json.loads((ROOT / 'curriculum/catalog.json').read_text(encoding='utf-8'))
-        self.assertEqual(len(catalog), 12)
-        self.assertTrue(all(item['topic'] == 'Machine Learning' for item in catalog))
-        self.assertTrue(all(item['datasets'] for item in catalog))
+        self.assertEqual(len(catalog), 36)
+        self.assertTrue(all(item['topic'] == 'Machine Learning' for item in catalog[:12]))
+        self.assertTrue(all(item['datasets'] for item in catalog[:12]))
+        self.assertTrue(all(item['topic'] == 'Python' and item['prerequisite_articles'] for item in catalog[12:]))
+        self.assertEqual(len({item['key'] for item in catalog}), 36)
         self.assertTrue(all((ROOT / 'curriculum/data' / name).is_file() for item in catalog for name in item['datasets']))
         self.assertEqual({item['key'] for item in catalog}, {item['key'] for item in grading.definitions()})
 

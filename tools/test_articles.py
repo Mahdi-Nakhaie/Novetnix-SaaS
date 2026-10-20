@@ -50,21 +50,23 @@ class Document(HTMLParser):
 
 
 class ArticleContentTest(unittest.TestCase):
-    def test_twelve_independent_long_form_articles_and_metadata(self):
-        self.assertEqual(len(CATALOG), 12)
+    def test_original_long_form_and_beginner_articles_and_metadata(self):
+        self.assertEqual(len(CATALOG), 36)
+        self.assertEqual(sum(a.get('series') == 'python-basics' for a in CATALOG), 24)
         for key in ('slug', 'title', 'seo_title', 'description'):
-            self.assertEqual(len({a[key] for a in CATALOG}), 12)
+            self.assertEqual(len({a[key] for a in CATALOG}), 36)
         for article in CATALOG:
             with self.subTest(article=article['slug']):
                 self.assertRegex(article['slug'], r'^[a-z0-9-]+$')
                 text = (CONTENT / (article['slug'] + '.txt')).read_text()
                 words = prose(text).split()
-                self.assertGreaterEqual(len(words), 1850)
-                self.assertLessEqual(len(words), 2200)
-                self.assertGreaterEqual(len(article['description']), 140)
-                self.assertLessEqual(len(article['description']), 160)
+                beginner = article.get('series') == 'python-basics'
+                self.assertGreaterEqual(len(words), 450 if beginner else 1850)
+                self.assertLessEqual(len(words), 800 if beginner else 2200)
+                self.assertGreaterEqual(len(article['description']), 90 if beginner else 140)
+                self.assertLessEqual(len(article['description']), 220 if beginner else 160)
                 self.assertLessEqual(len(article['seo_title'] + ' | Noventix'), 65)
-                self.assertGreaterEqual(text.count('\n## '), 12)
+                self.assertGreaterEqual(text.count('\n## '), 7 if beginner else 12)
                 self.assertGreaterEqual(text.count('\n### '), 2)
                 paragraphs = [p for p in prose(text).split('\n\n') if len(p.split()) > 30]
                 self.assertEqual(len(paragraphs), len(set(paragraphs)))
@@ -97,7 +99,7 @@ class ArticleContentTest(unittest.TestCase):
     def test_research_does_not_disguise_unavailable_sources_as_completed(self):
         report = json.loads((ROOT / 'outputs/research/reviews.json').read_text())
         counts = collections.Counter(r['topic'] for r in report['reviews'])
-        self.assertEqual(set(counts), {a['slug'] for a in CATALOG})
+        self.assertEqual(set(counts), {a['slug'] for a in CATALOG if a.get('series') != 'python-basics'})
         self.assertTrue(all(count == 10 for count in counts.values()))
         allowed = {'extracted', 'unavailable', 'insufficient_content', 'not_html'}
         self.assertTrue(all(r['review_status'] in allowed for r in report['reviews']))
@@ -166,7 +168,7 @@ class ArticleHttpTest(unittest.TestCase):
                 schema, breadcrumbs = document.json_ld[0]['@graph']
                 self.assertEqual(schema['@type'], 'Article')
                 self.assertEqual(schema['headline'], article['title'])
-                self.assertGreaterEqual(schema['wordCount'], 1850)
+                self.assertGreaterEqual(schema['wordCount'], 450 if article.get('series') == 'python-basics' else 1850)
                 self.assertEqual(breadcrumbs['@type'], 'BreadcrumbList')
                 self.assertEqual(breadcrumbs['itemListElement'][-1]['item'], head.canonical)
                 for source in article['sources']:

@@ -1,0 +1,13 @@
+def solve(data):
+    score = data['score']
+    if not 0 <= score <= 20:
+        return {'error': 'invalid_score'}
+    return {'passed': score >= 10}
+
+if __name__ == '__main__':
+    import json
+    from pathlib import Path
+    data = json.loads(Path('request.json').read_text(encoding='utf-8'))
+    result = solve(data)
+    Path('result.json').write_text(json.dumps(result, ensure_ascii=False, allow_nan=False), encoding='utf-8')
+    print(result)

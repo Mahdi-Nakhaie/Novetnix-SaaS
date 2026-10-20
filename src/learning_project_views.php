@@ -13,12 +13,19 @@ function lp_progress_view(int $userId): void {
 function lp_page(int $index): void {
     global $me;
     $p=PROJECTS[$index];
-    head_page($p['title'],$p['description']); notice();
+    head_page($p['title'],$p['description'],false,true); notice();
     echo '<main class="article"><div class="container narrow-container"><span class="eyebrow">'.h($p['topic']).' · '.h($p['level']).'</span><h1>'.h($p['title']).'</h1><p class="lead">'.h($p['description']).'</p><p>'.fa($p['minutes']).' دقیقه · '.fa($p['xp']).' XP · '.h($p['skills']).'</p><section class="panel-card"><h2>هدف و راهنمای انجام</h2><p>'.h($p['goal']).'</p><h3>ورودی</h3><p>'.h($p['input']).'</p><h3>خروجی</h3><p>'.h($p['output']).'</p><ol>';
     foreach ($p['steps'] as $step) echo '<li>'.h($step).'</li>';
     echo '</ol><p>'.h($p['notes']).'</p><h3>مثال ورودی و خروجی</h3><pre class="lp-output" dir="ltr">'.h(json_encode($p['example'],JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE)).'</pre><h3>معیارهای موفقیت</h3><ul>';
     foreach ($p['criteria'] as $criterion) echo '<li>'.h($criterion).'</li>';
     echo '</ul><p>کتابخانه‌ها: '.h(implode(', ',$p['dependencies']) ?: 'json, pathlib').'</p></section>';
+    if (!empty($p['prerequisites'])) {
+        echo '<section class="panel-card"><h2>پیش‌نیاز و ترتیب یادگیری</h2><ul>';
+        foreach ($p['prerequisites'] as $prerequisite) echo '<li>'.h($prerequisite).'</li>';
+        echo '</ul>';
+        foreach ($p['prerequisite_articles'] as $slug) { $article=article_entry($slug); if ($article) linkto('articles/'.$slug,$article['title'].' ←','inline-link'); }
+        echo '<p>برای شروع، مقالهٔ بالا را بخوانید. Python 3 و کتابخانه‌های موردنیاز در میزکار آماده‌اند؛ نصب آنلاین از ترمینال میزکار لازم نیست.</p></section>';
+    }
     if ($p['datasets']) {
         echo '<details class="panel-card"><summary>منبع و وضعیت دیتاست‌ها</summary>';
         $sources=json_decode(file_get_contents(dirname(__DIR__).'/curriculum/data/manifest.json'),true,512,JSON_THROW_ON_ERROR);

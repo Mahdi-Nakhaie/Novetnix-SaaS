@@ -29,7 +29,7 @@ CURRICULUM_PROJECTS = json.loads((ROOT / "curriculum/catalog.json").read_text(en
 PROJECTS = [(item['title'], item['topic'], item['level'], item['description'], item['skills']) for item in CURRICULUM_PROJECTS]
 
 YEAR = "۱۴۰۵"
-PROJECT_PLANS = ("free", "free", "bronze", "silver", "bronze", "gold", "silver", "gold", "titanium", "gold", "silver", "titanium")
+PROJECT_PLANS = ("free", "free", "bronze", "silver", "bronze", "gold", "silver", "gold", "titanium", "gold", "silver", "titanium", *("free" for item in CURRICULUM_PROJECTS[12:]))
 PAID_COURSES = ("ml-basics", "nlp-practice", "api-deployment")
 ARTICLE_DETAILS = {
     "python-foundations": [("مثال قابل اجرا", "فهرست فروش‌های روزانه را دریافت کن، ورودی خالی را جداگانه بررسی کن و مجموع را بر تعداد تقسیم کن. سپس با داده‌های [۱۰۰، ۲۰۰، ۳۰۰] انتظار خروجی ۲۰۰ را داشته باش. این مثال نشان می‌دهد چرا قرارداد تابع باید قبل از پیاده‌سازی روشن باشد."), ("خطاهای رایج", "تقسیم بر صفر، تغییر ناخواسته فهرست ورودی و آمیختن دریافت داده با منطق محاسبه از خطاهای متداول‌اند. تابع را مستقل از ورودی کاربر بنویس تا بتوانی آن را با چند مجموعه داده آزمون کنی."), ("تمرین و معیار پذیرش", "تابعی بنویس که برای فهرست خالی نتیجه مشخصی برگرداند و برای اعداد اعشاری هم درست کار کند. دست‌کم سه آزمون برای حالت عادی، ورودی خالی و داده منفی بنویس.")],
