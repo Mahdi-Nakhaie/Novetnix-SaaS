@@ -120,9 +120,23 @@ class LayoutStyleTests(unittest.TestCase):
         self.assertNotIn('line-height:1.15', source)
         self.assertNotIn('line-height:1.18', source)
 
+    def test_panel_cards_remain_stationary_while_public_hover_is_preserved(self):
+        import re
+        source = (ROOT / 'public/assets/style.css').read_text()
+        rule = re.search(r'body\.is-panel \.panel-content :is\(([^)]+)\)\{transform:none\}', source)
+        self.assertIsNotNone(rule)
+        targets = rule[1].split(',')
+        for selector in ('.stat-card', '.challenge-card', '.course-card', '.project-card', '.panel-card', '.card-3d', '.btn', '.feature-icon', '.project-visual', '.visual-glyph', '.section-header h2'):
+            self.assertIn(selector, targets)
+        self.assertGreater(rule.start(), source.index('.stat-card:hover{transform:perspective'))
+        self.assertGreater(rule.start(), source.index('/* Hover interaction layer */'))
+        self.assertRegex(source, r'body\.is-panel \.panel-content :is\([^)]+\)::after\{content:none\}')
+        self.assertIn('.course-card:hover{transform:translateY(-4px)', source)
+        self.assertIn('body.nav-open .sidebar{transform:translateX(0);visibility:visible}', source)
+
     def test_updated_styles_have_cache_versions(self):
         source = (ROOT / 'src/views.php').read_text()
-        for asset in ('style.css?v=6', 'free-course.css?v=3', 'articles.css?v=2'):
+        for asset in ('style.css?v=7', 'free-course.css?v=3', 'articles.css?v=2'):
             self.assertIn(asset, source)
         self.assertIn('workspace.css?v=6', (ROOT / 'src/workspace_views.php').read_text())
 
@@ -136,6 +150,20 @@ class StudioHttpTests(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         test_release.ReleaseHttpTest.tearDownClass()
+
+    def test_dashboard_delivers_stationary_panel_styles(self):
+        client = test_release.Client(self.base)
+        test_release.ReleaseHttpTest.register(self, client, '09990000870')
+        for path in ('/dashboard', '/dashboard/activity', '/dashboard/settings', '/dashboard/gamification', '/dashboard/darycheh'):
+            with self.subTest(path=path):
+                status, _, source = client.request(path)
+                self.assertEqual(status, 200)
+                self.assertIn('class="is-panel"', source)
+                self.assertIn('/assets/style.css?v=7', source)
+        status, _, stylesheet = client.request('/assets/style.css?v=7')
+        self.assertEqual(status, 200)
+        self.assertIn('body.is-panel .panel-content :is(', stylesheet)
+        self.assertNotIn('class="is-panel"', client.request('/login')[2])
 
     def test_member_settings_streak_and_commerce_pause(self):
         client = test_release.Client(self.base)
