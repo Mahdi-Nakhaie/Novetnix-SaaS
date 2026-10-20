@@ -64,6 +64,24 @@ echo dr_json($out);
 ''')
         self.assertEqual(result, [True] * 7)
 
+    def test_skill_score_missing_evidence_and_snapshot_compatibility(self):
+        result = self.php('''
+$empty=dr_skill_evaluation($d,[]); $criteria=[];
+foreach($d['skill_assessment'] as $spec) foreach($spec['criteria'] as $ref) $criteria[$ref['dimension'].':'.$ref['key']]=dr_criterion($d,$ref['dimension'],$ref['key'],true);
+$full=dr_skill_evaluation($d,array_values($criteria));
+foreach($criteria as &$c) $c['score']=0; unset($c);
+$zero=dr_skill_evaluation($d,array_values($criteria));
+$old=$d; unset($old['skill_assessment']); dr_validate_definition($old);
+$bad=$d; $bad['skill_assessment']['problem_definition']['criteria'][0]['key']='unknown'; $rejected=false;
+try{dr_validate_definition($bad);}catch(DarychehError $e){$rejected=true;}
+echo dr_json(['empty'=>$empty,'full'=>$full,'zero'=>$zero,'bad'=>$rejected]);
+''')
+        self.assertEqual(len(result['empty']), 9)
+        self.assertTrue(all(s['score'] is None and s['status'] == 'not_assessed' for s in result['empty'].values()))
+        self.assertTrue(all(s['score'] == 4 and s['level'] == 'strength' for s in result['full'].values()))
+        self.assertTrue(all(s['score'] == 0 and s['level'] == 'practice' for s in result['zero'].values()))
+        self.assertTrue(result['bad'])
+
     def test_simulation_is_deterministic_and_replays_last_seat(self):
         result = self.php('''
 dr_validate_definition($d);$order=array_keys($d['operations']);$out=[];
@@ -146,6 +164,38 @@ class DarychehHttpTests(unittest.TestCase):
     def finish(self, client, attempt):
         attempt = self.transfer(client, attempt)
         return self.act(client, attempt, {'route': 'finish'})
+
+    def test_skill_progress_is_private_persistent_and_not_visit_based(self):
+        client, phone = self.member()
+        before = json.loads(client.request('/darycheh/progress')[2])
+        self.assertTrue(all(h['last']['score'] is None for h in before['skill_groups']['unassessed'].values()))
+        for _ in range(2):
+            client.request('/dashboard/darycheh')
+        self.assertEqual(before, json.loads(client.request('/darycheh/progress')[2]))
+        attempt = self.finish(client, self.enter_transfer(client, self.main_path(client)))
+        skills = self.view(client, attempt)['summary']['skills']
+        self.assertEqual(len(skills), 9)
+        self.assertTrue(all(s['score'] == 4 for s in skills.values()))
+        progress = json.loads(client.request('/darycheh/progress')[2])
+        self.assertEqual(len(progress['skill_groups']), 1)
+        self.assertIn('دلیل این بازخورد', client.request('/dashboard/darycheh')[2])
+        self.assertEqual(len(self.rows("SELECT id FROM darycheh_evaluations WHERE scope='summary' AND attempt_id=?", (attempt['attempt_id'],))), 1)
+        client.post('/logout', {})
+        test_release.ReleaseHttpTest.login(self, client, phone)
+        self.assertEqual(progress, json.loads(client.request('/darycheh/progress')[2]))
+        other, _ = self.member()
+        private = json.loads(other.request('/darycheh/progress')[2])
+        self.assertEqual(private['groups'], [])
+        self.assertIn('unassessed', private['skill_groups'])
+        self.assertEqual(other.request('/dashboard/darycheh/' + str(attempt['attempt_id']))[0], 404)
+
+    def test_incomplete_stored_progress_does_not_invent_score(self):
+        client, _ = self.member()
+        attempt = self.finish(client, self.enter_transfer(client, self.main_path(client)))
+        self.change("UPDATE darycheh_evaluations SET result_json='{}' WHERE attempt_id=?", (attempt['attempt_id'],))
+        progress = json.loads(client.request('/darycheh/progress')[2])
+        self.assertEqual(progress['groups'], [])
+        self.assertTrue(all(h['last']['score'] is None for h in progress['skill_groups']['unassessed'].values()))
 
     def test_valid_complete_independent_and_terminal_guard(self):
         client, _ = self.member()

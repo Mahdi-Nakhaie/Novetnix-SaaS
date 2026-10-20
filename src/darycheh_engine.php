@@ -55,6 +55,7 @@ function dr_validate_definition(array $d): void {
     dr_require(is_array($d['rubric']['evidence'] ?? null) && is_array($d['rubric']['problem'] ?? null),'شواهد ارزیابی ناقص است.',409);
     dr_require(($d['rubric']['minimum_total'] ?? null)===16 && ($d['rubric']['minimum_dimension'] ?? null)===3 && count($d['rubric']['evidence'])===4 && count($d['rubric']['problem'])===4,'قرارداد ارزیابی نامعتبر است.',409);
     foreach (['evidence','problem','algorithm','testing','transfer'] as $key) dr_require(is_string($d['objectives'][$key] ?? null) && is_string($d['skills'][$key] ?? null),'هدف یادگیری ناقص است.',409);
+    if (isset($d['skill_assessment'])) dr_require(is_array($d['skill_assessment']) && count($d['skill_assessment'])===9,'تعریف مهارت‌ها ناقص است.',409);
     dr_require(is_array($d['hints'] ?? null) && count($d['hints'])===3 && count(array_filter($d['hints'],'is_string'))===3,'راهنمایی ناقص است.',409);
     $testKeys=[];
     foreach ($d['tests'] as $test) {
@@ -66,6 +67,13 @@ function dr_validate_definition(array $d): void {
     foreach ($d['transfer_bundles'] as $key=>$bundle) dr_require(dr_identifier($key) && is_array($bundle) && dr_identifier($bundle['exposure_key'] ?? null) && is_string($bundle['text'] ?? null) && is_string($bundle['label'] ?? null) && in_array($bundle['remaining'] ?? null,['0','1','2','3','4'],true),'بستهٔ انتقال ناقص است.',409);
     $byKind=[];
     foreach ($d['steps'] as $step) $byKind[$step['kind']]=$step;
+    $criterionKeys=['evidence'=>array_values($d['rubric']['evidence']),'problem'=>array_keys($d['rubric']['problem']),'algorithm'=>['history_before_change','return_previous','guard_before_reserve','remember_result'],'testing'=>$testKeys,'transfer'=>['cause','order','remaining','test']];
+    foreach (($d['skill_assessment'] ?? []) as $skill=>$spec) {
+        dr_require(dr_identifier($skill) && is_array($spec) && is_string($spec['label'] ?? null) && is_string($spec['description'] ?? null) && is_array($spec['criteria'] ?? null) && count($spec['criteria'])>0,'معیار مهارت ناقص است.',409);
+        foreach ($spec['criteria'] as $criterion) {
+            dr_require(is_array($criterion) && isset($criterion['dimension'],$criterion['key'],$criterion['label']) && isset($criterionKeys[$criterion['dimension']]) && in_array($criterion['key'],$criterionKeys[$criterion['dimension']],true) && is_string($criterion['label']),'ارجاع معیار مهارت نامعتبر است.',409);
+        }
+    }
     $contracts=['intro'=>[],'evidence'=>['selected'],'problem'=>array_keys($d['rubric']['problem']),'solution'=>['order'],'consequence'=>$testKeys,'feedback'=>[],'retry'=>['route'],'transfer'=>['cause','order','remaining','test'],'transfer_feedback'=>['route'],'report'=>[]];
     foreach ($contracts as $kind=>$fields) {
         $actual=array_keys($byKind[$kind]['fields']); sort($actual); sort($fields);
@@ -131,6 +139,27 @@ function dr_initial_state(): array {
 }
 function dr_criterion(array $d,string $dimension,string $key,bool $passed): array {
     return ['criterion_key'=>$key,'objective_key'=>$dimension,'skill_key'=>$d['skills'][$dimension],'score'=>(int)$passed,'max_score'=>1];
+}
+function dr_skill_evaluation(array $d,array $criteria): array {
+    $index=[];
+    foreach ($criteria as $criterion) {
+        if (!is_array($criterion) || !is_string($criterion['objective_key'] ?? null) || !is_string($criterion['criterion_key'] ?? null) || !in_array($criterion['score'] ?? null,[0,1],true) || ($criterion['max_score'] ?? null)!==1) continue;
+        $index[$criterion['objective_key'].':'.$criterion['criterion_key']]=$criterion;
+    }
+    $skills=[];
+    foreach (($d['skill_assessment'] ?? []) as $key=>$spec) {
+        $passed=0; $total=0; $evidence=[];
+        foreach ($spec['criteria'] as $reference) {
+            $criterion=$index[$reference['dimension'].':'.$reference['key']] ?? null;
+            if ($criterion===null) continue;
+            $total++; $passed+=(int)$criterion['score'];
+            $evidence[]=['criterion_key'=>$reference['key'],'label'=>$reference['label'],'passed'=>(bool)$criterion['score']];
+        }
+        $complete=$total===count($spec['criteria']);
+        $score=!$complete?null:(int)round(($passed/$total)*4);
+        $skills[$key]=['label'=>$spec['label'],'description'=>$spec['description'],'score'=>$score,'max_score'=>4,'status'=>!$complete?'not_assessed':'assessed','passed_criteria'=>$passed,'total_criteria'=>$total,'evidence'=>$evidence,'level'=>!$complete?'not_assessed':($score>=3?'strength':'practice')];
+    }
+    return $skills;
 }
 function dr_main_evaluation(array $d,array $s): array {
     $criteria=[]; $dimensions=[];
@@ -212,6 +241,7 @@ function dr_reduce(array $d,string $stepKey,array $s,string $action,array $paylo
             if (!$s['transfer']['is_independent']) $support='solution_revealed';
             $ending=$passed?($independent?'independent':'supported'):($eligible?'needs_fresh_evidence':'needs_practice');
             $s['summary']=['criteria'=>array_merge($s['main']['criteria'],$s['transfer']['criteria']),'dimensions'=>$dimensions,'score'=>$score,'max_score'=>20,'passed'=>$passed,'is_independent'=>$independent,'support_level'=>$support,'ending'=>$ending];
+            $s['summary']['skills']=dr_skill_evaluation($d,$s['summary']['criteria']);
             $evaluation=['scope'=>'summary','result'=>$s['summary']]; $type='completed';
         }
     }

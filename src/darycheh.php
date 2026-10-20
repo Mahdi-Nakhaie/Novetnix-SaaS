@@ -194,15 +194,33 @@ function dr_view(int $userId,int $id): array {
 }
 function dr_progress(int $userId): array {
     $rows=q('SELECT e.id,e.attempt_id,e.scope,e.assessment_hash,e.result_json,e.created_at FROM darycheh_evaluations e JOIN darycheh_attempts t ON t.id=e.attempt_id WHERE t.user_id=? ORDER BY e.id',[$userId])->fetchAll();
-    $groups=[];
+    $groups=[]; $skillGroups=[];
     foreach ($rows as $row) {
-        $result=dr_decode($row['result_json']); $key=$row['assessment_hash'].':'.$row['scope'];
+        try { $result=dr_decode($row['result_json']); } catch (DarychehError $e) { continue; }
+        if (!isset($result['score'],$result['max_score'],$result['passed'],$result['is_independent'],$result['dimensions']) || !is_array($result['dimensions'])) continue;
+        $key=$row['assessment_hash'].':'.$row['scope'];
         $entry=['evaluation_id'=>(int)$row['id'],'attempt_id'=>(int)$row['attempt_id'],'score'=>$result['score'],'max_score'=>$result['max_score'],'passed'=>$result['passed'],'independent'=>$result['is_independent'],'dimensions'=>$result['dimensions'],'created_at'=>$row['created_at']];
         if (!isset($groups[$key])) $groups[$key]=['first'=>$entry,'best'=>$entry,'last'=>$entry];
         if ($entry['score']>$groups[$key]['best']['score']) $groups[$key]['best']=$entry;
         $groups[$key]['last']=$entry;
+        if ($row['scope']==='summary' && isset($result['skills']) && is_array($result['skills'])) {
+            foreach ($result['skills'] as $skill=>$value) {
+                if (!is_array($value) || !isset($value['status'],$value['label'],$value['description'],$value['evidence']) || !in_array($value['status'],['assessed','not_assessed'],true)) continue;
+                if ($value['status']==='assessed' && (!is_int($value['score'] ?? null) || $value['score']<0 || $value['score']>4)) continue;
+                $item=$value+['attempt_id'=>$entry['attempt_id'],'independent'=>$entry['independent'],'evaluation_id'=>$entry['evaluation_id']];
+                if (!isset($skillGroups[$row['assessment_hash']][$skill])) $skillGroups[$row['assessment_hash']][$skill]=['first'=>$item,'best'=>$item,'last'=>$item];
+                $history=&$skillGroups[$row['assessment_hash']][$skill];
+                if (($item['score'] ?? -1)>($history['best']['score'] ?? -1)) $history['best']=$item;
+                $history['last']=$item;
+                unset($history);
+            }
+        }
     }
-    return ['groups'=>$groups,'note'=>'شواهد همین سناریو؛ نه درصد تسلط یا تضمین مهارت.'];
+    if (!$skillGroups && is_file(dirname(__DIR__).'/content/darycheh.php')) {
+        $definition=require dirname(__DIR__).'/content/darycheh.php';
+        if (is_array($definition)) foreach (dr_skill_evaluation($definition,[]) as $skill=>$item) $skillGroups['unassessed'][$skill]=['first'=>$item,'best'=>$item,'last'=>$item];
+    }
+    return ['groups'=>$groups,'skill_groups'=>$skillGroups,'note'=>'شواهد همین سناریو؛ نه درصد تسلط یا تضمین مهارت.'];
 }
 function dr_api(string $path): never {
     $u=user();

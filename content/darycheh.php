@@ -16,7 +16,7 @@ $predictions=[
     'rejected:3:0'=>'سفارش رد می‌شود؛ تغییری در سفارش و موجودی ایجاد نمی‌شود؛ موجودی ۳',
 ];
 return [
-    'scenario_key'=>'first-real-problem','content_version'=>'1.0','definition_schema_version'=>1,
+    'scenario_key'=>'first-real-problem','content_version'=>'1.1','definition_schema_version'=>1,
     'engine_version'=>'1','assessment_version'=>'1','entry_step_key'=>'intro',
     'title'=>'اولین مسئله واقعی تو',
     'objectives'=>[
@@ -24,6 +24,26 @@ return [
         'algorithm'=>'طراحی فرایند قابل اجرا','testing'=>'آزمایش و تحلیل نتیجه','transfer'=>'توسعه و انتقال راه‌حل',
     ],
     'skills'=>['evidence'=>'problem-discovery','problem'=>'requirements','algorithm'=>'process-design','testing'=>'debugging','transfer'=>'problem-solving'],
+    'skill_assessment'=>[
+        'problem_definition'=>['label'=>'تعریف مسئله','description'=>'تفکیک نشانه، علت، هدف و محدودیت','criteria'=>[
+            ['dimension'=>'problem','key'=>'person','label'=>'شناخت فرد درگیر'],['dimension'=>'problem','key'=>'cause','label'=>'بیان علت قابل آزمون'],['dimension'=>'problem','key'=>'goal','label'=>'هدف قابل مشاهده'],['dimension'=>'problem','key'=>'limits','label'=>'توجه به محدودیت']]],
+        'information_gathering'=>['label'=>'جمع‌آوری اطلاعات','description'=>'انتخاب شواهد مرتبط و قابل اتکا','criteria'=>[
+            ['dimension'=>'evidence','key'=>'same_id','label'=>'شناسهٔ تکراری'],['dimension'=>'evidence','key'=>'same_data','label'=>'دادهٔ یکسان'],['dimension'=>'evidence','key'=>'double_change','label'=>'تغییر واقعی'],['dimension'=>'evidence','key'=>'server_trace','label'=>'ردگیری سرور']]],
+        'logical_thinking'=>['label'=>'تفکر منطقی','description'=>'چیدن علت‌ها و کنترل‌ها در ترتیب درست','criteria'=>[
+            ['dimension'=>'algorithm','key'=>'history_before_change','label'=>'سابقه پیش از تغییر'],['dimension'=>'algorithm','key'=>'return_previous','label'=>'بازگرداندن نتیجه'],['dimension'=>'algorithm','key'=>'guard_before_reserve','label'=>'کنترل پیش از ثبت'],['dimension'=>'algorithm','key'=>'remember_result','label'=>'ثبت نتیجه']]],
+        'decision_making'=>['label'=>'تصمیم‌گیری','description'=>'انتخاب بر اساس هدف و محدودیت، نه حدس ظاهری','criteria'=>[
+            ['dimension'=>'problem','key'=>'goal','label'=>'انتخاب هدف درست'],['dimension'=>'problem','key'=>'limits','label'=>'انتخاب محدودیت درست'],['dimension'=>'algorithm','key'=>'guard_before_reserve','label'=>'تصمیم کنترل پیشینی']]],
+        'solution_design'=>['label'=>'طراحی راه‌حل','description'=>'تبدیل تعریف مسئله به فرایند قابل اجرا','criteria'=>[
+            ['dimension'=>'algorithm','key'=>'history_before_change','label'=>'طراحی کنترل تکرار'],['dimension'=>'algorithm','key'=>'return_previous','label'=>'طراحی پاسخ تکراری'],['dimension'=>'algorithm','key'=>'guard_before_reserve','label'=>'طراحی کنترل اعتبار و موجودی'],['dimension'=>'algorithm','key'=>'remember_result','label'=>'طراحی ثبت نتیجه']]],
+        'testing_validation'=>['label'=>'آزمایش و اعتبارسنجی','description'=>'پیش‌بینی و مقایسهٔ نتیجه در وضعیت‌های مختلف','criteria'=>[
+            ['dimension'=>'testing','key'=>'normal','label'=>'آزمون عادی'],['dimension'=>'testing','key'=>'repeat','label'=>'آزمون تکرار'],['dimension'=>'testing','key'=>'full','label'=>'آزمون کمبود موجودی'],['dimension'=>'testing','key'=>'invalid','label'=>'آزمون ورودی نامعتبر']]],
+        'error_analysis'=>['label'=>'تحلیل خطا','description'=>'بررسی پیامد واقعی و تشخیص نقطهٔ شکست','criteria'=>[
+            ['dimension'=>'evidence','key'=>'double_change','label'=>'تشخیص اثر خطا'],['dimension'=>'evidence','key'=>'server_trace','label'=>'استفاده از ردگیری'],['dimension'=>'testing','key'=>'repeat','label'=>'مقایسهٔ تکرار'],['dimension'=>'testing','key'=>'invalid','label'=>'بررسی ورودی نامعتبر']]],
+        'systems_thinking'=>['label'=>'تفکر سیستمی','description'=>'دیدن رابطهٔ درخواست، فرایند، موجودی و نتیجه','criteria'=>[
+            ['dimension'=>'evidence','key'=>'same_id','label'=>'ارتباط درخواست و شناسه'],['dimension'=>'evidence','key'=>'double_change','label'=>'ارتباط فرایند و موجودی'],['dimension'=>'problem','key'=>'cause','label'=>'تشخیص سازوکار علت'],['dimension'=>'algorithm','key'=>'history_before_change','label'=>'قرار دادن کنترل در سیستم']]],
+        'planning_prioritization'=>['label'=>'برنامه‌ریزی و اولویت‌بندی','description'=>'قرار دادن اقدام‌های حیاتی پیش از اقدام‌های برگشت‌ناپذیر','criteria'=>[
+            ['dimension'=>'problem','key'=>'limits','label'=>'اولویت محدودیت'],['dimension'=>'algorithm','key'=>'history_before_change','label'=>'اولویت سابقه'],['dimension'=>'algorithm','key'=>'guard_before_reserve','label'=>'اولویت اعتبارسنجی'],['dimension'=>'algorithm','key'=>'remember_result','label'=>'برنامهٔ ثبت نتیجه']]],
+    ],
     'hints'=>[
         'بین چیزی که مشتری می‌گوید و چیزی که در ردگیری سفارش رخ داده است تفاوت بگذار.',
         'پیش از نوشتن کد یا تغییر ظاهر، مشخص کن یک سفارش معتبر چند بار باید اثر کند و چه محدودیت‌هایی دارد.',

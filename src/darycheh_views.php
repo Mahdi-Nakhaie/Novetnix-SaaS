@@ -82,12 +82,30 @@ function dr_render_fields(array $view): void {
         echo '</fieldset>';
     }
 }
+function dr_skill_cards(array $skills): void {
+    echo '<div class="dr-progress-grid">';
+    foreach ($skills as $skill) {
+        echo '<article class="dr-progress-card"><h3>'.h($skill['label']).'</h3><p>'.h($skill['description']).'</p>';
+        if ($skill['status']==='not_assessed') echo '<p class="dr-badge">هنوز ارزیابی نشده</p><p class="dr-footnote">شواهد کافی ثبت نشده است؛ بازدید و تکمیل مرحله به‌تنهایی نمره ندارد.</p>';
+        else {
+            echo '<p class="dr-badge">'.($skill['level']==='strength'?'نقطهٔ قوت در این تجربه':'نیازمند تمرین').' · '.fa($skill['score']).' از ۴</p><p class="dr-footnote">'.fa($skill['passed_criteria']).' معیار از '.fa($skill['total_criteria']).' برقرار است؛ این امتیاز اعلام تسلط نیست.</p><details><summary>دلیل این بازخورد و معیارها</summary><ul>';
+            foreach ($skill['evidence'] as $item) echo '<li>'.h($item['label']).' — '.($item['passed']?'در پاسخ ثبت‌شده برقرار بود':'در پاسخ ثبت‌شده برقرار نبود؛ این بخش را بازبینی کن').'</li>';
+            echo '</ul></details>';
+        }
+        echo '</article>';
+    }
+    echo '</div>';
+}
 function dr_summary(array $summary): void {
     $endings=['independent'=>'شاهد عملکرد مستقل','supported'=>'تکمیل با پشتیبانی','needs_practice'=>'پایان تجربه؛ یک فرصت برای تمرین بیشتر','needs_fresh_evidence'=>'تمرین موفق؛ شاهد مستقل تازه لازم است'];
     $labels=['evidence'=>'تشخیص شواهد','problem'=>'تعریف مسئله','algorithm'=>'روند منطقی','testing'=>'آزمودن','transfer'=>'انتقال آموخته'];
     echo '<section class="dr-summary" aria-labelledby="dr-summary-title"><span class="dr-kicker">گزارش این تجربه</span><h3 id="dr-summary-title">'.h($endings[$summary['ending']]).'</h3><div class="dr-summary-score"><strong>'.fa($summary['score']).'</strong><span>از ۲۰ امتیاز قابل مشاهده</span></div><div class="dr-skill-grid">';
     foreach ($summary['dimensions'] as $dimension=>$score) echo '<div class="dr-skill"><label for="dr-skill-'.h($dimension).'">'.h($labels[$dimension]).'<span>'.fa($score).' از ۴</span></label><meter id="dr-skill-'.h($dimension).'" min="0" max="4" value="'.h($score).'">'.fa($score).' از ۴</meter></div>';
     echo '</div><p>قبولی فقط به مجموع نمره وابسته نیست؛ حداقل هر بُعد، تست‌های حیاتی و انتقال مستقل نیز لازم‌اند. این نتیجه تضمین تسلط یا حرفه‌ای‌شدن نیست.</p></section>';
+    if (!empty($summary['skills'])) {
+        echo '<section class="dr-results"><h3>مهارت‌ها بر اساس عملکرد همین تلاش</h3><p>مهارت‌ها از معیارهای مشترک استفاده می‌کنند؛ امتیاز آن‌ها با هم جمع نمی‌شود. '.($summary['is_independent']?'این تلاش بدون راهنمایی تکمیل شده است.':'این تلاش شاهد تسلط مستقل نیست؛ سابقهٔ راهنمایی و مشاهدهٔ پاسخ حفظ شده است.').'</p>';
+        dr_skill_cards($summary['skills']); echo '</section>';
+    }
 }
 function dr_landing(array $u): void {
     $history=q('SELECT id,attempt_no,status,current_step_key,updated_at FROM darycheh_attempts WHERE user_id=? ORDER BY id DESC LIMIT 50',[(int)$u['id']])->fetchAll();
@@ -126,6 +144,15 @@ function dr_landing(array $u): void {
     }
     echo '</section>';
     $progress=dr_progress((int)$u['id']);
+    foreach ($progress['skill_groups'] as $skillGroup) {
+        echo '<section class="dr-card"><h2>مهارت‌ها؛ نقاط قوت و فرصت تمرین</h2><p>امتیاز آخرین گزارش در این نسخهٔ ارزیابی نمایش داده می‌شود؛ پایان سناریو با تسلط یکسان نیست. نسخه‌های مختلف با هم جمع نمی‌شوند.</p>';
+        dr_skill_cards(array_map(fn($history)=>$history['last'],$skillGroup));
+        foreach ($skillGroup as $history) if (isset($history['last']['attempt_id'])) {
+            echo '<p class="dr-footnote">اولین، بهترین و آخرین امتیازِ '.h($history['last']['label']).': '.fa($history['first']['score']).'، '.fa($history['best']['score']).'، '.fa($history['last']['score']).'</p>';
+            linkto('dashboard/darycheh/'.$history['last']['attempt_id'],'مشاهدهٔ گزارش و تصمیم‌های این مهارت','dr-inline-link');
+        }
+        echo '</section>';
+    }
     if ($progress['groups']) {
         echo '<section class="dr-card" aria-labelledby="dr-progress-title"><div class="dr-section-heading"><div><span class="dr-kicker">شواهد، نه وعده</span><h2 id="dr-progress-title">تغییر عملکردت را ببین</h2></div></div><p>'.h($progress['note']).'</p><div class="dr-progress-grid">';
         $scopes=['main'=>'تحلیل و آزمودن','transfer'=>'انتقال آموخته','summary'=>'گزارش نهایی'];
