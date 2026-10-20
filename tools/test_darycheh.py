@@ -8,6 +8,7 @@ import re
 import sqlite3
 import subprocess
 import unittest
+import urllib.parse
 import uuid
 
 from tools import test_release
@@ -45,6 +46,14 @@ class DarychehSchemaTests(unittest.TestCase):
         db.executescript(admin_migration)
         db.execute("INSERT INTO darycheh_drafts(definition_json,updated_by) VALUES ('{}',1)")
         for statement in ("UPDATE darycheh_drafts SET revision=0", "UPDATE darycheh_drafts SET updated_by=999", "UPDATE darycheh_drafts SET definition_json='invalid'"):
+            with self.assertRaises(sqlite3.IntegrityError):
+                db.execute(statement)
+        product_migration = (ROOT / 'database/migrations/004_darycheh_products.sqlite.sql').read_text()
+        db.executescript(product_migration)
+        db.executescript(product_migration)
+        db.execute('INSERT INTO projects(id,user_id,catalog_index) VALUES (1,1,0)')
+        db.execute("INSERT INTO darycheh_product_requests(user_id,request_key,request_fingerprint,attempt_id,project_id) VALUES (1,'build-key','hash',1,1)")
+        for statement in ("INSERT INTO darycheh_product_requests(user_id,request_key,request_fingerprint,attempt_id,project_id) VALUES (1,'build-key','hash',1,1)", 'UPDATE darycheh_product_requests SET attempt_id=999', 'UPDATE darycheh_product_requests SET project_id=999'):
             with self.assertRaises(sqlite3.IntegrityError):
                 db.execute(statement)
         self.assertEqual(db.execute('PRAGMA foreign_key_check').fetchall(), [])
@@ -406,6 +415,143 @@ class DarychehHttpTests(unittest.TestCase):
         self.assertEqual(other.request('/dashboard/workspace/' + str(project))[0], 404)
         self.assertIn('ساخت پروژهٔ عملی تازه', client.request('/dashboard/darycheh/' + str(attempt['attempt_id']))[2])
         self.assertEqual(self.view(client, attempt)['summary']['score'], 20)
+
+    def test_audit_duplicate_product_request_is_atomic_and_idempotent(self):
+        client, _ = self.member()
+        attempt = self.finish(client, self.enter_transfer(client, self.main_path(client)))
+        data = {'id': attempt['attempt_id'], 'revision': attempt['revision'], 'request_key': key()}
+        first = client.post('/darycheh/build', data)
+        second = client.post('/darycheh/build', data)
+        self.assertEqual(first[0], 200, first[2])
+        self.assertEqual(second[0], 200, second[2])
+        self.assertEqual(json.loads(first[2]), json.loads(second[2]))
+        response = client.post('/darycheh/build', dict(data, revision=1))
+        self.assertEqual(response[0], 409)
+        project = json.loads(first[2])['project_id']
+        self.assertEqual(self.rows('SELECT COUNT(*) FROM project_workspaces w JOIN projects p ON p.id=w.project_id WHERE p.user_id=(SELECT user_id FROM projects WHERE id=?)', (project,))[0][0], 1)
+        fresh = client.post('/darycheh/build', dict(data, request_key=key()))
+        self.assertEqual(fresh[0], 200, fresh[2])
+        self.assertNotEqual(json.loads(fresh[2])['project_id'], project)
+
+    def test_audit_complete_journey_output_evaluation_and_relogin(self):
+        client, phone = self.member()
+        attempt = self.finish(client, self.enter_transfer(client, self.main_path(client)))
+        before = self.view(client, attempt)
+        built = client.post('/darycheh/build', {'id': attempt['attempt_id'], 'revision': attempt['revision'], 'request_key': key(), '_html': '1'})
+        self.assertEqual(built[0], 303)
+        workspace = built[1]['Location']
+        self.assertTrue(workspace.startswith('/dashboard/workspace/'))
+        self.assertEqual(client.request(workspace)[0], 200)
+        project = int(workspace.rsplit('/', 1)[1])
+        files = json.loads(self.rows('SELECT files_json FROM project_workspaces WHERE project_id=?', (project,))[0][0])
+        with tempfile.TemporaryDirectory() as directory:
+            script = pathlib.Path(directory) / 'main.py'
+            script.write_bytes(base64.b64decode(files['main.py']['data']))
+            result = subprocess.run(['python3', str(script)], cwd=directory, capture_output=True, timeout=10)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue(json.loads((pathlib.Path(directory) / 'product-results.json').read_text())['passed'])
+        self.assertEqual(client.post('/logout', {})[0], 303)
+        self.assertEqual(client.request(workspace)[0], 303)
+        self.assertEqual(client.request('/darycheh/state?id=' + str(attempt['attempt_id']))[0], 401)
+        self.assertEqual(self.login(client, phone)[0], 303)
+        self.assertEqual(self.view(client, attempt), before)
+        self.assertEqual(client.request(workspace)[0], 200)
+        report = client.request('/dashboard/darycheh/' + str(attempt['attempt_id']))
+        self.assertEqual(report[0], 200)
+        self.assertIn('شاهد عملکرد مستقل', report[2])
+        self.assertIn('no-store', report[1]['Cache-Control'])
+        self.assertEqual(self.rows("SELECT COUNT(*) FROM darycheh_evaluations WHERE attempt_id=? AND scope='summary'", (attempt['attempt_id'],))[0][0], 1)
+
+    def test_audit_session_expiry_and_role_revocation_take_effect(self):
+        client, phone = self.member()
+        attempt = self.act(client, self.start(client))
+        self.assertEqual(client.request('/__fixture/expire')[0], 200)
+        self.assertEqual(client.request('/darycheh/state?id=' + str(attempt['attempt_id']))[0], 401)
+        self.assertEqual(client.post('/darycheh/act', {'id': attempt['attempt_id'], 'revision': attempt['revision'], 'request_key': key(), 'payload': '{}'})[0], 419)
+        self.assertEqual(self.login(client, phone)[0], 303)
+        self.assertEqual(self.view(client, attempt)['step'], 'evidence')
+        admin = self.admin()
+        uid = self.rows("SELECT id FROM users WHERE phone='09990000000'")[0][0]
+        try:
+            self.change("UPDATE users SET role='student' WHERE id=?", (uid,))
+            self.assertEqual(admin.request('/dashboard/darycheh-manage')[0], 403)
+            self.assertEqual(admin.post('/darycheh/admin/publish', {'id': 0, 'revision': 1})[0], 403)
+        finally:
+            self.change("UPDATE users SET role='admin' WHERE id=?", (uid,))
+
+    def test_audit_untrusted_text_is_escaped_and_query_values_remain_data(self):
+        admin = self.admin()
+        definition = self.definition()
+        marker = 'DR10 <b data-audit="text">متن</b> \'quoted\' ; --'
+        definition['title'] = marker
+        definition['steps']['intro']['text'] = marker
+        definition['steps']['evidence']['fields']['selected']['options']['same_id'] = marker
+        definition['objectives']['evidence'] = marker
+        users = self.rows('SELECT COUNT(*) FROM users')[0][0]
+        draft = self.save_draft(admin, definition)
+        preview = self.publish(admin, draft)
+        self.assertNotIn('<b data-audit="text">', preview)
+        self.assertIn('&lt;b data-audit=', preview)
+        self.assertEqual(self.rows('SELECT COUNT(*) FROM users')[0][0], users)
+        self.assertEqual(json.loads(self.rows('SELECT definition_json FROM darycheh_releases WHERE scenario_key=?', (definition['scenario_key'],))[0][0])['title'], marker)
+        client, _ = self.member()
+        landing = client.request('/dashboard/darycheh')
+        self.assertNotIn('<b data-audit="text">', landing[2])
+        self.assertIn('&lt;b data-audit=', landing[2])
+        self.assertIn("default-src 'self'", landing[1]['Content-Security-Policy'])
+        attempt = self.start(client, definition['scenario_key'])
+        attempt = self.act(client, attempt)
+        rendered = client.request('/dashboard/darycheh/' + str(attempt['attempt_id']))[2]
+        self.assertNotIn('<b data-audit="text">', rendered)
+        self.assertIn('&lt;b data-audit=', rendered)
+        self.act(client, attempt, {'selected': [marker] * 4}, status=422)
+        self.assertEqual(client.post('/darycheh/start', {'scenario_key': "DR10' OR '1'='1", 'request_key': key()})[0], 404)
+
+    def test_audit_identifier_types_and_cross_owner_product_replay(self):
+        client, _ = self.member()
+        other, _ = self.member()
+        attempt = self.finish(client, self.enter_transfer(client, self.main_path(client)))
+        data = {'id': attempt['attempt_id'], 'revision': attempt['revision'], 'request_key': key()}
+        self.assertEqual(client.post('/darycheh/build', data)[0], 200)
+        self.assertEqual(other.post('/darycheh/build', data)[0], 404)
+        for value in ('0', '-1', '1.5', "1' OR '1'='1", '9' * 100):
+            self.assertEqual(client.request('/darycheh/state?id=' + urllib.parse.quote(value))[0], 422)
+            self.assertEqual(client.post('/darycheh/build', dict(data, id=value))[0], 422)
+        self.assertEqual(client.request('/darycheh/state?id[]=1')[0], 422)
+        self.assertEqual(client.post('/darycheh/build', {'id[]': '1', 'revision': 1, 'request_key': key()})[0], 422)
+        self.assertEqual(client.post('/darycheh/start', {'scenario_key[]': 'test', 'request_key': key()})[0], 422)
+
+    def test_audit_product_receipt_failure_rolls_back_and_can_retry(self):
+        client, _ = self.member()
+        attempt = self.finish(client, self.enter_transfer(client, self.main_path(client)))
+        data = {'id': attempt['attempt_id'], 'revision': attempt['revision'], 'request_key': key()}
+        before = self.rows('SELECT COUNT(*) FROM projects')[0][0]
+        self.change("CREATE TRIGGER fixture_fail_product BEFORE INSERT ON darycheh_product_requests BEGIN SELECT RAISE(ABORT,'fixture failure'); END")
+        try:
+            response = client.post('/darycheh/build', data)
+            self.assertEqual(response[0], 503)
+            self.assertNotIn('PDOException', response[2])
+            self.assertEqual(self.rows('SELECT COUNT(*) FROM projects')[0][0], before)
+            self.assertEqual(self.rows('SELECT COUNT(*) FROM darycheh_product_requests WHERE request_key=?', (data['request_key'],))[0][0], 0)
+        finally:
+            self.change('DROP TRIGGER fixture_fail_product')
+        self.assertEqual(client.post('/darycheh/build', data)[0], 200)
+
+    def test_audit_concurrent_product_requests_create_one_workspace(self):
+        client, _ = self.member()
+        attempt = self.finish(client, self.enter_transfer(client, self.main_path(client)))
+        uid = self.rows('SELECT user_id FROM darycheh_attempts WHERE id=?', (attempt['attempt_id'],))[0][0]
+        request = key()
+        code = 'require ' + json.dumps(str(ROOT / 'src/app.php')) + ';'
+        code += f'echo dr_json(dr_build_product({uid},{attempt["attempt_id"]},{attempt["revision"]},"{request}"));'
+        env = dict(os.environ, DB_DSN='sqlite:' + str(self.database))
+        def run(_):
+            return json.loads(subprocess.check_output(['php', '-r', code], env=env, text=True, timeout=20))
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            projects = list(pool.map(run, range(2)))
+        self.assertEqual(projects[0], projects[1])
+        self.assertEqual(self.rows('SELECT COUNT(*) FROM projects WHERE user_id=?', (uid,))[0][0], 1)
+        self.assertEqual(self.rows('SELECT COUNT(*) FROM darycheh_product_requests WHERE user_id=?', (uid,))[0][0], 1)
 
     def test_valid_complete_independent_and_terminal_guard(self):
         client, _ = self.member()

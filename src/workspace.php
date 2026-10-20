@@ -70,20 +70,21 @@ function ws_template_allowed(array $template,int $userId): bool {
     return $template['course_id']===null || (bool)q('SELECT id FROM lessons WHERE id=? AND course_id=?',[$template['lesson_id'],$template['course_id']])->fetchColumn();
 }
 function ws_create(int $userId,int $templateId,string $title,?int $catalogIndex=null,?array $initial=null): int {
-    $pdo=db(); $pdo->beginTransaction();
+    $pdo=db(); $ownsTransaction=!$pdo->inTransaction();
+    if ($ownsTransaction) $pdo->beginTransaction();
     try {
         ws_lock_user($userId);
         $template=$templateId ? q('SELECT * FROM workspace_templates WHERE id=?',[$templateId])->fetch() : false;
         if ($templateId && (!$template || !ws_template_allowed($template,$userId))) throw new InvalidArgumentException('تمرین منتشر نشده یا دسترسی آن را ندارید.');
         if ($template) {
             $existing=q('SELECT p.id FROM projects p JOIN project_workspaces w ON w.project_id=p.id WHERE p.user_id=? AND w.template_id=?',[$userId,$templateId])->fetchColumn();
-            if ($existing) { $pdo->commit(); return (int)$existing; }
+            if ($existing) { if ($ownsTransaction) $pdo->commit(); return (int)$existing; }
             $title=$template['title']; $manifest=ws_manifest(json_decode($template['files_json'],true,512,JSON_THROW_ON_ERROR));
             $catalogIndex=$template['catalog_index']===null ? null : (int)$template['catalog_index'];
         } else $manifest=$initial ?? ws_manifest(['main.py'=>['kind'=>'file','data'=>base64_encode("print('Hello, Noventix!')\n")]]);
         if ($catalogIndex!==null) {
             $workspace=q('SELECT p.id FROM projects p JOIN project_workspaces w ON w.project_id=p.id WHERE p.user_id=? AND p.catalog_index=?',[$userId,$catalogIndex])->fetchColumn();
-            if ($workspace) { $pdo->commit(); return (int)$workspace; }
+            if ($workspace) { if ($ownsTransaction) $pdo->commit(); return (int)$workspace; }
         }
         if (mb_strlen($title)<1 || mb_strlen($title)>180) throw new InvalidArgumentException('عنوان باید بین ۱ تا ۱۸۰ نویسه باشد.');
         if ((int)q('SELECT COUNT(*) FROM project_workspaces w JOIN projects p ON p.id=w.project_id WHERE p.user_id=?',[$userId])->fetchColumn()>=20) throw new InvalidArgumentException('حداکثر بیست پروژه ذخیره‌شده مجاز است.');
@@ -93,8 +94,9 @@ function ws_create(int $userId,int $templateId,string $title,?int $catalogIndex=
         if ($existing) $projectId=(int)$existing;
         else { q('INSERT INTO projects(user_id,catalog_index) VALUES (?,?)',[$userId,$catalogIndex]); $projectId=(int)$pdo->lastInsertId(); }
         q('INSERT INTO project_workspaces(project_id,template_id,title,files_json,bytes) VALUES (?,?,?,?,?)',[$projectId,$templateId?:null,$title,$manifest['json'],$manifest['bytes']]);
-        $pdo->commit(); return $projectId;
-    } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
+        if ($ownsTransaction) $pdo->commit();
+        return $projectId;
+    } catch (Throwable $e) { if ($ownsTransaction && $pdo->inTransaction()) $pdo->rollBack(); throw $e; }
 }
 function ws_save(int $userId,int $projectId,int $revision,array $manifest): void {
     $pdo=db(); $pdo->beginTransaction();

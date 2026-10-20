@@ -228,16 +228,32 @@ function dr_progress(int $userId): array {
     }
     return ['groups'=>$groups,'skill_groups'=>$skillGroups,'note'=>'شواهد همین سناریو؛ نه درصد تسلط یا تضمین مهارت.'];
 }
-function dr_build_product(int $userId,int $id,int $revision): int {
-    $attempt=dr_owned($userId,$id);
-    dr_require($attempt['status']==='completed' && (int)$attempt['revision']===$revision,'ابتدا سناریو را کامل کن و گزارش فعلی را باز کن.',409);
-    $definition=dr_release($attempt); $state=dr_state($attempt,$definition);
-    $source=file_get_contents(dirname(__DIR__).'/content/darycheh_product.py');
-    $source=str_replace(['__ORDER__','__TESTS__'],[base64_encode(dr_json($state['answers']['solution']['order'])),base64_encode(dr_json($definition['tests']))],$source);
-    $spec=['source_attempt'=>$id,'source_revision'=>$revision,'content_version'=>$definition['content_version'],'problem'=>$definition['steps'][$definition['entry_step_key']]['text'],'decisions'=>$state['answers'],'operations'=>$definition['operations'],'acceptance_tests'=>$definition['tests'],'limitations'=>['فقط درخواست ترتیبی و دادهٔ ساختگی','حافظه موقت؛ بدون پایگاه داده، پرداخت یا کنترل هم‌زمانی','قبولی این تست‌ها تضمین آمادگی محصول واقعی نیست'],'analysis'=>'نتیجهٔ واقعی اجرا را در product-results.json بررسی کن؛ expected معیار و actual خروجی نسخهٔ توست.','next_step'=>'پس از ذخیره و اجرا، خطاها و محدودیت‌ها را اینجا ثبت کن؛ سپس ORDER یا process را اصلاح کن و آزمون مرزی اضافه کن.'];
-    $files=['main.py'=>['kind'=>'file','data'=>base64_encode($source)],'specification.json'=>['kind'=>'file','data'=>base64_encode(json_encode($spec,JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT))],'instructions.txt'=>['kind'=>'file','data'=>base64_encode('این نمونه از تصمیم‌های خودت ساخته شده، نه پاسخ مرجع. ابتدا specification.json را بررسی و تحلیل و گام بعدی را تکمیل کن. در میزکار ذخیره کن و main.py را اجرا کن؛ هر آزمون expected و actual دارد. خروجی product-results.json فقط پس از اجرا ساخته می‌شود. تغییرها را در همین میزکار ذخیره و دوباره اجرا کن؛ نتیجهٔ هر اجرا به نسخهٔ ذخیره‌شده مرتبط است. هر بار زدن دکمهٔ ساخت، یک پروژهٔ تازه ایجاد می‌کند. این خروجی ارزیابی محلی نمونه است و امتیاز مهارت دریچه را تغییر نمی‌دهد.')]];
-    try { return ws_create($userId,0,'نمونهٔ عملی دریچه؛ تلاش '.$attempt['attempt_no'],null,ws_manifest($files)); }
-    catch (InvalidArgumentException $e) { throw new DarychehError($e->getMessage()); }
+function dr_build_product(int $userId,int $id,int $revision,string $requestKey): int {
+    dr_request_key($requestKey);
+    $db=db(); $db->beginTransaction();
+    try {
+        ws_lock_user($userId);
+        $attempt=dr_owned($userId,$id);
+        $fingerprint=dr_hash([$id,$revision]);
+        $prior=q('SELECT request_fingerprint,project_id FROM darycheh_product_requests WHERE user_id=? AND request_key=?',[$userId,$requestKey])->fetch();
+        if ($prior) {
+            dr_require(hash_equals($prior['request_fingerprint'],$fingerprint),'این شناسه برای درخواست دیگری استفاده شده است.',409);
+            $db->commit(); return (int)$prior['project_id'];
+        }
+        dr_require($attempt['status']==='completed' && (int)$attempt['revision']===$revision,'ابتدا سناریو را کامل کن و گزارش فعلی را باز کن.',409);
+        $definition=dr_release($attempt); $state=dr_state($attempt,$definition);
+        $source=file_get_contents(dirname(__DIR__).'/content/darycheh_product.py');
+        $source=str_replace(['__ORDER__','__TESTS__'],[base64_encode(dr_json($state['answers']['solution']['order'])),base64_encode(dr_json($definition['tests']))],$source);
+        $spec=['source_attempt'=>$id,'source_revision'=>$revision,'content_version'=>$definition['content_version'],'problem'=>$definition['steps'][$definition['entry_step_key']]['text'],'decisions'=>$state['answers'],'operations'=>$definition['operations'],'acceptance_tests'=>$definition['tests'],'limitations'=>['فقط درخواست ترتیبی و دادهٔ ساختگی','حافظه موقت؛ بدون پایگاه داده، پرداخت یا کنترل هم‌زمانی','قبولی این تست‌ها تضمین آمادگی محصول واقعی نیست'],'analysis'=>'نتیجهٔ واقعی اجرا را در product-results.json بررسی کن؛ expected معیار و actual خروجی نسخهٔ توست.','next_step'=>'پس از ذخیره و اجرا، خطاها و محدودیت‌ها را اینجا ثبت کن؛ سپس ORDER یا process را اصلاح کن و آزمون مرزی اضافه کن.'];
+        $files=['main.py'=>['kind'=>'file','data'=>base64_encode($source)],'specification.json'=>['kind'=>'file','data'=>base64_encode(json_encode($spec,JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT))],'instructions.txt'=>['kind'=>'file','data'=>base64_encode('این نمونه از تصمیم‌های خودت ساخته شده، نه پاسخ مرجع. ابتدا specification.json را بررسی و تحلیل و گام بعدی را تکمیل کن. در میزکار ذخیره کن و main.py را اجرا کن؛ هر آزمون expected و actual دارد. خروجی product-results.json فقط پس از اجرا ساخته می‌شود. تغییرها را در همین میزکار ذخیره و دوباره اجرا کن؛ نتیجهٔ هر اجرا به نسخهٔ ذخیره‌شده مرتبط است. هر بار زدن دکمهٔ ساخت، یک پروژهٔ تازه ایجاد می‌کند. این خروجی ارزیابی محلی نمونه است و امتیاز مهارت دریچه را تغییر نمی‌دهد.')]];
+        $projectId=ws_create($userId,0,'نمونهٔ عملی دریچه؛ تلاش '.$attempt['attempt_no'],null,ws_manifest($files));
+        q('INSERT INTO darycheh_product_requests(user_id,request_key,request_fingerprint,attempt_id,project_id) VALUES (?,?,?,?,?)',[$userId,$requestKey,$fingerprint,$id,$projectId]);
+        $db->commit(); return $projectId;
+    } catch (Throwable $e) {
+        if ($db->inTransaction()) $db->rollBack();
+        if ($e instanceof InvalidArgumentException) throw new DarychehError($e->getMessage());
+        throw $e;
+    }
 }
 function dr_api(string $path): never {
     $u=user();
@@ -251,8 +267,7 @@ function dr_api(string $path): never {
         if (!$post && $path==='darycheh/state') $result=dr_view($uid,$integer($_GET['id'] ?? null));
         elseif (!$post && $path==='darycheh/progress') $result=dr_progress($uid);
         elseif ($post && $path==='darycheh/build') {
-            dr_request_key($_POST['request_key'] ?? null);
-            $projectId=dr_build_product($uid,$integer($_POST['id'] ?? null),$integer($_POST['revision'] ?? null));
+            $projectId=dr_build_product($uid,$integer($_POST['id'] ?? null),$integer($_POST['revision'] ?? null),dr_request_key($_POST['request_key'] ?? null));
             if (($_POST['_html'] ?? '')==='1') { header_remove('Content-Type'); redirect('dashboard/workspace/'.$projectId); }
             $result=['project_id'=>$projectId];
         }
