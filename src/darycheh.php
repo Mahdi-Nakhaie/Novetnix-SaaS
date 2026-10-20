@@ -66,7 +66,7 @@ function dr_append(array $attempt,string $requestKey,string $fingerprint,string 
 }
 function dr_start(int $userId,string $scenario,string $requestKey,?int $restartId=null,?int $expectedRevision=null): array {
     dr_request_key($requestKey);
-    dr_require($scenario==='reservation-retry','سناریو پیدا نشد.',404);
+    dr_require($scenario==='first-real-problem','سناریو پیدا نشد.',404);
     $fingerprint=dr_hash([$scenario,$restartId,$expectedRevision]); $db=db(); $db->beginTransaction();
     try {
         ws_lock_user($userId);
@@ -216,7 +216,7 @@ function dr_api(string $path): never {
         if (!$post && $path==='darycheh/state') $result=dr_view($uid,$integer($_GET['id'] ?? null));
         elseif (!$post && $path==='darycheh/progress') $result=dr_progress($uid);
         elseif ($post && in_array($path,['darycheh/start','darycheh/restart'],true)) {
-            $scenario=$_POST['scenario_key'] ?? 'reservation-retry'; dr_require(is_string($scenario));
+            $scenario=$_POST['scenario_key'] ?? 'first-real-problem'; dr_require(is_string($scenario));
             $result=dr_start($uid,$scenario,dr_request_key($_POST['request_key'] ?? null),$path==='darycheh/restart'?$integer($_POST['id'] ?? null):null,$path==='darycheh/restart'?$integer($_POST['revision'] ?? null):null);
         } elseif ($post && $path==='darycheh/act') {
             $payload=$_POST['payload'] ?? [];

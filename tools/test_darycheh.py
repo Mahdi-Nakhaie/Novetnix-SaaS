@@ -374,6 +374,9 @@ class DarychehHttpTests(unittest.TestCase):
         client, _ = self.member()
         home = client.request('/dashboard/darycheh')[2]
         self.assertIn('دریچه؛ فراتر از یادگیری، به‌سوی توانایی ساختن.', home)
+        self.assertIn('اولین مسئله واقعی تو', home)
+        self.assertIn('کسب‌وکار کوچک', home)
+        self.assertNotIn('چرا یک کلیک، دو رزرو ساخته است؟', home)
         self.assertIn('class="dr-portal" aria-hidden="true"', home)
         self.assertIn('/assets/darycheh.css?v=1', home)
         self.assertIn('/assets/darycheh.js?v=1', home)

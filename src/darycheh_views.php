@@ -104,7 +104,7 @@ function dr_landing(array $u): void {
         linkto('dashboard/darycheh/'.$active['id'],'ادامهٔ تجربهٔ ذخیره‌شده','btn dr-button dr-button-primary');
         echo '</div>';
     } elseif ($scenario) {
-        echo '<h2 id="dr-feature-title">'.h($scenario['title']).'</h2><p>یک درخواست، دو رزرو. مشکل از کلیک است یا از روشی که سیستم درخواست را می‌فهمد؟ با شواهد جلو برو، راه‌حل بساز و آن را محک بزن.</p><ul class="dr-feature-facts"><li>حدود ۲۰ تا ۳۰ دقیقه</li><li>بدون تایمر و جریمهٔ سرعت</li><li>ذخیره در حساب فعلی</li></ul><div class="dr-actions">';
+        echo '<h2 id="dr-feature-title">'.h($scenario['title']).'</h2><p>یک کسب‌وکار کوچک در ثبت سفارش‌ها، پیگیری مشتریان و کاهش خطا مشکل دارد. با شواهد جلو برو، مسئله را تعریف کن، نمونهٔ اولیهٔ فرایند را بساز و آن را با چند وضعیت آزمایش کن.</p><ul class="dr-feature-facts"><li>حدود ۲۰ تا ۳۰ دقیقه</li><li>بدون تایمر و جریمهٔ سرعت</li><li>ذخیره در حساب فعلی</li></ul><div class="dr-actions">';
         dr_form('darycheh/start'); echo '<button class="btn dr-button dr-button-primary" type="submit">ورود به اولین تجربه</button></form></div>';
     } else {
         echo '<h2 id="dr-feature-title">'.($availabilityError?'این سناریو فعلاً قابل بارگذاری نیست':'هنوز سناریویی برای شروع در دسترس نیست').'</h2><p'.($availabilityError?' role="alert"':'').'>'.h($availabilityError ?? 'وقتی سناریوی معتبری منتشر شود، شروع آن از همین‌جا امکان‌پذیر است. تجربه‌های قبلی، در صورت وجود، از تاریخچه قابل دسترسی‌اند.').'</p>';
