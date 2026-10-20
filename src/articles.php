@@ -42,8 +42,9 @@ function article_cards(int $limit=12): void {
 function page_articles(): void {
     head_page('مقاله‌های پایتون، علم داده و هوش مصنوعی','از پایتون مقدماتی و کتابخانه‌های استاندارد تا NumPy، Pandas و یادگیری ماشین؛ راهنماهای فارسی همراه با پیش‌نیاز، مثال قابل اجرا و پروژهٔ مرتبط.',false,true);
     echo '<main class="container section articles-index"><header class="section-header"><span class="eyebrow">مجلهٔ آموزشی نوونتیکس</span><h1>مقاله‌ها</h1><p>'.fa(count(articles())).' راهنمای آموزشی؛ شامل ۲۴ گام پایتون از صفر، همراه مثال، پیش‌نیاز و پروژه. مطالعهٔ مقاله‌ها رایگان و بدون ورود است.</p>';
+    echo '<div class="article-actions">';
     linkto('articles/python-basics-hello','شروع پایتون از صفر ←','btn btn-primary');
-    echo '</header>';
+    echo '</div></header>';
     article_cards(count(articles()));
     if (in_array(FREE_COURSE_SLUG,array_column(published_courses(),'slug'),true)) {
         echo '<section class="article-course-note"><h2>دنبال دوره و ثبت پیشرفت هستید؟</h2><p>مقاله‌ها برای مطالعه‌اند؛ دورهٔ رایگان و پیشرفت درس‌ها همچنان از مسیر قبلی در دسترس است.</p>';
@@ -70,8 +71,8 @@ function page_article(array $article): void {
     foreach ($article['sources'] as $source) echo '<li><a href="'.h($source['url']).'" rel="external">'.h($source['title']).'</a></li>';
     echo '</ul></section></div></div></article><section class="article-related"><h2>مطالعهٔ بعدی</h2><ul>';
     foreach ($article['related'] as $slug) { $related=article_entry($slug); echo '<li><a href="'.h(url('articles/'.$slug)).'">'.h($related['title']).'</a></li>'; }
-    echo '</ul>';
+    echo '</ul><div class="article-actions">';
     if (isset($article['project_index']) && isset(PROJECTS[$article['project_index']])) linkto('project/'.$article['project_index'],'تمرین عملی: '.PROJECTS[$article['project_index']]['title'],'btn btn-primary');
-    linkto('articles','همهٔ مقاله‌ها ←','inline-link'); echo '</section></main>';
+    linkto('articles','همهٔ مقاله‌ها ←','inline-link'); echo '</div></section></main>';
     foot_page();
 }

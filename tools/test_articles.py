@@ -50,6 +50,16 @@ class Document(HTMLParser):
 
 
 class ArticleContentTest(unittest.TestCase):
+    def test_article_actions_have_spacing_and_readable_primary_labels(self):
+        css = (ROOT / 'public/assets/articles.css').read_text()
+        source = (ROOT / 'src/articles.php').read_text()
+        self.assertEqual(source.count('<div class="article-actions">'), 2)
+        self.assertIn('.article-actions{display:flex;flex-wrap:wrap;align-items:center;gap:16px 24px;margin-block-start:24px}', css)
+        self.assertIn('.article-actions>.btn{max-width:100%;white-space:normal;', css)
+        self.assertIn('.article-related .btn-primary:focus-visible{color:#fff}', css)
+        self.assertIn('.article-actions{align-items:stretch;flex-direction:column}', css)
+        self.assertIn('/assets/articles.css?v=3', (ROOT / 'src/views.php').read_text())
+
     def test_original_long_form_and_beginner_articles_and_metadata(self):
         self.assertEqual(len(CATALOG), 36)
         self.assertEqual(sum(a.get('series') == 'python-basics' for a in CATALOG), 24)

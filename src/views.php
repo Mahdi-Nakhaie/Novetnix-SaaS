@@ -16,7 +16,7 @@ function head_page(string $title,string $description='',bool $panel=false,bool $
         echo '<link rel="stylesheet" href="/assets/free-course.css?v=3">';
         if ($me && trim($me['name'])!=='') echo '<script src="/assets/free-course.js?v=2" defer></script>';
     }
-    if ($path==='' || $path==='articles' || str_starts_with($path,'articles/')) echo '<link rel="stylesheet" href="/assets/articles.css?v=2">';
+    if ($path==='' || $path==='articles' || str_starts_with($path,'articles/')) echo '<link rel="stylesheet" href="/assets/articles.css?v=3">';
     $darychehAssets=($path==='dashboard/darycheh' || str_starts_with($path,'dashboard/darycheh/')) ? '<link rel="stylesheet" href="/assets/darycheh.css?v=1"><script src="/assets/darycheh.js?v=1" defer></script>' : '';
     echo '<link rel="stylesheet" href="/assets/style.css?v=8">'.($path===''?'<script src="/assets/three.min.js" defer></script><script src="/assets/three-scene.js" defer></script>':'').'<script src="/assets/app.js?v=2" defer></script><script src="/assets/playback-events.js" defer></script>'.$darychehAssets.'</head><body class="'.($panel?'is-panel':'').'">';
     echo '<div class="noventix-loading" id="noventix-loading" role="status" aria-live="polite" hidden><div class="noventix-loading-card"><span class="noventix-loading-mark" aria-hidden="true">N</span><strong>Noventix</strong><span class="noventix-loading-track" aria-hidden="true"><span></span></span><p>در حال آماده‌سازی...</p></div></div>';
