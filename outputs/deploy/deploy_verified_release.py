@@ -1,0 +1,106 @@
+import hashlib
+import http.client
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+
+ROOT = Path('/var/www/noventix')
+STAGE = Path(sys.argv[1]).resolve()
+assert STAGE.parent == Path('/var/backups/noventix')
+manifest = json.loads((STAGE / 'release-manifest.json').read_text())
+files = manifest['files']
+backup = STAGE / 'previous'
+assert not backup.exists()
+
+
+def digest(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def run(command):
+    result = subprocess.run(command, capture_output=True, timeout=60)
+    if result.returncode:
+        raise RuntimeError('Command failed: ' + command[0])
+
+
+for name, entry in files.items():
+    assert not Path(name).is_absolute() and '..' not in Path(name).parts
+    source, target = STAGE / name, ROOT / name
+    assert source.is_file() and not source.is_symlink() and digest(source) == entry['sha256'], name
+    assert target.parent.is_dir() and not target.is_symlink(), name
+    if entry['before'] is None:
+        assert not target.exists(), 'Unexpected production file: ' + name
+    else:
+        assert target.is_file() and digest(target) == entry['before'], 'Production drift: ' + name
+    if name.endswith('.php'):
+        run(['php', '-l', str(source)])
+
+backup.mkdir()
+for name, entry in files.items():
+    if entry['before'] is not None:
+        saved = backup / name
+        saved.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(ROOT / name, saved)
+
+
+def install(source, target):
+    temporary = target.with_name(target.name + '.release-new')
+    assert not temporary.exists()
+    shutil.copy2(source, temporary)
+    os.chmod(temporary, 0o644)
+    os.replace(temporary, target)
+
+
+def probe(path, expected):
+    connection = http.client.HTTPSConnection('noventix.ir', timeout=30)
+    try:
+        connection.request('GET', path, headers={'User-Agent': 'Noventix-Release-Check', 'Cache-Control': 'no-cache'})
+        response = connection.getresponse()
+        body = response.read()
+        assert response.status == expected, (path, response.status)
+        assert b'Fatal error' not in body and b'PDOException' not in body, path
+        if expected == 303:
+            assert response.getheader('Location', '').startswith('/login?next='), path
+        if path in ('/login', '/course/ai-foundations'):
+            assert b'/assets/style.css?v=8' in body, 'Stale HTML: ' + path
+        if path.startswith('/assets/'):
+            asset = ROOT / ('public' + path.split('?', 1)[0])
+            assert hashlib.sha256(body).hexdigest() == digest(asset), 'Stale asset: ' + path
+        print('HTTP', response.status, path, flush=True)
+    finally:
+        connection.close()
+
+
+installed = []
+try:
+    ordered = sorted(files, key=lambda name: (2 if name.startswith('src/') else 1 if name == 'database/connection.php' else 0, name == 'src/app.php', name))
+    for name in ordered:
+        install(STAGE / name, ROOT / name)
+        installed.append(name)
+    run(['systemctl', 'reload', 'php8.2-fpm.service'])
+    run(['systemctl', 'is-active', 'php8.2-fpm.service'])
+    code = '''require '/var/www/noventix/src/app.php';
+    $database=db();
+    $lesson=q("SELECT l.id FROM lessons l JOIN courses c ON c.id=l.course_id WHERE c.slug=? AND c.status='published' AND l.position=1 AND l.status='published'",['ai-foundations'])->fetchColumn();
+    if (!$lesson || lesson_quiz_for_lesson((int)$lesson)===null) exit(2);
+    q('SELECT user_id,request_key FROM darycheh_product_requests LIMIT 0');
+    q('SELECT revision FROM darycheh_drafts LIMIT 0');'''
+    run(['php', '-r', code])
+    print('Database migrations and published lesson quiz verified.', flush=True)
+    for path, expected in [('/', 200), ('/login', 200), ('/course/ai-foundations', 200), ('/articles', 200), ('/dashboard/course/ai-foundations', 303), ('/dashboard/darycheh', 303), ('/dashboard/darycheh-manage', 303), ('/darycheh/progress', 401), ('/assets/style.css?v=8', 200), ('/assets/darycheh.js?v=1', 200), ('/assets/darycheh.css?v=1', 200)]:
+        probe(path, expected)
+    for name, entry in files.items():
+        assert digest(ROOT / name) == entry['sha256'], name
+except Exception:
+    for name in reversed(installed):
+        if files[name]['before'] is None:
+            (ROOT / name).unlink()
+        else:
+            install(backup / name, ROOT / name)
+    run(['systemctl', 'reload', 'php8.2-fpm.service'])
+    print('Source rollback completed; additive database changes retained.', flush=True)
+    raise
+print('Release ' + manifest['revision'] + ' deployed; source backup: ' + str(backup), flush=True)
