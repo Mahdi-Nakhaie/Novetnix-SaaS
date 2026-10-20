@@ -17,7 +17,7 @@ function head_page(string $title,string $description='',bool $panel=false,bool $
     }
     if ($path==='' || $path==='articles' || str_starts_with($path,'articles/')) echo '<link rel="stylesheet" href="/assets/articles.css?v=2">';
     $darychehAssets=($path==='dashboard/darycheh' || str_starts_with($path,'dashboard/darycheh/')) ? '<link rel="stylesheet" href="/assets/darycheh.css?v=1"><script src="/assets/darycheh.js?v=1" defer></script>' : '';
-    echo '<link rel="stylesheet" href="/assets/style.css?v=7">'.($path===''?'<script src="/assets/three.min.js" defer></script><script src="/assets/three-scene.js" defer></script>':'').'<script src="/assets/app.js?v=2" defer></script><script src="/assets/playback-events.js" defer></script>'.$darychehAssets.'</head><body class="'.($panel?'is-panel':'').'">';
+    echo '<link rel="stylesheet" href="/assets/style.css?v=8">'.($path===''?'<script src="/assets/three.min.js" defer></script><script src="/assets/three-scene.js" defer></script>':'').'<script src="/assets/app.js?v=2" defer></script><script src="/assets/playback-events.js" defer></script>'.$darychehAssets.'</head><body class="'.($panel?'is-panel':'').'">';
     echo '<div class="noventix-loading" id="noventix-loading" role="status" aria-live="polite" hidden><div class="noventix-loading-card"><span class="noventix-loading-mark" aria-hidden="true">N</span><strong>Noventix</strong><span class="noventix-loading-track" aria-hidden="true"><span></span></span><p>در حال آماده‌سازی...</p></div></div>';
     if ($panel) { panel_nav(); return; }
     echo '<header class="site-header"><div class="container header-inner"><a href="/" class="brand" aria-label="Noventix، صفحه اصلی"><img src="/assets/logo.png" alt="Noventix" width="171" height="55"></a><nav class="main-nav" aria-label="ناوبری اصلی">';
@@ -168,11 +168,11 @@ function page_course_workspace(?array $course,string $requestedLesson): void {
     $hasVideo=$course['slug']==='ai-foundations' && (int)$current['position']===1;
     echo '<div class="workspace-layout"><section class="workspace-main"><div class="video-placeholder'.($hasVideo?' has-aparat':'').'" aria-label="ویدیوی جلسه">';
     if ($hasVideo) {
-        echo '<div id="63043856666" class="aparat-embed"><script type="text/javascript" src="https://www.aparat.com/embed/qbk51d2?data[rnddiv]=63043856666&amp;data[responsive]=yes&amp;titleShow=true&amp;recom=self"></script></div>';
+        echo '<iframe class="aparat-embed" src="https://www.aparat.com/video/video/embed/videohash/qbk51d2/vt/frame?titleShow=true" title="جلسهٔ اول: مبانی هوش مصنوعی" allow="fullscreen; picture-in-picture" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>';
     } else {
         echo '<div class="video-placeholder-inner"><strong>ویدیوی این جلسه هنوز اضافه نشده است</strong><span>تا زمان انتشار ویدیو، متن درس را در همین صفحه مطالعه کنید.</span></div>';
     }
-    echo '</div>'; if ($hasVideo) echo '<p class="workspace-video-note">این ویدیو از آپارات پخش می‌شود؛ پیشرفت تماشا در حال حاضر به‌صورت خودکار ثبت نمی‌شود.</p>';
+    echo '</div>'; if ($hasVideo) echo '<p class="workspace-video-note">این ویدیو از آپارات پخش می‌شود؛ برای ثبت پیشرفت و تکمیل درس، آزمون پایان درس را با موفقیت بگذرانید.</p>';
     echo '<section class="current-lesson"><div class="workspace-kicker">جلسه '.fa((int)$current['position']).' از '.fa(count($course['lessons'])).'</div><h2>'.h($current['title']).'</h2><div class="current-lesson-meta"><span>'.h(course_workspace_duration($current['duration_minutes']===null?null:(int)$current['duration_minutes'])).'</span><span>متن درس</span></div><p>'.nl2br(h($current['content'])).'</p></section>';
     ws_lesson_exercises((int)$GLOBALS['me']['id'],(int)$current['id']);
     echo '<section class="current-lesson lesson-quiz"><h2>آزمون پایان درس</h2>';

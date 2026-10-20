@@ -96,6 +96,13 @@ function glossary_seed_initial_drafts(PDO $db): void {
     }
 }
 
+function seed_foundations_quiz(PDO $db): void {
+    $quiz=json_decode((string)file_get_contents(dirname(__DIR__).'/curriculum/ai-foundations-session1-quiz.json'),true,512,JSON_THROW_ON_ERROR);
+    $sql='INSERT INTO lesson_quizzes(lesson_id,pass_percent,questions_json) SELECT l.id,?,? FROM lessons l INNER JOIN courses c ON c.id=l.course_id WHERE c.slug=? AND l.position=1';
+    $sql.=$db->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql' ? ' ON DUPLICATE KEY UPDATE lesson_id=lesson_quizzes.lesson_id' : ' ON CONFLICT(lesson_id) DO NOTHING';
+    $db->prepare($sql)->execute([$quiz['pass_percent'],json_encode($quiz['questions'],JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE),'ai-foundations']);
+}
+
 function db(): PDO {
     static $db;
     if ($db instanceof PDO) return $db;
@@ -196,6 +203,7 @@ function db(): PDO {
         $runNames=[];
         for ($i=0;$i<$runColumns->columnCount();$i++) $runNames[]=$runColumns->getColumnMeta($i)['name'];
         foreach (['assessment_key','assessment_version'] as $column) if (!in_array($column,$runNames,true)) $db->exec('ALTER TABLE workspace_runs ADD COLUMN '.$column.' '.($driver==='mysql'?'VARCHAR(64) NULL':'TEXT'));
+        seed_foundations_quiz($db);
         return $db;
     } catch (Throwable $e) {
         throw new RuntimeException('Database initialization failed.', 0, $e);

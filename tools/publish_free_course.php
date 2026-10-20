@@ -26,6 +26,7 @@ try {
     $second=q('SELECT id FROM lessons WHERE course_id=? AND position=?',[$courseId,2])->fetchColumn();
     if ($second) q('UPDATE lessons SET status=? WHERE id=?',['draft',$second]);
     else q('INSERT INTO lessons(course_id,title,content,position,status) VALUES (?,?,?,?,?)',[$courseId,'جلسهٔ دوم','به‌زودی',2,'draft']);
+    seed_foundations_quiz($database);
     $database->commit();
     fwrite(STDOUT,"Free course published; lesson 1 available, lesson 2 coming soon.\n");
 } catch (Throwable $error) {

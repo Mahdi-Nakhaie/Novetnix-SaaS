@@ -136,7 +136,7 @@ class LayoutStyleTests(unittest.TestCase):
 
     def test_updated_styles_have_cache_versions(self):
         source = (ROOT / 'src/views.php').read_text()
-        for asset in ('style.css?v=7', 'free-course.css?v=3', 'articles.css?v=2'):
+        for asset in ('style.css?v=8', 'free-course.css?v=3', 'articles.css?v=2'):
             self.assertIn(asset, source)
         self.assertIn('workspace.css?v=6', (ROOT / 'src/workspace_views.php').read_text())
 
@@ -159,8 +159,8 @@ class StudioHttpTests(unittest.TestCase):
                 status, _, source = client.request(path)
                 self.assertEqual(status, 200)
                 self.assertIn('class="is-panel"', source)
-                self.assertIn('/assets/style.css?v=7', source)
-        status, _, stylesheet = client.request('/assets/style.css?v=7')
+                self.assertIn('/assets/style.css?v=8', source)
+        status, _, stylesheet = client.request('/assets/style.css?v=8')
         self.assertEqual(status, 200)
         self.assertIn('body.is-panel .panel-content :is(', stylesheet)
         self.assertNotIn('class="is-panel"', client.request('/login')[2])

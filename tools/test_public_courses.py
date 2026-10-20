@@ -99,8 +99,9 @@ class PublicCoursesTest(unittest.TestCase):
 
     def test_embed_is_scoped_to_first_demo_lesson_and_csp_to_workspace(self):
         self.assertIn("$course['slug']==='ai-foundations' && (int)$current['position']===1", self.workspace_view)
-        self.assertIn('id="63043856666"', self.workspace_view)
-        self.assertIn('https://www.aparat.com/embed/qbk51d2?data[rnddiv]=63043856666&amp;data[responsive]=yes&amp;titleShow=true&amp;recom=self', self.workspace_view)
+        self.assertIn('<iframe class="aparat-embed"', self.workspace_view)
+        self.assertIn('https://www.aparat.com/video/video/embed/videohash/qbk51d2/vt/frame?titleShow=true', self.workspace_view)
+        self.assertNotIn('data[responsive]', self.workspace_view)
         self.assertIn('ویدیوی این جلسه هنوز اضافه نشده است', self.workspace_view)
         self.assertIn('جلسهٔ بعدی', self.workspace_view)
         self.assertIn('aria-current="true"', self.workspace_view)

@@ -1,4 +1,5 @@
 import os
+import json
 import pathlib
 import shutil
 import sqlite3
@@ -210,6 +211,103 @@ class FreeCourseHttpTest(unittest.TestCase):
         self.assertNotIn("'unsafe-inline'", policy)
         _, headers, _ = client.request('/articles')
         self.assertNotIn('https://www.aparat.com', headers['Content-Security-Policy'])
+
+    def lesson_quiz(self):
+        with sqlite3.connect(test_release.ReleaseHttpTest.database) as connection:
+            lesson, threshold, raw = connection.execute("SELECT l.id,q.pass_percent,q.questions_json FROM lessons l JOIN courses c ON c.id=l.course_id JOIN lesson_quizzes q ON q.lesson_id=l.id WHERE c.slug='ai-foundations' AND l.position=1").fetchone()
+        return lesson, threshold, json.loads(raw)
+
+    def test_workspace_video_and_slide_quiz_use_existing_learning_flow(self):
+        client = self.register_for_course('09990000191')
+        self.assertEqual(client.post('/courses/enroll', {'slug': 'ai-foundations'})[0], 303)
+        status, headers, source = client.request('/dashboard/course/ai-foundations')
+        self.assertEqual(status, 200)
+        frames = CourseDocument(source).iframes
+        self.assertEqual(len(frames), 1)
+        self.assertEqual(frames[0]['class'], 'aparat-embed')
+        self.assertIn('/videohash/qbk51d2/', frames[0]['src'])
+        self.assertIn('allowfullscreen', frames[0])
+        self.assertNotIn('data[responsive]', source)
+        self.assertNotIn('63043856666', source)
+        self.assertIn("https://www.aparat.com", headers['Content-Security-Policy'])
+        lesson, threshold, questions = self.lesson_quiz()
+        expected = json.loads((ROOT / 'curriculum/ai-foundations-session1-quiz.json').read_text())
+        self.assertEqual((threshold, questions), (expected['pass_percent'], expected['questions']))
+        self.assertEqual(len(questions), 10)
+        for i, question in enumerate(questions):
+            self.assertIn(question['prompt'], source)
+            self.assertIn(f'name="answers[{i}]"', source)
+        self.assertIn('name="quiz_submit" value="1"', source)
+        self.assertIn('ثبت پیشرفت و تکمیل درس', source)
+        self.assertIn('/assets/style.css?v=8', source)
+        css = client.request('/assets/style.css?v=8')[2]
+        self.assertIn('.video-placeholder.has-aparat{display:block;position:relative;', css)
+        self.assertIn('.aparat-embed{position:absolute;inset:0;display:block;width:100%;height:100%;border:0}', css)
+        self.assertIn('aspect-ratio:16/9', css)
+        self.assertFalse(json.loads(client.request(f'/progress/lesson/{lesson}')[2])['completed'])
+
+    def test_slide_quiz_threshold_persistence_isolation_and_repeat_submission(self):
+        client = self.register_for_course('09990000192')
+        client.post('/courses/enroll', {'slug': 'ai-foundations'})
+        client.request('/dashboard/course/ai-foundations')
+        lesson, threshold, questions = self.lesson_quiz()
+        progress = f'/progress/lesson/{lesson}'
+        self.assertEqual(client.post('/progress/save', {'lesson_id': lesson, 'completed': 'true'})[0], 422)
+        self.assertEqual(client.post('/progress/save', {'lesson_id': lesson, 'watched_seconds': 900, 'last_position': 900, 'percentage': 100, 'completed': 'false'})[0], 200)
+        self.assertFalse(json.loads(client.request(progress)[2])['completed'])
+        answers = {f'answers[{i}]': str(q['correct']) for i, q in enumerate(questions)}
+        wrong = dict(answers)
+        for i in range(3):
+            wrong[f'answers[{i}]'] = str((questions[i]['correct'] + 1) % len(questions[i]['options']))
+        payload = {'lesson_id': lesson, 'quiz_submit': '1'}
+        self.assertEqual(client.post('/progress/save', dict(payload, **wrong))[0], 303)
+        self.assertFalse(json.loads(client.request(progress)[2])['completed'])
+        invalid = dict(answers, **{'answers[0]': '99'})
+        self.assertEqual(client.post('/progress/save', dict(payload, **invalid))[0], 303)
+        self.assertFalse(json.loads(client.request(progress)[2])['completed'])
+        passing = dict(answers)
+        for i in range(2):
+            passing[f'answers[{i}]'] = wrong[f'answers[{i}]']
+        self.assertEqual(threshold, 80)
+        self.assertEqual(client.post('/progress/save', dict(payload, **passing))[0], 303)
+        first = json.loads(client.request(progress)[2])
+        self.assertTrue(first['completed'])
+        self.assertIn('تکمیل‌شده', client.request('/dashboard/course/ai-foundations')[2])
+        with sqlite3.connect(test_release.ReleaseHttpTest.database) as connection:
+            uid = connection.execute('SELECT id FROM users WHERE phone=?', ('09990000192',)).fetchone()[0]
+            before = connection.execute('SELECT completed_at,quiz_version FROM lesson_progress WHERE user_id=? AND lesson_id=?', (uid, lesson)).fetchone()
+        self.assertEqual(client.post('/progress/save', dict(payload, **passing))[0], 303)
+        client.post('/logout', {})
+        client.request('/login')
+        self.assertEqual(client.post('/auth/login', {'phone': '09990000192', 'password': 'FixturePass123', 'captcha': client.state()['captcha']})[0], 303)
+        self.assertTrue(json.loads(client.request(progress)[2])['completed'])
+        with sqlite3.connect(test_release.ReleaseHttpTest.database) as connection:
+            after = connection.execute('SELECT completed_at,quiz_version FROM lesson_progress WHERE user_id=? AND lesson_id=?', (uid, lesson)).fetchone()
+            self.assertEqual(after, before)
+            self.assertTrue(after[1])
+            self.assertEqual(connection.execute("SELECT COUNT(*) FROM activities WHERE user_id=? AND event_name='lesson_completed'", (uid,)).fetchone()[0], 1)
+            self.assertEqual(connection.execute("SELECT COUNT(*) FROM activities WHERE user_id=? AND event_name='course_completed'", (uid,)).fetchone()[0], 1)
+        other = self.register_for_course('09990000193')
+        self.assertEqual(other.post('/progress/save', dict(payload, **answers))[0], 404)
+        other.post('/courses/enroll', {'slug': 'ai-foundations'})
+        self.assertFalse(json.loads(other.request(progress)[2])['completed'])
+
+    def test_seed_preserves_custom_quiz_and_backfills_existing_lesson(self):
+        lesson, threshold, questions = self.lesson_quiz()
+        database = test_release.ReleaseHttpTest.database
+        custom = [{'prompt': 'آزمون سفارشی مدیر', 'options': ['یک', 'دو'], 'correct': 0}]
+        try:
+            with sqlite3.connect(database) as connection:
+                connection.execute('UPDATE lesson_quizzes SET pass_percent=100,questions_json=? WHERE lesson_id=?', (json.dumps(custom), lesson))
+            self.publish('custom-quiz.json')
+            self.assertEqual(self.lesson_quiz(), (lesson, 100, custom))
+            with sqlite3.connect(database) as connection:
+                connection.execute('DELETE FROM lesson_quizzes WHERE lesson_id=?', (lesson,))
+            self.assertEqual(test_release.Client(self.base).request('/course/ai-foundations')[0], 200)
+            self.assertEqual(self.lesson_quiz(), (lesson, threshold, questions))
+        finally:
+            with sqlite3.connect(database) as connection:
+                connection.execute('UPDATE lesson_quizzes SET pass_percent=?,questions_json=? WHERE lesson_id=?', (threshold, json.dumps(questions), lesson))
 
     def test_publication_is_repeatable_and_preserves_lesson_identity(self):
         with sqlite3.connect(test_release.ReleaseHttpTest.database) as connection:
