@@ -1,3 +1,5 @@
+import base64
+import tempfile
 import concurrent.futures
 import json
 import os
@@ -196,6 +198,47 @@ class DarychehHttpTests(unittest.TestCase):
         progress = json.loads(client.request('/darycheh/progress')[2])
         self.assertEqual(progress['groups'], [])
         self.assertTrue(all(h['last']['score'] is None for h in progress['skill_groups']['unassessed'].values()))
+
+    def test_product_is_owned_runnable_and_revisable_in_existing_workspace(self):
+        client, _ = self.member()
+        attempt = self.start(client)
+        def build(member, state):
+            return member.post('/darycheh/build', {'id': state['attempt_id'], 'revision': state['revision'], 'request_key': key()})
+        self.assertEqual(build(client, attempt)[0], 409)
+        attempt = self.finish(client, self.enter_transfer(client, self.main_path(client)))
+        other, _ = self.member()
+        self.assertEqual(build(other, attempt)[0], 404)
+        self.assertEqual(build(client, dict(attempt, revision=1))[0], 409)
+        response = build(client, attempt)
+        self.assertEqual(response[0], 200, response[2])
+        project = json.loads(response[2])['project_id']
+        files_json, revision = self.rows('SELECT files_json,revision FROM project_workspaces WHERE project_id=?', (project,))[0]
+        files = json.loads(files_json)
+        spec = json.loads(base64.b64decode(files['specification.json']['data']))
+        self.assertEqual(spec['source_attempt'], attempt['attempt_id'])
+        self.assertEqual(spec['decisions']['solution']['order'], ORDER)
+        self.assertEqual(len(spec['acceptance_tests']), 4)
+        self.assertNotIn('product-results.json', files)
+        source = base64.b64decode(files['main.py']['data']).decode()
+        with tempfile.TemporaryDirectory() as directory:
+            script = pathlib.Path(directory) / 'main.py'
+            script.write_text(source)
+            good = subprocess.run(['python3', str(script)], cwd=directory, capture_output=True, timeout=10)
+            self.assertEqual(good.returncode, 0, good.stderr)
+            result = json.loads((pathlib.Path(directory) / 'product-results.json').read_text())
+            self.assertTrue(result['passed'])
+            broken = source.replace('for operation in ORDER:', 'for operation in ["reserve"]:')
+            script.write_text(broken)
+            bad = subprocess.run(['python3', str(script)], cwd=directory, capture_output=True, timeout=10)
+            self.assertEqual(bad.returncode, 1)
+            self.assertFalse(json.loads((pathlib.Path(directory) / 'product-results.json').read_text())['passed'])
+        files['main.py']['data'] = base64.b64encode(broken.encode()).decode()
+        saved = client.post('/workspace/save', {'id': project, 'revision': revision, 'files': json.dumps(files)})
+        self.assertEqual(saved[0], 200, saved[2])
+        self.assertEqual(client.post('/workspace/save', {'id': project, 'revision': revision, 'files': json.dumps(files)})[0], 409)
+        self.assertEqual(other.request('/dashboard/workspace/' + str(project))[0], 404)
+        self.assertIn('ساخت پروژهٔ عملی تازه', client.request('/dashboard/darycheh/' + str(attempt['attempt_id']))[2])
+        self.assertEqual(self.view(client, attempt)['summary']['score'], 20)
 
     def test_valid_complete_independent_and_terminal_guard(self):
         client, _ = self.member()

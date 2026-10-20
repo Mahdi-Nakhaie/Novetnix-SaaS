@@ -179,7 +179,14 @@ function dr_page(array $u,?int $id): void {
     echo '<div class="dr-workspace"><section class="dr-card dr-stage" id="dr-content" tabindex="-1" aria-labelledby="dr-stage-title"><div class="dr-stage-meta"><span>تلاش '.fa($view['attempt_no']).' · نسخهٔ '.h($view['content_version']).'</span><span>آخرین ثبت سرور: '.fa($view['revision']).'</span></div><span class="dr-kicker">'.($stage['kind']==='report'?'پس از عبور':('گام '.fa(min(8,dr_position($stage['kind'])+1)).' از ۸')).'</span><h2 id="dr-stage-title">'.h($stage['title']).'</h2><p class="dr-stage-intro">'.h($stage['text']).'</p>';
     if (isset($view['bundle'])) echo '<div class="dr-situation"><span class="dr-kicker">موقعیت تازه / '.h($view['bundle']['label']).'</span><p>'.h($view['bundle']['text']).'</p>'.($view['bundle']['previously_exposed']?'<p class="dr-footnote">این بسته قبلاً پاسخ داده شده و برای تمرین است؛ شاهد مستقل تازه محسوب نمی‌شود.</p>':'').'</div>';
     if ($view['hint']) echo '<div class="dr-message dr-message-hint" role="status"><strong>راهنمایی ثبت‌شده</strong><p>'.h($view['hint']).'</p></div>';
-    if (isset($view['summary'])) dr_summary($view['summary']);
+    if (isset($view['summary'])) {
+        dr_summary($view['summary']);
+        echo '<section class="dr-results"><h3>از تحلیل به نمونهٔ عملی</h3><p>با تصمیم‌های همین تلاش، یک پروژهٔ پایتون و مشخصات فنی بساز. چهار معیار روشن، نتیجهٔ واقعی و دلیل رد یا پذیرش هر آزمون را نشان می‌دهند. پس از ساخت، فایل‌ها را در میزکار ویرایش، ذخیره و اجرا کن؛ نتیجه از پیش اجراشده نیست.</p><p class="dr-footnote">هر بار ساخت، یک پروژهٔ تازه از سهمیهٔ میزکار ایجاد می‌کند. برای اصلاح، همان پروژه را از فهرست میزکار باز کن. اجرا به در دسترس بودن اجرای ایزولهٔ فعلی وابسته است؛ مشخصات و کد حتی بدون اجرا قابل بررسی‌اند.</p>';
+        dr_form('darycheh/build',$view);
+        echo '<button class="btn dr-button dr-button-primary" type="submit">ساخت پروژهٔ عملی تازه در میزکار</button></form>';
+        linkto('dashboard/workspace','پروژه‌های ذخیره‌شدهٔ من','dr-inline-link');
+        echo '</section>';
+    }
     if (in_array($stage['kind'],['feedback','transfer_feedback'],true)) dr_render_results($view);
     if ($view['status']==='in_progress') {
         dr_form('darycheh/act',$view); dr_render_fields($view);
