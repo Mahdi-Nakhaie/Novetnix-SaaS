@@ -18,7 +18,7 @@ function head_page(string $title,string $description='',bool $panel=false,bool $
     }
     if ($path==='' || $path==='articles' || str_starts_with($path,'articles/')) echo '<link rel="stylesheet" href="/assets/articles.css?v=3">';
     $darychehAssets=($path==='dashboard/darycheh' || str_starts_with($path,'dashboard/darycheh/')) ? '<link rel="stylesheet" href="/assets/darycheh.css?v=1"><script src="/assets/darycheh.js?v=1" defer></script>' : '';
-    echo '<link rel="stylesheet" href="/assets/style.css?v=20"><script src="/assets/app.js?v=2" defer></script><script src="/assets/playback-events.js" defer></script>'.$darychehAssets.'</head><body class="'.($panel?'is-panel':'').'">';
+    echo '<link rel="stylesheet" href="/assets/style.css?v=21"><script src="/assets/app.js?v=2" defer></script><script src="/assets/playback-events.js" defer></script>'.$darychehAssets.'</head><body class="'.($panel?'is-panel':'').'">';
     echo '<div class="noventix-loading" id="noventix-loading" role="status" aria-live="polite" hidden><div class="noventix-loading-card"><span class="noventix-loading-mark" aria-hidden="true">N</span><strong>Noventix</strong><span class="noventix-loading-track" aria-hidden="true"><span></span></span><p>در حال آماده‌سازی...</p></div></div>';
     if ($panel) { panel_nav(); return; }
     echo '<header class="site-header"><div class="container header-inner"><a href="/" class="brand" aria-label="Noventix، صفحه اصلی"><img src="/assets/noventix-logo.webp?v=2" alt="Noventix" width="72" height="72"><span class="brand-name" lang="en" dir="ltr">Noventix</span></a><nav class="main-nav" aria-label="ناوبری اصلی">';
@@ -151,7 +151,7 @@ function home(array $courses): void {
     } else {
         echo '<section class="section container"><div class="cta-panel"><span class="eyebrow">دوره رایگان MVP</span><h2>'.h(FREE_COURSE_TITLE).'</h2><p>ثبت‌نام کن و بدون پرداخت، درس‌ها و پیشرفت واقعی خودت را دنبال کن.</p>'; linkto('course/'.FREE_COURSE_SLUG,'شروع دوره رایگان ←','btn btn-light'); echo '</div></section>';
     }
-    echo '<section class="section container"><div class="section-header"><span class="eyebrow">قیمت‌گذاری · بزودی</span><h2>پلن مناسب مسیرت</h2><p>پلن‌های برنزی، نقره‌ای، طلایی و تیتانیومی در حال آماده‌سازی‌اند؛ خرید آن‌ها فعلاً غیرفعال است.</p></div>'; linkto('pricing','مشاهدهٔ پلن‌های آینده','btn btn-outline'); echo '</section>';
+    echo '<section class="section container"><div class="section-header"><span class="eyebrow">پلن‌های Noventix · به‌زودی</span><h2>پلن مناسب مسیرت</h2><p>برنزی، نقره‌ای، طلایی و تیتانیومی؛ چهار مسیر برای شروع هدفمند، تمرین کاربردی و رشد حرفه‌ای در دنیای برنامه‌نویسی.</p></div>'; linkto('pricing','آشنایی با پلن‌ها','btn btn-outline'); echo '</section>';
     echo '<section class="section container"><div class="cta-panel"><span class="eyebrow">آینده از همین قدم شروع می‌شود</span><h2>پروژه بعدی‌ات منتظر توست.</h2><p>مسیرت را انتخاب کن، یاد بگیر و چیزی بساز که بتوانی به آن افتخار کنی.</p>'; linkto('login','رایگان شروع کن ←','btn btn-light'); echo '</div></section></main>';
 }
 function panel_head(string $title,string $sub): void { echo '<div class="panel-heading"><h1>'.h($title).'</h1><p>'.h($sub).'</p></div>'; }
