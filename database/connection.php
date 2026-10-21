@@ -96,6 +96,40 @@ function glossary_seed_initial_drafts(PDO $db): void {
     }
 }
 
+function glossary_expand_categories(PDO $db): void {
+    $db->exec('CREATE TABLE IF NOT EXISTS glossary_content_releases (release_key VARCHAR(80) PRIMARY KEY)');
+    $release='category-expansion-20261021';
+    $check=$db->prepare('SELECT release_key FROM glossary_content_releases WHERE release_key=?');
+    $check->execute([$release]);
+    if ($check->fetchColumn()) return;
+    $data=json_decode((string)file_get_contents(dirname(__DIR__).'/curriculum/glossary-category-expansion.json'),true,512,JSON_THROW_ON_ERROR);
+    $db->beginTransaction();
+    try {
+        $claim='INSERT INTO glossary_content_releases(release_key) VALUES (?)';
+        $claim.=$db->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql' ? ' ON DUPLICATE KEY UPDATE release_key=glossary_content_releases.release_key' : ' ON CONFLICT(release_key) DO NOTHING';
+        $claimed=$db->prepare($claim);
+        $claimed->execute([$release]);
+        if ($claimed->rowCount()===0) { $db->commit(); return; }
+        $lookup=$db->prepare('SELECT id FROM glossary_terms WHERE slug=? OR canonical_key=? OR LOWER(term_en)=LOWER(?)');
+        $insert=$db->prepare('INSERT INTO glossary_terms(slug,term_en,term_fa,letter,alternative_translations,short_definition,full_definition,beginner_explanation,technical_explanation,advanced_explanation,how_it_works,practical_example,code_example,use_cases,advantages,limitations,search_text,difficulty_level,canonical_key,publication_status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
+        foreach ($data['entries'] as $entry) {
+            $canonical=db_glossary_normalize($entry['term'].' '.$entry['title']);
+            $lookup->execute([$entry['key'],$canonical,$entry['term']]);
+            if ($lookup->fetchColumn()) continue;
+            $search=db_glossary_normalize(implode(' ',[$entry['term'],$entry['title'],$entry['definition'],$entry['explanation']]));
+            $insert->execute([$entry['key'],$entry['term'],$entry['title'],strtoupper(substr($entry['term'],0,1)),'[]',$entry['definition'],$entry['explanation'],'','','','',$entry['example'],$entry['code'],'[]','[]','[]',$search,'beginner',$canonical,'published']);
+        }
+        $link=$db->prepare('INSERT INTO glossary_term_categories(term_id,category_id) SELECT t.id,c.id FROM glossary_terms t CROSS JOIN glossary_categories c WHERE t.slug=? AND c.slug=? AND t.publication_status=\'published\' AND NOT EXISTS (SELECT 1 FROM glossary_term_categories tc WHERE tc.term_id=t.id AND tc.category_id=c.id)');
+        foreach ($data['categories'] as $category=>$slugs) {
+            foreach ($slugs as $slug) $link->execute([$slug,$category]);
+        }
+        $db->commit();
+    } catch (Throwable $e) {
+        if ($db->inTransaction()) $db->rollBack();
+        throw $e;
+    }
+}
+
 function seed_foundations_quiz(PDO $db): void {
     $quiz=json_decode((string)file_get_contents(dirname(__DIR__).'/curriculum/ai-foundations-session1-quiz.json'),true,512,JSON_THROW_ON_ERROR);
     $sql='INSERT INTO lesson_quizzes(lesson_id,pass_percent,questions_json) SELECT l.id,?,? FROM lessons l INNER JOIN courses c ON c.id=l.course_id WHERE c.slug=? AND l.position=1';
@@ -129,6 +163,7 @@ function db(): PDO {
         $db->exec(file_get_contents(dirname(__DIR__).$productMigration));
         glossary_backfill_legacy($db);
         glossary_seed_initial_drafts($db);
+        glossary_expand_categories($db);
         $columns=$db->query('SELECT * FROM otp_codes LIMIT 0');
         $names=[];
         for ($i=0; $i<$columns->columnCount(); $i++) $names[]=$columns->getColumnMeta($i)['name'];
