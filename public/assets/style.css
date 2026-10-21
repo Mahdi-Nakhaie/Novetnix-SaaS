@@ -634,7 +634,7 @@ body.is-panel{display:grid;grid-template-columns:248px minmax(0,1fr);background:
 .footer-main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:clamp(2rem,4vw,4rem);align-items:start;padding-bottom:2rem}
 .footer-intro,.footer-column{min-width:0}
 .footer-brand{display:inline-flex;align-items:center;gap:.8rem;min-height:44px;color:#fff;font-weight:800;font-size:1.35rem;margin-bottom:1rem}
-.footer-mark{display:grid;place-items:center;width:44px;height:44px;border:1px solid #aa70d3;border-radius:14px;background:var(--brand);color:#fff;font-size:1.2rem;box-shadow:3px 3px 0 var(--gold)}
+.footer-mark{display:block;width:56px;height:56px;object-fit:contain;border:0;border-radius:0;background:transparent;box-shadow:none}
 .footer-intro p{max-width:36ch;font-size:.86rem;line-height:2;margin:0;color:#c5bacf;overflow-wrap:anywhere}
 .footer-intro .footer-message{margin-top:1rem;padding-inline-start:.85rem;border-inline-start:2px solid var(--gold);color:#eee7f4;font-size:.85rem}
 .footer-links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.5rem}

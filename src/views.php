@@ -10,7 +10,7 @@ function head_page(string $title,string $description='',bool $panel=false,bool $
     if ($panel) header('Cache-Control: private, no-store');
     $full=($title==='خانه' ? 'Noventix | از یادگیری تا ساختن' : h($title).' | Noventix');
     echo '<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#201a35"><title>'.$full.'</title><meta name="description" content="'.h($description ?: 'Noventix؛ آموزش پروژه‌محور پایتون، علم داده و هوش مصنوعی از مطالعه تا ساختن.').'">';
-    echo '<meta name="google-site-verification" content="ac80Ad6zRSLvvfcYFAMfV2JVVj8rUKlz49RpTpzwv70"><link rel="icon" href="/assets/favicon.webp" type="image/webp">';
+    echo '<meta name="google-site-verification" content="ac80Ad6zRSLvvfcYFAMfV2JVVj8rUKlz49RpTpzwv70"><link rel="icon" href="/assets/favicon.png" type="image/png">';
     seo_head($title,$description ?: 'Noventix؛ آموزش پروژه‌محور پایتون، علم داده و هوش مصنوعی از مطالعه تا ساختن.',$panel,$indexable);
     if ($path==='course/'.FREE_COURSE_SLUG) {
         echo '<link rel="stylesheet" href="/assets/free-course.css?v=3">';
@@ -18,10 +18,10 @@ function head_page(string $title,string $description='',bool $panel=false,bool $
     }
     if ($path==='' || $path==='articles' || str_starts_with($path,'articles/')) echo '<link rel="stylesheet" href="/assets/articles.css?v=3">';
     $darychehAssets=($path==='dashboard/darycheh' || str_starts_with($path,'dashboard/darycheh/')) ? '<link rel="stylesheet" href="/assets/darycheh.css?v=1"><script src="/assets/darycheh.js?v=1" defer></script>' : '';
-    echo '<link rel="stylesheet" href="/assets/style.css?v=16"><script src="/assets/app.js?v=2" defer></script><script src="/assets/playback-events.js" defer></script>'.$darychehAssets.'</head><body class="'.($panel?'is-panel':'').'">';
+    echo '<link rel="stylesheet" href="/assets/style.css?v=17"><script src="/assets/app.js?v=2" defer></script><script src="/assets/playback-events.js" defer></script>'.$darychehAssets.'</head><body class="'.($panel?'is-panel':'').'">';
     echo '<div class="noventix-loading" id="noventix-loading" role="status" aria-live="polite" hidden><div class="noventix-loading-card"><span class="noventix-loading-mark" aria-hidden="true">N</span><strong>Noventix</strong><span class="noventix-loading-track" aria-hidden="true"><span></span></span><p>در حال آماده‌سازی...</p></div></div>';
     if ($panel) { panel_nav(); return; }
-    echo '<header class="site-header"><div class="container header-inner"><a href="/" class="brand" aria-label="Noventix، صفحه اصلی"><img src="/assets/noventix-logo.webp" alt="Noventix" width="64" height="64"></a><nav class="main-nav" aria-label="ناوبری اصلی">';
+    echo '<header class="site-header"><div class="container header-inner"><a href="/" class="brand" aria-label="Noventix، صفحه اصلی"><img src="/assets/logo.png" alt="Noventix" width="64" height="64"></a><nav class="main-nav" aria-label="ناوبری اصلی">';
     foreach ([''=>'خانه','course/'.FREE_COURSE_SLUG=>'دورهٔ رایگان','articles'=>'مقاله‌ها','projects'=>'پروژه‌ها','learners'=>'جامعه','community'=>'انجمن','glossary'=>'لغت‌نامه','about'=>'درباره ما','contact'=>'تماس با ما'] as $href=>$label) linkto($href,$label,trim(($path===$href?'active ':'').($href==='course/'.FREE_COURSE_SLUG?'nav-free-course':'')));
     echo '</nav><div class="header-actions">';
     if ($me) linkto('dashboard','پنل من','btn btn-small btn-outline'); else linkto('login','ورود','btn btn-small btn-outline');
@@ -75,7 +75,7 @@ function pager(int $total,int $perPage,string $base,string $query=''): void {
 }
 function foot_page(bool $panel=false): void {
     if ($panel) { echo '</div></body></html>'; return; }
-    echo '<footer class="footer" dir="rtl"><div class="container footer-shell"><div class="footer-main"><div class="footer-intro"><a href="'.h(url('')).'" class="footer-brand" aria-label="Noventix، صفحه اصلی"><span class="footer-mark" aria-hidden="true">N</span><span lang="en" dir="ltr">Noventix</span></a><p>یادگیری پروژه‌محور پایتون و هوش مصنوعی به زبان فارسی؛ از شناخت مفهوم تا ساختن و تمرین.</p><p class="footer-message">ما دنبال پیشرفتیم، نه فقط بیهوده تلاش کردن</p></div><nav class="footer-links" aria-label="راهنمای پایین صفحه"><section class="footer-column"><h2>یادگیری و منابع</h2>';
+    echo '<footer class="footer" dir="rtl"><div class="container footer-shell"><div class="footer-main"><div class="footer-intro"><a href="'.h(url('')).'" class="footer-brand" aria-label="Noventix، صفحه اصلی"><img class="footer-mark" src="/assets/logo.png" alt="Noventix" width="56" height="56"><span lang="en" dir="ltr">Noventix</span></a><p>یادگیری پروژه‌محور پایتون و هوش مصنوعی به زبان فارسی؛ از شناخت مفهوم تا ساختن و تمرین.</p><p class="footer-message">ما دنبال پیشرفتیم، نه فقط بیهوده تلاش کردن</p></div><nav class="footer-links" aria-label="راهنمای پایین صفحه"><section class="footer-column"><h2>یادگیری و منابع</h2>';
     linkto('articles','مقاله‌های آموزشی'); if (in_array(FREE_COURSE_SLUG,array_column(published_courses(),'slug'),true)) linkto('course/'.FREE_COURSE_SLUG,'دورهٔ رایگان'); linkto('projects','پروژه‌های عملی'); linkto('glossary','واژه‌نامهٔ هوش مصنوعی'); linkto('community','انجمن یادگیری');
     echo '</section><section class="footer-column"><h2>دربارهٔ نوونتیکس</h2>';
     linkto('about','دربارهٔ ما'); linkto('learners','جامعهٔ یادگیرندگان'); if (COMMERCE_ENABLED) linkto('pricing','پلن‌ها و امکانات');
