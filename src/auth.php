@@ -17,7 +17,7 @@ function redirect(string $path): never { header('Location: '.url($path),true,303
 function flash(string $message, string $kind='success'): void { $_SESSION['flash']=['text'=>$message,'kind'=>$kind]; }
 function user(): ?array {
     if (empty($_SESSION['uid'])) return null;
-    $u=q('SELECT id,phone,name,role,phone_verified_at FROM users WHERE id=?',[(int)$_SESSION['uid']])->fetch();
+    $u=q('SELECT id,phone,name,role,phone_verified_at,profile_image FROM users WHERE id=?',[(int)$_SESSION['uid']])->fetch();
     if (!$u || (SMS_VERIFICATION_ENABLED && $u['phone_verified_at']===null)) return null;
     if ($u && $u['role']==='admin' && (!hash_equals((string)config_value('ADMIN_PHONE'), $u['phone']) || ($_SESSION['admin_verified_uid'] ?? null)!==(int)$u['id'])) $u['role']='student';
     return $u ?: null;
@@ -123,6 +123,7 @@ function delete_account(int $userId): bool {
     $pdo=db(); $pdo->beginTransaction();
     try {
         q('SELECT id FROM users WHERE id=?'.($pdo->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql'?' FOR UPDATE':''),[$userId]);
+        $profileImage=(string)(q('SELECT profile_image FROM users WHERE id=?',[$userId])->fetchColumn() ?: '');
         $running=q("SELECT 1 FROM workspace_runs r JOIN projects p ON p.id=r.project_id WHERE p.user_id=? AND r.state IN ('submitting','queued','running','cancelling') LIMIT 1",[$userId])->fetchColumn();
         $downloading=q("SELECT 1 FROM workspace_dataset_imports WHERE owner=? AND state='downloading' LIMIT 1",[$userId])->fetchColumn();
         if ($running || $downloading) { $pdo->rollBack(); return false; }
@@ -148,6 +149,7 @@ function delete_account(int $userId): bool {
         q('UPDATE glossary_revisions SET editor_id=NULL WHERE editor_id=?',[$userId]);
         q('DELETE FROM users WHERE id=?',[$userId]);
         $pdo->commit();
+        if ($profileImage!=='' && preg_match('/^[a-f0-9]{32}\\.(?:jpg|jpeg|png|webp)$/',$profileImage)) @unlink(dirname(__DIR__).'/public/uploads/profiles/'.$profileImage);
         return true;
     } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
 }

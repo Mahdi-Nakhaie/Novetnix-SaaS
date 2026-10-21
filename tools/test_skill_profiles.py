@@ -64,7 +64,14 @@ class SkillLevelTest(unittest.TestCase):
 
 
 class SkillProfileSourceTest(unittest.TestCase):
-    def test_mobile_profiles_collapse_and_controls_fit_their_container(self):
+    def test_profile_images_are_validated_and_rendered(self):
+        self.assertIn('profile_image', APP)
+        self.assertIn('finfo(FILEINFO_MIME_TYPE)', APP)
+        self.assertIn('getimagesize', APP)
+        self.assertIn('profile_image_url', SKILL)
+        self.assertIn('has-image', PROFILE_VIEWS)
+        self.assertIn('multipart/form-data', VIEWS)
+
         self.assertIn('@media(max-width:900px){.profile-grid{grid-template-columns:minmax(0,1fr)}}', STYLE)
         self.assertIn('.profile-search{display:grid;grid-template-columns:minmax(0,1fr);gap:.75rem}', STYLE)
         self.assertIn('.profile-search input{width:100%;min-width:0;box-sizing:border-box}', STYLE)
@@ -267,7 +274,7 @@ class ProfileHttpTest(unittest.TestCase):
         self.assertIn('href="/member/' + str(member) + '"', source)
         status, _, source = client.request('/member/' + str(member))
         self.assertEqual(status, 200)
-        for text in (name, 'profile-grid', 'پیشرفت مهارتی', 'ویرایش پروفایل', '/assets/style.css?v=15'):
+        for text in (name, 'profile-grid', 'پیشرفت مهارتی', 'ویرایش پروفایل', '/assets/style.css?v=16'):
             self.assertIn(text, source)
         self.assertNotIn('09990000771', source)
         self.assertIn('class="profile-column"', source)

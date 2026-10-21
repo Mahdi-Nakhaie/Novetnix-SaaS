@@ -24,7 +24,7 @@ function seo_head(string $title,string $description,bool $panel,bool $indexable)
     $origin=seo_origin();
     if ($origin && $indexable) {
         $canonical=$origin.'/'.implode('/',array_map('rawurlencode',explode('/',$path)));
-        $image=$origin.'/assets/logo.png';
+        $image=$origin.'/assets/noventix-logo.webp';
         echo '<link rel="canonical" href="'.h($canonical).'">';
         echo '<meta property="og:url" content="'.h($canonical).'">';
         echo '<meta property="og:image" content="'.h($image).'">';

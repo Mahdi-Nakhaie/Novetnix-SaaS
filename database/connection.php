@@ -153,6 +153,7 @@ function db(): PDO {
         if ($driver==='sqlite') $db->exec('PRAGMA foreign_keys=ON');
         $schema=$driver==='mysql' ? '/database/schema.mysql.sql' : '/database/schema.sqlite.sql';
         $db->exec(file_get_contents(dirname(__DIR__).$schema));
+        try { $db->exec('ALTER TABLE users ADD COLUMN profile_image '.($driver==='mysql' ? "VARCHAR(40) NOT NULL DEFAULT ''" : "TEXT NOT NULL DEFAULT ''")); } catch (Throwable $e) { }
         $migration=$driver==='mysql' ? '/database/migrations/001_glossary.mysql.sql' : '/database/migrations/001_glossary.sqlite.sql';
         $db->exec(file_get_contents(dirname(__DIR__).$migration));
         $darychehMigration=$driver==='mysql' ? '/database/migrations/002_darycheh.mysql.sql' : '/database/migrations/002_darycheh.sqlite.sql';

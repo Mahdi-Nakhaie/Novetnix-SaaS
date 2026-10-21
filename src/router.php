@@ -164,7 +164,7 @@ function page_course(string $slug): void {
     echo '<div class="cta-panel course-final-cta"><span class="eyebrow">قدم بعدی</span><h2>آماده‌ای شروع کنی؟</h2><p>از اولین Lesson شروع کن و قدم‌به‌قدم جلو برو.</p>'; course_start_action($course,$me,$enrolled,'btn btn-light'); echo '</div></section></main>'; foot_page();
 }
 function page_projects(): void {
-    echo '<main><section class="page-hero container"><span class="eyebrow">پروژه‌ها</span><h1>یادگیری با ساختن، نه فقط خواندن</h1><p>'.fa(count(PROJECTS)).' پروژه؛ از ۲۴ تمرین پایتون مقدماتی تا یادگیری ماشین، با پیش‌نیاز، ورودی، خروجی و ارزیابی واقعی.</p>';
+    echo '<main><section class="page-hero container projects-hero"><span class="eyebrow">پروژه‌ها</span><h1>یادگیری با ساختن، نه فقط خواندن</h1><p>'.fa(count(PROJECTS)).' پروژه؛ از ۲۴ تمرین پایتون مقدماتی تا یادگیری ماشین، با پیش‌نیاز، ورودی، خروجی و ارزیابی واقعی.</p>';
     linkto('articles/python-basics-hello','اولین بار است پایتون می‌نویسید؟ از اینجا شروع کنید','btn btn-primary');
     echo '</section><section class="section container">'; project_cards(); echo '</section></main>';
 }

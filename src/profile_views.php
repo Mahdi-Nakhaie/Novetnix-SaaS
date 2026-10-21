@@ -80,8 +80,9 @@ function profile_community_section(array $profile,bool $own): void {
 
 function page_skill_profile(array $profile,bool $own,bool $signedIn): void {
     message_notice();
+    $avatar=$profile['profile_image'] ? '<img src="'.h(profile_image_url($profile['profile_image'])).'" alt="تصویر پروفایل '.h($profile['name']).'">' : h(mb_substr($profile['name'],0,1));
     echo '<main class="profile-page"><div class="container"><nav class="profile-crumb" aria-label="مسیر صفحه"><a href="'.h(url('learners')).'">جامعه یادگیرندگان</a><span aria-current="page">'.h($profile['name']).'</span></nav>';
-    echo '<section class="profile-hero"><div class="profile-identity"><span class="profile-avatar">'.h(mb_substr($profile['name'],0,1)).'</span><div><span class="eyebrow">'.($own?'پروفایل مهارتی من':'عضو انجمن Noventix').'</span><h1>'.h($profile['name']).'</h1><p class="muted">'.h($profile['role']==='admin'?'تیم Noventix':'عضو جامعه').' · عضویت از '.h(jdate($profile['joined'])).'</p></div>'.skill_badge($profile['level'],'is-large').'</div><div class="profile-actions">';
+    echo '<section class="profile-hero"><div class="profile-identity"><span class="profile-avatar'.($profile['profile_image']?' has-image':'').'">'.$avatar.'</span><div><span class="eyebrow">'.($own?'پروفایل مهارتی من':'عضو انجمن Noventix').'</span><h1>'.h($profile['name']).'</h1><p class="muted">'.h($profile['role']==='admin'?'تیم Noventix':'عضو جامعه').' · عضویت از '.h(jdate($profile['joined'])).'</p></div>'.skill_badge($profile['level'],'is-large').'</div><div class="profile-actions">';
     if ($own) { linkto('dashboard/profile','ویرایش پروفایل','btn btn-outline'); linkto('messages','پیام‌های من','btn btn-outline'); }
     else echo member_message_form($profile['id'],$signedIn);
     echo '</div></section><div class="profile-grid"><div class="profile-column">';
@@ -120,7 +121,7 @@ function page_learners(array $directory,string $query,bool $signedIn): void {
     else {
         echo '<ul class="learner-grid">';
         foreach ($directory['learners'] as $learner) {
-            echo '<li class="learner-card"><a href="'.h(url('member/'.$learner['id'])).'"><span class="profile-avatar">'.h(mb_substr($learner['name'],0,1)).'</span><strong>'.h($learner['name']).'</strong><span class="muted">سطح '.fa($learner['level']['level']).' · '.fa($learner['xp']).' XP</span><span class="muted">'.fa($learner['completed']).' پروژه تکمیل‌شده</span></a></li>';
+            echo '<li class="learner-card"><a href="'.h(url('member/'.$learner['id'])).'"><span class="profile-avatar'.($learner['profile_image']?' has-image':'').'">'.($learner['profile_image']?'<img src="'.h(profile_image_url($learner['profile_image'])).'" alt="">':h(mb_substr($learner['name'],0,1))).'</span><strong>'.h($learner['name']).'</strong><span class="muted">سطح '.fa($learner['level']['level']).' · '.fa($learner['xp']).' XP</span><span class="muted">'.fa($learner['completed']).' پروژه تکمیل‌شده</span></a></li>';
         }
         echo '</ul>';
         if ($directory['pages']>1) {

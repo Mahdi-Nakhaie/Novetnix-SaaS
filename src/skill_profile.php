@@ -38,8 +38,12 @@ function skill_topic_stats(int $userId): array {
     return $topics;
 }
 
+function profile_image_url(?string $image): string {
+    return $image && preg_match('/^[a-f0-9]{32}\.(?:jpg|jpeg|png|webp)$/', $image) ? '/uploads/profiles/'.$image : '';
+}
+
 function skill_profile_for(int $userId): ?array {
-    $user=q('SELECT id,name,role,created_at FROM users WHERE id=?',[$userId])->fetch();
+    $user=q('SELECT id,name,role,created_at,profile_image FROM users WHERE id=?',[$userId])->fetch();
     if (!$user) return null;
     $completions=q('SELECT learning_key,xp,completed_at FROM project_completions WHERE user_id=? ORDER BY completed_at DESC,learning_key',[$userId])->fetchAll();
     $lessons=(int)q('SELECT COUNT(*) FROM lesson_progress WHERE user_id=? AND status=?',[$userId,'completed'])->fetchColumn();
@@ -51,6 +55,7 @@ function skill_profile_for(int $userId): ?array {
     foreach ($completions as $completion) $xp+=(int)$completion['xp'];
     return [
         'id'=>(int)$user['id'],
+        'profile_image'=>(string)($user['profile_image'] ?? ''),
         'name'=>trim((string)$user['name'])!=='' ? (string)$user['name'] : 'عضو Noventix',
         'role'=>(string)$user['role'],
         'joined'=>(string)$user['created_at'],
@@ -77,11 +82,11 @@ function learner_directory(string $query,int $page): array {
     $condition=implode(' AND ',$where);
     $total=(int)q('SELECT COUNT(*) FROM users u WHERE '.$condition,$params)->fetchColumn();
     // No LIMIT/OFFSET placeholders: neither driver accepts them as bound params in this shape.
-    $rows=q('SELECT u.id,u.name,u.created_at,(SELECT COALESCE(SUM(c.xp),0) FROM project_completions c WHERE c.user_id=u.id) AS xp,(SELECT COUNT(*) FROM project_completions c WHERE c.user_id=u.id) AS completed FROM users u WHERE '.$condition.' ORDER BY xp DESC,u.id ASC LIMIT '.$perPage.' OFFSET '.min($page-1,10000)*$perPage,$params)->fetchAll();
+    $rows=q('SELECT u.id,u.name,u.created_at,u.profile_image,(SELECT COALESCE(SUM(c.xp),0) FROM project_completions c WHERE c.user_id=u.id) AS xp,(SELECT COUNT(*) FROM project_completions c WHERE c.user_id=u.id) AS completed FROM users u WHERE '.$condition.' ORDER BY xp DESC,u.id ASC LIMIT '.$perPage.' OFFSET '.min($page-1,10000)*$perPage,$params)->fetchAll();
     $learners=[];
     foreach ($rows as $row) {
         $xp=(int)$row['xp'];
-        $learners[]=['id'=>(int)$row['id'],'name'=>(string)$row['name'],'joined'=>(string)$row['created_at'],'xp'=>$xp,'completed'=>(int)$row['completed'],'level'=>skill_level($xp)];
+        $learners[]=['id'=>(int)$row['id'],'name'=>(string)$row['name'],'profile_image'=>(string)($row['profile_image'] ?? ''),'joined'=>(string)$row['created_at'],'xp'=>$xp,'completed'=>(int)$row['completed'],'level'=>skill_level($xp)];
     }
     return ['learners'=>$learners,'total'=>$total,'page'=>$page,'pages'=>max(1,(int)ceil($total/$perPage))];
 }

@@ -484,7 +484,19 @@ function handle_post(string $path): void {
     if ($path==='profile/account') {
         $name=trim((string)($_POST['name'] ?? '')); $email=trim((string)($_POST['email'] ?? ''));
         if (mb_strlen($name)<2 || mb_strlen($name)>100 || ($email!=='' && !filter_var($email,FILTER_VALIDATE_EMAIL))) { flash('نام و ایمیل معتبر وارد کنید.','error'); redirect('dashboard/profile'); }
-        q('UPDATE users SET name=? WHERE id=?',[$name,$u['id']]);
+        $image=$u['profile_image'] ?? '';
+        if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error']!==UPLOAD_ERR_NO_FILE) {
+            $upload=$_FILES['profile_image'];
+            $mime=(new finfo(FILEINFO_MIME_TYPE))->file($upload['tmp_name']);
+            $types=['image/jpeg'=>'jpg','image/png'=>'png','image/webp'=>'webp'];
+            if ($upload['error']!==UPLOAD_ERR_OK || $upload['size']>2097152 || !is_uploaded_file($upload['tmp_name']) || !isset($types[$mime]) || @getimagesize($upload['tmp_name'])===false) { flash('تصویر معتبر نیست؛ فایل JPG، PNG یا WebP تا حداکثر ۲ مگابایت انتخاب کنید.','error'); redirect('dashboard/profile'); }
+            $directory=dirname(__DIR__).'/public/uploads/profiles';
+            if (!is_dir($directory) && !mkdir($directory,0750,true) && !is_dir($directory)) { flash('ذخیرهٔ تصویر ممکن نشد.','error'); redirect('dashboard/profile'); }
+            $image=bin2hex(random_bytes(16)).'.'.$types[$mime];
+            if (!move_uploaded_file($upload['tmp_name'],$directory.'/'.$image)) { flash('ذخیرهٔ تصویر ممکن نشد.','error'); redirect('dashboard/profile'); }
+            if (is_string($u['profile_image'] ?? null) && preg_match('/^[a-f0-9]{32}\\.(?:jpg|jpeg|png|webp)$/',$u['profile_image'])) @unlink($directory.'/'.$u['profile_image']);
+        }
+        q('UPDATE users SET name=?,profile_image=? WHERE id=?',[$name,$image,$u['id']]);
         flash('پروفایل به‌روزرسانی شد.'); redirect('dashboard/profile');
     }
     if ($path==='settings/save') {

@@ -903,7 +903,16 @@ body.is-panel{max-inline-size:100%;overflow-x:clip}
 body:has(.site-header){background:linear-gradient(180deg,#fff 0,var(--bg) 22rem)}
 .site-header{background:color-mix(in srgb,var(--card) 92%,transparent);box-shadow:0 1px 0 rgba(40,18,62,.04)}
 .header-inner{min-height:76px}
-.brand img{display:block}
+.brand img{height:56px;width:56px;max-width:56px;border-radius:14px;object-fit:cover}
+.profile-avatar.has-image{overflow:hidden;background:var(--brand-soft)}
+.profile-avatar.has-image img{display:block;width:100%;height:100%;object-fit:cover}
+.panel-avatar.has-image{overflow:hidden;padding:0}
+.panel-avatar.has-image img{display:block;width:100%;height:100%;object-fit:cover}
+.profile-upload input[type=file]{width:100%;padding:.7rem;border:1px dashed var(--brand-line);background:var(--brand-soft);border-radius:var(--r-md);box-sizing:border-box}
+.profile-upload .fine-print{display:block;margin-top:.35rem}
+.projects-hero{max-width:var(--max)}
+.projects-hero>p{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:760px){.projects-hero>p{white-space:normal;overflow:visible}}
 .main-nav a,.mobile-nav a{min-height:42px;display:inline-flex;align-items:center}
 .btn{min-height:48px;border-radius:var(--r-md);transition:transform .18s ease,box-shadow .18s ease,background-color .18s ease,border-color .18s ease}
 .btn:focus-visible,.main-nav a:focus-visible,.mobile-nav a:focus-visible,.sidebar nav a:focus-visible{outline:3px solid color-mix(in srgb,var(--brand) 30%,transparent);outline-offset:2px}

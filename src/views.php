@@ -3,14 +3,14 @@ declare(strict_types=1);
 
 function money(int $amount): string { return fa(number_format($amount,0,'.','٬')).' تومان'; }
 function linkto(string $path,string $label,string $class=''): void { echo '<a class="'.($class?h($class):'').'" href="'.h(url($path)).'">'.h($label).'</a>'; }
-function form_start(string $action,string $class='',bool $customValidation=false): void { echo '<form action="'.h(url($action)).'" method="post" class="'.($class?h($class):'').($customValidation?' custom-validation':'').'"'.($customValidation?' novalidate':'').'><input type="hidden" name="csrf" value="'.h(csrf()).'">'; }
+function form_start(string $action,string $class='',bool $customValidation=false,bool $multipart=false): void { echo '<form action="'.h(url($action)).'" method="post" class="'.($class?h($class):'').($customValidation?' custom-validation':'').($multipart?' enctype="multipart/form-data"':'').'"'.($customValidation?' novalidate':'').'><input type="hidden" name="csrf" value="'.h(csrf()).'">'; }
 function head_page(string $title,string $description='',bool $panel=false,bool $indexable=false): void {
     global $me,$path;
     if ($panel || !($indexable && seo_public_path($path)) || http_response_code()===404) header('X-Robots-Tag: noindex, follow');
     if ($panel) header('Cache-Control: private, no-store');
     $full=($title==='خانه' ? 'Noventix | از یادگیری تا ساختن' : h($title).' | Noventix');
     echo '<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#201a35"><title>'.$full.'</title><meta name="description" content="'.h($description ?: 'Noventix؛ آموزش پروژه‌محور پایتون، علم داده و هوش مصنوعی از مطالعه تا ساختن.').'">';
-    echo '<meta name="google-site-verification" content="ac80Ad6zRSLvvfcYFAMfV2JVVj8rUKlz49RpTpzwv70">';
+    echo '<meta name="google-site-verification" content="ac80Ad6zRSLvvfcYFAMfV2JVVj8rUKlz49RpTpzwv70"><link rel="icon" href="/assets/favicon.webp" type="image/webp">';
     seo_head($title,$description ?: 'Noventix؛ آموزش پروژه‌محور پایتون، علم داده و هوش مصنوعی از مطالعه تا ساختن.',$panel,$indexable);
     if ($path==='course/'.FREE_COURSE_SLUG) {
         echo '<link rel="stylesheet" href="/assets/free-course.css?v=3">';
@@ -18,10 +18,10 @@ function head_page(string $title,string $description='',bool $panel=false,bool $
     }
     if ($path==='' || $path==='articles' || str_starts_with($path,'articles/')) echo '<link rel="stylesheet" href="/assets/articles.css?v=3">';
     $darychehAssets=($path==='dashboard/darycheh' || str_starts_with($path,'dashboard/darycheh/')) ? '<link rel="stylesheet" href="/assets/darycheh.css?v=1"><script src="/assets/darycheh.js?v=1" defer></script>' : '';
-    echo '<link rel="stylesheet" href="/assets/style.css?v=15"><script src="/assets/app.js?v=2" defer></script><script src="/assets/playback-events.js" defer></script>'.$darychehAssets.'</head><body class="'.($panel?'is-panel':'').'">';
+    echo '<link rel="stylesheet" href="/assets/style.css?v=16"><script src="/assets/app.js?v=2" defer></script><script src="/assets/playback-events.js" defer></script>'.$darychehAssets.'</head><body class="'.($panel?'is-panel':'').'">';
     echo '<div class="noventix-loading" id="noventix-loading" role="status" aria-live="polite" hidden><div class="noventix-loading-card"><span class="noventix-loading-mark" aria-hidden="true">N</span><strong>Noventix</strong><span class="noventix-loading-track" aria-hidden="true"><span></span></span><p>در حال آماده‌سازی...</p></div></div>';
     if ($panel) { panel_nav(); return; }
-    echo '<header class="site-header"><div class="container header-inner"><a href="/" class="brand" aria-label="Noventix، صفحه اصلی"><img src="/assets/logo.png" alt="Noventix" width="171" height="55"></a><nav class="main-nav" aria-label="ناوبری اصلی">';
+    echo '<header class="site-header"><div class="container header-inner"><a href="/" class="brand" aria-label="Noventix، صفحه اصلی"><img src="/assets/noventix-logo.webp" alt="Noventix" width="64" height="64"></a><nav class="main-nav" aria-label="ناوبری اصلی">';
     foreach ([''=>'خانه','course/'.FREE_COURSE_SLUG=>'دورهٔ رایگان','articles'=>'مقاله‌ها','projects'=>'پروژه‌ها','learners'=>'جامعه','community'=>'انجمن','glossary'=>'لغت‌نامه','about'=>'درباره ما','contact'=>'تماس با ما'] as $href=>$label) linkto($href,$label,trim(($path===$href?'active ':'').($href==='course/'.FREE_COURSE_SLUG?'nav-free-course':'')));
     echo '</nav><div class="header-actions">';
     if ($me) linkto('dashboard','پنل من','btn btn-small btn-outline'); else linkto('login','ورود','btn btn-small btn-outline');
@@ -58,10 +58,10 @@ function panel_nav(): void {
         $items['dashboard/darycheh-manage']='مدیریت سناریوهای دریچه';
     }
     if (!COMMERCE_ENABLED) unset($items['dashboard/subscription'],$items['dashboard/subscriptions'],$items['dashboard/payments']);
-    echo '<aside class="sidebar"><a class="panel-brand" href="/"><img src="/assets/favicon.png" alt="" width="42" height="42"><span>Noventix</span></a><div class="sidebar-caption">'.($role==='admin'?'مدیریت پلتفرم':($role==='owner'?'پنل مالک':'فضای یادگیری')).'</div><nav aria-label="ناوبری پنل">';
+    echo '<aside class="sidebar"><a class="panel-brand" href="/"><img src="/assets/favicon.webp" alt="" width="42" height="42"><span>Noventix</span></a><div class="sidebar-caption">'.($role==='admin'?'مدیریت پلتفرم':($role==='owner'?'پنل مالک':'فضای یادگیری')).'</div><nav aria-label="ناوبری پنل">';
     foreach ($items as $href=>$label) linkto($href,$label,$path===$href?'selected':'');
     echo '</nav><div class="sidebar-bottom"><a href="/">بازگشت به سایت ↗</a>';
-    form_start('logout'); echo '<button type="submit" class="text-button">خروج از حساب</button></form></div></aside><div class="panel-body"><div class="panel-top"><button type="button" class="panel-menu" aria-label="فهرست پنل">☰</button><span>Noventix <span class="muted">/ '.($role==='admin'?'مدیریت':($role==='owner'?'مالک':'دانش‌آموز')).'</span></span><span class="panel-avatar">'.h(mb_substr($me['name'] ?: $me['phone'],0,1)).'</span></div>';
+    form_start('logout'); echo '<button type="submit" class="text-button">خروج از حساب</button></form></div></aside><div class="panel-body"><div class="panel-top"><button type="button" class="panel-menu" aria-label="فهرست پنل">☰</button><span>Noventix <span class="muted">/ '.($role==='admin'?'مدیریت':($role==='owner'?'مالک':'دانش‌آموز')).'</span></span><span class="panel-avatar'.($me['profile_image']?' has-image':'').'">'.($me['profile_image']?'<img src="'.h(profile_image_url($me['profile_image'])).'" alt="">':h(mb_substr($me['name'] ?: $me['phone'],0,1))).'</span></div>';
 }
 function clamp(int $min,int $cur,int $max=99): int { return max($min,min($cur,$max)); }
 function pager(int $total,int $perPage,string $base,string $query=''): void {
@@ -314,12 +314,12 @@ function panel(string $sub): void {
     } elseif ($sub==='profile') {
         panel_head('پروفایل من','اطلاعات حساب و خلاصهٔ مهارت شما.');
         $summary=skill_profile_for((int)$me['id']);
-        echo '<div class="profile-head"><div><span class="profile-avatar">'.h(mb_substr($me['name'] ?: 'ن',0,1)).'</span><div><h2>'.h($me['name'] ?: 'کاربر Noventix').'</h2><p class="muted">'.h($me['phone']).' · سطح '.fa($summary['level']['level']).' · '.fa($summary['level']['xp']).' XP</p><p class="muted">'.h($role==='admin'?'مدیر پلتفرم':($role==='owner'?'مالک پلتفرم':'سازنده‌ای در مسیر یادگیری هوش مصنوعی')).'</p></div></div>';
+        echo '<div class="profile-head"><div><span class="profile-avatar'.($me['profile_image']?' has-image':'').'">'.($me['profile_image']?'<img src="'.h(profile_image_url($me['profile_image'])).'" alt="">':h(mb_substr($me['name'] ?: 'ن',0,1))).'</span><div><h2>'.h($me['name'] ?: 'کاربر Noventix').'</h2><p class="muted">'.h($me['phone']).' · سطح '.fa($summary['level']['level']).' · '.fa($summary['level']['xp']).' XP</p><p class="muted">'.h($role==='admin'?'مدیر پلتفرم':($role==='owner'?'مالک پلتفرم':'سازنده‌ای در مسیر یادگیری هوش مصنوعی')).'</p></div></div>';
         linkto('member/'.$me['id'],'دیدن پروفایل مهارتی','btn btn-primary');
         echo '</div><div class="panel-card"><span class="eyebrow">خلاصه مهارت</span><h2>پیشرفت ثبت‌شده</h2><div class="profile-summary-stats">';
         foreach ([['XP',fa($summary['level']['xp'])],['پروژه تأییدشده',fa(count($summary['completions']))],['درس تکمیل‌شده',fa($summary['lessons'])],['پیام خوانده‌نشده',fa(messages_unread((int)$me['id']))]] as [$label,$value]) echo '<div class="skill-stat"><span>'.h($label).'</span><strong>'.h($value).'</strong></div>';
         echo '</div><div class="profile-summary-links">'; linkto('messages','پیام‌های من','btn btn-outline'); linkto('learners','جامعه یادگیرندگان','btn btn-outline'); echo '</div></div>';
-        echo '<div class="panel-card narrow">'; form_start('profile/account','stack-form'); echo '<label>نام نمایشی<input name="name" maxlength="100" minlength="2" required value="'.h($me['name']).'" placeholder="نام شما"></label><label>ایمیل (اختیاری)<input type="email" dir="ltr" name="email" maxlength="255" placeholder="you@example.com"></label><label>شماره موبایل<input dir="ltr" disabled value="'.h($me['phone']).'"></label><button class="btn btn-primary">ذخیره تغییرات</button></form><p class="fine-print">شماره موبایل شناسه ورود شماست و از این صفحه قابل تغییر نیست.</p></div>';
+        echo '<div class="panel-card narrow">'; form_start('profile/account','stack-form',false,true); echo '<label>نام نمایشی<input name="name" maxlength="100" minlength="2" required value="'.h($me['name']).'" placeholder="نام شما"></label><label>ایمیل (اختیاری)<input type="email" dir="ltr" name="email" maxlength="255" placeholder="you@example.com"></label><label>شماره موبایل<input dir="ltr" disabled value="'.h($me['phone']).'"></label><label class="profile-upload">تصویر پروفایل (اختیاری)<input type="file" name="profile_image" accept="image/jpeg,image/png,image/webp"><span class="fine-print">حداکثر ۲ مگابایت؛ JPG، PNG یا WebP.</span></label><button class="btn btn-primary">ذخیره تغییرات</button></form><p class="fine-print">شماره موبایل شناسه ورود شماست و از این صفحه قابل تغییر نیست.</p></div>';
         if ($role==='student') {
             echo '<section class="panel-card account-danger"><h2>حذف کامل حساب</h2><p>حساب، پروفایل مهارتی، پروژه‌ها، پیشرفت آموزشی، پست‌ها، پاسخ‌ها، پیام‌ها و اطلاعات وابستهٔ شما برای همیشه حذف می‌شوند. ابتدا اجراها و دانلودهای فعال میزکار را متوقف کنید. این کار برگشت‌پذیر نیست.</p><details><summary>می‌خواهم حسابم را حذف کنم</summary>';
             form_start('account/delete','stack-form');

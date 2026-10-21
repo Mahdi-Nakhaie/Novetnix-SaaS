@@ -63,7 +63,16 @@ class ArticleContentTest(unittest.TestCase):
         self.assertIn('.home-section-row .section-header{margin-bottom:0;min-width:0}', css)
         self.assertIn('.home-section-row{align-items:flex-start;flex-direction:column;gap:1.25rem}', css)
 
-    def test_card_highlight_is_a_clipped_corner_not_an_overflowing_circle(self):
+    def test_projects_intro_matches_first_card_row_and_brand_assets_are_used(self):
+        source = (ROOT / 'src/router.php').read_text()
+        views = (ROOT / 'src/views.php').read_text()
+        css = (ROOT / 'public/assets/style.css').read_text()
+        self.assertIn('page-hero container projects-hero', source)
+        self.assertIn('.projects-hero>p{white-space:nowrap', css)
+        self.assertIn('/assets/noventix-logo.webp', views)
+        self.assertIn('/assets/favicon.webp', views)
+        self.assertIn('/assets/noventix-logo.webp', (ROOT / 'src/seo.php').read_text())
+
         css = (ROOT / 'public/assets/style.css').read_text()
         layer = css.split('/* Hover interaction layer */', 1)[1].split('body.is-panel', 1)[0]
         effect = re.search(r'\.feature::after[^{}]*\{([^}]+)\}', layer).group(1)
@@ -184,7 +193,7 @@ class ArticleHttpTest(unittest.TestCase):
         self.assertIn('خروجی نمونه', source)
         self.assertIn('این باکس نمایشی است', source)
         self.assertIn('<pre dir="ltr" tabindex="0"', source)
-        self.assertIn('/assets/style.css?v=15', source)
+        self.assertIn('/assets/style.css?v=16', source)
         self.assertNotIn('<canvas', source)
         self.assertNotIn('three.min.js', source)
         self.assertNotIn('three-scene.js', source)
