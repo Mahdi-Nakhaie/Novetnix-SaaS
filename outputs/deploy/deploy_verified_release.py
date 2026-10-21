@@ -70,7 +70,7 @@ def probe(path, expected):
         if expected == 303:
             assert response.getheader('Location', '').startswith('/login?next='), path
         if path in ('/login', '/course/ai-foundations'):
-            assert b'/assets/style.css?v=11' in body, 'Stale HTML: ' + path
+            assert b'/assets/style.css?v=12' in body, 'Stale HTML: ' + path
         if 'content/articles/catalog.json' in files and path in ('/', '/articles'):
             assert b'<meta name="google-site-verification" content="ac80Ad6zRSLvvfcYFAMfV2JVVj8rUKlz49RpTpzwv70">' in body.split(b'</head>', 1)[0], 'Missing Google verification'
         if path == '/articles' and 'content/articles/catalog.json' in files:
@@ -79,6 +79,11 @@ def probe(path, expected):
         if path == '/projects' and 'curriculum/catalog.json' in files:
             catalog = json.loads((STAGE / 'curriculum/catalog.json').read_text())
             assert all(('href="/project/' + str(i) + '"').encode() in body for i in range(len(catalog))), 'Missing project cards'
+        if path == '/glossary' and 'src/glossary.php' in files:
+            assert b'glossary-motion' not in body, 'Unexpected motion control'
+            assert b'glossary-all-topics' in body, 'Missing all-topics link'
+            categories = body.split(b'<nav class="glossary-categories"', 1)[1].split(b'</nav>', 1)[0]
+            assert categories.count(b'<a ') == 25, 'Incorrect category grid'
         if path.startswith('/assets/'):
             asset = ROOT / ('public' + path.split('?', 1)[0])
             assert hashlib.sha256(body).hexdigest() == digest(asset), 'Stale asset: ' + path
@@ -114,7 +119,7 @@ try:
         probe('/glossary', 200)
         probe('/glossary?category=python&letter=P', 200)
         probe('/glossary/python', 200)
-    for path, expected in [('/', 200), ('/login', 200), ('/course/ai-foundations', 200), ('/articles', 200), ('/dashboard/course/ai-foundations', 303), ('/dashboard/darycheh', 303), ('/dashboard/darycheh-manage', 303), ('/darycheh/progress', 401), ('/assets/style.css?v=11', 200), ('/assets/darycheh.js?v=1', 200), ('/assets/darycheh.css?v=1', 200)]:
+    for path, expected in [('/', 200), ('/login', 200), ('/course/ai-foundations', 200), ('/articles', 200), ('/dashboard/course/ai-foundations', 303), ('/dashboard/darycheh', 303), ('/dashboard/darycheh-manage', 303), ('/darycheh/progress', 401), ('/assets/style.css?v=12', 200), ('/assets/darycheh.js?v=1', 200), ('/assets/darycheh.css?v=1', 200)]:
         probe(path, expected)
     if 'content/articles/catalog.json' in files:
         probe('/projects', 200)

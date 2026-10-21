@@ -152,7 +152,7 @@ class ArticleHttpTest(unittest.TestCase):
         self.assertIn('خروجی نمونه', source)
         self.assertIn('این باکس نمایشی است', source)
         self.assertIn('<pre dir="ltr" tabindex="0"', source)
-        self.assertIn('/assets/style.css?v=11', source)
+        self.assertIn('/assets/style.css?v=12', source)
         self.assertNotIn('<canvas', source)
         self.assertNotIn('three.min.js', source)
         self.assertNotIn('three-scene.js', source)

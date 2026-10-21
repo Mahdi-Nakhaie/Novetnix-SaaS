@@ -1,5 +1,6 @@
 import json
 import pathlib
+import re
 import shutil
 import subprocess
 import unittest
@@ -32,10 +33,21 @@ class ExpansionContentTests(unittest.TestCase):
             if entry['code']:
                 compile(entry['code'], entry['key'], 'exec')
 
-    def test_motion_is_optional_and_keyboard_safe(self):
+    def test_motion_respects_accessibility_without_a_stop_control(self):
         css = (ROOT / 'public/assets/style.css').read_text()
-        for rule in ('prefers-reduced-motion:reduce', 'animation:none', ':focus-within', ':focus-visible', 'animation-play-state:paused', '.glossary-motion-toggle:checked~.glossary-categories a'):
+        for rule in ('prefers-reduced-motion:reduce', 'animation:none', ':focus-within', ':focus-visible', 'animation-play-state:paused'):
             self.assertIn(rule, css)
+        self.assertNotIn('glossary-motion-toggle', css)
+
+    def test_full_width_search_and_five_column_rounded_categories(self):
+        css = (ROOT / 'public/assets/style.css').read_text()
+        self.assertIn('.glossary-search.glossary-search-panel{position:relative;display:block;width:100%;max-width:none;', css)
+        self.assertIn('grid-template-areas:"icon input submit clear";gap:16px;width:100%', css)
+        self.assertIn('grid-template-areas:"icon input clear" "submit submit submit"', css)
+        self.assertIn('.glossary-topic-window .glossary-categories{display:grid;grid-template-columns:repeat(5,minmax(0,1fr))', css)
+        self.assertIn('grid-template-columns:repeat(5,minmax(150px,1fr));overflow-x:auto', css)
+        self.assertIn('padding:14px;border-radius:18px;', css)
+        self.assertIn('width:34px;height:34px;border:1px solid #a782ca66;border-radius:50%', css)
 
     @unittest.skipUnless(shutil.which('php'), 'PHP required')
     def test_actual_seed_is_additive_idempotent_and_preserves_editor_changes(self):
@@ -109,8 +121,15 @@ class ExpansionHttpTests(unittest.TestCase):
         client = test_release.Client(self.base)
         status, _, source = client.request('/glossary?q=Python&category=python&letter=P')
         self.assertEqual(status, 200)
-        for text in ('topics.py', 'glossary-topic-window', 'glossary-motion', 'توقف حرکت دسته‌ها', '/assets/style.css?v=11'):
+        for text in ('topics.py', 'glossary-topic-window', 'glossary-all-topics', '/assets/style.css?v=12'):
             self.assertIn(text, source)
+        self.assertNotIn('glossary-motion', source)
+        self.assertNotIn('توقف حرکت', source)
+        nav = re.search(r'<nav class="glossary-categories"[^>]*>(.*?)</nav>', source, re.S).group(1)
+        category_links = Links(nav).links
+        self.assertEqual(len(category_links), 25)
+        self.assertTrue(all(parse_qs(urlsplit(a['href']).query).get('category') for a in category_links))
+        self.assertNotIn('همه حوزه‌ها', nav)
         links = Links(source).links
         current = [a for a in links if a.get('aria-current') == 'page']
         self.assertEqual(len(current), 2)
