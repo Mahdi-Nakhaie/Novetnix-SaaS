@@ -48,7 +48,9 @@
         $('checks').replaceChildren(); $('artifacts').replaceChildren();
         for (const check of result.assessment?.checks || []) {
           const line = document.createElement('p');
-          line.textContent = `${check.passed ? 'PASS' : 'FAIL'} · ${check.name} · ${check.execution_state}`;
+          line.className = `lp-check lp-check-${check.passed ? 'success' : 'failure'}`;
+          const states = {program_error: 'برنامه با خطا متوقف شد؛ بخش خروجی و خطا را بررسی کنید.', timeout: 'زمان اجرای برنامه تمام شد.', succeeded: 'برنامه اجرا شد، اما پاسخ با قرارداد مسئله سازگار نبود.'};
+          line.textContent = `${check.name} — ${check.passed ? 'تأیید شد؛ پاسخ این آزمون درست است.' : 'تأیید نشد؛ ' + (states[check.execution_state] || 'اجرا کامل نشد؛ وضعیت اجرا و خروجی را بررسی کنید.')}`;
           $('checks').append(line);
         }
         for (const [name, file] of Object.entries(result.files || {})) {

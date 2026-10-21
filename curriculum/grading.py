@@ -250,6 +250,7 @@ def grade(job, execute, image, cancelled):
     spec = job['assessment']
     if spec['version'] != version():
         return {'state': 'infrastructure_error', 'stdout': '', 'stderr': 'Curriculum version mismatch.', 'files': {}}
+    definition = next(item for item in definitions() if item['key'] == spec['key'])
     checks, last = [], None
     seed = int(hashlib.sha256(job['id'].encode()).hexdigest()[:16], 16)
     started = time.monotonic()
@@ -272,7 +273,7 @@ def grade(job, execute, image, cancelled):
                 passed = validate(spec['key'], payload, actual, expected, run['files'])
             except (ValueError, KeyError, TypeError, OverflowError, ZeroDivisionError, zlib.error, UnicodeError):
                 pass
-        checks.append({'name': f'معیار {index+1}', 'passed': passed, 'execution_state': run['state']})
+        checks.append({'name': f"معیار {index+1}: صحت پاسخ پروژهٔ «{definition['title']}»؛ {definition['output']}", 'passed': passed, 'execution_state': run['state']})
     return {'state': 'succeeded', 'stdout': (last or {}).get('stdout', ''), 'stderr': (last or {}).get('stderr', ''),
             'files': {k:v for k,v in (last or {}).get('files', {}).items() if k in ('result.json','chart.png','cleaned.csv','model.json')},
             'assessment': {'key': spec['key'], 'version': spec['version'], 'passed': bool(checks) and all(c['passed'] for c in checks), 'checks': checks}}

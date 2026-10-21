@@ -20,6 +20,22 @@ TOKEN = 'ac80Ad6zRSLvvfcYFAMfV2JVVj8rUKlz49RpTpzwv70'
 
 
 class BeginnerContentTests(unittest.TestCase):
+    def test_every_project_has_specific_guidance_and_transfer(self):
+        guidance = json.loads((ROOT / 'curriculum/project-guidance.json').read_text())
+        self.assertEqual(set(guidance), {p['key'] for p in PROJECTS})
+        self.assertEqual(len({v[0] for v in guidance.values()}), 36)
+        self.assertTrue(all(len(v) == 2 and all(len(t) > 45 for t in v) for v in guidance.values()))
+
+    def test_assessment_labels_explain_output_without_disclosing_test_input(self):
+        def wrong(job, image, cancelled):
+            return {'state': 'succeeded', 'stdout': '', 'stderr': '', 'files': {'result.json': grading.pack('{}')}}
+        for project in PROJECTS:
+            result = grading.grade({'id': project['key'], 'files': {}, 'assessment': {'key': project['key'], 'version': grading.version()}}, wrong, None, lambda: False)
+            for check in result['assessment']['checks']:
+                self.assertIn(project['title'], check['name'])
+                self.assertIn(project['output'], check['name'])
+                self.assertFalse(check['passed'])
+
     def test_exact_counts_order_and_prerequisites(self):
         self.assertEqual((len(PROJECTS), len(ARTICLES), len(BEGINNERS), len(LESSONS)), (36, 36, 24, 24))
         self.assertEqual([a['sequence'] for a in LESSONS], list(range(1, 25)))
@@ -77,6 +93,16 @@ class BeginnerHttpTests(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         test_release.ReleaseHttpTest.tearDownClass()
+
+    def test_every_project_explains_craft_and_has_native_help(self):
+        client = test_release.Client(self.base)
+        for index in range(len(PROJECTS)):
+            status, _, source = client.request('/project/'+str(index))
+            self.assertEqual(status, 200)
+            for label in ('Challenge', 'Route', 'Applicable Knowledge', 'Forge', 'Transfer'):
+                self.assertIn(label, source)
+            self.assertIn('<details class="panel-card lp-help">', source)
+            self.assertIn('/assets/learning-projects.css?v=3', source)
 
     def test_all_new_articles_and_projects_are_public_and_cross_linked(self):
         client = test_release.Client(self.base)
