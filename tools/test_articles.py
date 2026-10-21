@@ -1,4 +1,7 @@
 import ast
+import contextlib
+import html
+import io
 import collections
 import importlib.util
 import json
@@ -50,6 +53,20 @@ class Document(HTMLParser):
 
 
 class ArticleContentTest(unittest.TestCase):
+    def test_home_hero_code_is_real_and_matches_displayed_output(self):
+        source = (ROOT / 'src/views.php').read_text()
+        lines = re.findall(r'<span class="hero-code-line">(.*?)</span>(?:\n|</code>)', source)
+        self.assertEqual(len(lines), 7)
+        code = '\n'.join(html.unescape(re.sub(r'<[^>]+>', '', line)) for line in lines)
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            exec(compile(code, 'first_project.py', 'exec'), {})
+        self.assertEqual(output.getvalue(), 'Average: 16.0\n')
+        self.assertIn('<samp dir="ltr">Average: 16.0</samp>', source)
+        self.assertNotIn('data-three-scene', source)
+        self.assertNotIn('/assets/three.min.js', source)
+        self.assertNotIn('/assets/three-scene.js', source)
+
     def test_article_actions_have_spacing_and_readable_primary_labels(self):
         css = (ROOT / 'public/assets/articles.css').read_text()
         source = (ROOT / 'src/articles.php').read_text()
@@ -126,6 +143,20 @@ class ArticleHttpTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         test_release.ReleaseHttpTest.tearDownClass()
+
+    def test_home_hero_uses_accessible_code_instead_of_webgl(self):
+        client = test_release.Client(self.base)
+        status, _, source = client.request('/')
+        self.assertEqual(status, 200)
+        self.assertIn('hero-code-window', source)
+        self.assertIn('خروجی نمونه', source)
+        self.assertIn('این باکس نمایشی است', source)
+        self.assertIn('<pre dir="ltr" tabindex="0"', source)
+        self.assertIn('/assets/style.css?v=10', source)
+        self.assertNotIn('<canvas', source)
+        self.assertNotIn('three.min.js', source)
+        self.assertNotIn('three-scene.js', source)
+        self.assertNotIn('data-scene-toggle', source)
 
     def test_index_redirect_and_public_home(self):
         client = test_release.Client(self.base)
