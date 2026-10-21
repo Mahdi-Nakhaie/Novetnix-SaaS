@@ -121,7 +121,7 @@ class ExpansionHttpTests(unittest.TestCase):
         client = test_release.Client(self.base)
         status, _, source = client.request('/glossary?q=Python&category=python&letter=P')
         self.assertEqual(status, 200)
-        for text in ('topics.py', 'glossary-topic-window', 'glossary-all-topics', '/assets/style.css?v=12'):
+        for text in ('topics.py', 'glossary-topic-window', 'glossary-all-topics', '/assets/style.css?v=13'):
             self.assertIn(text, source)
         self.assertNotIn('glossary-motion', source)
         self.assertNotIn('توقف حرکت', source)

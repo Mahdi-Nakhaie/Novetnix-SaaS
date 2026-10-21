@@ -53,6 +53,26 @@ class Document(HTMLParser):
 
 
 class ArticleContentTest(unittest.TestCase):
+    def test_home_section_actions_are_separated_from_cards(self):
+        css = (ROOT / 'public/assets/style.css').read_text()
+        source = (ROOT / 'src/views.php').read_text()
+        self.assertEqual(source.count('class="section-row home-section-row"'), 2)
+        for destination, label in (('articles', 'همه مقاله‌ها ←'), ('projects', 'همه پروژه‌ها ←')):
+            self.assertIn("linkto('" + destination + "','" + label + "','btn btn-outline home-section-link')", source)
+        self.assertIn('.home-section-row{align-items:center;gap:1.5rem 2rem;margin-block-end:clamp(2rem,4vw,3rem)}', css)
+        self.assertIn('.home-section-row .section-header{margin-bottom:0;min-width:0}', css)
+        self.assertIn('.home-section-row{align-items:flex-start;flex-direction:column;gap:1.25rem}', css)
+
+    def test_card_highlight_is_a_clipped_corner_not_an_overflowing_circle(self):
+        css = (ROOT / 'public/assets/style.css').read_text()
+        layer = css.split('/* Hover interaction layer */', 1)[1].split('body.is-panel', 1)[0]
+        effect = re.search(r'\.feature::after[^{}]*\{([^}]+)\}', layer).group(1)
+        for rule in ('position:absolute', 'inset:0;', 'border-radius:inherit', 'clip-path:inset(0 round var(--r-lg))', 'background:linear-gradient(135deg', 'pointer-events:none'):
+            self.assertIn(rule, effect)
+        for rule in ('radial-gradient', 'border-radius:50%', 'translate(', 'inset:-'):
+            self.assertNotIn(rule, effect)
+        self.assertNotIn('hover::after{opacity:1;transform:', layer)
+
     def test_home_hero_code_is_real_and_matches_displayed_output(self):
         source = (ROOT / 'src/views.php').read_text()
         lines = re.findall(r'<span class="hero-code-line">(.*?)</span>(?:\n|</code>)', source)
@@ -144,6 +164,18 @@ class ArticleHttpTest(unittest.TestCase):
     def tearDownClass(cls):
         test_release.ReleaseHttpTest.tearDownClass()
 
+    def test_home_article_and_project_buttons_precede_their_card_grids(self):
+        status, _, source = test_release.Client(self.base).request('/')
+        self.assertEqual(status, 200)
+        rows = re.findall(r'<div class="section-row home-section-row">(.*?)</div><div class="(article-grid|project-grid)"', source, re.S)
+        self.assertEqual(len(rows), 2)
+        for (row, grid), destination, label in zip(rows, ('articles', 'projects'), ('همه مقاله‌ها ←', 'همه پروژه‌ها ←')):
+            self.assertIn('href="/' + destination + '"', row)
+            self.assertIn('class="btn btn-outline home-section-link"', row)
+            self.assertIn(label, row)
+        self.assertEqual(source.count('<article class="article-card">'), 6)
+        self.assertEqual(source.count('<article class="project-card">'), 3)
+
     def test_home_hero_uses_accessible_code_instead_of_webgl(self):
         client = test_release.Client(self.base)
         status, _, source = client.request('/')
@@ -152,7 +184,7 @@ class ArticleHttpTest(unittest.TestCase):
         self.assertIn('خروجی نمونه', source)
         self.assertIn('این باکس نمایشی است', source)
         self.assertIn('<pre dir="ltr" tabindex="0"', source)
-        self.assertIn('/assets/style.css?v=12', source)
+        self.assertIn('/assets/style.css?v=13', source)
         self.assertNotIn('<canvas', source)
         self.assertNotIn('three.min.js', source)
         self.assertNotIn('three-scene.js', source)

@@ -124,6 +124,11 @@ input[aria-invalid="true"],textarea[aria-invalid="true"],select[aria-invalid="tr
 .section-header p{color:var(--ink-2);margin:0}
 .section-row{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap}
 .section-row .section-header{margin-bottom:2rem}
+.home-section-row{align-items:center;gap:1.5rem 2rem;margin-block-end:clamp(2rem,4vw,3rem)}
+.home-section-row .section-header{margin-bottom:0;min-width:0}
+.home-section-row>.home-section-link{display:inline-flex;align-items:center;justify-content:center;flex:none;min-height:44px;white-space:nowrap}
+@media(max-width:560px){.home-section-row{align-items:flex-start;flex-direction:column;gap:1.25rem}.home-section-row>.home-section-link{align-self:flex-start}}
+
 
 /* features */
 .features-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.2rem}
@@ -1019,9 +1024,9 @@ input::placeholder,textarea::placeholder{color:#87929c;opacity:1}
 /* Hover interaction layer */
 @media (hover:hover){
   .feature,.course-card,.project-card,.price-card,.challenge-card,.post-card,.profile-card,.glossary-card,.related-term-card,.stat-card,.panel-card{position:relative;transition:transform .28s cubic-bezier(.2,.75,.25,1),box-shadow .28s ease,border-color .28s ease}
-  .feature::after,.course-card::after,.project-card::after,.price-card::after,.challenge-card::after,.post-card::after,.profile-card::after,.glossary-card::after,.related-term-card::after,.stat-card::after,.panel-card::after{content:"";position:absolute;inset:-35% auto auto -15%;width:55%;height:70%;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--brand) 13%,transparent),transparent 70%);opacity:0;pointer-events:none;transform:translate(-20px,-20px);transition:opacity .3s ease,transform .4s ease}
+  .feature::after,.course-card::after,.project-card::after,.price-card::after,.challenge-card::after,.post-card::after,.profile-card::after,.glossary-card::after,.related-term-card::after,.stat-card::after,.panel-card::after{content:"";position:absolute;inset:0;border-radius:inherit;clip-path:inset(0 round var(--r-lg));background:linear-gradient(135deg,color-mix(in srgb,var(--brand) 13%,transparent),transparent 38%);opacity:0;pointer-events:none;transition:opacity .3s ease}
   .feature:hover,.course-card:hover,.project-card:hover,.price-card:hover,.challenge-card:hover,.post-card:hover,.profile-card:hover,.glossary-card:hover,.related-term-card:hover,.stat-card:hover{transform:translateY(-4px);border-color:var(--brand-line);box-shadow:0 24px 48px -26px rgba(40,18,62,.35)}
-  .feature:hover::after,.course-card:hover::after,.project-card:hover::after,.price-card:hover::after,.challenge-card:hover::after,.post-card:hover::after,.profile-card:hover::after,.glossary-card:hover::after,.related-term-card:hover::after,.stat-card:hover::after,.panel-card:hover::after{opacity:1;transform:translate(0,0)}
+  .feature:hover::after,.course-card:hover::after,.project-card:hover::after,.price-card:hover::after,.challenge-card:hover::after,.post-card:hover::after,.profile-card:hover::after,.glossary-card:hover::after,.related-term-card:hover::after,.stat-card:hover::after,.panel-card:hover::after{opacity:1}
   .feature-icon,.course-icon,.project-visual,.about-card-mark,.help-topic-icon{transition:transform .3s cubic-bezier(.2,.75,.25,1),filter .3s ease}
   .feature:hover .feature-icon,.course-card:hover .course-icon,.help-topic:hover .help-topic-icon{transform:translateY(-3px) rotate(-4deg) scale(1.08);filter:saturate(1.12)}
   .project-card:hover .project-visual{transform:scale(1.035)}
