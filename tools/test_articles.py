@@ -72,6 +72,8 @@ class ArticleContentTest(unittest.TestCase):
         self.assertIn('/assets/noventix-logo.webp', views)
         self.assertIn('/assets/favicon.webp', views)
         self.assertIn('/assets/noventix-logo.webp', (ROOT / 'src/seo.php').read_text())
+        self.assertIn('class="brand-name"', views)
+        self.assertIn('.brand-name{font-family:ui-monospace', css)
         self.assertIn('footer-brand-name', views)
         self.assertIn('.footer-brand-name{font-family:ui-monospace', css)
 
@@ -195,7 +197,7 @@ class ArticleHttpTest(unittest.TestCase):
         self.assertIn('خروجی نمونه', source)
         self.assertIn('این باکس نمایشی است', source)
         self.assertIn('<pre dir="ltr" tabindex="0"', source)
-        self.assertIn('/assets/style.css?v=18', source)
+        self.assertIn('/assets/style.css?v=19', source)
         self.assertNotIn('<canvas', source)
         self.assertNotIn('three.min.js', source)
         self.assertNotIn('three-scene.js', source)

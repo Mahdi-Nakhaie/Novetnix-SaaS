@@ -903,7 +903,7 @@ body.is-panel{max-inline-size:100%;overflow-x:clip}
 body:has(.site-header){background:linear-gradient(180deg,#fff 0,var(--bg) 22rem)}
 .site-header{background:color-mix(in srgb,var(--card) 92%,transparent);box-shadow:0 1px 0 rgba(40,18,62,.04)}
 .header-inner{min-height:76px}
-.brand img{height:64px;width:64px;max-width:64px;border-radius:16px;object-fit:cover}
+.brand-name{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;font-size:1.25rem;font-weight:800;letter-spacing:.02em;color:var(--ink)}
 .footer-mark{display:block;width:64px;height:64px;object-fit:contain;border:0;border-radius:0;background:transparent;box-shadow:none}
 .footer-brand-name{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;font-size:1.35rem;letter-spacing:.02em;font-weight:800}
 .profile-avatar.has-image{overflow:hidden;background:var(--brand-soft)}

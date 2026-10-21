@@ -274,7 +274,7 @@ class ProfileHttpTest(unittest.TestCase):
         self.assertIn('href="/member/' + str(member) + '"', source)
         status, _, source = client.request('/member/' + str(member))
         self.assertEqual(status, 200)
-        for text in (name, 'profile-grid', 'پیشرفت مهارتی', 'ویرایش پروفایل', '/assets/style.css?v=18'):
+        for text in (name, 'profile-grid', 'پیشرفت مهارتی', 'ویرایش پروفایل', '/assets/style.css?v=19'):
             self.assertIn(text, source)
         self.assertNotIn('09990000771', source)
         self.assertIn('class="profile-column"', source)
