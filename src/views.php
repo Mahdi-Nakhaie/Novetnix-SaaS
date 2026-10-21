@@ -18,7 +18,7 @@ function head_page(string $title,string $description='',bool $panel=false,bool $
     }
     if ($path==='' || $path==='articles' || str_starts_with($path,'articles/')) echo '<link rel="stylesheet" href="/assets/articles.css?v=3">';
     $darychehAssets=($path==='dashboard/darycheh' || str_starts_with($path,'dashboard/darycheh/')) ? '<link rel="stylesheet" href="/assets/darycheh.css?v=1"><script src="/assets/darycheh.js?v=1" defer></script>' : '';
-    echo '<link rel="stylesheet" href="/assets/style.css?v=22"><script src="/assets/app.js?v=2" defer></script><script src="/assets/playback-events.js" defer></script>'.$darychehAssets.'</head><body class="'.($panel?'is-panel':'').'">';
+    echo '<link rel="stylesheet" href="/assets/style.css?v=23"><script src="/assets/app.js?v=2" defer></script><script src="/assets/playback-events.js" defer></script>'.$darychehAssets.'</head><body class="'.($panel?'is-panel':'').'">';
     echo '<div class="noventix-loading" id="noventix-loading" role="status" aria-live="polite" hidden><div class="noventix-loading-card"><span class="noventix-loading-mark" aria-hidden="true">N</span><strong>Noventix</strong><span class="noventix-loading-track" aria-hidden="true"><span></span></span><p>در حال آماده‌سازی...</p></div></div>';
     if ($panel) { panel_nav(); return; }
     echo '<header class="site-header"><div class="container header-inner"><a href="/" class="brand" aria-label="Noventix، صفحه اصلی"><img src="/assets/noventix-logo.webp?v=2" alt="Noventix" width="72" height="72"><span class="brand-name" lang="en" dir="ltr">Noventix</span></a><nav class="main-nav" aria-label="ناوبری اصلی">';
@@ -94,6 +94,23 @@ function plan_is_available(string $id): bool {
 function available_plan_ids(): array {
     return array_values(array_filter(array_keys(PLANS),static fn(string $id): bool=>plan_is_available($id)));
 }
+function upcoming_plan_cards(): void {
+    $plans=[
+        'bronze'=>['برنزی','شروعی محکم و هدفمند','برای ساختن پایه‌های درست و برداشتن اولین قدم‌های مطمئن در دنیای برنامه‌نویسی.',['تمرکز بر مفاهیم پایه','عادت به تمرین مستمر','حرکت از مفهوم به کد']],
+        'silver'=>['نقره‌ای','از یادگیری به تجربه','برای عبور از مثال‌های ساده و پرورش نگاه مسئله‌محور در مسیر یادگیری.',['تقویت مهارت حل مسئله','تمرین با سناریوهای کاربردی','تبدیل دانش به تجربه']],
+        'gold'=>['طلایی','نگاهی حرفه‌ای به ساختن','برای کسانی که به کیفیت خروجی، تحلیل دقیق‌تر و ساختن پروژه‌های جدی فکر می‌کنند.',['تفکر تحلیلی و دقیق','توجه به کیفیت پروژه','ساخت خروجی قابل ارائه']],
+        'titanium'=>['تیتانیومی','فراتر از مسیر معمول','برای ذهن‌های بلندپرواز؛ با تمرکز بر چالش‌های عمیق‌تر و رشد مستقل مهارت‌ها.',['نگاه جامع به مسئله','تمرکز بر چالش‌های پیچیده','رشد مستمر و مستقل']]
+    ];
+    echo '<div class="upcoming-plans">';
+    foreach ($plans as $id=>[$name,$tagline,$description,$focus]) {
+        echo '<article class="upcoming-plan plan-'.h($id).'" aria-label="پلن '.h($name).'؛ به‌زودی"><span class="eyebrow">اشتراک Noventix</span><h2>پلن '.h($name).'</h2><h3>'.h($tagline).'</h3><p class="plan-description">'.h($description).'</p><ul class="plan-focus">';
+        foreach ($focus as $item) echo '<li>'.h($item).'</li>';
+        echo '</ul><div class="plan-availability"><div class="plan-chain" aria-hidden="true">';
+        for ($i=0;$i<9;$i++) echo '<span></span>';
+        echo '</div><strong class="plan-coming-soon">به‌زودی</strong></div></article>';
+    }
+    echo '</div>';
+}
 function plan_cards(bool $short=false): void {
     $available=available_plan_ids();
     echo '<div class="pricing-grid pricing-grid-active">';
@@ -151,7 +168,7 @@ function home(array $courses): void {
     } else {
         echo '<section class="section container"><div class="cta-panel"><span class="eyebrow">دوره رایگان MVP</span><h2>'.h(FREE_COURSE_TITLE).'</h2><p>ثبت‌نام کن و بدون پرداخت، درس‌ها و پیشرفت واقعی خودت را دنبال کن.</p>'; linkto('course/'.FREE_COURSE_SLUG,'شروع دوره رایگان ←','btn btn-light'); echo '</div></section>';
     }
-    echo '<section class="section container"><div class="section-header"><span class="eyebrow">پلن‌های Noventix · به‌زودی</span><h2>پلن مناسب مسیرت</h2><p>برنزی، نقره‌ای، طلایی و تیتانیومی؛ چهار مسیر برای شروع هدفمند، تمرین کاربردی و رشد حرفه‌ای در دنیای برنامه‌نویسی.</p></div>'; linkto('pricing','آشنایی با پلن‌ها','btn btn-outline'); echo '</section>';
+    echo '<section class="section container"><div class="section-header"><span class="eyebrow">پلن‌های Noventix · به‌زودی</span><h2>پلن مناسب مسیرت</h2><p>برنزی، نقره‌ای، طلایی و تیتانیومی؛ چهار مسیر برای شروع هدفمند، تمرین کاربردی و رشد حرفه‌ای در دنیای برنامه‌نویسی.</p></div>'; upcoming_plan_cards(); echo '<div class="home-plans-link">'; linkto('pricing#plan-features','مشاهدهٔ امکانات پلن‌ها','btn btn-outline'); echo '</div></section>';
     echo '<section class="section container"><div class="cta-panel"><span class="eyebrow">آینده از همین قدم شروع می‌شود</span><h2>پروژه بعدی‌ات منتظر توست.</h2><p>مسیرت را انتخاب کن، یاد بگیر و چیزی بساز که بتوانی به آن افتخار کنی.</p>'; linkto('login','رایگان شروع کن ←','btn btn-light'); echo '</div></section></main>';
 }
 function panel_head(string $title,string $sub): void { echo '<div class="panel-heading"><h1>'.h($title).'</h1><p>'.h($sub).'</p></div>'; }

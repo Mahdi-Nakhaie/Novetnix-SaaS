@@ -23,6 +23,31 @@ def query(source, table):
     return re.search(r'"(SELECT [^"\n]+ FROM ' + table + r' [^"\n]+)"', source).group(1)
 
 
+class UpcomingPricingTest(unittest.TestCase):
+    def test_home_and_pricing_use_the_same_plan_cards(self):
+        self.assertIn('upcoming_plan_cards();', body(VIEWS, 'home'))
+        self.assertIn('upcoming_plan_cards();', body(ROUTER, 'page_pricing'))
+        cards = body(VIEWS, 'upcoming_plan_cards')
+        for plan in ('bronze', 'silver', 'gold', 'titanium'):
+            self.assertIn(f"'{plan}'=>", cards)
+        self.assertIn('plan-chain', cards)
+        self.assertIn('به‌زودی', cards)
+
+    def test_home_link_targets_pricing_comparison(self):
+        self.assertIn("linkto('pricing#plan-features','مشاهدهٔ امکانات پلن‌ها'", body(VIEWS, 'home'))
+        self.assertIn('id="plan-features"', body(ROUTER, 'page_pricing'))
+
+    def test_comparison_is_accessible_and_pending(self):
+        pricing = body(ROUTER, 'page_pricing')
+        for markup in ('<caption>', 'scope="col"', 'scope="row"', 'tabindex="0"', 'plan-comparison-lock', 'aria-hidden="true"'):
+            self.assertIn(markup, pricing)
+        self.assertIn('<td><span class="plan-feature-pending">به‌زودی</span></td>', pricing)
+        self.assertNotIn('checkout', pricing)
+        css = (ROOT / 'public/assets/style.css').read_text(encoding='utf-8')
+        self.assertIn('.plan-comparison-scroll{overflow-x:auto;', css)
+        self.assertIn('.plan-comparison-lock{position:absolute;inset:0;pointer-events:none;', css)
+
+
 class PublicCoursesTest(unittest.TestCase):
     def setUp(self):
         self.db = sqlite3.connect(":memory:")
