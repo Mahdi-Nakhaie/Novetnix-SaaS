@@ -3,6 +3,8 @@ import re
 import sqlite3
 import unittest
 
+from tools import test_release
+
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SKILL = (ROOT / "src/skill_profile.php").read_text(encoding="utf-8")
@@ -62,6 +64,17 @@ class SkillLevelTest(unittest.TestCase):
 
 
 class SkillProfileSourceTest(unittest.TestCase):
+    def test_mobile_profiles_collapse_and_controls_fit_their_container(self):
+        self.assertIn('@media(max-width:900px){.profile-grid{grid-template-columns:minmax(0,1fr)}}', STYLE)
+        self.assertIn('.profile-search{display:grid;grid-template-columns:minmax(0,1fr);gap:.75rem}', STYLE)
+        self.assertIn('.profile-search input{width:100%;min-width:0;box-sizing:border-box}', STYLE)
+        self.assertIn('.profile-page .message-compose{min-width:0;width:100%;max-width:100%;box-sizing:border-box}', STYLE)
+        self.assertIn('minmax(min(100%,140px),1fr)', STYLE)
+        self.assertIn('minmax(min(100%,210px),1fr)', STYLE)
+        self.assertIn('.profile-identity>div{flex:1;min-width:0}', STYLE)
+        self.assertIn('.profile-crumb{flex-wrap:wrap;overflow-wrap:anywhere}', STYLE)
+        self.assertIn('.completion-title{flex-basis:100%;min-width:0}', STYLE)
+
     def test_progress_is_derived_from_stored_completions_only(self):
         profile = body(SKILL, "skill_profile_for")
         self.assertIn("FROM project_completions WHERE user_id=?", profile)
@@ -222,6 +235,62 @@ class MessagingDatabaseTest(unittest.TestCase):
         self.assertTrue(self.db.execute("SELECT 1 FROM user_follows WHERE follower_id=2 AND followed_id=1").fetchone())
         with self.assertRaises(sqlite3.IntegrityError):
             self.db.execute("INSERT INTO user_follows(follower_id,followed_id) VALUES (1,1)")
+
+
+class ProfileHttpTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        test_release.ReleaseHttpTest.setUpClass()
+        cls.base = test_release.ReleaseHttpTest.base
+
+    @classmethod
+    def tearDownClass(cls):
+        test_release.ReleaseHttpTest.tearDownClass()
+
+    def test_home_omits_the_requested_sentence(self):
+        status, _, source = test_release.Client(self.base).request('/')
+        self.assertEqual(status, 200)
+        self.assertNotIn('این مسیر تضمین درآمد یا استخدام نیست', source)
+        self.assertIn('اگر می‌دانی اما هنوز نمی‌سازی', source)
+        self.assertIn('class="section-row home-section-row"', source)
+
+    def test_directory_and_own_profile_with_a_long_name(self):
+        client = test_release.Client(self.base)
+        test_release.ReleaseHttpTest.register(self, client, '09990000771')
+        name = 'یادگیرنده' * 12
+        with sqlite3.connect(test_release.ReleaseHttpTest.database) as db:
+            db.execute('UPDATE users SET name=? WHERE phone=?', (name, '09990000771'))
+            member = db.execute('SELECT id FROM users WHERE phone=?', ('09990000771',)).fetchone()[0]
+        status, _, source = client.request('/learners')
+        self.assertEqual(status, 200)
+        self.assertIn(name, source)
+        self.assertIn('href="/member/' + str(member) + '"', source)
+        status, _, source = client.request('/member/' + str(member))
+        self.assertEqual(status, 200)
+        for text in (name, 'profile-grid', 'پیشرفت مهارتی', 'ویرایش پروفایل', '/assets/style.css?v=14'):
+            self.assertIn(text, source)
+        self.assertNotIn('09990000771', source)
+        self.assertIn('class="profile-column"', source)
+
+    def test_other_profile_preserves_messaging_and_empty_search(self):
+        viewer = test_release.Client(self.base)
+        peer = test_release.Client(self.base)
+        test_release.ReleaseHttpTest.register(self, viewer, '09990000772')
+        test_release.ReleaseHttpTest.register(self, peer, '09990000773')
+        with sqlite3.connect(test_release.ReleaseHttpTest.database) as db:
+            member = db.execute('SELECT id FROM users WHERE phone=?', ('09990000773',)).fetchone()[0]
+        status, _, source = viewer.request('/member/' + str(member))
+        self.assertEqual(status, 200)
+        self.assertIn('class="message-compose"', source)
+        self.assertIn('name="recipient" value="' + str(member) + '"', source)
+        self.assertIn('name="form_token"', source)
+        self.assertIn('name="csrf"', source)
+        status, _, source = test_release.Client(self.base).request('/member/' + str(member))
+        self.assertEqual(status, 200)
+        self.assertIn('برای پیام دادن وارد شوید', source)
+        status, _, source = viewer.request('/learners?q=NoMatchingMember12345')
+        self.assertEqual(status, 200)
+        self.assertIn('عضوی با این مشخصات پیدا نشد', source)
 
 
 if __name__ == "__main__":
