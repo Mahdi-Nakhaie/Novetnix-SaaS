@@ -903,7 +903,9 @@ body.is-panel{max-inline-size:100%;overflow-x:clip}
 body:has(.site-header){background:linear-gradient(180deg,#fff 0,var(--bg) 22rem)}
 .site-header{background:color-mix(in srgb,var(--card) 92%,transparent);box-shadow:0 1px 0 rgba(40,18,62,.04)}
 .header-inner{min-height:76px}
-.brand img{height:56px;width:56px;max-width:56px;border-radius:14px;object-fit:cover}
+.brand img{height:64px;width:64px;max-width:64px;border-radius:16px;object-fit:cover}
+.footer-mark{display:block;width:64px;height:64px;object-fit:contain;border:0;border-radius:0;background:transparent;box-shadow:none}
+.footer-brand-name{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;font-size:1.35rem;letter-spacing:.02em;font-weight:800}
 .profile-avatar.has-image{overflow:hidden;background:var(--brand-soft)}
 .profile-avatar.has-image img{display:block;width:100%;height:100%;object-fit:cover}
 .panel-avatar.has-image{overflow:hidden;padding:0}
@@ -937,7 +939,7 @@ input::placeholder,textarea::placeholder{color:#87929c;opacity:1}
 .panel-top{box-shadow:0 1px 0 rgba(40,18,62,.04)}
 @media(max-width:900px){
   .header-inner{min-height:68px}
-  .brand img{height:42px;max-width:150px}
+  .brand img{height:48px;max-width:48px;width:48px}
   .panel-content{padding:1rem}
 }
 @media(max-width:560px){
