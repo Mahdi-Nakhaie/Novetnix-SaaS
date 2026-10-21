@@ -69,9 +69,9 @@ class ArticleContentTest(unittest.TestCase):
         css = (ROOT / 'public/assets/style.css').read_text()
         self.assertIn('page-hero container projects-hero', source)
         self.assertIn('.projects-hero>p{white-space:nowrap', css)
-        self.assertIn('/assets/logo.png', views)
-        self.assertIn('/assets/favicon.png', views)
-        self.assertIn('/assets/logo.png', (ROOT / 'src/seo.php').read_text())
+        self.assertIn('/assets/noventix-logo.webp', views)
+        self.assertIn('/assets/favicon.webp', views)
+        self.assertIn('/assets/noventix-logo.webp', (ROOT / 'src/seo.php').read_text())
 
         css = (ROOT / 'public/assets/style.css').read_text()
         layer = css.split('/* Hover interaction layer */', 1)[1].split('body.is-panel', 1)[0]
