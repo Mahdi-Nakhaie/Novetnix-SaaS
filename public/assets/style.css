@@ -1,3 +1,20 @@
+.post-actions{display:flex;align-items:flex-start;flex-wrap:wrap;gap:12px;width:100%;margin-block:16px}
+.heart-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:64px;min-height:44px;padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface,#fff);color:var(--muted);font:inherit;cursor:pointer;text-decoration:none;box-sizing:border-box}
+.heart-button svg{flex:none;fill:none}
+.heart-button.is-liked{color:#c52242;background:#fff0f3;border-color:#f4b9c5}
+.heart-button.is-liked svg{fill:currentColor}
+.heart-button:hover{border-color:#c52242;color:#c52242}
+.heart-button:focus-visible,.post-delete summary:focus-visible,.account-danger summary:focus-visible{outline:3px solid var(--brand);outline-offset:3px}
+.post-delete{flex:1 1 220px;min-width:0;max-width:100%;border:1px solid #f0c7ce;border-radius:14px;padding:10px 14px;color:var(--ink)}
+.post-delete summary,.account-danger summary{cursor:pointer;min-height:24px;color:#a51b36;font-weight:600}
+.post-delete p,.account-danger p{overflow-wrap:anywhere;line-height:1.9}
+.post-delete .stack-form,.account-danger .stack-form{margin-block-start:16px;min-width:0}
+.post-delete .delete-confirm{display:flex;align-items:flex-start;gap:10px}
+.post-delete .delete-confirm input{width:20px;min-width:20px;height:20px;margin-block-start:4px;accent-color:#b91c3b}
+.btn.btn-danger{background:#b91c3b;color:#fff;border:1px solid #b91c3b;white-space:normal;max-width:100%}
+.btn.btn-danger:hover{background:#95152e;color:#fff}
+.account-danger{margin-block-start:24px;border:1px solid #f0c7ce}
+.account-danger details{max-width:560px}
 @font-face{font-family:Estedad;src:url(Estedad-Thin.ttf) format('truetype');font-weight:100;font-style:normal;font-display:swap}
 @font-face{font-family:Estedad;src:url(Estedad-ExtraLight.ttf) format('truetype');font-weight:200;font-style:normal;font-display:swap}
 @font-face{font-family:Estedad;src:url(Estedad-Light.ttf) format('truetype');font-weight:300;font-style:normal;font-display:swap}

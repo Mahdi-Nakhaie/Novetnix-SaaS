@@ -119,6 +119,39 @@ function send_verification_code(string $phone, string $code): bool {
     error_log('SMS.ir verify send failed: HTTP '.$status.', status '.(is_array($body) ? (string)($body['status'] ?? 'unknown') : 'invalid-response'));
     return false;
 }
+function delete_account(int $userId): bool {
+    $pdo=db(); $pdo->beginTransaction();
+    try {
+        q('SELECT id FROM users WHERE id=?'.($pdo->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql'?' FOR UPDATE':''),[$userId]);
+        $running=q("SELECT 1 FROM workspace_runs r JOIN projects p ON p.id=r.project_id WHERE p.user_id=? AND r.state IN ('submitting','queued','running','cancelling') LIMIT 1",[$userId])->fetchColumn();
+        $downloading=q("SELECT 1 FROM workspace_dataset_imports WHERE owner=? AND state='downloading' LIMIT 1",[$userId])->fetchColumn();
+        if ($running || $downloading) { $pdo->rollBack(); return false; }
+        q('DELETE FROM darycheh_product_requests WHERE user_id=?',[$userId]);
+        q('DELETE FROM darycheh_evaluations WHERE attempt_id IN (SELECT id FROM darycheh_attempts WHERE user_id=?)',[$userId]);
+        q('DELETE FROM darycheh_actions WHERE attempt_id IN (SELECT id FROM darycheh_attempts WHERE user_id=?)',[$userId]);
+        q('DELETE FROM darycheh_attempts WHERE user_id=?',[$userId]);
+        q('DELETE FROM project_completions WHERE user_id=?',[$userId]);
+        q('DELETE FROM workspace_dataset_imports WHERE owner=?',[$userId]);
+        q('DELETE FROM workspace_runs WHERE project_id IN (SELECT id FROM projects WHERE user_id=?)',[$userId]);
+        q('DELETE FROM project_workspaces WHERE project_id IN (SELECT id FROM projects WHERE user_id=?)',[$userId]);
+        q('DELETE FROM workspace_hub_rates WHERE owner=?',[$userId]);
+        q('DELETE FROM projects WHERE user_id=?',[$userId]);
+        q('DELETE FROM ticket_replies WHERE user_id=? OR ticket_id IN (SELECT id FROM tickets WHERE user_id=?)',[$userId,$userId]);
+        q('DELETE FROM tickets WHERE user_id=?',[$userId]);
+        q('DELETE FROM post_reactions WHERE user_id=? OR post_id IN (SELECT id FROM community_posts WHERE user_id=?)',[$userId,$userId]);
+        q('DELETE FROM community_replies WHERE user_id=? OR post_id IN (SELECT id FROM community_posts WHERE user_id=?)',[$userId,$userId]);
+        q('DELETE FROM community_posts WHERE user_id=?',[$userId]);
+        q('DELETE FROM user_follows WHERE follower_id=? OR followed_id=?',[$userId,$userId]);
+        foreach (['direct_messages','message_requests'] as $table) q('DELETE FROM '.$table.' WHERE sender_id=? OR recipient_id=?',[$userId,$userId]);
+        foreach (['payment_orders','subscriptions','enrollments','lesson_progress','activities','nova_messages','nova_usage','challenge_progress'] as $table) q('DELETE FROM '.$table.' WHERE user_id=?',[$userId]);
+        foreach (['otp_codes','otp_requests','leads'] as $table) q('DELETE FROM '.$table.' WHERE phone=(SELECT phone FROM users WHERE id=?)',[$userId]);
+        q('UPDATE glossary_revisions SET editor_id=NULL WHERE editor_id=?',[$userId]);
+        q('DELETE FROM users WHERE id=?',[$userId]);
+        $pdo->commit();
+        return true;
+    } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
+}
+
 function logout_user(): void {
     $_SESSION=[];
     if (ini_get('session.use_cookies')) {

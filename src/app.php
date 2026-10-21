@@ -433,12 +433,42 @@ function handle_post(string $path): void {
         if (!$owned || mb_strlen($body)<2 || mb_strlen($body)>5000) { flash('پاسخ معتبر وارد کنید.','error'); redirect('dashboard/support'); }
         q('INSERT INTO ticket_replies(ticket_id,user_id,body) VALUES (?,?,?)',[$ticket,$u['id'],$body]); q("UPDATE tickets SET status='open' WHERE id=?",[$ticket]); flash('پاسخ شما به تیکت اضافه شد.'); redirect('dashboard/support');
     }
+    if ($path==='community/delete') {
+        $id=filter_var($_POST['post_id'] ?? '',FILTER_VALIDATE_INT);
+        $target=($_POST['return_to'] ?? '')==='community' ? 'community' : 'dashboard/community';
+        if (!$id || ($_POST['confirm'] ?? '')!=='delete') { http_response_code(422); exit('حذف پست را تأیید کنید.'); }
+        $pdo=db(); $pdo->beginTransaction();
+        try {
+            $post=q('SELECT user_id FROM community_posts WHERE id=?'.($pdo->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql'?' FOR UPDATE':''),[$id])->fetch();
+            if (!$post || ((int)$post['user_id']!==(int)$u['id'] && $u['role']!=='admin')) { $pdo->rollBack(); http_response_code(404); exit; }
+            q('DELETE FROM post_reactions WHERE post_id=?',[$id]);
+            q('DELETE FROM community_replies WHERE post_id=?',[$id]);
+            q('DELETE FROM community_posts WHERE id=?',[$id]);
+            $pdo->commit();
+        } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
+        flash('پست و پاسخ‌های آن حذف شد.'); redirect($target);
+    }
+    if ($path==='account/delete') {
+        if (($_POST['confirmation'] ?? '')!=='حذف حساب') { flash('برای تأیید، عبارت «حذف حساب» را وارد کنید.','error'); redirect('dashboard/profile'); }
+        $attempts=(int)($_SESSION['delete_account_attempts'] ?? 0);
+        if ($attempts>=5) { http_response_code(429); exit('تعداد تلاش‌ها بیش از حد مجاز است. دوباره وارد شوید.'); }
+        $_SESSION['delete_account_attempts']=$attempts+1;
+        $account=q('SELECT password_hash,role FROM users WHERE id=?',[$u['id']])->fetch();
+        if (!$account || $account['role']!=='student') { http_response_code(403); exit('حذف حساب مدیریتی از این بخش مجاز نیست.'); }
+        if (!password_verify((string)($_POST['password'] ?? ''),$account['password_hash'])) { flash('رمز عبور صحیح نیست؛ حساب حذف نشد.','error'); redirect('dashboard/profile'); }
+        if (q('SELECT 1 FROM darycheh_drafts WHERE updated_by=? LIMIT 1',[$u['id']])->fetchColumn()) { flash('ابتدا از پشتیبانی بخواهید مسئولیت پیش‌نویس‌های مدیریتی قبلی شما را منتقل کند؛ حساب هنوز حذف نشده است.','error'); redirect('dashboard/profile'); }
+        if (!delete_account((int)$u['id'])) { flash('ابتدا اجراهای فعال میزکار و دانلودهای در حال انجام را متوقف کنید؛ سپس دوباره حساب را حذف کنید.','error'); redirect('dashboard/profile'); }
+        logout_user(); flash('حساب و داده‌های وابستهٔ شما حذف شد.'); redirect('login');
+    }
     if ($path==='community/react') {
         $id=filter_var($_POST['post_id'] ?? '',FILTER_VALIDATE_INT); $kind=(string)($_POST['kind'] ?? '');
         if (!$id || !in_array($kind,['like','save'],true) || !q('SELECT id FROM community_posts WHERE id=?',[$id])->fetch()) { http_response_code(404); exit; }
-        if (db()->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql') q('INSERT IGNORE INTO post_reactions(post_id,user_id,kind) VALUES (?,?,?)',[$id,$u['id'],$kind]);
+        $active=(string)($_POST['active'] ?? '1');
+        if (!in_array($active,['0','1'],true)) { http_response_code(422); exit; }
+        if ($active==='0') q('DELETE FROM post_reactions WHERE post_id=? AND user_id=? AND kind=?',[$id,$u['id'],$kind]);
+        elseif (db()->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql') q('INSERT IGNORE INTO post_reactions(post_id,user_id,kind) VALUES (?,?,?)',[$id,$u['id'],$kind]);
         else q('INSERT OR IGNORE INTO post_reactions(post_id,user_id,kind) VALUES (?,?,?)',[$id,$u['id'],$kind]);
-        redirect('dashboard/community');
+        redirect(($_POST['return_to'] ?? '')==='community' ? 'community' : 'dashboard/community');
     }
     if ($path==='tickets/create') {
         $subject=trim((string)($_POST['subject'] ?? '')); $body=trim((string)($_POST['body'] ?? '')); $priority=(string)($_POST['priority'] ?? 'متوسط');
