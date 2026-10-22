@@ -18,7 +18,8 @@ function head_page(string $title,string $description='',bool $panel=false,bool $
     }
     if ($path==='' || $path==='articles' || str_starts_with($path,'articles/')) echo '<link rel="stylesheet" href="/assets/articles.css?v=3">';
     $darychehAssets=($path==='dashboard/darycheh' || str_starts_with($path,'dashboard/darycheh/')) ? '<link rel="stylesheet" href="/assets/darycheh.css?v=1"><script src="/assets/darycheh.js?v=1" defer></script>' : '';
-    echo '<link rel="stylesheet" href="/assets/style.css?v=23"><script src="/assets/app.js?v=2" defer></script><script src="/assets/playback-events.js" defer></script>'.$darychehAssets.'</head><body class="'.($panel?'is-panel':'').'">';
+    $adminPanel=$panel && ($me['role'] ?? '')==='admin';
+    echo '<link rel="stylesheet" href="/assets/style.css?v=23">'.($adminPanel?'<link rel="stylesheet" href="/assets/admin.css?v=1">':'').'<script src="/assets/app.js?v=3" defer></script><script src="/assets/playback-events.js" defer></script>'.$darychehAssets.'</head><body class="'.($panel?'is-panel':'').($adminPanel?' is-admin':'').'">';
     echo '<div class="noventix-loading" id="noventix-loading" role="status" aria-live="polite" hidden><div class="noventix-loading-card"><span class="noventix-loading-mark" aria-hidden="true">N</span><strong>Noventix</strong><span class="noventix-loading-track" aria-hidden="true"><span></span></span><p>در حال آماده‌سازی...</p></div></div>';
     if ($panel) { panel_nav(); return; }
     echo '<header class="site-header"><div class="container header-inner"><a href="/" class="brand" aria-label="Noventix، صفحه اصلی"><img src="/assets/noventix-logo.webp?v=2" alt="Noventix" width="72" height="72"><span class="brand-name" lang="en" dir="ltr">Noventix</span></a><nav class="main-nav" aria-label="ناوبری اصلی">';
@@ -47,6 +48,7 @@ function page_not_found(): void {
 function panel_nav(): void {
     global $me,$path;
     $role=$me['role'];
+    if ($role==='admin') { admin_nav(); return; }
     $items=$role==='admin'
         ? ['dashboard'=>'Overview','dashboard/users'=>'کاربران','dashboard/users-new'=>'کاربران جدید','dashboard/courses'=>'Courses & Lessons','dashboard/catalog'=>'پروژه‌ها','dashboard/challenges'=>'چالش‌ها','dashboard/subscriptions'=>'اشتراک‌ها','dashboard/payments'=>'پرداخت‌ها','dashboard/community'=>'Community','dashboard/support'=>'پشتیبانی','dashboard/announcements'=>'اعلان‌ها','dashboard/gamification'=>'Gamification','dashboard/analytics'=>'Analytics','dashboard/content'=>'Content','dashboard/glossary'=>'واژه‌نامه','dashboard/profile'=>'پروفایل','dashboard/settings'=>'System Settings']
         : ['dashboard'=>'نمای کلی','dashboard/learning'=>'مسیر یادگیری','dashboard/projects'=>'پروژه‌ها','dashboard/challenges'=>'چالش‌ها','dashboard/community'=>'Community','messages'=>'پیام‌ها','dashboard/nova'=>'Nova AI','dashboard/subscription'=>'اشتراک','dashboard/support'=>'پشتیبانی','dashboard/gamification'=>'Gamification','dashboard/activity'=>'فعالیت و Streak','dashboard/profile'=>'پروفایل','dashboard/settings'=>'تنظیمات'];
@@ -62,6 +64,41 @@ function panel_nav(): void {
     foreach ($items as $href=>$label) linkto($href,$label,$path===$href?'selected':'');
     echo '</nav><div class="sidebar-bottom"><a href="/">بازگشت به سایت ↗</a>';
     form_start('logout'); echo '<button type="submit" class="text-button">خروج از حساب</button></form></div></aside><div class="panel-body"><div class="panel-top"><button type="button" class="panel-menu" aria-label="فهرست پنل">☰</button><span>Noventix <span class="muted">/ '.($role==='admin'?'مدیریت':($role==='owner'?'مالک':'دانش‌آموز')).'</span></span><span class="panel-avatar'.($me['profile_image']?' has-image':'').'">'.($me['profile_image']?'<img src="'.h(profile_image_url($me['profile_image'])).'" alt="">':h(mb_substr($me['name'] ?: $me['phone'],0,1))).'</span></div>';
+}
+function admin_nav(): void {
+    global $me,$path;
+    $groups=[
+        'مدیریت'=>['dashboard'=>'نمای کلی','dashboard/users'=>'کاربران','dashboard/users-new'=>'ثبت‌نام‌های جدید','dashboard/analytics'=>'آمار و گزارش‌ها'],
+        'آموزش و محتوا'=>['dashboard/courses'=>'دوره‌ها و درس‌ها','dashboard/catalog'=>'پروژه‌ها','dashboard/challenges'=>'چالش‌ها','dashboard/workspace-templates'=>'تمرین‌های پایتون','dashboard/darycheh-manage'=>'سناریوهای دریچه','dashboard/content'=>'محتوا','dashboard/glossary'=>'واژه‌نامه'],
+        'ارتباط با کاربران'=>['dashboard/community'=>'انجمن','dashboard/support'=>'پشتیبانی','dashboard/messages'=>'پیام‌های تماس','dashboard/announcements'=>'اعلان‌ها'],
+        'حساب و ابزارها'=>['dashboard/workspace'=>'میزکار پایتون','dashboard/darycheh'=>'دریچه','dashboard/gamification'=>'پیشرفت و امتیازها','dashboard/profile'=>'پروفایل من','dashboard/settings'=>'تنظیمات سامانه'],
+    ];
+    if (COMMERCE_ENABLED) $groups['امور مالی']=['dashboard/subscriptions'=>'اشتراک‌ها','dashboard/payments'=>'پرداخت‌ها'];
+    $current='مدیریت';
+    foreach ($groups as $items) foreach ($items as $href=>$label) if ($path===$href || ($href!=='dashboard' && str_starts_with($path,$href.'/'))) $current=$label;
+    echo '<a class="admin-skip" href="#admin-main">رفتن به محتوای اصلی</a><aside class="sidebar" id="admin-sidebar"><a class="panel-brand" href="/"><img src="/assets/favicon.webp" alt="" width="42" height="42"><span lang="en" dir="ltr">Noventix</span></a><div class="sidebar-caption">پنل مدیریت</div><nav aria-label="ناوبری مدیریت">';
+    foreach ($groups as $title=>$items) {
+        echo '<div class="admin-nav-group"><span class="admin-nav-label">'.h($title).'</span>';
+        foreach ($items as $href=>$label) {
+            $active=$path===$href || ($href!=='dashboard' && str_starts_with($path,$href.'/'));
+            echo '<a href="'.h(url($href)).'"'.($active?' class="selected" aria-current="page"':'').'><span class="admin-nav-mark" aria-hidden="true"></span>'.h($label).'</a>';
+        }
+        echo '</div>';
+    }
+    echo '</nav><div class="sidebar-bottom"><a href="/">مشاهدهٔ سایت ↗</a>';
+    form_start('logout');
+    echo '<button type="submit" class="text-button">خروج از حساب</button></form></div></aside><div class="panel-body"><header class="panel-top"><button type="button" class="panel-menu" aria-label="باز و بسته کردن منوی مدیریت" aria-expanded="false" aria-controls="admin-sidebar">☰</button><div class="admin-breadcrumb"><span>مدیریت پلتفرم</span><strong>'.h($current).'</strong></div><div class="admin-account"><div><strong>'.h($me['name'] ?: 'مدیر').'</strong><span>مدیر پلتفرم</span></div><span class="panel-avatar">'.h(mb_substr($me['name'] ?: 'م',0,1)).'</span></div></header>';
+}
+function admin_overview(): void {
+    global $me;
+    echo '<section class="admin-welcome"><div><span class="eyebrow">مرکز مدیریت نوونتیکس</span><h1>سلام، '.h($me['name'] ?: 'مدیر').' </h1><p>کاربران، محتوای آموزشی و ارتباطات پلتفرم را از اینجا مدیریت کنید.</p></div>';
+    linkto('dashboard/users','مدیریت کاربران','btn btn-primary');
+    echo '</section><div class="stat-grid">';
+    $stats=[['کل کاربران','SELECT COUNT(*) FROM users','dashboard/users','حساب ثبت‌شده'],['دوره‌های آموزشی','SELECT COUNT(*) FROM courses','dashboard/courses','دوره در سامانه'],['گفت‌وگوهای انجمن','SELECT COUNT(*) FROM community_posts','dashboard/community','گفت‌وگوی ثبت‌شده'],['پیام‌های تماس','SELECT COUNT(*) FROM contact_messages','dashboard/messages','پیام دریافتی']];
+    foreach ($stats as [$label,$sql,$href,$hint]) echo '<a class="stat-card" href="'.h(url($href)).'"><span>'.h($label).'</span><strong>'.fa((int)q($sql)->fetchColumn()).'</strong><small>'.h($hint).' <span aria-hidden="true">←</span></small></a>';
+    echo '</div><section class="panel-card"><div class="admin-section-title"><div><span class="eyebrow">دسترسی سریع</span><h2>کارهای روزمرهٔ مدیریت</h2></div><span class="pill">مدیریت پلتفرم</span></div><div class="admin-shortcuts">';
+    foreach ([['dashboard/courses','دوره‌ها و درس‌ها','بررسی و مدیریت محتوای آموزشی'],['dashboard/users-new','ثبت‌نام‌های جدید','مشاهدهٔ تازه‌ترین اعضای پلتفرم'],['dashboard/support','پشتیبانی کاربران','بررسی درخواست‌ها و تیکت‌ها'],['dashboard/announcements','اعلان‌ها','اطلاع‌رسانی به یادگیرندگان'],['dashboard/analytics','آمار و گزارش‌ها','مرور داده‌های فعالیت پلتفرم'],['dashboard/glossary','واژه‌نامه','مدیریت واژه‌ها و مفاهیم آموزشی']] as [$href,$label,$hint]) echo '<a href="'.h(url($href)).'"><strong>'.h($label).'<span aria-hidden="true">←</span></strong><span>'.h($hint).'</span></a>';
+    echo '</div></section>';
 }
 function clamp(int $min,int $cur,int $max=99): int { return max($min,min($cur,$max)); }
 function pager(int $total,int $perPage,string $base,string $query=''): void {
@@ -298,7 +335,8 @@ function bars(array $values,bool $gold=false): void {
 }
 function panel(string $sub): void {
     global $me,$plan;
-    $role=$me['role']; echo '<main class="panel-content">';
+    $role=$me['role']; echo '<main class="panel-content"'.($role==='admin'?' id="admin-main" tabindex="-1"':'').'>';
+    if ($sub==='' && $role==='admin') { admin_overview(); echo '</main>'; return; }
     if ($sub==='') {
         echo '<div class="panel-welcome"><div><span class="eyebrow">'.($role==='admin'?'مدیریت Noventix':($role==='owner'?'فضای مالک':'فضای یادگیری شما')).'</span><h1>سلام'.($me['name']?' '.h($me['name']):'').'، خوش آمدی 👋</h1><p>'.($role==='admin'?'وضعیت پلتفرم را در یک نگاه ببین و کاربران را مدیریت کن.':'امروز هم یک قدم برای ساختن مهارت تازه بردار.').'</p></div><span class="pill">'.(COMMERCE_ENABLED?'پلن '.h(PLANS[$plan]['name']):'دسترسی رایگان محدود').'</span></div>';
         if ($role==='admin') { $stats=[['کاربران',(int)q('SELECT COUNT(*) FROM users')->fetchColumn()],['اشتراک فعال',(int)q("SELECT COUNT(*) FROM subscriptions WHERE status='active' AND expires_at>?",[gmdate('Y-m-d H:i:s')])->fetchColumn()],['گفت‌وگوها',(int)q('SELECT COUNT(*) FROM community_posts')->fetchColumn()],['پیام‌ها',(int)q('SELECT COUNT(*) FROM contact_messages')->fetchColumn()]]; }
@@ -403,7 +441,7 @@ function panel(string $sub): void {
     } elseif ($sub==='support') {
         panel_head('پشتیبانی','تیکت‌های باز و اولویت‌بندی آن‌ها.');
         $open=(int)q("SELECT COUNT(*) FROM tickets WHERE user_id=? AND status='open'",[$me['id']])->fetchColumn();
-        echo '<div class="panel-card narrow-left"><span class="pill">Support Queue</span><h2>'.fa($open).' تیکت باز</h2><p class="muted">تیکت‌های اولویت‌دار را بررسی یا تیکت جدیدی ایجاد کن.</p><button type="button" class="btn btn-primary" data-toggle="#ticket-form">Create Ticket</button></div>';
+        echo '<div class="panel-card narrow-left"><span class="pill">صف درخواست‌های پشتیبانی</span><h2>'.fa($open).' تیکت باز</h2><p class="muted">تیکت‌های اولویت‌دار را بررسی یا تیکت جدیدی ایجاد کن.</p><button type="button" class="btn btn-primary" data-toggle="#ticket-form">ایجاد تیکت</button></div>';
         echo '<div id="ticket-form" class="panel-card narrow" hidden><h2>تیکت جدید</h2>'; form_start('tickets/create','stack-form'); echo '<label>موضوع<input name="subject" required minlength="5" maxlength="180"></label><label>اولویت<select name="priority">'; foreach (TICKET_PRIORITIES as $pr) echo '<option value="'.h($pr).'">'.h($pr).'</option>'; echo '</select></label><label>شرح مشکل<textarea name="body" required minlength="10" maxlength="5000" rows="5"></textarea></label><button class="btn btn-primary">ثبت تیکت</button></form></div>';
         echo '<div class="panel-list">'; $rows=q('SELECT * FROM tickets WHERE user_id=? ORDER BY id DESC LIMIT 30',[$me['id']])->fetchAll();
         if (!$rows) echo '<div class="empty-state">هنوز تیکتی ثبت نکرده‌ای.</div>';
@@ -461,19 +499,19 @@ function admin_panel(string $sub): void {
         panel_head('کاربران','فهرست حساب‌های ثبت‌شده و وضعیت Lead و یادگیری آن‌ها.');
         try {
             $search=is_string($_GET['q'] ?? null) ? trim($_GET['q']) : '';
-            echo '<form method="get"><label>جست‌وجوی نام<input name="q" value="'.h($search).'" maxlength="100"></label><button class="btn btn-outline">جست‌وجو</button></form>';
+            echo '<form method="get" class="admin-search"><label>جست‌وجوی نام<input name="q" value="'.h($search).'" maxlength="100" placeholder="نام کاربر را وارد کنید"></label><button class="btn btn-outline">جست‌وجو</button></form>';
             $rows=$search==='' ? q('SELECT id,name,phone,acquisition_source,acquisition_campaign,phone_verified_at FROM users ORDER BY id DESC LIMIT 100')->fetchAll() : q('SELECT id,name,phone,acquisition_source,acquisition_campaign,phone_verified_at FROM users WHERE name LIKE ? ORDER BY id DESC LIMIT 100',['%'.mb_substr($search,0,100).'%'])->fetchAll();
-            echo '<div class="panel-card table-wrap"><table><thead><tr><th>نام و نام خانوادگی</th><th>شماره موبایل</th><th>پلن فعال</th><th>Lead Status</th><th>Course Progress</th><th>Completed Lessons</th><th>Course Completion</th><th>Source</th><th>Campaign</th></tr></thead><tbody>';
-            if (!$rows) echo '<tr><td colspan="8" class="muted">هنوز کاربری ثبت‌نام نکرده است.</td></tr>';
+            echo '<div class="panel-card table-wrap"><table><thead><tr><th>نام و نام خانوادگی</th><th>شماره موبایل</th><th>پلن فعال</th><th>وضعیت کاربر</th><th>پیشرفت دوره</th><th>درس‌های تکمیل‌شده</th><th>وضعیت دوره</th><th>منبع جذب</th><th>کمپین</th></tr></thead><tbody>';
+            if (!$rows) echo '<tr><td colspan="9" class="muted">کاربری مطابق جست‌وجو یافت نشد یا هنوز ثبت‌نامی انجام نشده است.</td></tr>';
             foreach ($rows as $r) {
                 $stage=lead_stage_for_user((int)$r['id']);
                 $learning=lead_progress_summary((int)$r['id']);
                 $progress=$learning ? fa((string)round((float)$learning['percentage'],1)).'٪' : '—';
                 $completed=$learning ? fa((int)$learning['completed']) : '—';
                 $completion=match ($learning['status'] ?? null) {
-                    'completed'=>'Completed',
-                    'in_progress'=>'In Progress',
-                    'not_started'=>'Not Started',
+                    'completed'=>'تکمیل‌شده',
+                    'in_progress'=>'در حال یادگیری',
+                    'not_started'=>'شروع‌نشده',
                     default=>'—'
                 };
                 $source=trim((string)($r['acquisition_source'] ?? '')) ?: 'Unknown';
@@ -487,7 +525,7 @@ function admin_panel(string $sub): void {
     } elseif ($sub==='messages') {
         echo '<div class="panel-heading"><h1>پیام‌های تماس</h1><p>پیام‌های ثبت‌شده از فرم تماس.</p></div><div class="panel-list">'; foreach (q('SELECT * FROM contact_messages ORDER BY id DESC LIMIT 50')->fetchAll() as $r) echo '<div class="list-item"><div><h3>'.h($r['name']).' · '.h($r['email']).'</h3><p>'.nl2br(h($r['message'])).'</p></div><small>'.h($r['created_at']).'</small></div>'; echo '</div>';
     } elseif ($sub==='courses') {
-        panel_head('Courses & Lessons','ساختار دوره‌ها و درس‌ها از پایگاه‌داده؛ دوره‌ها فیلد ترتیب ندارند و بر اساس شناسه نمایش داده می‌شوند؛ ترتیب درس‌ها از position است.');
+        panel_head('دوره‌ها و درس‌ها','مدیریت ساختار دوره‌ها، انتشار محتوا و ترتیب درس‌ها.');
         course_admin_forms();
         try {
             $courses=q('SELECT id,title,status FROM courses ORDER BY id ASC')->fetchAll();
@@ -500,7 +538,7 @@ function admin_panel(string $sub): void {
                 $items=$byCourse[(int)$course['id']] ?? [];
                 if (!$items) echo '<p class="muted">این دوره هنوز درسی ندارد.</p>';
                 else {
-                    echo '<div class="table-wrap"><table><thead><tr><th>Lesson Title</th><th>Order</th><th>Status</th><th>Video URL</th></tr></thead><tbody>';
+                    echo '<div class="table-wrap"><table><thead><tr><th>عنوان درس</th><th>ترتیب</th><th>وضعیت</th><th>ویدئو</th></tr></thead><tbody>';
                     foreach ($items as $lesson) echo '<tr><td>'.h($lesson['title']).' (ID: '.fa((int)$lesson['id']).')</td><td>'.fa((int)$lesson['position']).'</td><td>'.h($lesson['status'] ?? '—').'</td><td>ثبت نشده (فیلد ویدئو موجود نیست)</td></tr>';
                     echo '</tbody></table></div>';
                 }
@@ -527,18 +565,18 @@ function admin_panel(string $sub): void {
     } elseif ($sub==='analytics') {
         $since=gmdate('Y-m-d H:i:s',time()-30*86400);
         $rows=[['کاربران ۳۰ روز گذشته',(int)q('SELECT COUNT(*) FROM users WHERE created_at>=?',[$since])->fetchColumn()],['گفت‌وگوهای ۳۰ روز گذشته',(int)q('SELECT COUNT(*) FROM community_posts WHERE created_at>=?',[$since])->fetchColumn()],['پروژه‌های شروع‌شده',(int)q('SELECT COUNT(*) FROM projects')->fetchColumn()],['مقاله‌های ذخیره‌شده',(int)q('SELECT COUNT(*) FROM enrollments')->fetchColumn()]];
-        panel_head('Analytics','روند فعالیت و درآمد پلتفرم.');
+        panel_head('آمار و گزارش‌ها','روند فعالیت و درآمد پلتفرم.');
         echo '<div class="stat-grid">'; foreach ($rows as [$label,$value]) echo '<div class="stat-card"><span>'.h($label).'</span><strong>'.fa($value).'</strong></div>'; echo '</div>';
         $users=[]; for ($i=0;$i<8;$i++) $users[]=(int)q('SELECT COUNT(*) FROM users WHERE created_at>=? AND created_at<?',[gmdate('Y-m-d H:i:s',time()-($i+1)*7*86400),gmdate('Y-m-d H:i:s',time()-$i*7*86400)])->fetchColumn();
         $revenue=[]; foreach (PLANS as $id=>$p) if ($p['price']) $revenue[]=(int)q("SELECT COUNT(*) FROM subscriptions WHERE plan=?",[$id])->fetchColumn()*(int)$p['price'];
         while (count($revenue)<8) $revenue[]=0;
-        echo '<div class="chart-grid"><section class="panel-card"><h2>Active Users</h2><p class="muted">کاربران جدید در ۸ هفته گذشته</p>'; bars(array_reverse($users),true); echo '</section><section class="panel-card"><h2>Revenue</h2><p class="muted">درآمد ماهانه به تفکیک پلن</p>'; bars(array_slice($revenue,0,8)); echo '</section></div>';
+        echo '<div class="chart-grid"><section class="panel-card"><h2>ثبت‌نام کاربران</h2><p class="muted">کاربران جدید در ۸ هفته گذشته</p>'; bars(array_reverse($users),true); echo '</section><section class="panel-card"><h2>درآمد پلن‌ها</h2><p class="muted">درآمد ماهانه به تفکیک پلن</p>'; bars(array_slice($revenue,0,8)); echo '</section></div>';
         try {
             $cohort=admin_cohort_data();
-            echo '<section class="panel-card cohort-card"><h2>Lead Cohort</h2><p class="muted">مبنای cohort ماه ثبت‌نام است؛ فعالیت بر اساس رویدادهای واقعی جدول activities محاسبه شده است.</p>';
+            echo '<section class="panel-card cohort-card"><h2>ماندگاری کاربران</h2><p class="muted">مبنای cohort ماه ثبت‌نام است؛ فعالیت بر اساس رویدادهای واقعی جدول activities محاسبه شده است.</p>';
             if (!$cohort['rows']) echo '<div class="empty-state">برای شش ماه اخیر دادهٔ کافی برای cohort وجود ندارد.</div>';
             else {
-                echo '<div class="table-wrap"><table class="cohort-table"><thead><tr><th>Cohort</th><th>Users</th>'; foreach ($cohort['labels'] as $label) echo '<th>'.h($label).'</th>'; echo '</tr></thead><tbody>';
+                echo '<div class="table-wrap"><table class="cohort-table"><thead><tr><th>ماه ثبت‌نام</th><th>کاربران</th>'; foreach ($cohort['labels'] as $label) echo '<th>'.h($label).'</th>'; echo '</tr></thead><tbody>';
                 foreach ($cohort['rows'] as $label=>$row) {
                     $cohortIndex=array_search($label,$cohort['labels'],true);
                     echo '<tr><th scope="row" dir="ltr">'.h($label).'</th><td>'.fa($row['size']).'</td>';
@@ -555,7 +593,7 @@ function admin_panel(string $sub): void {
             }
             echo '</section>';
         } catch (Throwable $e) {
-            echo '<section class="panel-card"><h2>Lead Cohort</h2><p class="muted">دریافت دادهٔ cohort ممکن نشد. لطفاً دوباره تلاش کنید.</p></section>';
+            echo '<section class="panel-card"><h2>ماندگاری کاربران</h2><p class="muted">دریافت دادهٔ cohort ممکن نشد. لطفاً دوباره تلاش کنید.</p></section>';
         }
         echo '<div class="panel-card"><h2>توزیع پلن‌ها</h2><div class="table-wrap"><table><thead><tr><th>پلن</th><th>اشتراک فعال</th></tr></thead><tbody>'; foreach (PLANS as $id=>$p) echo '<tr><td>'.h($p['name']).'</td><td>'.fa((int)q("SELECT COUNT(*) FROM subscriptions WHERE plan=? AND status='active' AND expires_at>?",[$id,gmdate('Y-m-d H:i:s')])->fetchColumn()).'</td></tr>'; echo '</tbody></table></div></div>';
     } elseif ($sub==='subscriptions') {
@@ -569,7 +607,7 @@ function admin_panel(string $sub): void {
     } elseif ($sub==='support') {
         panel_head('پشتیبانی','تیکت‌های باز و اولویت‌بندی آن‌ها.');
         $open=(int)q("SELECT COUNT(*) FROM tickets WHERE status='open'")->fetchColumn();
-        echo '<div class="panel-card narrow-left"><span class="pill">Support Queue</span><h2>'.fa($open).' تیکت باز</h2><p class="muted">تیکت‌های اولویت‌دار را بررسی یا تیکت جدیدی ایجاد کن.</p><button type="button" class="btn btn-primary" data-toggle="#ticket-form">Create Ticket</button></div>';
+        echo '<div class="panel-card narrow-left"><span class="pill">صف درخواست‌های پشتیبانی</span><h2>'.fa($open).' تیکت باز</h2><p class="muted">تیکت‌های اولویت‌دار را بررسی یا تیکت جدیدی ایجاد کن.</p><button type="button" class="btn btn-primary" data-toggle="#ticket-form">ایجاد تیکت</button></div>';
         echo '<div id="ticket-form" class="panel-card narrow" hidden><h2>تیکت جدید</h2>'; form_start('tickets/create','stack-form'); echo '<label>موضوع<input name="subject" required minlength="5" maxlength="180"></label><label>اولویت<select name="priority">'; foreach (TICKET_PRIORITIES as $pr) echo '<option value="'.h($pr).'">'.h($pr).'</option>'; echo '</select></label><label>شرح مشکل<textarea name="body" required minlength="10" maxlength="5000" rows="5"></textarea></label><button class="btn btn-primary">ثبت تیکت</button></form></div>';
         echo '<div class="panel-list">'; $tickets=q('SELECT t.id,t.subject,t.priority,t.status,t.created_at,u.name,u.phone FROM tickets t JOIN users u ON u.id=t.user_id ORDER BY t.id DESC LIMIT 40')->fetchAll();
         if (!$tickets) echo '<div class="empty-state">هنوز تیکتی ثبت نشده است.</div>';
@@ -577,7 +615,7 @@ function admin_panel(string $sub): void {
         echo '</div>';
     } elseif ($sub==='announcements') {
         panel_head('اعلان‌ها','آخرین رخدادهای مسیر یادگیری.');
-        echo '<div class="panel-card narrow-left"><h2>ارسال اعلان</h2>'; form_start('announcements/send','stack-form'); echo '<label>عنوان<input name="title" required minlength="3" maxlength="255"></label><label>متن<textarea name="body" required minlength="5" maxlength="2000" rows="4"></textarea></label><button class="btn btn-primary">Send Notification</button></form></div>';
+        echo '<div class="panel-card narrow-left"><h2>ارسال اعلان</h2>'; form_start('announcements/send','stack-form'); echo '<label>عنوان<input name="title" required minlength="3" maxlength="255"></label><label>متن<textarea name="body" required minlength="5" maxlength="2000" rows="4"></textarea></label><button class="btn btn-primary">ارسال اعلان</button></form></div>';
         echo '<div class="panel-list">'; $rows=q('SELECT * FROM announcements ORDER BY id DESC LIMIT 30')->fetchAll();
         if (!$rows) { echo '<div class="empty-state">هنوز اعلانی ثبت نشده است.</div>'; foreach (ANNOUNCEMENTS as $a) echo '<div class="announce-card"><div><h2>'.h($a['title']).'</h2><p>'.h($a['body']).'</p></div><small>'.h($a['ago']).'</small></div>'; }
         else foreach ($rows as $a) echo '<div class="announce-card"><div><h2>'.h($a['title']).'</h2><p>'.h($a['body']).'</p></div><small>'.h(jdate($a['created_at'])).'</small></div>';
@@ -585,7 +623,7 @@ function admin_panel(string $sub): void {
     } elseif ($sub==='gamification') {
         lp_progress_view((int)$me['id']);
     } elseif ($sub==='content') {
-        panel_head('Content','مدیریت محتوای آموزشی و صفحات عمومی.');
+        panel_head('محتوا','مدیریت محتوای آموزشی و صفحات عمومی.');
         echo '<div class="panel-card narrow-left"><button type="button" class="btn btn-primary" data-toggle="#content-form">ایجاد محتوا</button></div>';
         echo '<div id="content-form" class="panel-card narrow" hidden><h2>محتوای جدید</h2>'; form_start('content/create','stack-form'); echo '<label>عنوان<input name="title" required minlength="3" maxlength="180"></label><label>نوع<select name="kind"><option value="مقاله">مقاله</option><option value="صفحه">صفحه</option></select></label><button class="btn btn-primary">ذخیره و انتشار</button></form></div>';
         echo '<div class="panel-card"><h2>آخرین آیتم‌ها</h2><div class="content-list">'; $rows=q('SELECT * FROM content_items ORDER BY id DESC LIMIT 30')->fetchAll();
@@ -595,7 +633,7 @@ function admin_panel(string $sub): void {
     } elseif ($sub==='glossary' || str_starts_with($sub,'glossary/')) {
         admin_glossary_panel($sub);
     } elseif ($sub==='settings') {
-        panel_head('System Settings','مدیریت تنظیمات مرتبط با هر بخش.');
+        panel_head('تنظیمات سامانه','مدیریت تنظیمات مرتبط با هر بخش.');
         echo '<div class="settings-grid">'; foreach (SETTINGS_GROUPS as $g) { $cur=(string)q('SELECT svalue FROM settings WHERE skey=?',[$g['key']])->fetchColumn(); echo '<article class="setting-card"><div><h3>'.h($g['title']).'</h3><span class="muted">'.h($g['hint']).'</span></div>'; form_start('settings/save','setting-form'); echo '<input type="hidden" name="key" value="'.h($g['key']).'"><input name="value" value="'.h($cur).'" placeholder="مقدار تنظیم"><button class="btn btn-small btn-outline">ذخیره</button></form></article>'; }
         echo '</div>';
     } elseif ($sub==='messages') {

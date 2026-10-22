@@ -6,6 +6,12 @@
     button.setAttribute("aria-expanded", String(open));
   }
 
+  function setPanelOpen(open) {
+    document.body.classList.toggle("nav-open", open);
+    var button = document.querySelector(".panel-menu");
+    if (button) button.setAttribute("aria-expanded", String(open));
+  }
+
   document.addEventListener("click", function (event) {
     var button = event.target.closest(".menu-toggle");
     if (button) {
@@ -28,18 +34,18 @@
 
     var panelButton = event.target.closest(".panel-menu");
     if (panelButton) {
-      document.body.classList.toggle("nav-open");
+      setPanelOpen(!document.body.classList.contains("nav-open"));
       return;
     }
 
     if (document.body.classList.contains("nav-open") && !event.target.closest(".sidebar")) {
-      document.body.classList.remove("nav-open");
+      setPanelOpen(false);
     }
   });
 
   document.addEventListener("keydown", function (event) {
     if (event.key !== "Escape") return;
-    document.body.classList.remove("nav-open");
+    setPanelOpen(false);
     var nav = document.getElementById("mobile-nav");
     var button = document.querySelector(".menu-toggle");
     if (nav && button && nav.classList.contains("open")) toggle(nav, button, false);
@@ -47,7 +53,7 @@
 
   window.addEventListener("resize", function () {
     if (window.innerWidth > 900) {
-      document.body.classList.remove("nav-open");
+      setPanelOpen(false);
       var nav = document.getElementById("mobile-nav");
       var button = document.querySelector(".menu-toggle");
       if (nav && button) toggle(nav, button, false);
