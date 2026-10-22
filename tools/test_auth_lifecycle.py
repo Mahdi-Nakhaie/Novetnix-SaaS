@@ -32,5 +32,26 @@ class AuthLifecycleTest(unittest.TestCase):
         self.assertIn("password_verify((string)($_POST['password'] ?? ''),$hash)", AUTH)
 
 
+    def test_admin_phone_override_loads_before_base_pool(self):
+        override = ROOT / 'outputs/deploy/00-noventix-admin-phone.conf'
+        self.assertTrue(override.is_file())
+        self.assertLess(override.name, 'noventix.conf')
+        deployment = (ROOT / 'outputs/deploy/assign-noventix-admin.py').read_text(encoding='utf-8')
+        self.assertIn('path.name > TARGET.name', deployment)
+        self.assertIn('LEGACY.read_text() == EXPECTED', deployment)
+
+    def test_admin_assignment_checks_effective_worker_configuration(self):
+        deployment = (ROOT / 'outputs/deploy/assign-noventix-admin.py').read_text(encoding='utf-8')
+        self.assertIn('def verify_runtime_admin_phone():', deployment)
+        self.assertIn("client.connect('/run/php/php8.2-fpm-noventix.sock')", deployment)
+        self.assertIn('Effective administrator phone does not match', deployment)
+        self.assertIn('os.unlink(filename)', deployment)
+        reload = deployment.index("run(['systemctl', 'reload', 'php8.2-fpm.service'])")
+        verify = deployment.index('            verify_runtime_admin_phone()', reload)
+        success = deployment.index("'admin_phone_configured': True", verify)
+        self.assertLess(reload, verify)
+        self.assertLess(verify, success)
+
+
 if __name__ == "__main__":
     unittest.main()
