@@ -19,7 +19,10 @@ function user(): ?array {
     if (empty($_SESSION['uid'])) return null;
     $u=q('SELECT id,phone,name,role,phone_verified_at,profile_image FROM users WHERE id=?',[(int)$_SESSION['uid']])->fetch();
     if (!$u || (SMS_VERIFICATION_ENABLED && $u['phone_verified_at']===null)) return null;
-    if ($u && $u['role']==='admin' && (!hash_equals((string)config_value('ADMIN_PHONE'), $u['phone']) || ($_SESSION['admin_verified_uid'] ?? null)!==(int)$u['id'])) $u['role']='student';
+    if ($u && $u['role']==='admin') {
+        $version=(int)(q('SELECT password_version FROM admin_credentials WHERE user_id=?',[$u['id']])->fetchColumn() ?: 0);
+        if (!hash_equals((string)config_value('ADMIN_PHONE'),$u['phone']) || ($_SESSION['admin_verified_uid'] ?? null)!==(int)$u['id'] || (int)($_SESSION['admin_password_version'] ?? 0)!==$version) $u['role']='student';
+    }
     return $u ?: null;
 }
 // Members are visible to each other without an SMS round trip while verification is off.
@@ -189,8 +192,12 @@ function sms_free_registration(string $phone, string $first, string $last, strin
     flash('خوش آمدی! حسابت ساخته شد.');
     redirect($destination);
 }
+function admin_password_setup_available(array $u): bool {
+    if ($u['phone']!==(string)config_value('ADMIN_PHONE')) return false;
+    return (bool)q("SELECT 1 FROM admin_credentials a JOIN users u ON u.id=a.user_id WHERE a.user_id=? AND u.role='admin' AND a.reset_authorized_until>? AND a.reset_attempts<5",[$u['id'],time()])->fetchColumn();
+}
 function handle_auth_post(string $path): bool {
-    if (!in_array($path,['auth/request','auth/resend','auth/login','auth/verify','auth/admin','logout'],true)) return false;
+    if (!in_array($path,['auth/request','auth/resend','auth/login','auth/verify','auth/admin','auth/admin-password','logout'],true)) return false;
     validate_csrf();
     if ($path==='auth/request') {
         $firstRaw=registration_input('first_name');
@@ -293,17 +300,39 @@ function handle_auth_post(string $path): bool {
         unset($_SESSION['auth_return_to']);
         flash('خوش آمدید!'); redirect($destination);
     }
+    if ($path==='auth/admin-password') {
+        $u=require_user();
+        if (!admin_password_setup_available($u)) { http_response_code(403); exit('مجوز تعیین رمز مدیریت معتبر نیست یا منقضی شده است.'); }
+        if (!validate_captcha()) { flash('کد کپچا صحیح نیست.','error'); redirect('admin-login'); }
+        $current=registration_input('account_password');
+        $password=registration_input('new_password');
+        $confirmation=registration_input('password_confirmation');
+        if ($password===null || mb_strlen($password)<12 || strlen($password)>72 || !preg_match('/[A-Za-z]/',$password) || !preg_match('/[0-9]/',$password)) { flash('رمز جدید مدیریت باید ۱۲ تا ۷۲ نویسه و شامل حرف انگلیسی و عدد باشد.','error'); redirect('admin-login'); }
+        if ($confirmation!==$password) { flash('تکرار رمز جدید با رمز واردشده یکسان نیست.','error'); redirect('admin-login'); }
+        $attempt=q('UPDATE admin_credentials SET reset_attempts=reset_attempts+1 WHERE user_id=? AND reset_authorized_until>? AND reset_attempts<5',[$u['id'],time()]);
+        if ($attempt->rowCount()!==1) { http_response_code(429); exit('مجوز تعیین رمز منقضی شده یا تعداد تلاش‌ها به پایان رسیده است.'); }
+        $accountHash=(string)q('SELECT password_hash FROM users WHERE id=?',[$u['id']])->fetchColumn();
+        if ($current===null || !password_verify($current,$accountHash)) { flash('رمز فعلی حساب شما صحیح نیست.','error'); redirect('admin-login'); }
+        $saved=q("UPDATE admin_credentials SET password_hash=?,password_version=password_version+1,reset_authorized_until=0,reset_attempts=0 WHERE user_id=? AND reset_authorized_until>? AND reset_attempts<=5 AND EXISTS (SELECT 1 FROM users WHERE id=? AND phone=? AND role='admin')",[password_hash($password,PASSWORD_DEFAULT),$u['id'],time(),$u['id'],(string)config_value('ADMIN_PHONE')]);
+        if ($saved->rowCount()!==1) { http_response_code(409); exit('این مجوز دیگر معتبر نیست؛ ممکن است رمز در درخواست دیگری تعیین شده باشد.'); }
+        session_regenerate_id(true);
+        $_SESSION['authenticated_at']=time(); $_SESSION['last_seen']=time(); $_SESSION['admin_verified_uid']=(int)$u['id'];
+        $_SESSION['admin_password_version']=(int)q('SELECT password_version FROM admin_credentials WHERE user_id=?',[$u['id']])->fetchColumn();
+        unset($_SESSION['admin_attempts']);
+        flash('رمز جدید مدیریت ذخیره شد. به پنل مدیریت خوش آمدید.'); redirect('dashboard');
+    }
     if ($path==='auth/admin') {
         $u=user();
         if (!$u || $u['phone']!==config_value('ADMIN_PHONE')) { http_response_code(403); exit('دسترسی مجاز نیست.'); }
         if (!validate_captcha()) { flash('کد کپچا صحیح نیست.','error'); redirect('admin-login'); }
         $attempts=(int)($_SESSION['admin_attempts'] ?? 0);
-        $hash=config_value('ADMIN_PASSWORD_HASH') ?: '';
+        $credentials=q('SELECT password_hash,password_version FROM admin_credentials WHERE user_id=?',[$u['id']])->fetch();
+        $hash=$credentials && $credentials['password_hash']!==null ? (string)$credentials['password_hash'] : (config_value('ADMIN_PASSWORD_HASH') ?: '');
         if ($attempts>=5) { http_response_code(429); exit('تعداد تلاش‌ها بیش از حد مجاز است. دوباره وارد شوید.'); }
         $_SESSION['admin_attempts']=$attempts+1;
         if ($hash==='' || !password_verify((string)($_POST['password'] ?? ''),$hash)) { flash('رمز مدیریت صحیح نیست.','error'); redirect('admin-login'); }
         q("UPDATE users SET role='admin' WHERE id=?",[$u['id']]);
-        session_regenerate_id(true); $_SESSION['authenticated_at']=time(); $_SESSION['last_seen']=time(); $_SESSION['admin_verified_uid']=(int)$u['id']; unset($_SESSION['admin_attempts']);
+        session_regenerate_id(true); $_SESSION['authenticated_at']=time(); $_SESSION['last_seen']=time(); $_SESSION['admin_verified_uid']=(int)$u['id']; $_SESSION['admin_password_version']=(int)($credentials['password_version'] ?? 0); unset($_SESSION['admin_attempts']);
         redirect('dashboard');
     }
     if ($path==='logout') { logout_user(); flash('از حساب خود خارج شدید.'); redirect(''); }

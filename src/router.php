@@ -311,12 +311,22 @@ function page_login(bool $register=false): void {
 function page_admin_login(): void {
     $u=require_user();
     if ($u['phone']!==(config_value('ADMIN_PHONE') ?: '')) { http_response_code(403); exit('دسترسی مجاز نیست.'); }
-    if ($u['role']==='admin') redirect('dashboard');
-    head_page('ورود مدیر','تأیید ورود به پنل مدیریت.'); notice();
+    header('Cache-Control: private, no-store');
+    $setup=admin_password_setup_available($u);
+    if ($u['role']==='admin' && !$setup) redirect('dashboard');
+    head_page($setup?'تعیین رمز جدید مدیریت':'ورود مدیر','تأیید ورود به پنل مدیریت.'); notice();
     $captcha=captcha_code();
-    echo '<main class="auth-page"><div class="auth-card"><h1>ورود به مدیریت</h1><p class="muted">برای ادامه، رمز مدیریت و کد امنیتی را وارد کنید.</p>';
-    form_start('auth/admin','stack-form',true);
-    echo '<label>رمز مدیریت<input type="password" name="password" required autocomplete="current-password"></label><div class="captcha-box"><strong dir="ltr">'.h($captcha).'</strong><span>کد امنیتی را وارد کنید</span></div><label>کپچا<input name="captcha" required maxlength="5" pattern="[A-Za-z0-9]{5}" dir="ltr" autocomplete="off"></label><button class="btn btn-primary">ورود به پنل مدیریت</button></form></div></main>';
+    echo '<main class="auth-page"><div class="auth-card">';
+    if ($setup) {
+        echo '<h1>تعیین رمز جدید مدیریت</h1><p class="muted">برای تأیید مالکیت، رمز فعلی حسابی را که با آن وارد سایت می‌شوید وارد کنید؛ سپس رمز جدید مدیریت را انتخاب کنید. این مجوز یک‌بارمصرف است.</p>';
+        form_start('auth/admin-password','stack-form',true);
+        echo '<label>رمز فعلی حساب شما<input type="password" dir="ltr" name="account_password" required autocomplete="current-password"></label><label>رمز جدید مدیریت<input type="password" dir="ltr" name="new_password" required minlength="12" maxlength="72" autocomplete="new-password" aria-describedby="admin-password-help"></label><p id="admin-password-help" class="fine-print">۱۲ تا ۷۲ نویسه، شامل حرف انگلیسی و عدد؛ رمز را فقط در همین فرم وارد کنید.</p><label>تکرار رمز جدید مدیریت<input type="password" dir="ltr" name="password_confirmation" required minlength="12" maxlength="72" autocomplete="new-password"></label>';
+    } else {
+        echo '<h1>ورود به مدیریت</h1><p class="muted">برای ادامه، رمز مدیریت و کد امنیتی را وارد کنید.</p>';
+        form_start('auth/admin','stack-form',true);
+        echo '<label>رمز مدیریت<input type="password" dir="ltr" name="password" required autocomplete="current-password"></label>';
+    }
+    echo '<div class="captcha-box"><strong dir="ltr">'.h($captcha).'</strong><span>کد امنیتی را وارد کنید</span></div><label>کپچا<input name="captcha" required maxlength="5" pattern="[A-Za-z0-9]{5}" dir="ltr" autocomplete="off"></label><button class="btn btn-primary">'.($setup?'ذخیرهٔ رمز جدید و ورود به مدیریت':'ورود به پنل مدیریت').'</button></form></div></main>';
     foot_page();
 }
 function page_verify(): void {
