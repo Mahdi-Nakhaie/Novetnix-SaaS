@@ -111,16 +111,17 @@ class ArticleContentTest(unittest.TestCase):
         self.assertIn('/assets/articles.css?v=3', (ROOT / 'src/views.php').read_text())
 
     def test_original_long_form_and_beginner_articles_and_metadata(self):
-        self.assertEqual(len(CATALOG), 36)
+        self.assertEqual(len(CATALOG), 48)
         self.assertEqual(sum(a.get('series') == 'python-basics' for a in CATALOG), 24)
+        self.assertEqual(sum(a.get('series') == 'python-practice' for a in CATALOG), 12)
         for key in ('slug', 'title', 'seo_title', 'description'):
-            self.assertEqual(len({a[key] for a in CATALOG}), 36)
+            self.assertEqual(len({a[key] for a in CATALOG}), 48)
         for article in CATALOG:
             with self.subTest(article=article['slug']):
                 self.assertRegex(article['slug'], r'^[a-z0-9-]+$')
                 text = (CONTENT / (article['slug'] + '.txt')).read_text()
                 words = prose(text).split()
-                beginner = article.get('series') == 'python-basics'
+                beginner = article.get('series') in ('python-basics', 'python-practice')
                 self.assertGreaterEqual(len(words), 450 if beginner else 1850)
                 self.assertLessEqual(len(words), 800 if beginner else 2200)
                 self.assertGreaterEqual(len(article['description']), 90 if beginner else 140)
@@ -159,7 +160,7 @@ class ArticleContentTest(unittest.TestCase):
     def test_research_does_not_disguise_unavailable_sources_as_completed(self):
         report = json.loads((ROOT / 'outputs/research/reviews.json').read_text())
         counts = collections.Counter(r['topic'] for r in report['reviews'])
-        self.assertEqual(set(counts), {a['slug'] for a in CATALOG if a.get('series') != 'python-basics'})
+        self.assertEqual(set(counts), {a['slug'] for a in CATALOG if not a.get('series')})
         self.assertTrue(all(count == 10 for count in counts.values()))
         allowed = {'extracted', 'unavailable', 'insufficient_content', 'not_html'}
         self.assertTrue(all(r['review_status'] in allowed for r in report['reviews']))
@@ -254,7 +255,7 @@ class ArticleHttpTest(unittest.TestCase):
                 schema, breadcrumbs = document.json_ld[0]['@graph']
                 self.assertEqual(schema['@type'], 'Article')
                 self.assertEqual(schema['headline'], article['title'])
-                self.assertGreaterEqual(schema['wordCount'], 450 if article.get('series') == 'python-basics' else 1850)
+                self.assertGreaterEqual(schema['wordCount'], 450 if article.get('series') in ('python-basics', 'python-practice') else 1850)
                 self.assertEqual(breadcrumbs['@type'], 'BreadcrumbList')
                 self.assertEqual(breadcrumbs['itemListElement'][-1]['item'], head.canonical)
                 for source in article['sources']:

@@ -1004,5 +1004,889 @@
         }
       }
     ]
+  ],
+  "py-expenses": [
+    [
+      {
+        "expenses": [
+          {
+            "category": "خوراک",
+            "amount": 120
+          },
+          {
+            "category": "رفت‌وآمد",
+            "amount": 80
+          },
+          {
+            "category": "خوراک",
+            "amount": 50
+          }
+        ]
+      },
+      {
+        "by_category": {
+          "خوراک": 170,
+          "رفت‌وآمد": 80
+        },
+        "total": 250
+      }
+    ],
+    [
+      {
+        "expenses": []
+      },
+      {
+        "by_category": {},
+        "total": 0
+      }
+    ],
+    [
+      {
+        "expenses": [
+          {
+            "category": "A",
+            "amount": 0
+          }
+        ]
+      },
+      {
+        "by_category": {
+          "A": 0
+        },
+        "total": 0
+      }
+    ],
+    [
+      {
+        "expenses": [
+          {
+            "category": "A",
+            "amount": 8
+          },
+          {
+            "category": "B",
+            "amount": 5
+          },
+          {
+            "category": "A",
+            "amount": 3
+          }
+        ]
+      },
+      {
+        "by_category": {
+          "A": 11,
+          "B": 5
+        },
+        "total": 16
+      }
+    ]
+  ],
+  "py-password-audit": [
+    [
+      {
+        "passwords": [
+          "Python123!",
+          "short",
+          "abcdefghijk"
+        ]
+      },
+      {
+        "results": [
+          {
+            "length": 10,
+            "has_letter": true,
+            "has_digit": true,
+            "has_symbol": true,
+            "strong": true
+          },
+          {
+            "length": 5,
+            "has_letter": true,
+            "has_digit": false,
+            "has_symbol": false,
+            "strong": false
+          },
+          {
+            "length": 11,
+            "has_letter": true,
+            "has_digit": false,
+            "has_symbol": false,
+            "strong": false
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "passwords": []
+      },
+      {
+        "results": []
+      }
+    ],
+    [
+      {
+        "passwords": [
+          ""
+        ]
+      },
+      {
+        "results": [
+          {
+            "length": 0,
+            "has_letter": false,
+            "has_digit": false,
+            "has_symbol": false,
+            "strong": false
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "passwords": [
+          "A123456!"
+        ]
+      },
+      {
+        "results": [
+          {
+            "length": 8,
+            "has_letter": true,
+            "has_digit": true,
+            "has_symbol": true,
+            "strong": true
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "passwords": [
+          "abcdefgh1 ",
+          "۱۲۳۴۵۶۷۸"
+        ]
+      },
+      {
+        "results": [
+          {
+            "length": 10,
+            "has_letter": true,
+            "has_digit": true,
+            "has_symbol": false,
+            "strong": false
+          },
+          {
+            "length": 8,
+            "has_letter": false,
+            "has_digit": false,
+            "has_symbol": false,
+            "strong": false
+          }
+        ]
+      }
+    ]
+  ],
+  "py-log-parser": [
+    [
+      {
+        "levels": [
+          "INFO",
+          "error",
+          "INFO",
+          "warning",
+          "ERROR"
+        ]
+      },
+      {
+        "counts": {
+          "INFO": 2,
+          "ERROR": 2,
+          "WARNING": 1
+        }
+      }
+    ],
+    [
+      {
+        "levels": []
+      },
+      {
+        "counts": {}
+      }
+    ],
+    [
+      {
+        "levels": [
+          " info ",
+          "INFO",
+          "",
+          "  ",
+          "trace"
+        ]
+      },
+      {
+        "counts": {
+          "INFO": 2,
+          "TRACE": 1
+        }
+      }
+    ],
+    [
+      {
+        "levels": [
+          "error",
+          "Warning",
+          "ERROR",
+          "debug"
+        ]
+      },
+      {
+        "counts": {
+          "ERROR": 2,
+          "WARNING": 1,
+          "DEBUG": 1
+        }
+      }
+    ]
+  ],
+  "py-sales-tax": [
+    [
+      {
+        "items": [
+          {
+            "price": "100.00",
+            "quantity": 2
+          },
+          {
+            "price": "50.00",
+            "quantity": 1
+          }
+        ],
+        "tax_rate": "0.10"
+      },
+      {
+        "subtotal": "250.00",
+        "tax": "25.00",
+        "total": "275.00"
+      }
+    ],
+    [
+      {
+        "items": [],
+        "tax_rate": "0.10"
+      },
+      {
+        "subtotal": "0.00",
+        "tax": "0.00",
+        "total": "0.00"
+      }
+    ],
+    [
+      {
+        "items": [
+          {
+            "price": "0.05",
+            "quantity": 1
+          }
+        ],
+        "tax_rate": "0.10"
+      },
+      {
+        "subtotal": "0.05",
+        "tax": "0.01",
+        "total": "0.06"
+      }
+    ],
+    [
+      {
+        "items": [
+          {
+            "price": "19.99",
+            "quantity": 2
+          },
+          {
+            "price": "0.02",
+            "quantity": 1
+          }
+        ],
+        "tax_rate": "0.05"
+      },
+      {
+        "subtotal": "40.00",
+        "tax": "2.00",
+        "total": "42.00"
+      }
+    ]
+  ],
+  "py-text-cleaner": [
+    [
+      {
+        "names": [
+          "  سارا ",
+          "علی",
+          "سارا",
+          "  علی  ",
+          "مینا"
+        ]
+      },
+      {
+        "names": [
+          "سارا",
+          "علی",
+          "مینا"
+        ],
+        "count": 3
+      }
+    ],
+    [
+      {
+        "names": []
+      },
+      {
+        "names": [],
+        "count": 0
+      }
+    ],
+    [
+      {
+        "names": [
+          " ",
+          "\t",
+          "A",
+          "A "
+        ]
+      },
+      {
+        "names": [
+          "A"
+        ],
+        "count": 1
+      }
+    ],
+    [
+      {
+        "names": [
+          "علی  رضا",
+          "علی\tرضا",
+          "سارا",
+          "علي رضا"
+        ]
+      },
+      {
+        "names": [
+          "علی رضا",
+          "سارا",
+          "علي رضا"
+        ],
+        "count": 3
+      }
+    ]
+  ],
+  "py-date-range": [
+    [
+      {
+        "start": "2026-01-01",
+        "end": "2026-01-10"
+      },
+      {
+        "days": 9
+      }
+    ],
+    [
+      {
+        "start": "2024-02-28",
+        "end": "2024-03-01"
+      },
+      {
+        "days": 2
+      }
+    ],
+    [
+      {
+        "start": "2026-01-03",
+        "end": "2026-01-01"
+      },
+      {
+        "days": -2
+      }
+    ],
+    [
+      {
+        "start": "2026-01-01",
+        "end": "2026-01-01"
+      },
+      {
+        "days": 0
+      }
+    ],
+    [
+      {
+        "start": "2025-02-29",
+        "end": "2025-03-01"
+      },
+      {
+        "error": "invalid_date"
+      }
+    ],
+    [
+      {
+        "start": "2026-1-01",
+        "end": "2026-01-02"
+      },
+      {
+        "error": "invalid_date"
+      }
+    ]
+  ],
+  "py-scoreboard": [
+    [
+      {
+        "players": [
+          {
+            "name": "سارا",
+            "score": 80
+          },
+          {
+            "name": "علی",
+            "score": 95
+          },
+          {
+            "name": "مینا",
+            "score": 80
+          }
+        ]
+      },
+      {
+        "ranking": [
+          {
+            "name": "علی",
+            "score": 95
+          },
+          {
+            "name": "سارا",
+            "score": 80
+          },
+          {
+            "name": "مینا",
+            "score": 80
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "players": []
+      },
+      {
+        "ranking": []
+      }
+    ],
+    [
+      {
+        "players": [
+          {
+            "name": "B",
+            "score": 2
+          },
+          {
+            "name": "A",
+            "score": 2
+          },
+          {
+            "name": "C",
+            "score": -1
+          }
+        ]
+      },
+      {
+        "ranking": [
+          {
+            "name": "A",
+            "score": 2
+          },
+          {
+            "name": "B",
+            "score": 2
+          },
+          {
+            "name": "C",
+            "score": -1
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "players": [
+          {
+            "name": "Z",
+            "score": -2
+          }
+        ]
+      },
+      {
+        "ranking": [
+          {
+            "name": "Z",
+            "score": -2
+          }
+        ]
+      }
+    ]
+  ],
+  "py-budget-check": [
+    [
+      {
+        "budget": 500,
+        "spent": [
+          120,
+          80,
+          90
+        ]
+      },
+      {
+        "spent": 290,
+        "remaining": 210,
+        "within_budget": true
+      }
+    ],
+    [
+      {
+        "budget": 0,
+        "spent": []
+      },
+      {
+        "spent": 0,
+        "remaining": 0,
+        "within_budget": true
+      }
+    ],
+    [
+      {
+        "budget": 10,
+        "spent": [
+          5,
+          5
+        ]
+      },
+      {
+        "spent": 10,
+        "remaining": 0,
+        "within_budget": true
+      }
+    ],
+    [
+      {
+        "budget": 10,
+        "spent": [
+          7,
+          8
+        ]
+      },
+      {
+        "spent": 15,
+        "remaining": -5,
+        "within_budget": false
+      }
+    ]
+  ],
+  "py-frequency-table": [
+    [
+      {
+        "labels": [
+          "A",
+          "B",
+          "A",
+          "C",
+          "B",
+          "A"
+        ]
+      },
+      {
+        "counts": {
+          "A": 3,
+          "B": 2,
+          "C": 1
+        },
+        "ratios": {
+          "A": 0.5,
+          "B": 0.3333333333333333,
+          "C": 0.16666666666666666
+        }
+      }
+    ],
+    [
+      {
+        "labels": []
+      },
+      {
+        "counts": {},
+        "ratios": {}
+      }
+    ],
+    [
+      {
+        "labels": [
+          "x",
+          "x"
+        ]
+      },
+      {
+        "counts": {
+          "x": 2
+        },
+        "ratios": {
+          "x": 1
+        }
+      }
+    ],
+    [
+      {
+        "labels": [
+          "a",
+          "A"
+        ]
+      },
+      {
+        "counts": {
+          "a": 1,
+          "A": 1
+        },
+        "ratios": {
+          "a": 0.5,
+          "A": 0.5
+        }
+      }
+    ]
+  ],
+  "py-matrix-summary": [
+    [
+      {
+        "matrix": [
+          [
+            1,
+            2
+          ],
+          [
+            3,
+            4
+          ]
+        ]
+      },
+      {
+        "row_sums": [
+          3,
+          7
+        ],
+        "column_sums": [
+          4,
+          6
+        ],
+        "diagonal": 5
+      }
+    ],
+    [
+      {
+        "matrix": []
+      },
+      {
+        "row_sums": [],
+        "column_sums": [],
+        "diagonal": 0
+      }
+    ],
+    [
+      {
+        "matrix": [
+          [
+            -2
+          ]
+        ]
+      },
+      {
+        "row_sums": [
+          -2
+        ],
+        "column_sums": [
+          -2
+        ],
+        "diagonal": -2
+      }
+    ],
+    [
+      {
+        "matrix": [
+          [
+            1,
+            2,
+            3
+          ],
+          [
+            4,
+            5,
+            6
+          ]
+        ]
+      },
+      {
+        "error": "invalid_matrix"
+      }
+    ],
+    [
+      {
+        "matrix": [
+          [
+            1,
+            2
+          ],
+          [
+            3
+          ]
+        ]
+      },
+      {
+        "error": "invalid_matrix"
+      }
+    ]
+  ],
+  "py-api-payload": [
+    [
+      {
+        "payload": {
+          "name": "سارا",
+          "email": "sara@example.com",
+          "age": 21
+        }
+      },
+      {
+        "valid": true,
+        "name": "سارا",
+        "email": "sara@example.com",
+        "age": 21
+      }
+    ],
+    [
+      {
+        "payload": {}
+      },
+      {
+        "valid": false
+      }
+    ],
+    [
+      {
+        "payload": {
+          "name": " A ",
+          "email": " a@b.test ",
+          "age": 0,
+          "role": "extra"
+        }
+      },
+      {
+        "valid": true,
+        "name": "A",
+        "email": "a@b.test",
+        "age": 0
+      }
+    ],
+    [
+      {
+        "payload": {
+          "name": "A",
+          "email": "a@b",
+          "age": true
+        }
+      },
+      {
+        "valid": false
+      }
+    ],
+    [
+      {
+        "payload": {
+          "name": "A",
+          "email": "@b.test",
+          "age": 2
+        }
+      },
+      {
+        "valid": false
+      }
+    ],
+    [
+      {
+        "payload": {
+          "name": " ",
+          "email": "a@b.test",
+          "age": 2
+        }
+      },
+      {
+        "valid": false
+      }
+    ]
+  ],
+  "py-report-builder": [
+    [
+      {
+        "metrics": {
+          "speed": 80,
+          "quality": 90,
+          "reliability": 70
+        }
+      },
+      {
+        "average": 80,
+        "status": "good",
+        "best_metric": "quality"
+      }
+    ],
+    [
+      {
+        "metrics": {}
+      },
+      {
+        "error": "empty_metrics"
+      }
+    ],
+    [
+      {
+        "metrics": {
+          "a": 90
+        }
+      },
+      {
+        "average": 90,
+        "status": "excellent",
+        "best_metric": "a"
+      }
+    ],
+    [
+      {
+        "metrics": {
+          "b": 70,
+          "a": 70
+        }
+      },
+      {
+        "average": 70,
+        "status": "good",
+        "best_metric": "a"
+      }
+    ],
+    [
+      {
+        "metrics": {
+          "x": 0,
+          "y": 100
+        }
+      },
+      {
+        "average": 50,
+        "status": "needs_review",
+        "best_metric": "y"
+      }
+    ]
   ]
 }

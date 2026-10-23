@@ -770,5 +770,257 @@
       "pandas-cleaning"
     ],
     "project_index": 35
+  },
+  {
+    "slug": "python-expense-aggregation",
+    "title": "تجمیع هزینه‌ها در پایتون؛ از رکورد خام تا گزارش دسته‌ای",
+    "seo_title": "تجمیع هزینه‌ها در پایتون با دیکشنری",
+    "description": "تجمیع هزینه‌ها در پایتون را با دیکشنری و defaultdict یاد بگیرید؛ قرارداد پول، دسته‌های تکراری، ورودی خالی و آزمون جمع کل را با یک پروژه تمرین کنید.",
+    "category": "پایتون کاربردی",
+    "series": "python-practice",
+    "published_at": "2026-10-23",
+    "project_index": 36,
+    "sources": [
+      {
+        "title": "مستندات رسمی Python؛ collections",
+        "url": "https://docs.python.org/3/library/collections.html"
+      }
+    ],
+    "related": [
+      "python-validation-contracts",
+      "python-for-data",
+      "python-basics-testing"
+    ]
+  },
+  {
+    "slug": "python-validation-contracts",
+    "title": "اعتبارسنجی رشته در پایتون؛ قرارداد روشن به‌جای شرط‌های مبهم",
+    "seo_title": "اعتبارسنجی رشته در پایتون با شرط‌های روشن",
+    "description": "اعتبارسنجی رشته در پایتون را با قواعد صریح، any و خروجی بولی تمرین کنید؛ تفاوت ASCII و Unicode و محدودیت سنجش گذرواژه را در مثال ساختگی بشناسید.",
+    "category": "پایتون کاربردی",
+    "series": "python-practice",
+    "published_at": "2026-10-23",
+    "project_index": 37,
+    "sources": [
+      {
+        "title": "مستندات رسمی Python؛ نوع رشته",
+        "url": "https://docs.python.org/3/library/stdtypes.html"
+      }
+    ],
+    "related": [
+      "python-log-levels",
+      "python-for-data",
+      "python-basics-testing"
+    ]
+  },
+  {
+    "slug": "python-log-levels",
+    "title": "تحلیل سطح لاگ در پایتون؛ شمارش رخدادها با خروجی قابل‌اعتماد",
+    "seo_title": "تحلیل سطح لاگ در پایتون با Counter",
+    "description": "سطح لاگ را در پایتون نرمال و شمارش کنید؛ تفاوت رخداد و سطح، مدیریت مقدار خالی، ترتیب Counter و محدودیت تفسیر آمار خطا را با مثال یاد بگیرید.",
+    "category": "مهندسی نرم‌افزار",
+    "series": "python-practice",
+    "published_at": "2026-10-23",
+    "project_index": 38,
+    "sources": [
+      {
+        "title": "مستندات رسمی Python؛ logging",
+        "url": "https://docs.python.org/3/library/logging.html"
+      }
+    ],
+    "related": [
+      "python-tax-rounding",
+      "python-for-data",
+      "python-basics-testing"
+    ]
+  },
+  {
+    "slug": "python-tax-rounding",
+    "title": "محاسبهٔ مالیات سبد خرید با Decimal؛ سیاست گردکردن در پایتون",
+    "seo_title": "محاسبهٔ مالیات با Decimal در پایتون",
+    "description": "مالیات سبد خرید را با Decimal محاسبه کنید؛ ساخت عدد از رشته، گردکردن ROUND_HALF_UP، تفاوت ردیف و کل فاکتور و خروجی مالی دقیق را تمرین کنید.",
+    "category": "محاسبات دقیق",
+    "series": "python-practice",
+    "published_at": "2026-10-23",
+    "project_index": 39,
+    "sources": [
+      {
+        "title": "مستندات رسمی Python؛ Decimal",
+        "url": "https://docs.python.org/3/library/decimal.html"
+      }
+    ],
+    "related": [
+      "python-name-normalization",
+      "python-for-data",
+      "python-basics-testing"
+    ]
+  },
+  {
+    "slug": "python-name-normalization",
+    "title": "پاک‌سازی نام‌های تکراری در پایتون با حفظ ترتیب و متن اصلی",
+    "seo_title": "پاک‌سازی نام‌های تکراری در پایتون",
+    "description": "نام‌های تکراری را در پایتون با حفظ ترتیب حذف کنید؛ فاصلهٔ اضافی، تفاوت حروف فارسی و عربی، set و کلید مقایسه را بدون تغییر هویت افراد بشناسید.",
+    "category": "پردازش متن",
+    "series": "python-practice",
+    "published_at": "2026-10-23",
+    "project_index": 40,
+    "sources": [
+      {
+        "title": "مستندات رسمی Python؛ رشته‌ها و مجموعه‌ها",
+        "url": "https://docs.python.org/3/library/stdtypes.html"
+      }
+    ],
+    "related": [
+      "python-date-intervals",
+      "python-for-data",
+      "python-basics-testing"
+    ]
+  },
+  {
+    "slug": "python-date-intervals",
+    "title": "اختلاف تاریخ در پایتون؛ بازهٔ نیمه‌باز، سال کبیسه و ورودی نامعتبر",
+    "seo_title": "اختلاف تاریخ در پایتون و اعتبارسنجی بازه",
+    "description": "اختلاف دو تاریخ را در پایتون درست محاسبه کنید؛ بازهٔ نیمه‌باز، تاریخ معکوس، سال کبیسه و قالب دقیق ورودی را با datetime و آزمون مرزی یاد بگیرید.",
+    "category": "پایتون کاربردی",
+    "series": "python-practice",
+    "published_at": "2026-10-23",
+    "project_index": 41,
+    "sources": [
+      {
+        "title": "مستندات رسمی Python؛ datetime",
+        "url": "https://docs.python.org/3/library/datetime.html"
+      }
+    ],
+    "related": [
+      "python-stable-ranking",
+      "python-for-data",
+      "python-basics-testing"
+    ]
+  },
+  {
+    "slug": "python-stable-ranking",
+    "title": "رتبه‌بندی چندکلیدی در پایتون؛ امتیاز نزولی و تساوی قابل‌تکرار",
+    "seo_title": "رتبه‌بندی چندکلیدی در پایتون با sorted",
+    "description": "رتبه‌بندی چندکلیدی در پایتون را با sorted و key بیاموزید؛ امتیاز نزولی، تساوی نام‌ها، پایداری مرتب‌سازی و تفاوت ترتیب Unicode و الفبا را تمرین کنید.",
+    "category": "الگوریتم‌های پایتون",
+    "series": "python-practice",
+    "published_at": "2026-10-23",
+    "project_index": 42,
+    "sources": [
+      {
+        "title": "راهنمای رسمی Python؛ Sorting HOW TO",
+        "url": "https://docs.python.org/3/howto/sorting.html"
+      }
+    ],
+    "related": [
+      "python-budget-invariants",
+      "python-for-data",
+      "python-basics-testing"
+    ]
+  },
+  {
+    "slug": "python-budget-invariants",
+    "title": "کنترل بودجه با پایتون؛ ناوردا، مرز مجاز و گزارش بدون ابهام",
+    "seo_title": "کنترل بودجه با پایتون و آزمون ناورداها",
+    "description": "کنترل بودجه با پایتون را با جمع هزینه، باقیماندهٔ علامت‌دار و آزمون مرز مساوی تمرین کنید؛ ناوردای گزارش و تفاوت صفر، خالی و دادهٔ گمشده را بشناسید.",
+    "category": "طراحی و آزمون",
+    "series": "python-practice",
+    "published_at": "2026-10-23",
+    "project_index": 43,
+    "sources": [
+      {
+        "title": "مستندات رسمی Python؛ توابع داخلی",
+        "url": "https://docs.python.org/3/library/functions.html"
+      }
+    ],
+    "related": [
+      "python-frequency-ratios",
+      "python-for-data",
+      "python-basics-testing"
+    ]
+  },
+  {
+    "slug": "python-frequency-ratios",
+    "title": "جدول فراوانی و نسبت در پایتون؛ از Counter تا گزارش دادهٔ نامتوازن",
+    "seo_title": "جدول فراوانی و نسبت در پایتون با Counter",
+    "description": "جدول فراوانی و نسبت را در پایتون با Counter بسازید؛ مخرج درست، ورودی خالی، اعشار تقریبی و تفاوت توزیع نمونه با احتمال واقعی را درک کنید.",
+    "category": "آمار کاربردی",
+    "series": "python-practice",
+    "published_at": "2026-10-23",
+    "project_index": 44,
+    "sources": [
+      {
+        "title": "مستندات رسمی Python؛ Counter",
+        "url": "https://docs.python.org/3/library/collections.html"
+      }
+    ],
+    "related": [
+      "python-matrix-axes",
+      "python-for-data",
+      "python-basics-testing"
+    ]
+  },
+  {
+    "slug": "python-matrix-axes",
+    "title": "جمع سطر و ستون ماتریس در پایتون؛ محور، شکل داده و قطر اصلی",
+    "seo_title": "جمع سطر و ستون ماتریس در پایتون",
+    "description": "جمع سطر و ستون ماتریس را در پایتون بدون کتابخانه محاسبه کنید؛ مربع بودن، سطر نامنظم، قطر اصلی و ناورداهای جمع را با مثال و آزمون یاد بگیرید.",
+    "category": "محاسبات عددی",
+    "series": "python-practice",
+    "published_at": "2026-10-23",
+    "project_index": 45,
+    "sources": [
+      {
+        "title": "مستندات رسمی Python؛ ساختارهای داده",
+        "url": "https://docs.python.org/3/tutorial/datastructures.html"
+      }
+    ],
+    "related": [
+      "python-payload-contracts",
+      "python-for-data",
+      "python-basics-testing"
+    ]
+  },
+  {
+    "slug": "python-payload-contracts",
+    "title": "اعتبارسنجی دیکشنری ورودی در پایتون؛ قرارداد payload و نوع داده",
+    "seo_title": "اعتبارسنجی payload در پایتون با قرارداد دقیق",
+    "description": "اعتبارسنجی payload در پایتون را با نوع داده، فیلد لازم، حذف کلید اضافی و خروجی روشن تمرین کنید؛ تفاوت bool و int و محدودیت بررسی ایمیل را بشناسید.",
+    "category": "مهندسی نرم‌افزار",
+    "series": "python-practice",
+    "published_at": "2026-10-23",
+    "project_index": 46,
+    "sources": [
+      {
+        "title": "مستندات رسمی Python؛ انواع داخلی",
+        "url": "https://docs.python.org/3/library/stdtypes.html"
+      }
+    ],
+    "related": [
+      "python-metric-scorecards",
+      "python-for-data",
+      "python-basics-testing"
+    ]
+  },
+  {
+    "slug": "python-metric-scorecards",
+    "title": "ساخت کارت امتیاز در پایتون؛ میانگین، آستانه و محدودیت تفسیر",
+    "seo_title": "ساخت کارت امتیاز و میانگین شاخص‌ها با پایتون",
+    "description": "کارت امتیاز را با پایتون بسازید؛ میانگین شاخص‌های هم‌مقیاس، آستانهٔ وضعیت، تساوی بهترین شاخص و ورودی خالی را همراه محدودیت تفسیر بررسی کنید.",
+    "category": "تحلیل و گزارش",
+    "series": "python-practice",
+    "published_at": "2026-10-23",
+    "project_index": 47,
+    "sources": [
+      {
+        "title": "مستندات رسمی Python؛ statistics",
+        "url": "https://docs.python.org/3/library/statistics.html"
+      }
+    ],
+    "related": [
+      "python-expense-aggregation",
+      "python-for-data",
+      "python-basics-testing"
+    ]
   }
 ]

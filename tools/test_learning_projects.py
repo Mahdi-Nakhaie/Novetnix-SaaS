@@ -38,11 +38,11 @@ class ReferenceTests(unittest.TestCase):
 
     def test_catalog_preserves_ml_and_adds_beginner_projects(self):
         catalog = json.loads((ROOT / 'curriculum/catalog.json').read_text(encoding='utf-8'))
-        self.assertEqual(len(catalog), 36)
+        self.assertEqual(len(catalog), 48)
         self.assertTrue(all(item['topic'] == 'Machine Learning' for item in catalog[:12]))
         self.assertTrue(all(item['datasets'] for item in catalog[:12]))
         self.assertTrue(all(item['topic'] == 'Python' and item['prerequisite_articles'] for item in catalog[12:]))
-        self.assertEqual(len({item['key'] for item in catalog}), 36)
+        self.assertEqual(len({item['key'] for item in catalog}), 48)
         self.assertTrue(all((ROOT / 'curriculum/data' / name).is_file() for item in catalog for name in item['datasets']))
         self.assertEqual({item['key'] for item in catalog}, {item['key'] for item in grading.definitions()})
 

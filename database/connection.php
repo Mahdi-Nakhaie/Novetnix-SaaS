@@ -96,13 +96,12 @@ function glossary_seed_initial_drafts(PDO $db): void {
     }
 }
 
-function glossary_expand_categories(PDO $db): void {
+function glossary_expand_categories(PDO $db, string $release='category-expansion-20261021', string $filename='glossary-category-expansion.json'): void {
     $db->exec('CREATE TABLE IF NOT EXISTS glossary_content_releases (release_key VARCHAR(80) PRIMARY KEY)');
-    $release='category-expansion-20261021';
     $check=$db->prepare('SELECT release_key FROM glossary_content_releases WHERE release_key=?');
     $check->execute([$release]);
     if ($check->fetchColumn()) return;
-    $data=json_decode((string)file_get_contents(dirname(__DIR__).'/curriculum/glossary-category-expansion.json'),true,512,JSON_THROW_ON_ERROR);
+    $data=json_decode((string)file_get_contents(dirname(__DIR__).'/curriculum/'.$filename),true,512,JSON_THROW_ON_ERROR);
     $db->beginTransaction();
     try {
         $claim='INSERT INTO glossary_content_releases(release_key) VALUES (?)';
@@ -165,6 +164,7 @@ function db(): PDO {
         glossary_backfill_legacy($db);
         glossary_seed_initial_drafts($db);
         glossary_expand_categories($db);
+        glossary_expand_categories($db,'practice-expansion-20261023','glossary-practice-expansion.json');
         $columns=$db->query('SELECT * FROM otp_codes LIMIT 0');
         $names=[];
         for ($i=0; $i<$columns->columnCount(); $i++) $names[]=$columns->getColumnMeta($i)['name'];

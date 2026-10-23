@@ -23,7 +23,7 @@ class BeginnerContentTests(unittest.TestCase):
     def test_every_project_has_specific_guidance_and_transfer(self):
         guidance = json.loads((ROOT / 'curriculum/project-guidance.json').read_text())
         self.assertEqual(set(guidance), {p['key'] for p in PROJECTS})
-        self.assertEqual(len({v[0] for v in guidance.values()}), 36)
+        self.assertEqual(len({v[0] for v in guidance.values()}), 48)
         self.assertTrue(all(len(v) == 2 and all(len(t) > 45 for t in v) for v in guidance.values()))
 
     def test_assessment_labels_explain_output_without_disclosing_test_input(self):
@@ -37,7 +37,7 @@ class BeginnerContentTests(unittest.TestCase):
                 self.assertFalse(check['passed'])
 
     def test_exact_counts_order_and_prerequisites(self):
-        self.assertEqual((len(PROJECTS), len(ARTICLES), len(BEGINNERS), len(LESSONS)), (36, 36, 24, 24))
+        self.assertEqual((len(PROJECTS), len(ARTICLES), len(BEGINNERS), len(LESSONS)), (48, 48, 36, 24))
         self.assertEqual([a['sequence'] for a in LESSONS], list(range(1, 25)))
         for index, (project, article) in enumerate(zip(BEGINNERS, LESSONS), 12):
             with self.subTest(project=project['key']):
