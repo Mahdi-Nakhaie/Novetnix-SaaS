@@ -1,0 +1,263 @@
+body:not(.is-panel) {
+  --editorial-rule: var(--line-2);
+  --editorial-surface: var(--card);
+  --editorial-text: var(--ink-2);
+  --editorial-gap: var(--space-6);
+  --editorial-section: clamp(3.2rem, 7vw, 6.4rem);
+  --editorial-title: clamp(2rem, 3.6vw, 3.2rem);
+  --editorial-frame: var(--space-3);
+  --editorial-shadow: var(--shadow-sm);
+}
+
+body:not(.is-panel) :is(h1, h2, h3) {
+  letter-spacing: normal;
+  text-wrap: pretty;
+}
+
+body:not(.is-panel) .hero {
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: clamp(2.4rem, 5vw, 4.8rem);
+  padding-block: var(--editorial-section);
+}
+
+body:not(.is-panel) .hero h1 {
+  font-size: clamp(2.4rem, 4.3vw, 4rem);
+  line-height: 1.55;
+  max-inline-size: 17ch;
+}
+
+body:not(.is-panel) .hero-copy > p {
+  max-inline-size: 48ch;
+  font-size: 1.0625rem;
+  line-height: 2;
+  color: var(--editorial-text);
+}
+
+body:not(.is-panel) .hero-proof {
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  color: var(--editorial-text);
+  line-height: 1.8;
+}
+
+body:not(.is-panel) .hero-code-display {
+  padding: 0;
+  order: 0;
+}
+
+body:not(.is-panel) .hero-code-display::before {
+  display: none;
+}
+
+body:not(.is-panel) .hero-code-window {
+  background: var(--dark);
+  border-radius: var(--r-lg);
+  box-shadow: var(--editorial-shadow);
+  border-block-start: var(--editorial-frame) solid var(--gold);
+  animation: none;
+  transform: none;
+}
+
+body:not(.is-panel) .hero-code-window:hover {
+  transform: none;
+  box-shadow: var(--editorial-shadow);
+}
+
+body:not(.is-panel) .hero-code-window pre {
+  max-inline-size: 100%;
+  overflow-x: auto;
+}
+
+body:not(.is-panel) .hero-code-window .window-footer a {
+  white-space: normal;
+}
+
+body:not(.is-panel) .metrics {
+  background: var(--editorial-surface);
+  border-block: 1px solid var(--editorial-rule);
+}
+
+body:not(.is-panel) .metrics-inner {
+  gap: var(--editorial-gap);
+  padding-block: var(--space-7);
+}
+
+body:not(.is-panel) .metrics-inner > div {
+  border-inline-start: 2px solid var(--gold);
+  padding-inline-start: var(--space-4);
+  min-inline-size: 0;
+}
+
+body:not(.is-panel) .metrics-inner strong {
+  font-size: 1.75rem;
+  color: var(--brand);
+}
+
+body:not(.is-panel) .metrics-inner span {
+  color: var(--editorial-text);
+  line-height: 1.8;
+}
+
+body:not(.is-panel) .section {
+  padding-block: var(--editorial-section);
+}
+
+body:not(.is-panel) .section-header {
+  max-inline-size: 48rem;
+}
+
+body:not(.is-panel) .section-header h2 {
+  font-size: clamp(1.5rem, 2.6vw, 2.25rem);
+  line-height: 1.65;
+}
+
+body:not(.is-panel) .section-header p {
+  max-inline-size: 65ch;
+  color: var(--editorial-text);
+  line-height: 2;
+}
+
+body:not(.is-panel) .feature {
+  border-radius: 0;
+  border: 0;
+  border-block-start: 2px solid var(--editorial-rule);
+  padding-inline: var(--space-4);
+  background: transparent;
+  box-shadow: none;
+}
+
+body:not(.is-panel) .feature:hover {
+  transform: none;
+  box-shadow: none;
+  border-block-start-color: var(--gold);
+}
+
+body:not(.is-panel) .feature-n {
+  color: var(--brand-2);
+}
+
+body:not(.is-panel) :is(.project-card, .course-card, .article-card, .price-card) {
+  border-color: var(--editorial-rule);
+  box-shadow: var(--editorial-shadow);
+  border-radius: var(--r-md);
+}
+
+body:not(.is-panel) :is(.project-card, .course-card, .article-card, .price-card):hover {
+  transform: none;
+  border-color: var(--gold);
+  box-shadow: var(--editorial-shadow);
+}
+
+body:not(.is-panel) :is(.project-info, .article-card) {
+  padding: var(--space-6);
+}
+
+body:not(.is-panel) :is(.project-card, .course-card) p {
+  color: var(--editorial-text);
+  line-height: 2;
+}
+
+body:not(.is-panel) .dark-band {
+  background: var(--dark);
+  border-block: 1px solid var(--gold);
+}
+
+body:not(.is-panel) :is(.pricing-hero, .about-hero-card, .community-hero-card) {
+  background: var(--dark);
+  box-shadow: var(--editorial-shadow);
+}
+
+body:not(.is-panel) .pricing-hero {
+  border-block-end: var(--editorial-frame) solid var(--gold);
+}
+
+body:not(.is-panel) :is(.about-hero, .community-hero, .contact-hero, .course-overview-hero) {
+  background: var(--editorial-surface);
+  border-block-end: 1px solid var(--editorial-rule);
+}
+
+body:not(.is-panel) :is(.page-hero, .pricing-hero, .about-hero, .community-hero, .contact-hero, .course-overview-hero) h1 {
+  font-size: var(--editorial-title);
+  line-height: 1.65;
+}
+
+body:not(.is-panel) .article-toc {
+  border-radius: 0;
+  border: 0;
+  border-inline-start: 2px solid var(--gold);
+  background: transparent;
+}
+
+body:not(.is-panel) :is(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 4px;
+}
+
+body:not(.is-panel) :is(.hero-code-window, .dark-band, .pricing-hero) :is(a, button, [tabindex]):focus-visible {
+  outline-color: var(--card);
+}
+
+@media (min-width: 1100px) {
+  body:not(.is-panel) .project-grid:has(> article:nth-child(4)) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body:not(.is-panel) .project-grid:has(> article:nth-child(4)) .project-card {
+    display: grid;
+    grid-template-columns: minmax(0, .75fr) minmax(0, 1fr);
+  }
+
+  body:not(.is-panel) .project-grid:has(> article:nth-child(4)) .project-visual {
+    height: auto;
+    min-block-size: 15rem;
+  }
+}
+
+@media (max-width: 1180px) {
+  body:not(.is-panel) .hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-7);
+  }
+
+  body:not(.is-panel) .hero-code-display {
+    max-inline-size: 44rem;
+    inline-size: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  body:not(.is-panel) {
+    --editorial-section: var(--space-8);
+  }
+
+  body:not(.is-panel) .hero h1 {
+    font-size: clamp(2rem, 9vw, 2.75rem);
+  }
+
+  body:not(.is-panel) .hero-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  body:not(.is-panel) .hero-buttons .btn {
+    white-space: normal;
+    text-align: center;
+  }
+
+  body:not(.is-panel) .metrics-inner {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-5);
+  }
+
+  body:not(.is-panel) :is(.project-info, .article-card) {
+    padding: var(--space-5);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body:not(.is-panel) :is(.hero-copy, .hero-display, .feature, .project-card, .course-card, .article-card, .price-card) {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
