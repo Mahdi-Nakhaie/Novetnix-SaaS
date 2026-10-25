@@ -1,0 +1,154 @@
+body .site-header {
+  --header-gutter: clamp(1rem, 2.5vw, 3rem);
+  --header-gap: var(--space-5);
+  background: var(--card);
+  border-block-end: 1px solid var(--brand-line);
+  box-shadow: var(--shadow-sm);
+}
+
+body .site-header .header-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas: "brand actions" "nav nav";
+  width: 100%;
+  max-width: none;
+  min-height: 88px;
+  margin-inline: 0;
+  padding: var(--space-4) var(--header-gutter);
+  gap: var(--space-4) var(--header-gap);
+  align-items: center;
+}
+
+body .site-header .brand {
+  grid-area: brand;
+  justify-self: start;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+body .site-header .brand img {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+body .site-header .brand-name {
+  font-size: 1.4rem;
+  line-height: 1.5;
+}
+
+body .site-header .header-actions {
+  grid-area: actions;
+  justify-self: end;
+  gap: var(--space-3);
+}
+
+body .site-header .header-actions .btn {
+  min-height: 48px;
+  padding-inline: var(--space-4);
+  font-size: .9375rem;
+  border-radius: var(--r-sm);
+}
+
+body .site-header .main-nav {
+  grid-area: nav;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: stretch;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  min-width: 0;
+  margin: 0;
+  padding-block: var(--space-3) 0;
+  border-block-start: 1px solid var(--line);
+}
+
+body .site-header .main-nav a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: var(--space-2) var(--space-3);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.7;
+  white-space: nowrap;
+  border-radius: var(--r-sm);
+  text-align: center;
+}
+
+body .site-header .main-nav a:hover,
+body .site-header .main-nav a.active {
+  background: var(--brand-soft);
+  color: var(--brand-2);
+}
+
+body .site-header :is(a, button):focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 3px;
+}
+
+@media (min-width: 1920px) {
+  body .site-header .header-inner {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-areas: "brand nav actions";
+  }
+
+  body .site-header .main-nav {
+    padding-block: 0;
+    border-block-start: 0;
+  }
+}
+
+@media (max-width: 1180px) {
+  body .site-header .header-inner {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "brand toggle";
+    min-height: 80px;
+    padding-block: var(--space-3);
+  }
+
+  body .site-header .main-nav,
+  body .site-header .header-actions {
+    display: none;
+  }
+
+  body .site-header .menu-toggle {
+    grid-area: toggle;
+    display: grid;
+    place-items: center;
+    justify-self: end;
+    min-width: 48px;
+    min-height: 48px;
+    margin: 0;
+    padding: var(--space-2);
+    color: var(--brand-2);
+  }
+
+  body .site-header .mobile-nav {
+    padding-inline: var(--header-gutter);
+  }
+
+  body .site-header .mobile-nav a {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 48px;
+    padding-inline: var(--space-4);
+    font-size: 1rem;
+    text-align: center;
+  }
+}
+
+@media (max-width: 560px) {
+  body .site-header .brand img {
+    width: 44px;
+    height: 44px;
+  }
+
+  body .site-header .brand-name {
+    font-size: 1.25rem;
+  }
+}

@@ -69,5 +69,42 @@ class EditorialDesignTest(unittest.TestCase):
         self.assertIn('outline-color: var(--card);', CSS)
 
 
+class HeaderLayoutTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.css = (ROOT / 'public/assets/header.css').read_text(encoding='utf-8')
+
+    def test_shared_header_styles_exclude_private_panels(self):
+        self.assertIn("if (!$panel) echo '<link rel=\"stylesheet\" href=\"/assets/header.css?v=1\">';", VIEWS)
+        for selector in re.findall(r'([^{}]+)\{', self.css):
+            if not selector.strip().startswith('@'):
+                self.assertTrue(selector.strip().startswith('body .site-header'), selector)
+
+    def test_centering_uses_equal_side_columns_and_symmetric_padding(self):
+        self.assertIn('grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);', self.css)
+        self.assertIn('grid-template-areas: "brand nav actions";', self.css)
+        self.assertIn('grid-template-areas: "brand actions" "nav nav";', self.css)
+        self.assertIn('padding: var(--space-4) var(--header-gutter);', self.css)
+        self.assertIn('max-width: none;', self.css)
+        self.assertIn('justify-content: center;', self.css)
+        self.assertNotIn('position: absolute', self.css)
+
+    def test_navigation_is_larger_and_can_wrap_without_overlap(self):
+        self.assertRegex(self.css, r'\.main-nav a\s*\{[^}]*font-size: 1rem;')
+        self.assertIn('flex-wrap: wrap;', self.css)
+        self.assertIn('min-height: 48px;', self.css)
+        self.assertIn('@media (min-width: 1920px)', self.css)
+        self.assertIn('@media (max-width: 1180px)', self.css)
+        self.assertIn('@media (max-width: 560px)', self.css)
+
+    def test_mobile_alignment_and_focus_are_preserved(self):
+        self.assertIn('grid-template-areas: "brand toggle";', self.css)
+        self.assertIn('padding-inline: var(--header-gutter);', self.css)
+        self.assertRegex(self.css, r'\.mobile-nav a\s*\{[^}]*justify-content: center;')
+        self.assertIn(':focus-visible', self.css)
+        self.assertNotIn('outline: none', self.css)
+        self.assertNotIn('animation:', self.css)
+
+
 if __name__ == '__main__':
     unittest.main()
