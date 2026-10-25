@@ -18,8 +18,7 @@ function head_page(string $title,string $description='',bool $panel=false,bool $
     }
     if ($path==='' || $path==='articles' || str_starts_with($path,'articles/')) echo '<link rel="stylesheet" href="/assets/articles.css?v=3">';
     $darychehAssets=($path==='dashboard/darycheh' || str_starts_with($path,'dashboard/darycheh/')) ? '<link rel="stylesheet" href="/assets/darycheh.css?v=1"><script src="/assets/darycheh.js?v=1" defer></script>' : '';
-    if (!$panel && (in_array($path,['','articles','projects','pricing','about','contact','community'],true) || $path==='course/'.FREE_COURSE_SLUG || str_starts_with($path,'articles/'))) echo '<link rel="stylesheet" href="/assets/editorial.css?v=1">';
-    if (!$panel) echo '<link rel="stylesheet" href="/assets/header.css?v=1">';
+    if (!$panel) echo '<link rel="stylesheet" href="/assets/header.css?v=3">';
     $adminPanel=$panel && ($me['role'] ?? '')==='admin';
     echo '<link rel="stylesheet" href="/assets/style.css?v=24">'.($adminPanel?'<link rel="stylesheet" href="/assets/admin.css?v=1">':'').'<script src="/assets/three.min.js" defer></script><script src="/assets/three-scene.js?v=2" defer></script><script src="/assets/app.js?v=3" defer></script><script src="/assets/playback-events.js" defer></script>'.$darychehAssets.'</head><body class="'.($panel?'is-panel':'').($adminPanel?' is-admin':'').'">';
     echo '<div class="noventix-loading" id="noventix-loading" role="status" aria-live="polite" hidden><div class="noventix-loading-card"><span class="noventix-loading-mark" aria-hidden="true">N</span><strong>Noventix</strong><span class="noventix-loading-track" aria-hidden="true"><span></span></span><p>در حال آماده‌سازی...</p></div></div>';

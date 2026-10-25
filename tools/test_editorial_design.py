@@ -19,15 +19,8 @@ def contrast(first, second):
 
 
 class EditorialDesignTest(unittest.TestCase):
-    def test_stylesheet_is_limited_to_selected_public_routes(self):
-        line = next(line for line in VIEWS.splitlines() if '/assets/editorial.css' in line)
-        self.assertIn('if (!$panel &&', line)
-        self.assertIn("['','articles','projects','pricing','about','contact','community']", line)
-        self.assertIn("$path==='course/'.FREE_COURSE_SLUG", line)
-        self.assertIn("str_starts_with($path,'articles/')", line)
-        self.assertNotIn('dashboard', line)
-        self.assertNotIn('login', line)
-        self.assertNotIn('register', line)
+    def test_public_redesign_is_no_longer_loaded(self):
+        self.assertNotIn('/assets/editorial.css', VIEWS)
 
     def test_every_selector_excludes_panels(self):
         selectors = re.findall(r'([^{}]+)\{', CSS)
@@ -75,7 +68,7 @@ class HeaderLayoutTest(unittest.TestCase):
         cls.css = (ROOT / 'public/assets/header.css').read_text(encoding='utf-8')
 
     def test_shared_header_styles_exclude_private_panels(self):
-        self.assertIn("if (!$panel) echo '<link rel=\"stylesheet\" href=\"/assets/header.css?v=1\">';", VIEWS)
+        self.assertIn("if (!$panel) echo '<link rel=\"stylesheet\" href=\"/assets/header.css?v=3\">';", VIEWS)
         for selector in re.findall(r'([^{}]+)\{', self.css):
             if not selector.strip().startswith('@'):
                 self.assertTrue(selector.strip().startswith('body .site-header'), selector)
@@ -83,17 +76,20 @@ class HeaderLayoutTest(unittest.TestCase):
     def test_centering_uses_equal_side_columns_and_symmetric_padding(self):
         self.assertIn('grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);', self.css)
         self.assertIn('grid-template-areas: "brand nav actions";', self.css)
-        self.assertIn('grid-template-areas: "brand actions" "nav nav";', self.css)
+        self.assertNotIn('grid-template-areas: "brand actions" "nav nav";', self.css)
         self.assertIn('padding: var(--space-4) var(--header-gutter);', self.css)
         self.assertIn('max-width: none;', self.css)
         self.assertIn('justify-content: center;', self.css)
         self.assertNotIn('position: absolute', self.css)
 
-    def test_navigation_is_larger_and_can_wrap_without_overlap(self):
-        self.assertRegex(self.css, r'\.main-nav a\s*\{[^}]*font-size: 1rem;')
-        self.assertIn('flex-wrap: wrap;', self.css)
+    def test_navigation_only_increases_spacing_and_type(self):
+        self.assertRegex(self.css, r'\.main-nav a\s*\{[^}]*font-size: 1.125rem;')
+        self.assertIn('font-size: calc(clamp(.8rem, .9vw, .95rem) + .125rem);', self.css)
+        self.assertIn('gap: .5rem;', self.css)
+        self.assertIn('gap: .8rem;', self.css)
+        self.assertIn('flex-wrap: nowrap;', self.css)
         self.assertIn('min-height: 48px;', self.css)
-        self.assertIn('@media (min-width: 1920px)', self.css)
+        self.assertIn('@media (min-width: 1181px) and (max-width: 1919px)', self.css)
         self.assertIn('@media (max-width: 1180px)', self.css)
         self.assertIn('@media (max-width: 560px)', self.css)
 

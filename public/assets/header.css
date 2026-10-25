@@ -8,8 +8,8 @@ body .site-header {
 
 body .site-header .header-inner {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  grid-template-areas: "brand actions" "nav nav";
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-areas: "brand nav actions";
   width: 100%;
   max-width: none;
   min-height: 88px;
@@ -44,11 +44,15 @@ body .site-header .header-actions {
   gap: var(--space-3);
 }
 
-body .site-header .header-actions .btn {
-  min-height: 48px;
-  padding-inline: var(--space-4);
-  font-size: .9375rem;
-  border-radius: var(--r-sm);
+body .site-header .cart-button {
+  width: 48px;
+  min-width: 48px;
+  padding-inline: 0;
+  justify-content: center;
+}
+
+body .site-header .cart-button svg {
+  flex: 0 0 21px;
 }
 
 body .site-header .main-nav {
@@ -56,13 +60,13 @@ body .site-header .main-nav {
   display: flex;
   align-items: center;
   justify-content: center;
-  justify-self: stretch;
-  flex-wrap: wrap;
-  gap: var(--space-1);
+  justify-self: center;
+  flex-wrap: nowrap;
+  gap: .8rem;
   min-width: 0;
   margin: 0;
-  padding-block: var(--space-3) 0;
-  border-block-start: 1px solid var(--line);
+  padding: 0;
+  border-block-start: 0;
 }
 
 body .site-header .main-nav a {
@@ -71,7 +75,7 @@ body .site-header .main-nav a {
   justify-content: center;
   min-height: 48px;
   padding: var(--space-2) var(--space-3);
-  font-size: 1rem;
+  font-size: 1.125rem;
   font-weight: 700;
   line-height: 1.7;
   white-space: nowrap;
@@ -90,15 +94,14 @@ body .site-header :is(a, button):focus-visible {
   outline-offset: 3px;
 }
 
-@media (min-width: 1920px) {
-  body .site-header .header-inner {
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-    grid-template-areas: "brand nav actions";
+@media (min-width: 1181px) and (max-width: 1919px) {
+  body .site-header .main-nav {
+    gap: .5rem;
   }
 
-  body .site-header .main-nav {
-    padding-block: 0;
-    border-block-start: 0;
+  body .site-header .main-nav a {
+    padding-inline: .45rem;
+    font-size: calc(clamp(.8rem, .9vw, .95rem) + .125rem);
   }
 }
 
