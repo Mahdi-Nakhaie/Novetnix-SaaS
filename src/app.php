@@ -330,6 +330,13 @@ function handle_post(string $path): void {
         if (mb_strlen($name)<2 || mb_strlen($name)>100 || !filter_var($email,FILTER_VALIDATE_EMAIL) || mb_strlen($message)<10 || mb_strlen($message)>3000) { flash('نام، ایمیل و پیام معتبر وارد کنید.','error'); redirect('contact'); }
         q('INSERT INTO contact_messages(name,email,message) VALUES (?,?,?)',[$name,$email,$message]); flash('پیام شما ثبت شد.'); redirect('contact');
     }
+    if ($path==='payment/start' && !user()) {
+        $selected=(string)($_POST['plan'] ?? ''); $key=(string)($_POST['request_key'] ?? '');
+        if (!plan_is_available($selected) || $selected==='free' || !preg_match('/^[a-f0-9]{32}$/D',$key)) { flash('این پلن فعلاً برای خرید در دسترس نیست.','error'); redirect('pricing'); }
+        $_SESSION['pending_plan_purchase']=['plan'=>$selected,'request_key'=>$key,'expires_at'=>time()+900];
+        $_SESSION['auth_return_to']='payment/continue';
+        redirect('login');
+    }
     $u=require_user(); $plan=plan_for($u);
     if (glossary_admin_post($path)) return;
     if ($path==='admin/course-save' || $path==='admin/lesson-save' || $path==='admin/quiz-save') course_admin_save($path);

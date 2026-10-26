@@ -142,11 +142,20 @@ function upcoming_plan_cards(): void {
     ];
     echo '<div class="upcoming-plans">';
     foreach ($plans as $id=>[$name,$tagline,$description,$focus]) {
-        echo '<article class="upcoming-plan plan-'.h($id).'" aria-label="پلن '.h($name).'؛ به‌زودی"><span class="eyebrow">اشتراک Noventix</span><h2>پلن '.h($name).'</h2><h3>'.h($tagline).'</h3><p class="plan-description">'.h($description).'</p><ul class="plan-focus">';
+        $available=plan_is_available($id);
+        echo '<article class="upcoming-plan plan-'.h($id).'" aria-label="پلن '.h($name).($available?'':'؛ به‌زودی').'">';
+        echo '<span class="eyebrow">اشتراک Noventix</span><h2>پلن '.h($name).'</h2><h3>'.h($tagline).'</h3><p class="plan-description">'.h($description).'</p><ul class="plan-focus">';
         foreach ($focus as $item) echo '<li>'.h($item).'</li>';
-        echo '</ul><div class="plan-availability"><div class="plan-chain" aria-hidden="true">';
-        for ($i=0;$i<9;$i++) echo '<span></span>';
-        echo '</div><strong class="plan-coming-soon">به‌زودی</strong></div></article>';
+        echo '</ul>';
+        if ($available) {
+            echo '<div class="plan-price">'.money((int)PLANS[$id]['price']).'<small>/ ماه</small></div>';
+            plan_purchase_button($id,'btn btn-primary full');
+        } else {
+            echo '<div class="plan-availability"><div class="plan-chain" aria-hidden="true">';
+            for ($i=0;$i<9;$i++) echo '<span></span>';
+            echo '</div><strong class="plan-coming-soon">به‌زودی</strong></div>';
+        }
+        echo '</article>';
     }
     echo '</div>';
 }
@@ -159,7 +168,9 @@ function plan_cards(bool $short=false): void {
         foreach (array_slice($p['features'],0,$short?3:count($p['features'])) as $feature) echo '<li>'.h($feature).'</li>';
         echo '</ul>';
         if (!$short && !empty($p['limits'])) { echo '<div class="plan-limits"><span class="eyebrow">سقف دقیق این پلن</span><table><tbody>'; foreach ($p['limits'] as [$label,$value]) echo '<tr><th scope="row">'.h($label).'</th><td>'.h($value).'</td></tr>'; echo '</tbody></table></div>'; }
-        echo '<a class="btn '.($id==='gold'?'btn-gold':'btn-outline').' full" href="'.h(url($id==='free'?'course/'.FREE_COURSE_SLUG:'dashboard/subscription')).'">'.($id==='free'?'شروع دورهٔ رایگان':'انتخاب پلن').'</a></article>';
+        if ($id==='free') linkto('course/'.FREE_COURSE_SLUG,'شروع دورهٔ رایگان','btn btn-outline full');
+        else plan_purchase_button($id,'btn '.($id==='gold'?'btn-gold':'btn-outline').' full');
+        echo '</article>';
     }
     echo '</div>';
 }

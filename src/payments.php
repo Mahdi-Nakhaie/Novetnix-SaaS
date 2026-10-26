@@ -26,6 +26,18 @@ function payment_plan_courses(string $plan): array {
     $courses=q("SELECT c.slug,c.title FROM courses c WHERE c.status='published' AND EXISTS (SELECT 1 FROM lessons l WHERE l.course_id=c.id AND l.status='published') ORDER BY c.id")->fetchAll();
     return array_values(array_filter($courses,fn($course)=>can_course($course['slug'],$plan) && !can_course($course['slug'],'free')));
 }
+function plan_purchase_button(string $plan,string $class='btn btn-primary'): void {
+    form_start('payment/start');
+    echo '<input type="hidden" name="plan" value="'.h($plan).'"><input type="hidden" name="request_key" value="'.bin2hex(random_bytes(16)).'"><button class="'.h($class).'" type="submit">خرید پلن · '.money((int)PLANS[$plan]['price']).'</button></form>';
+}
+function payment_resume(): never {
+    $u=require_user();
+    $pending=$_SESSION['pending_plan_purchase'] ?? null;
+    unset($_SESSION['pending_plan_purchase']);
+    if (!is_array($pending) || (int)($pending['expires_at'] ?? 0)<time()) redirect('pricing');
+    $_POST=['plan'=>$pending['plan'],'request_key'=>$pending['request_key']];
+    payment_start($u);
+}
 function payment_start(array $u): never {
     $selected=(string)($_POST['plan'] ?? ''); $key=(string)($_POST['request_key'] ?? '');
     if (!COMMERCE_ENABLED || !payment_ready()) { flash('درگاه واقعی هنوز تنظیم نشده است؛ هیچ مبلغی دریافت و اشتراکی فعال نشد.','error'); redirect('dashboard/subscription'); }
@@ -87,7 +99,7 @@ function payment_callback(): never {
     if (!is_string($authority) || !payment_authority($authority)) { http_response_code(400); exit('شناسه پرداخت معتبر نیست.'); }
     $order=q('SELECT * FROM payment_orders WHERE authority=?',[$authority])->fetch();
     if (!$order) { http_response_code(404); exit('پرداخت پیدا نشد.'); }
-    if (strtoupper((string)($_GET['Status'] ?? ''))!=='OK') { q("UPDATE payment_orders SET status='cancelled' WHERE id=? AND status<>'paid'",[$order['id']]); flash('پرداخت لغو شد و مبلغی به حساب شما اضافه نشد.','error'); redirect('cart'); }
+    if (strtoupper((string)($_GET['Status'] ?? ''))!=='OK') { q("UPDATE payment_orders SET status='cancelled' WHERE id=? AND status<>'paid'",[$order['id']]); flash('پرداخت لغو شد و مبلغی به حساب شما اضافه نشد.','error'); redirect(($order['plan'] ?? '')==='cart'?'cart':'dashboard/subscription'); }
     try { $paid=payment_verify_order($order); $message=$paid?'پرداخت تأیید شد و دسترسی خریداری‌شده فعال شد.':'پرداخت تأیید نشد. اگر مبلغی کسر شده، تاریخچه پرداخت را بررسی کنید.'; }
     catch (PaymentError $e) { $message=$e->getMessage(); }
     flash($message,isset($paid)&&$paid?'success':'error'); redirect('dashboard/payment-history');
@@ -205,6 +217,6 @@ function cart_page(): void {
         if (count(array_filter($items,fn(array $item): bool=>$item['type']==='plan'))<2) { form_start('cart/checkout','cart-checkout-form'); echo '<button class="btn btn-primary cart-checkout" type="submit">ادامه و پرداخت با زرین‌پال <span aria-hidden="true">←</span></button></form>'; }
         echo '<p class="summary-note">با ادامه، به درگاه امن زرین‌پال منتقل می‌شوی.</p></aside></div>';
     }
-    if ($available) { echo '<section class="cart-recommendations" aria-labelledby="cart-recommendations-title"><div class="cart-card-heading"><div><span class="eyebrow">برای مسیر بعدی</span><h2 id="cart-recommendations-title">شاید این‌ها هم به کارت بیاید</h2></div><span class="cart-scroll-hint">برای دیدن بیشتر بکشید ←</span></div><div class="cart-recommendation-track">'; foreach (array_slice($available,0,4) as $item) { echo '<article class="cart-recommendation"><div class="cart-recommendation-art" aria-hidden="true">'.($item['type']==='plan'?'✦':'⌘').'</div><div><span class="pill">'.h($item['type']==='plan'?'پلن':'دوره').'</span><h3>'.h($item['title']).'</h3><strong>'.money((int)$item['price']).'</strong><form method="post" action="'.h(url('cart/add')).'"><input type="hidden" name="csrf" value="'.h(csrf()).'"><input type="hidden" name="key" value="'.h($item['key']).'"><button class="btn btn-outline" type="submit">افزودن به سبد</button></form></div></article>'; } echo '</div></section>'; }
+    if ($available) { echo '<section class="cart-recommendations" aria-labelledby="cart-recommendations-title"><div class="cart-card-heading"><div><span class="eyebrow">برای مسیر بعدی</span><h2 id="cart-recommendations-title">شاید این‌ها هم به کارت بیاید</h2></div><span class="cart-scroll-hint">برای دیدن بیشتر بکشید ←</span></div><div class="cart-recommendation-track">'; foreach (array_slice($available,0,4) as $item) { echo '<article class="cart-recommendation"><div class="cart-recommendation-art" aria-hidden="true">'.($item['type']==='plan'?'✦':'⌘').'</div><div><span class="pill">'.h($item['type']==='plan'?'پلن':'دوره').'</span><h3>'.h($item['title']).'</h3><strong>'.money((int)$item['price']).'</strong>'; if ($item['type']==='plan' && plan_is_available($item['slug'])) plan_purchase_button($item['slug'],'btn btn-primary'); echo '<form method="post" action="'.h(url('cart/add')).'"><input type="hidden" name="csrf" value="'.h(csrf()).'"><input type="hidden" name="key" value="'.h($item['key']).'"><button class="btn btn-outline" type="submit">افزودن به سبد</button></form></div></article>'; } echo '</div></section>'; }
     echo '</main>';
 }

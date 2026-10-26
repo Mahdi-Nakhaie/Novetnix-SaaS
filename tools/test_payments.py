@@ -176,5 +176,45 @@ $_POST=$f['post']; $_GET=$f['query'];
         self.assertEqual(self.scalar("SELECT COUNT(*) FROM subscriptions WHERE status='active'"), 1)
 
 
+class PurchaseRoutingTests(unittest.TestCase):
+    def test_plan_buttons_post_to_direct_gateway_flow(self):
+        source = (ROOT / 'src/payments.php').read_text()
+        button = source.split('function plan_purchase_button(', 1)[1].split('function payment_resume(', 1)[0]
+        self.assertIn("form_start('payment/start')", button)
+        self.assertIn('name="request_key"', button)
+        self.assertNotIn('cart/add', button)
+        views = (ROOT / 'src/views.php').read_text()
+        self.assertIn("plan_purchase_button($id,'btn btn-primary full')", views)
+        self.assertIn('$available=plan_is_available($id);', views)
+
+    def test_login_preserves_only_validated_plan_intent(self):
+        source = (ROOT / 'src/app.php').read_text()
+        start = source.index("if ($path==='payment/start' && !user())")
+        branch = source[start:source.index('$u=require_user(); $plan=plan_for($u);', start)]
+        self.assertIn('validate_csrf();', source[:start])
+        self.assertIn('!plan_is_available($selected)', branch)
+        self.assertIn("$selected==='free'", branch)
+        self.assertIn("$_SESSION['auth_return_to']='payment/continue';", branch)
+        self.assertIn("'expires_at'=>time()+900", branch)
+        self.assertIn("redirect('login');", branch)
+
+    def test_resume_is_one_time_and_revalidates_with_existing_payment_handler(self):
+        source = (ROOT / 'src/payments.php').read_text()
+        resume = source.split('function payment_resume(): never {', 1)[1].split('function payment_start(', 1)[0]
+        self.assertIn('$u=require_user();', resume)
+        self.assertIn("unset($_SESSION['pending_plan_purchase']);", resume)
+        self.assertIn("($pending['expires_at'] ?? 0)<time()", resume)
+        self.assertIn('payment_start($u);', resume)
+        self.assertIn("if ($path==='payment/continue') payment_resume();", (ROOT / 'src/router.php').read_text())
+
+    def test_courses_and_combined_purchases_keep_cart(self):
+        source = (ROOT / 'src/payments.php').read_text()
+        self.assertIn("if ($item['type']==='plan' && plan_is_available($item['slug'])) plan_purchase_button", source)
+        self.assertIn("url('cart/add')", source)
+        self.assertIn("form_start('cart/checkout'", source)
+        self.assertIn("url('cart/add')", (ROOT / 'src/views.php').read_text())
+        self.assertIn("redirect(($order['plan'] ?? '')==='cart'?'cart':'dashboard/subscription')", source)
+
+
 if __name__ == '__main__':
     unittest.main()
