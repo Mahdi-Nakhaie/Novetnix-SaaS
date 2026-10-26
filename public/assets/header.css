@@ -62,7 +62,7 @@ body .site-header .main-nav {
   justify-content: center;
   justify-self: center;
   flex-wrap: nowrap;
-  gap: .8rem;
+  gap: 1rem;
   min-width: 0;
   margin: 0;
   padding: 0;
@@ -96,7 +96,7 @@ body .site-header :is(a, button):focus-visible {
 
 @media (min-width: 1181px) and (max-width: 1919px) {
   body .site-header .main-nav {
-    gap: .5rem;
+    gap: .7rem;
   }
 
   body .site-header .main-nav a {

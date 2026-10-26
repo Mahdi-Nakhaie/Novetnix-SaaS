@@ -85,8 +85,8 @@ class HeaderLayoutTest(unittest.TestCase):
     def test_navigation_only_increases_spacing_and_type(self):
         self.assertRegex(self.css, r'\.main-nav a\s*\{[^}]*font-size: 1.125rem;')
         self.assertIn('font-size: calc(clamp(.8rem, .9vw, .95rem) + .125rem);', self.css)
-        self.assertIn('gap: .5rem;', self.css)
-        self.assertIn('gap: .8rem;', self.css)
+        self.assertIn('gap: .7rem;', self.css)
+        self.assertIn('gap: 1rem;', self.css)
         self.assertIn('flex-wrap: nowrap;', self.css)
         self.assertIn('min-height: 48px;', self.css)
         self.assertIn('@media (min-width: 1181px) and (max-width: 1919px)', self.css)
