@@ -13,6 +13,18 @@
   }
 
   document.addEventListener("click", function (event) {
+    var passwordToggle = event.target.closest("[data-password-toggle]");
+    if (passwordToggle) {
+      var password = document.getElementById(passwordToggle.getAttribute("data-password-toggle"));
+      if (password) {
+        var visible = password.type === "text";
+        password.type = visible ? "password" : "text";
+        passwordToggle.setAttribute("aria-pressed", String(!visible));
+        passwordToggle.textContent = visible ? "نمایش رمز" : "پنهان کردن رمز";
+      }
+      return;
+    }
+
     var button = event.target.closest(".menu-toggle");
     if (button) {
       var nav = document.getElementById(button.getAttribute("aria-controls") || "mobile-nav");
@@ -66,7 +78,8 @@
     maxlength: "مقدار واردشده بیش از حد طولانی است.",
     pattern: "مقدار واردشده معتبر نیست.",
     phone: "شماره موبایل معتبر وارد کنید.",
-    password: "رمز باید دست‌کم ۸ نویسه و شامل حرف انگلیسی و عدد باشد."
+    password: "رمز باید دست‌کم ۸ نویسه و شامل حرف انگلیسی و عدد باشد.",
+    passwordConfirmation: "تکرار رمز عبور با رمز واردشده یکسان نیست."
   };
 
   function normalizedPhone(value) {
@@ -81,6 +94,10 @@
   function fieldMessage(field) {
     if (field.dataset.validation === "phone" && !/^09[0-9]{9}$/.test(normalizedPhone(field.value))) return messages.phone;
     if (field.dataset.validation === "password" && (!/[A-Za-z]/.test(field.value) || !/[0-9]/.test(field.value))) return messages.password;
+    if (field.dataset.validation === "password-confirmation") {
+      var password = document.getElementById(field.dataset.passwordMatch);
+      if (password && field.value !== password.value) return messages.passwordConfirmation;
+    }
     if (field.required && !field.value.trim()) return messages.required;
     if (field.minLength > -1 && field.value.length < field.minLength) return messages.minlength;
     if (field.maxLength > -1 && field.value.length > field.maxLength) return messages.maxlength;

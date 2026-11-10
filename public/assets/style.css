@@ -572,6 +572,10 @@ input[aria-invalid="true"],textarea[aria-invalid="true"],select[aria-invalid="tr
 .stack-form input,.stack-form select,.stack-form textarea{border:1.5px solid var(--line-2);border-radius:11px;padding:.7rem .9rem;background:#fdfcff;transition:border-color .15s,box-shadow .15s;width:100%}
 .stack-form input:focus,.stack-form select:focus,.stack-form textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft);outline:none}
 .stack-form input:disabled{background:#f4f2f8;color:var(--muted)}
+.password-field{display:flex;align-items:stretch;gap:.5rem}
+.password-field input{flex:1;min-width:0}
+.password-toggle{border:1px solid var(--line-2);border-radius:10px;background:var(--card);color:var(--brand-2);padding:0 .75rem;white-space:nowrap;cursor:pointer;font-size:.82rem;font-weight:700}
+.password-toggle:hover{background:var(--brand-soft)}
 .stack-form textarea{resize:vertical;min-height:90px}
 .stack-form button{justify-self:start}
 .fine-print{font-size:.8125rem;color:var(--muted);margin:.9rem 0 0}

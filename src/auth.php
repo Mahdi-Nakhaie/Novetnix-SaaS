@@ -204,6 +204,7 @@ function handle_auth_post(string $path): bool {
         $lastRaw=registration_input('last_name');
         $phoneRaw=registration_input('phone');
         $password=registration_input('password');
+        $passwordConfirmation=registration_input('password_confirmation');
         $first=$firstRaw===null ? '' : trim($firstRaw);
         $last=$lastRaw===null ? '' : trim($lastRaw);
         $phone=$phoneRaw===null ? null : normalized_phone($phoneRaw);
@@ -211,6 +212,7 @@ function handle_auth_post(string $path): bool {
         if ($firstRaw===null || $lastRaw===null || mb_strlen($first)<2 || mb_strlen($first)>50 || mb_strlen($last)<2 || mb_strlen($last)>50) registration_error('نام و نام خانوادگی معتبر وارد کنید.',$first,$last,$preservedPhone);
         if ($phoneRaw===null || !$phone) registration_error('شماره موبایل معتبر وارد کنید.',$first,$last,$preservedPhone);
         if ($password===null || strlen($password)<8 || strlen($password)>72) registration_error('رمز عبور باید بین ۸ تا ۷۲ نویسه باشد.',$first,$last,$phone);
+        if ($passwordConfirmation===null || !hash_equals($password,$passwordConfirmation)) registration_error('تکرار رمز عبور با رمز واردشده یکسان نیست.',$first,$last,$phone);
         if (!preg_match('/[A-Za-z]/',$password) || !preg_match('/[0-9]/',$password)) registration_error('رمز عبور باید دست‌کم یک حرف انگلیسی و یک عدد داشته باشد.',$first,$last,$phone);
         if (q('SELECT 1 FROM users WHERE phone=?',[$phone])->fetchColumn()) registration_error('این شماره موبایل قبلاً ثبت شده است. برای ورود از فرم ورود استفاده کنید.',$first,$last,$phone);
         if (!SMS_VERIFICATION_ENABLED) sms_free_registration($phone,$first,$last,$password);
