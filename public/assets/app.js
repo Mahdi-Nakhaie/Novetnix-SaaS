@@ -19,8 +19,10 @@
       if (password) {
         var visible = password.type === "text";
         password.type = visible ? "password" : "text";
+        passwordToggle.classList.toggle("is-visible", !visible);
         passwordToggle.setAttribute("aria-pressed", String(!visible));
-        passwordToggle.textContent = visible ? "نمایش رمز" : "پنهان کردن رمز";
+        passwordToggle.setAttribute("aria-label", visible ? "نمایش رمز" : "پنهان کردن رمز");
+        passwordToggle.setAttribute("title", visible ? "نمایش رمز" : "پنهان کردن رمز");
       }
       return;
     }

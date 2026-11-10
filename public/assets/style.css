@@ -574,8 +574,13 @@ input[aria-invalid="true"],textarea[aria-invalid="true"],select[aria-invalid="tr
 .stack-form input:disabled{background:#f4f2f8;color:var(--muted)}
 .password-field{display:flex;align-items:stretch;gap:.5rem}
 .password-field input{flex:1;min-width:0}
-.password-toggle{border:1px solid var(--line-2);border-radius:10px;background:var(--card);color:var(--brand-2);padding:0 .75rem;white-space:nowrap;cursor:pointer;font-size:.82rem;font-weight:700}
+.password-toggle{display:inline-grid;place-items:center;flex:0 0 44px;width:44px;height:44px;border:1px solid var(--line-2);border-radius:10px;background:var(--card);color:var(--brand-2);padding:0;cursor:pointer}
 .password-toggle:hover{background:var(--brand-soft)}
+.password-toggle:focus-visible{outline:3px solid var(--brand-soft);outline-offset:2px}
+.password-icon{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.password-icon-hide{display:none}
+.password-toggle.is-visible .password-icon-show{display:none}
+.password-toggle.is-visible .password-icon-hide{display:block}
 .stack-form textarea{resize:vertical;min-height:90px}
 .stack-form button{justify-self:start}
 .fine-print{font-size:.8125rem;color:var(--muted);margin:.9rem 0 0}
