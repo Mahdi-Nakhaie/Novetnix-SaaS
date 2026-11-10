@@ -32,6 +32,15 @@ require_once dirname(__DIR__).'/src/router.php';
 ob_start();
 try {
     db();
+    if (empty($_SESSION['uid']) && isset($_COOKIE[REMEMBER_COOKIE])) {
+        $remembered=remember_restore();
+        if ($remembered!==null) {
+            session_regenerate_id(true);
+            $_SESSION['uid']=$remembered;
+            $_SESSION['authenticated_at']=time();
+            $_SESSION['last_seen']=time();
+        }
+    }
     $me=user();
     if ($_SERVER['REQUEST_METHOD']==='GET' && !$me && (array_key_exists('source',$_GET) || array_key_exists('campaign',$_GET))) {
         $_SESSION['registration_source']=acquisition_source($_GET['source'] ?? null);

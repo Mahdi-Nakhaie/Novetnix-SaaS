@@ -157,7 +157,54 @@ function delete_account(int $userId): bool {
     } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
 }
 
+const REMEMBER_COOKIE='noventix_remember';
+function remember_ttl_seconds(): int { return 60*60*24*30; }
+function remember_cookie_options(int $expires): array {
+    $params=session_get_cookie_params();
+    return ['expires'=>$expires,'path'=>$params['path'] ?: '/','domain'=>$params['domain'],'secure'=>(bool)$params['secure'],'httponly'=>true,'samesite'=>'Lax'];
+}
+function remember_clear_cookie(): void {
+    if (isset($_COOKIE[REMEMBER_COOKIE])) setcookie(REMEMBER_COOKIE,'',remember_cookie_options(time()-42000));
+    unset($_COOKIE[REMEMBER_COOKIE]);
+}
+// The cookie carries a public selector plus a secret validator; only the validator's hash is stored,
+// so a database leak cannot be replayed as a login.
+function remember_issue(int $userId): void {
+    $selector=bin2hex(random_bytes(16));
+    $validator=bin2hex(random_bytes(32));
+    $now=time();
+    q('DELETE FROM auth_tokens WHERE expires_at<=?',[$now]);
+    q('INSERT INTO auth_tokens(user_id,selector,validator_hash,expires_at,created_at,last_used_at) VALUES (?,?,?,?,?,?)',[$userId,$selector,hash('sha256',$validator),$now+remember_ttl_seconds(),$now,$now]);
+    setcookie(REMEMBER_COOKIE,$selector.':'.$validator,remember_cookie_options($now+remember_ttl_seconds()));
+}
+function remember_revoke_all(int $userId): void {
+    q('DELETE FROM auth_tokens WHERE user_id=?',[$userId]);
+    remember_clear_cookie();
+}
+function remember_restore(): ?int {
+    $raw=$_COOKIE[REMEMBER_COOKIE] ?? null;
+    if (!is_string($raw) || !preg_match('/^([a-f0-9]{32}):([a-f0-9]{64})$/D',$raw,$parts)) { remember_clear_cookie(); return null; }
+    $row=q('SELECT id,user_id,validator_hash,expires_at FROM auth_tokens WHERE selector=?',[$parts[1]])->fetch();
+    if (!$row) { remember_clear_cookie(); return null; }
+    if (time()>(int)$row['expires_at']) { q('DELETE FROM auth_tokens WHERE id=?',[(int)$row['id']]); remember_clear_cookie(); return null; }
+    if (!hash_equals((string)$row['validator_hash'],hash('sha256',$parts[2]))) {
+        // A mismatched validator means the cookie was copied or forged: drop every token for the account.
+        q('DELETE FROM auth_tokens WHERE user_id=?',[(int)$row['user_id']]);
+        remember_clear_cookie();
+        return null;
+    }
+    $userId=(int)$row['user_id'];
+    $role=(string)(q('SELECT role FROM users WHERE id=?',[$userId])->fetchColumn() ?: '');
+    if ($role==='' || $role==='admin') { remember_revoke_all($userId); return null; }
+    $now=time();
+    $validator=bin2hex(random_bytes(32));
+    q('UPDATE auth_tokens SET validator_hash=?,last_used_at=?,expires_at=? WHERE id=?',[hash('sha256',$validator),$now,$now+remember_ttl_seconds(),(int)$row['id']]);
+    setcookie(REMEMBER_COOKIE,$parts[1].':'.$validator,remember_cookie_options($now+remember_ttl_seconds()));
+    return $userId;
+}
 function logout_user(): void {
+    if (!empty($_SESSION['uid'])) remember_revoke_all((int)$_SESSION['uid']);
+    remember_clear_cookie();
     $_SESSION=[];
     if (ini_get('session.use_cookies')) {
         $params=session_get_cookie_params();
@@ -189,6 +236,7 @@ function sms_free_registration(string $phone, string $first, string $last, strin
     unset($_SESSION['registration_source'],$_SESSION['registration_campaign']);
     session_regenerate_id(true); $_SESSION['authenticated_at']=time(); $_SESSION['last_seen']=time(); $_SESSION['uid']=$userId; unset($_SESSION['admin_verified_uid']);
     if ($phone===(config_value('ADMIN_PHONE') ?: '')) redirect('admin-login');
+    remember_issue($userId);
     flash('خوش آمدی! حسابت ساخته شد.');
     redirect($destination);
 }
@@ -253,7 +301,8 @@ function handle_auth_post(string $path): bool {
         if (!session_regenerate_id(true)) throw new RuntimeException('Session renewal failed.');
         $_SESSION['uid']=(int)$u['id']; unset($_SESSION['admin_verified_uid']);
         record_activity_event((int)$u['id'],'user_logged_in');
-        if ($phone===(config_value('ADMIN_PHONE') ?: '')) redirect('admin-login');
+        if ($phone===(config_value('ADMIN_PHONE') ?: '')) { remember_clear_cookie(); redirect('admin-login'); }
+        remember_issue((int)$u['id']);
         $destination=$_SESSION['auth_return_to'] ?? 'dashboard';
         unset($_SESSION['auth_return_to']);
         flash('خوش آمدید!'); redirect($destination);
@@ -298,6 +347,7 @@ function handle_auth_post(string $path): bool {
         }
         session_regenerate_id(true); $_SESSION['authenticated_at']=time(); $_SESSION['last_seen']=time(); $_SESSION['uid']=$userId; unset($_SESSION['verify_phone'],$_SESSION['verify_name'],$_SESSION['admin_verified_uid']);
         if ($phone!=='' && $phone===(config_value('ADMIN_PHONE') ?: '')) redirect('admin-login');
+        remember_issue($userId);
         $destination=$_SESSION['auth_return_to'] ?? 'dashboard';
         unset($_SESSION['auth_return_to']);
         flash('خوش آمدید!'); redirect($destination);

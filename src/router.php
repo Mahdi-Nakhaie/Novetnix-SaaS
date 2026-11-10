@@ -296,14 +296,7 @@ function page_help(): void {
 }
 function page_login(bool $register=false): void {
     $existing=user();
-    if ($existing && trim((string)$existing['name'])!=='') {
-        head_page('ورود','مدیریت نشست و ورود یا ثبت‌نام دوباره در Noventix.'); notice();
-        echo '<main class="auth-page"><div class="auth-card"><img src="/assets/nova.png" alt="مسکات Nova" width="70" height="70"><h1>حساب شما فعال است</h1><p class="muted">برای ثبت‌نام با حساب دیگری، ابتدا به‌طور کامل خارج شوید.</p>';
-        echo '<div class="account-active-actions">';
-        linkto('dashboard','بازگشت به پنل ←','btn btn-primary');
-        form_start('logout'); echo '<button class="btn btn-outline" type="submit">خروج کامل از حساب</button></form></div>';
-        echo '</div></main>'; foot_page(); return;
-    }
+    if ($existing && trim((string)$existing['name'])!=='') redirect('dashboard');
     $captcha=$register ? '' : captcha_code();
     $registration=$register ? ($_SESSION['registration_form'] ?? []) : [];
     if ($register) unset($_SESSION['registration_form']);

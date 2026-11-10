@@ -16,14 +16,36 @@ class AuthLifecycleTest(unittest.TestCase):
             self.assertIn(statement, logout)
         self.assertIn("logout_user(); flash", AUTH)
 
-    def test_login_route_exposes_full_logout_for_active_session(self):
+    def test_login_route_sends_authenticated_users_to_dashboard(self):
         start = ROUTER.index("function page_login")
         end = ROUTER.index("function page_admin_login", start)
         login = ROUTER[start:end]
-        self.assertIn("حساب شما فعال است", login)
-        self.assertIn("form_start('logout'", login)
-        self.assertIn("ثبت‌نام دوباره", login)
+        self.assertIn("if ($existing && trim((string)$existing['name'])!=='') redirect('dashboard');", login)
         self.assertIn("form_start('auth/request'", login)
+        self.assertIn("form_start('auth/login'", login)
+
+    def test_persistent_login_stores_only_hashed_validator(self):
+        start = AUTH.index("function remember_cookie_options")
+        end = AUTH.index("function logout_user", start)
+        remember = AUTH[start:end]
+        self.assertIn("random_bytes(32)", remember)
+        self.assertIn("hash('sha256',$validator)", remember)
+        self.assertIn("hash_equals((string)$row['validator_hash'],hash('sha256',$parts[2]))", remember)
+        self.assertIn("remember_ttl_seconds()", remember)
+        self.assertIn("'httponly'=>true", remember)
+        self.assertIn("'samesite'=>'Lax'", remember)
+
+    def test_logout_revokes_persistent_tokens(self):
+        start = AUTH.index("function logout_user")
+        end = AUTH.index("function sms_free_registration", start)
+        logout = AUTH[start:end]
+        self.assertIn("remember_revoke_all((int)$_SESSION['uid'])", logout)
+        self.assertIn("remember_clear_cookie()", logout)
+
+    def test_remember_cookie_restores_session_before_routing(self):
+        index = (ROOT / "public/index.php").read_text(encoding="utf-8")
+        self.assertIn("remember_restore()", index)
+        self.assertLess(index.index("remember_restore()"), index.index("$me=user();"))
 
     def test_admin_credentials_are_environment_hash_based(self):
         self.assertIn("ADMIN_PHONE=", ENV)
