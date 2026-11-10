@@ -34,7 +34,7 @@
     var geometry = new THREE.BufferGeometry();
     geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     var particles = new THREE.Points(geometry,
-      new THREE.PointsMaterial({ color: 0xd8ff42, size: 0.025, transparent: true, opacity: 0.7 }));
+      new THREE.PointsMaterial({ color: 0x9ed9a5, size: 0.025, transparent: true, opacity: 0.7 }));
     group.add(particles);
     return { scene: scene, group: group, ring: ring, ringTwo: ringTwo, particles: particles };
   }

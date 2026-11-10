@@ -4,6 +4,8 @@ declare(strict_types=1);
 const HF_IMPORT_BYTES = 2097152;
 const HF_IMPORT_FILES = 10;
 const HF_IMPORT_SECONDS = 120;
+const HF_GLOBAL_BYTES = 536870912;
+const HF_GLOBAL_ACTIVE_IMPORTS = 8;
 
 class HfError extends RuntimeException {}
 
@@ -179,6 +181,12 @@ function hf_rate(int $owner): void {
         $pdo->commit();
     } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
 }
+function hf_global_capacity(int $bytes): void {
+    $stored=(int)q("SELECT COALESCE(SUM(bytes),0) FROM workspace_dataset_imports WHERE state IN ('downloading','succeeded')")->fetchColumn();
+    if ($stored+$bytes>HF_GLOBAL_BYTES) throw new HfError('ظرفیت سراسری ذخیره‌سازی دیتاست تکمیل است؛ بعداً دوباره تلاش کنید.');
+    $active=(int)q("SELECT COUNT(*) FROM workspace_dataset_imports WHERE state='downloading' AND created>=?",[time()-HF_IMPORT_SECONDS])->fetchColumn();
+    if ($active>=HF_GLOBAL_ACTIVE_IMPORTS) throw new HfError('صف دریافت دیتاست فعلاً تکمیل است؛ بعداً دوباره تلاش کنید.');
+}
 function hf_begin(int $owner,int $project,string $id,string $revision,array $chosen): array {
     if (!array_is_list($chosen) || count($chosen)<1 || count($chosen)>HF_IMPORT_FILES || count(array_unique($chosen,SORT_REGULAR))!==count($chosen)) throw new InvalidArgumentException('بین ۱ تا ۱۰ فایل غیرتکراری انتخاب کنید.');
     foreach ($chosen as $path) if (!is_string($path)) throw new InvalidArgumentException('مسیر فایل معتبر نیست.');
@@ -198,6 +206,7 @@ function hf_begin(int $owner,int $project,string $id,string $revision,array $cho
         ws_lock_user($owner); $row=ws_owned($owner,$project);
         $existing=q("SELECT * FROM workspace_dataset_imports WHERE project_id=? AND fingerprint=? AND state IN ('downloading','succeeded') ORDER BY created DESC LIMIT 1",[$project,$fingerprint])->fetch();
         if ($existing && in_array($existing['state'],['downloading','succeeded'],true)) { $pdo->commit(); return hf_status($existing); }
+        hf_global_capacity($bytes);
         foreach (hf_imports($project) as $import) if ($import['dataset_id']===$id && $import['revision']===$revision) {
             foreach (json_decode($import['files_json'],true,32,JSON_THROW_ON_ERROR) as $file) if (in_array($file['path'],$chosen,true)) throw new InvalidArgumentException('یکی از فایل‌های انتخابی قبلاً در همین نسخه به پروژه اضافه شده است؛ از فایل موجود استفاده کنید.');
         }

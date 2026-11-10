@@ -330,6 +330,9 @@ function handle_post(string $path): void {
         if (mb_strlen($name)<2 || mb_strlen($name)>100 || !filter_var($email,FILTER_VALIDATE_EMAIL) || mb_strlen($message)<10 || mb_strlen($message)>3000) { flash('نام، ایمیل و پیام معتبر وارد کنید.','error'); redirect('contact'); }
         q('INSERT INTO contact_messages(name,email,message) VALUES (?,?,?)',[$name,$email,$message]); flash('پیام شما ثبت شد.'); redirect('contact');
     }
+    if ($path==='cart/add') cart_add((string)($_POST['key'] ?? ''));
+    if ($path==='cart/remove') cart_remove((string)($_POST['key'] ?? ''));
+    if ($path==='cart/clear') cart_clear();
     if ($path==='payment/start' && !user()) {
         $selected=(string)($_POST['plan'] ?? ''); $key=(string)($_POST['request_key'] ?? '');
         if (!plan_is_available($selected) || $selected==='free' || !preg_match('/^[a-f0-9]{32}$/D',$key)) { flash('این پلن فعلاً برای خرید در دسترس نیست.','error'); redirect('pricing'); }
@@ -342,6 +345,7 @@ function handle_post(string $path): void {
     if ($path==='admin/course-save' || $path==='admin/lesson-save' || $path==='admin/quiz-save') course_admin_save($path);
     if ($path==='progress/save') { save_lesson_progress($u); }
     if ($path==='payment/start') payment_start($u);
+    if ($path==='cart/checkout') payment_cart_start($u);
     if ($path==='payment/retry') {
         $order=q('SELECT * FROM payment_orders WHERE id=? AND user_id=?',[(int)($_POST['id'] ?? 0),$u['id']])->fetch();
         if (!$order || !$order['authority']) { http_response_code(404); exit; }
@@ -370,9 +374,9 @@ function handle_post(string $path): void {
     if ($path==='projects/start') {
         $index=filter_var($_POST['index'] ?? '',FILTER_VALIDATE_INT);
         if ($index===false || $index<0 || !isset(PROJECTS[$index])) { http_response_code(404); exit; }
-        try { ws_create((int)$u['id'],0,PROJECTS[$index]['title'],100+$index,lp_starter(PROJECTS[$index])); }
+        try { $workspaceId=ws_create((int)$u['id'],0,PROJECTS[$index]['title'],100+$index,lp_starter(PROJECTS[$index])); }
         catch (InvalidArgumentException $e) { flash($e->getMessage(),'error'); redirect('project/'.$index); }
-        redirect('project/'.$index);
+        redirect('dashboard/workspace/'.$workspaceId);
     }
     if ($path==='community/create' || $path==='community/reply') {
         $body=trim((string)($_POST['body'] ?? ''));
@@ -488,9 +492,33 @@ function handle_post(string $path): void {
         } catch (Throwable $e) { $pdo->rollBack(); throw $e; }
         flash('تیکت شما ثبت شد.'); redirect('dashboard/support');
     }
+    if ($path==='profile/image') {
+        $raw=null; $mime='';
+        $cropped=trim((string)($_POST['cropped_image'] ?? ''));
+        if ($cropped!=='') {
+            if (!preg_match('~^data:image/(?:jpeg|png|webp);base64,([A-Za-z0-9+/=\s]+)$~D',$cropped,$match)) { flash('نسخهٔ برش‌خوردهٔ تصویر معتبر نیست.','error'); redirect('dashboard/profile'); }
+            $raw=base64_decode($match[1],true);
+            if ($raw===false) { flash('نسخهٔ برش‌خوردهٔ تصویر معتبر نیست.','error'); redirect('dashboard/profile'); }
+            $mime=(new finfo(FILEINFO_MIME_TYPE))->buffer($raw);
+        } elseif (isset($_FILES['profile_image']) && $_FILES['profile_image']['error']!==UPLOAD_ERR_NO_FILE) {
+            $upload=$_FILES['profile_image'];
+            if ($upload['error']!==UPLOAD_ERR_OK || $upload['size']>2097152 || !is_uploaded_file($upload['tmp_name'])) { flash('تصویر معتبر نیست؛ فایل JPG، PNG یا WebP تا حداکثر ۲ مگابایت انتخاب کنید.','error'); redirect('dashboard/profile'); }
+            $raw=file_get_contents($upload['tmp_name']);
+            $mime=(new finfo(FILEINFO_MIME_TYPE))->buffer($raw===false?'':$raw);
+        }
+        $types=['image/jpeg'=>'jpg','image/png'=>'png','image/webp'=>'webp'];
+        if (!is_string($raw) || strlen($raw)>2097152 || !$raw || !isset($types[$mime]) || @getimagesizefromstring($raw)===false) { flash('تصویر معتبر نیست؛ فایل JPG، PNG یا WebP تا حداکثر ۲ مگابایت انتخاب کنید.','error'); redirect('dashboard/profile'); }
+        $directory=dirname(__DIR__).'/public/uploads/profiles';
+        if (!is_dir($directory) && !mkdir($directory,0750,true) && !is_dir($directory)) { flash('ذخیرهٔ تصویر ممکن نشد.','error'); redirect('dashboard/profile'); }
+        $image=bin2hex(random_bytes(16)).'.'.$types[$mime];
+        if (file_put_contents($directory.'/'.$image,$raw,LOCK_EX)!==strlen($raw)) { flash('ذخیرهٔ تصویر ممکن نشد.','error'); redirect('dashboard/profile'); }
+        if (is_string($u['profile_image'] ?? null) && preg_match('/^[a-f0-9]{32}\.(?:jpg|jpeg|png|webp)$/',$u['profile_image'])) @unlink($directory.'/'.$u['profile_image']);
+        q('UPDATE users SET profile_image=? WHERE id=?',[$image,$u['id']]);
+        flash('تصویر پروفایل با موفقیت تغییر کرد.'); redirect('dashboard/profile');
+    }
     if ($path==='profile/account') {
-        $name=trim((string)($_POST['name'] ?? '')); $email=trim((string)($_POST['email'] ?? ''));
-        if (mb_strlen($name)<2 || mb_strlen($name)>100 || ($email!=='' && !filter_var($email,FILTER_VALIDATE_EMAIL))) { flash('نام و ایمیل معتبر وارد کنید.','error'); redirect('dashboard/profile'); }
+        $name=trim((string)($_POST['name'] ?? '')); $email=trim((string)($_POST['email'] ?? '')); $bio=trim((string)($_POST['bio'] ?? ''));
+        if (mb_strlen($name)<2 || mb_strlen($name)>100 || mb_strlen($bio)>600 || ($email!=='' && !filter_var($email,FILTER_VALIDATE_EMAIL))) { flash('نام، معرفی کوتاه و ایمیل معتبر وارد کنید.','error'); redirect('dashboard/profile'); }
         $image=$u['profile_image'] ?? '';
         if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error']!==UPLOAD_ERR_NO_FILE) {
             $upload=$_FILES['profile_image'];
@@ -503,7 +531,7 @@ function handle_post(string $path): void {
             if (!move_uploaded_file($upload['tmp_name'],$directory.'/'.$image)) { flash('ذخیرهٔ تصویر ممکن نشد.','error'); redirect('dashboard/profile'); }
             if (is_string($u['profile_image'] ?? null) && preg_match('/^[a-f0-9]{32}\\.(?:jpg|jpeg|png|webp)$/',$u['profile_image'])) @unlink($directory.'/'.$u['profile_image']);
         }
-        q('UPDATE users SET name=?,profile_image=? WHERE id=?',[$name,$image,$u['id']]);
+        q('UPDATE users SET name=?,profile_image=?,bio=? WHERE id=?',[$name,$image,$bio,$u['id']]);
         flash('پروفایل به‌روزرسانی شد.'); redirect('dashboard/profile');
     }
     if ($path==='settings/save') {

@@ -17,7 +17,7 @@ function redirect(string $path): never { header('Location: '.url($path),true,303
 function flash(string $message, string $kind='success'): void { $_SESSION['flash']=['text'=>$message,'kind'=>$kind]; }
 function user(): ?array {
     if (empty($_SESSION['uid'])) return null;
-    $u=q('SELECT id,phone,name,role,phone_verified_at,profile_image FROM users WHERE id=?',[(int)$_SESSION['uid']])->fetch();
+    $u=q('SELECT id,phone,name,role,phone_verified_at,profile_image,bio FROM users WHERE id=?',[(int)$_SESSION['uid']])->fetch();
     if (!$u || (SMS_VERIFICATION_ENABLED && $u['phone_verified_at']===null)) return null;
     if ($u && $u['role']==='admin') {
         $version=(int)(q('SELECT password_version FROM admin_credentials WHERE user_id=?',[$u['id']])->fetchColumn() ?: 0);

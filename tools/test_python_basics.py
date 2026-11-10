@@ -140,11 +140,10 @@ class BeginnerHttpTests(unittest.TestCase):
     def test_beginner_starter_is_private_and_does_not_expose_grading_material(self):
         client = test_release.Client(self.base)
         test_release.ReleaseHttpTest.register(self, client, '09990000661')
-        client.request('/project/12')
-        self.assertEqual(client.post('/projects/start', {'index': '12'})[0], 303)
-        status, _, source = client.request('/project/12')
-        self.assertEqual(status, 200)
-        project_id = re.search(r'data-lp-id="(\d+)"', source).group(1)
+        status, headers, _ = client.post('/projects/start', {'index': '12'})
+        self.assertEqual(status, 303)
+        self.assertRegex(headers['Location'], r'^/dashboard/workspace/[1-9][0-9]*$')
+        project_id = headers['Location'].rsplit('/', 1)[-1]
         state = json.loads(client.request('/workspace/data?id='+project_id)[2])
         self.assertEqual(set(state['files']), {'main.py', 'request.json'})
         self.assertNotIn('beginner_cases.json', json.dumps(state))

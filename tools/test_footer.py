@@ -8,7 +8,7 @@ from html.parser import HTMLParser
 from tools import gen, test_release
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-MESSAGE = 'ما دنبال پیشرفتیم، نه فقط بیهوده تلاش کردن'
+MESSAGE = 'هر مفهوم، یک قدم برای ساختن بهتر'
 PUBLIC = ('', 'courses', 'projects', 'pricing', 'glossary', 'learners', 'community', 'about', 'contact', 'help', 'terms', 'privacy')
 
 

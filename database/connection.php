@@ -153,6 +153,7 @@ function db(): PDO {
         $schema=$driver==='mysql' ? '/database/schema.mysql.sql' : '/database/schema.sqlite.sql';
         $db->exec(file_get_contents(dirname(__DIR__).$schema));
         try { $db->exec('ALTER TABLE users ADD COLUMN profile_image '.($driver==='mysql' ? "VARCHAR(40) NOT NULL DEFAULT ''" : "TEXT NOT NULL DEFAULT ''")); } catch (Throwable $e) { }
+        try { $db->exec('ALTER TABLE users ADD COLUMN bio '.($driver==='mysql' ? "VARCHAR(1000) NOT NULL DEFAULT ''" : "TEXT NOT NULL DEFAULT ''")); } catch (Throwable $e) { }
         $migration=$driver==='mysql' ? '/database/migrations/001_glossary.mysql.sql' : '/database/migrations/001_glossary.sqlite.sql';
         $db->exec(file_get_contents(dirname(__DIR__).$migration));
         $darychehMigration=$driver==='mysql' ? '/database/migrations/002_darycheh.mysql.sql' : '/database/migrations/002_darycheh.sqlite.sql';
@@ -161,6 +162,8 @@ function db(): PDO {
         $db->exec(file_get_contents(dirname(__DIR__).$adminMigration));
         $productMigration=$driver==='mysql' ? '/database/migrations/004_darycheh_products.mysql.sql' : '/database/migrations/004_darycheh_products.sqlite.sql';
         $db->exec(file_get_contents(dirname(__DIR__).$productMigration));
+        $cartMigration=$driver==='mysql' ? '/database/migrations/005_cart_orders.mysql.sql' : '/database/migrations/005_cart_orders.sqlite.sql';
+        try { $db->exec(file_get_contents(dirname(__DIR__).$cartMigration)); } catch (Throwable $e) { }
         glossary_backfill_legacy($db);
         glossary_seed_initial_drafts($db);
         glossary_expand_categories($db);

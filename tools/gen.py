@@ -211,8 +211,8 @@ def footer_html():
     return (
         '<footer class="footer" dir="rtl"><div class="container footer-shell"><div class="footer-main"><div class="footer-intro">'
         f'<a href="{h(href(""))}" class="footer-brand" aria-label="Noventix، صفحه اصلی"><span class="footer-mark" aria-hidden="true">N</span><span lang="en" dir="ltr">Noventix</span></a>'
-        '<p>یادگیری پروژه‌محور پایتون و هوش مصنوعی به زبان فارسی؛ از شناخت مفهوم تا ساختن و تمرین.</p>'
-        '<p class="footer-message">ما دنبال پیشرفتیم، نه فقط بیهوده تلاش کردن</p></div>'
+        '<p>یادگیری پروژه‌محور پایتون و هوش مصنوعی به زبان فارسی؛ از فهم مفهوم تا ساختن پروژه.</p>'
+        '<p class="footer-message">هر مفهوم، یک قدم برای ساختن بهتر</p></div>'
         '<nav class="footer-links" aria-label="راهنمای پایین صفحه"><section class="footer-column"><h2>یادگیری و منابع</h2>'
         + linkto("courses", "دوره‌های آموزشی") + linkto("projects", "پروژه‌های عملی")
         + linkto("glossary", "واژه‌نامهٔ هوش مصنوعی") + linkto("community", "انجمن یادگیری")
@@ -237,9 +237,9 @@ def footer_html():
 def view_home():
     out = "<main>" + (
         '<section class="hero container"><div class="hero-copy">'
-        '<span class="eyebrow"><span class="dot"></span> مسیر تازه یادگیری هوش مصنوعی</span>'
-        "<h1>فقط یاد نگیر؛<br><em>واقعاً بساز.</em></h1>"
-        "<p>پایتون، علم داده و هوش مصنوعی را با مقاله‌های کاربردی یاد بگیر؛ بعد با پروژه‌های واقعی، آموخته‌هایت را به مهارت تبدیل کن.</p>"
+        '<span class="eyebrow"><span class="dot"></span> مسیر روشن یادگیری هوش مصنوعی</span>'
+        "<h1>یاد بگیر،<br><em>بساز و پیشرفت کن.</em></h1>"
+        "<p>پایتون، علم داده و هوش مصنوعی را با توضیح‌های روشن یاد بگیر و با پروژه‌های واقعی به مهارت قابل استفاده تبدیل کن.</p>"
         '<div class="hero-buttons">' + linkto("courses", "شروع مسیر یادگیری ←", "btn btn-primary")
         + linkto("projects", "دیدن پروژه‌ها", "btn btn-outline") + "</div>"
         '<div class="hero-proof"><span>✦ مسیر پروژه‌محور</span><span>✦ یادگیری به زبان فارسی</span><span>✦ شروع رایگان</span></div></div>'
@@ -265,8 +265,8 @@ def view_home():
             "<div><strong>∞</strong><span>مسیرهای تازه برای ساختن</span></div></div></section>")
 
     out += ('<section class="section container">'
-            + section_header("روش یادگیری ما", "فاصله دانستن تا توانستن را کم کن",
-                             "به جای جمع‌کردن آموزش‌های ناتمام، با یک مسیر روشن مهارتت را در عمل بساز.")
+            + section_header("روش یادگیری ما", "از فهمیدن تا ساختن، یک مسیر روشن",
+                             "هر مفهوم را با توضیح ساده شروع کن، در یک پروژه به کار ببر و نتیجه‌اش را ببین.")
             + '<div class="features-grid">'
               '<article class="feature"><div class="feature-icon">◇</div><span class="feature-n">01 / DISCOVER</span>'
               "<h3>بخوان و بفهم</h3><p>مفهوم‌های پایتون، ماشین لرنینگ و علم داده را در مقاله‌های کوتاه و هدفمند یاد بگیر.</p></article>"

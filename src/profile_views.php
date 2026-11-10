@@ -80,19 +80,20 @@ function profile_community_section(array $profile,bool $own): void {
 
 function page_skill_profile(array $profile,bool $own,bool $signedIn): void {
     message_notice();
-    $avatar=$profile['profile_image'] ? '<img src="'.h(profile_image_url($profile['profile_image'])).'" alt="تصویر پروفایل '.h($profile['name']).'">' : h(mb_substr($profile['name'],0,1));
+    $avatar=h(mb_substr($profile['name'] ?: 'ک',0,1));
     echo '<main class="profile-page"><div class="container"><nav class="profile-crumb" aria-label="مسیر صفحه"><a href="'.h(url('learners')).'">جامعه یادگیرندگان</a><span aria-current="page">'.h($profile['name']).'</span></nav>';
-    echo '<section class="profile-hero"><div class="profile-identity"><span class="profile-avatar'.($profile['profile_image']?' has-image':'').'">'.$avatar.'</span><div><span class="eyebrow">'.($own?'پروفایل مهارتی من':'عضو انجمن Noventix').'</span><h1>'.h($profile['name']).'</h1><p class="muted">'.h($profile['role']==='admin'?'تیم Noventix':'عضو جامعه').' · عضویت از '.h(jdate($profile['joined'])).'</p></div>'.skill_badge($profile['level'],'is-large').'</div><div class="profile-actions">';
+    echo '<section class="profile-hero"><div class="profile-hero-main"><div class="profile-identity"><span class="profile-avatar'.($profile['profile_image']?' has-image':'').'">'.$avatar.'</span><div><span class="eyebrow">'.($own?'پروفایل مهارتی من':'عضو انجمن Noventix').'</span><h1>'.h($profile['name']).'</h1><p class="muted">'.h($profile['role']==='admin'?'تیم Noventix':'عضو جامعه').' · عضویت از '.h(jdate($profile['joined'])).'</p></div></div></div><div class="profile-actions">';
     if ($own) { linkto('dashboard/profile','ویرایش پروفایل','btn btn-outline'); linkto('messages','پیام‌های من','btn btn-outline'); }
     else echo member_message_form($profile['id'],$signedIn);
     echo '</div></section><div class="profile-grid"><div class="profile-column">';
     profile_progress_section($profile);
     profile_skills_section($profile);
     profile_activity_section($profile,$own);
+    $about=trim((string)($profile['bio'] ?? ''));
     echo '</div><aside class="profile-column">';
     profile_community_section($profile,$own);
     profile_follow_section($profile,$own);
-    echo '<section class="profile-card"><span class="eyebrow">دربارهٔ این پروفایل</span><h2>چه چیزی اینجا دیده می‌شود؟</h2><p class="muted">فقط پیشرفت واقعی ثبت‌شده نمایش داده می‌شود: پروژه‌هایی که ارزیابی را گذرانده‌اند و درس‌هایی که با آزمون تکمیل شده‌اند. شماره تماس و ایمیل هیچ‌وقت نمایش داده نمی‌شود.</p></section></aside></div></div></main>';
+    echo '<section class="profile-card"><span class="eyebrow">دربارهٔ این پروفایل</span><h2>'.($about!==''?'دربارهٔ من':'چه چیزی اینجا دیده می‌شود؟').'</h2><p class="muted">'.($about!==''?nl2br(h($about)):'فقط پیشرفت واقعی ثبت‌شده نمایش داده می‌شود: پروژه‌هایی که ارزیابی را گذرانده‌اند و درس‌هایی که با آزمون تکمیل شده‌اند. شماره تماس و ایمیل هیچ‌وقت نمایش داده نمی‌شود.').'</p></section></aside></div></div></main>';
 }
 
 // Identity of the message control (ids, labels) lives here so the compact form on
@@ -121,7 +122,7 @@ function page_learners(array $directory,string $query,bool $signedIn): void {
     else {
         echo '<ul class="learner-grid">';
         foreach ($directory['learners'] as $learner) {
-            echo '<li class="learner-card"><a href="'.h(url('member/'.$learner['id'])).'"><span class="profile-avatar'.($learner['profile_image']?' has-image':'').'">'.($learner['profile_image']?'<img src="'.h(profile_image_url($learner['profile_image'])).'" alt="">':h(mb_substr($learner['name'],0,1))).'</span><strong>'.h($learner['name']).'</strong><span class="muted">سطح '.fa($learner['level']['level']).' · '.fa($learner['xp']).' XP</span><span class="muted">'.fa($learner['completed']).' پروژه تکمیل‌شده</span></a></li>';
+            echo '<li class="learner-card"><a href="'.h(url('member/'.$learner['id'])).'"><span class="profile-avatar">'.h(mb_substr($learner['name'] ?: 'ک',0,1)).'</span><strong>'.h($learner['name']).'</strong>'.skill_badge($learner['level'],'is-card').'<span class="muted">'.fa($learner['xp']).' XP</span><span class="muted">'.fa($learner['completed']).' پروژه تکمیل‌شده</span></a></li>';
         }
         echo '</ul>';
         if ($directory['pages']>1) {

@@ -43,7 +43,7 @@ function profile_image_url(?string $image): string {
 }
 
 function skill_profile_for(int $userId): ?array {
-    $user=q('SELECT id,name,role,created_at,profile_image FROM users WHERE id=?',[$userId])->fetch();
+    $user=q('SELECT id,name,role,created_at,profile_image,bio FROM users WHERE id=?',[$userId])->fetch();
     if (!$user) return null;
     $completions=q('SELECT learning_key,xp,completed_at FROM project_completions WHERE user_id=? ORDER BY completed_at DESC,learning_key',[$userId])->fetchAll();
     $lessons=(int)q('SELECT COUNT(*) FROM lesson_progress WHERE user_id=? AND status=?',[$userId,'completed'])->fetchColumn();
@@ -56,6 +56,7 @@ function skill_profile_for(int $userId): ?array {
     return [
         'id'=>(int)$user['id'],
         'profile_image'=>(string)($user['profile_image'] ?? ''),
+        'bio'=>(string)($user['bio'] ?? ''),
         'name'=>trim((string)$user['name'])!=='' ? (string)$user['name'] : 'عضو Noventix',
         'role'=>(string)$user['role'],
         'joined'=>(string)$user['created_at'],
