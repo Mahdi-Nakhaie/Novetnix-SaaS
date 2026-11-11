@@ -68,7 +68,7 @@ class HeaderLayoutTest(unittest.TestCase):
         cls.css = (ROOT / 'public/assets/header.css').read_text(encoding='utf-8')
 
     def test_shared_header_styles_exclude_private_panels(self):
-        self.assertIn("if (!$panel) echo '<link rel=\"stylesheet\" href=\"/assets/header.css?v=4\">';", VIEWS)
+        self.assertIn("if (!$panel) echo '<link rel=\"stylesheet\" href=\"/assets/header.css?v=5\">';", VIEWS)
         for selector in re.findall(r'([^{}]+)\{', self.css):
             if not selector.strip().startswith('@'):
                 self.assertTrue(selector.strip().startswith('body .site-header'), selector)
