@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 function ws_assets(): void {
-    echo '<link rel="stylesheet" href="/assets/workspace.css?v=8"><script src="/assets/workspace.js?v=7" defer></script>';
+    echo '<link rel="stylesheet" href="/assets/workspace.css?v=9"><script src="/assets/workspace.js?v=7" defer></script>';
 }
 function ws_form(string $action): void {
     echo '<form action="/workspace/'.h($action).'" method="post" enctype="multipart/form-data" class="stack-form" data-ws-form><input type="hidden" name="csrf" value="'.h(csrf()).'">';
@@ -36,10 +36,10 @@ function ws_index(array $u): void {
 function ws_challenge_card(int $index,array $p,?array $workspace,bool $done): void {
     $state=$done ? 'done' : ($workspace ? 'active' : 'new');
     echo '<article class="ws-challenge-card is-'.$state.'" id="challenge-'.$index.'">';
-    echo '<div class="ws-challenge-top"><span class="ws-challenge-index">'.fa(str_pad((string)($index+1),2,'0',STR_PAD_LEFT)).'</span><span class="ws-challenge-topic">'.h($p['topic']).'</span>'.($done?'<span class="ws-challenge-badge">تکمیل‌شده</span>':'').'</div>';
+    echo '<div class="ws-challenge-top"><span class="ws-challenge-index" aria-label="چالش '.fa($index+1).'">'.fa($index+1).'</span><span class="ws-challenge-topic">'.h($p['topic']).'</span>'.($done?'<span class="ws-challenge-badge">تکمیل‌شده</span>':'').'</div>';
     echo '<h3>'.h($p['title']).'</h3><p class="ws-challenge-desc">'.h($p['description']).'</p>';
-    echo '<dl class="ws-challenge-facts"><div><dt>هدف</dt><dd>'.h($p['goal']).'</dd></div><div><dt>سطح</dt><dd>'.h($p['level']).'</dd></div><div><dt>زمان</dt><dd>'.fa((int)$p['minutes']).' دقیقه</dd></div><div><dt>مهارت‌ها</dt><dd dir="ltr">'.h($p['skills']).'</dd></div></dl>';
-    echo '<details class="ws-challenge-more"><summary>شرح کامل، ورودی و خروجی</summary><div class="ws-challenge-detail"><h4>ورودی</h4><p>'.h($p['input']).'</p><h4>خروجی</h4><p>'.h($p['output']).'</p><h4>مراحل پیشنهادی</h4><ol>';
+    echo '<p class="ws-challenge-time"><span class="ws-challenge-time-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 1.8"/></svg></span>'.fa((int)$p['minutes']).' دقیقه</p>';
+    echo '<details class="ws-challenge-more"><summary>توضیح کامل، هدف و مراحل</summary><div class="ws-challenge-detail"><h4>هدف</h4><p>'.h($p['goal']).'</p><h4>سطح</h4><p>'.h($p['level']).'</p><h4>مهارت‌ها</h4><p dir="ltr">'.h($p['skills']).'</p><h4>ورودی</h4><p>'.h($p['input']).'</p><h4>خروجی</h4><p>'.h($p['output']).'</p><h4>مراحل پیشنهادی</h4><ol>';
     foreach ($p['steps'] as $step) echo '<li>'.h($step).'</li>';
     echo '</ol><h4>معیارهای موفقیت</h4><ul>';
     foreach ($p['criteria'] as $criterion) echo '<li>'.h($criterion).'</li>';

@@ -79,7 +79,7 @@ body .site-header .main-nav {
   justify-content: center;
   justify-self: center;
   flex-wrap: nowrap;
-  gap: clamp(4px, .5vw, 12px);
+  gap: clamp(6px, .55vw, 12px);
   min-width: 0;
   margin: 0;
   padding: 0;
@@ -91,8 +91,8 @@ body .site-header .main-nav a {
   align-items: center;
   justify-content: center;
   min-height: 48px;
-  padding: var(--space-2) clamp(5px, .55vw, 12px);
-  font-size: clamp(.88rem, .5vw + .45rem, 1.25rem);
+  padding: var(--space-2) clamp(5px, .55vw, 11px);
+  font-size: clamp(.82rem, 2.1vw - 12px, 1.22rem);
   font-weight: 700;
   line-height: 1.7;
   white-space: nowrap;
@@ -113,16 +113,15 @@ body .site-header :is(a, button):focus-visible {
 
 @media (min-width: 1181px) and (max-width: 1919px) {
   body .site-header .main-nav {
-    gap: clamp(4px, .5vw, 12px);
+    gap: clamp(6px, .55vw, 12px);
   }
 
   body .site-header .main-nav a {
-    padding-inline: clamp(5px, .5vw, 10px);
-    font-size: clamp(.78rem, .6vw + .2rem, 1.02rem);
+    padding-inline: clamp(5px, .55vw, 11px);
   }
 }
 
-@media (min-width: 1181px) and (max-width: 1480px) {
+@media (min-width: 1181px) and (max-width: 1640px) {
   body .site-header .brand img {
     width: 44px;
     height: 44px;
