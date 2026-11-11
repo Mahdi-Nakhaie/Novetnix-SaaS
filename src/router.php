@@ -166,9 +166,13 @@ function page_course(string $slug): void {
     echo '<div class="cta-panel course-final-cta"><span class="eyebrow">قدم بعدی</span><h2>آماده‌ای شروع کنی؟</h2><p>از اولین جلسه شروع کن و قدم‌به‌قدم جلو برو.</p>'; course_start_action($course,$me,$enrolled,'btn btn-light'); echo '</div></section></main>'; foot_page();
 }
 function page_projects(): void {
-    echo '<main><section class="page-hero container projects-hero"><span class="eyebrow">پروژه‌ها</span><h1>یادگیری با ساختن، نه فقط خواندن</h1><p>'.fa(count(PROJECTS)).' پروژه؛ از ۲۴ تمرین پایتون مقدماتی تا یادگیری ماشین، با پیش‌نیاز، ورودی، خروجی و ارزیابی واقعی.</p>';
-    linkto('articles/python-basics-hello','اولین بار است پایتون می‌نویسید؟ از اینجا شروع کنید','btn btn-primary');
-    echo '</section><section class="section container">'; project_cards(); echo '</section></main>';
+    $total=count(PROJECTS);
+    $python=0; $ml=0; $minutes=0;
+    foreach (PROJECTS as $p) {
+        if (($p['topic'] ?? '')==='Python') $python++; else $ml++;
+        $minutes+=(int)($p['minutes'] ?? 0);
+    }
+    echo '<main><section class="projects-hero"><div class="container projects-hero-inner"><div class="projects-hero-copy"><span class="eyebrow">پروژه‌ها</span><h1>یادگیری با ساختن، نه فقط خواندن</h1><p>'.fa($total).' پروژهٔ واقعی با پیش‌نیاز روشن، ورودی مشخص، خروجی قابل بررسی و ارزیابی خودکار؛ از اولین تمرین پایتون تا مدل یادگیری ماشین.</p><div class="projects-hero-actions">'; linkto('articles/python-basics-hello','اولین بار است پایتون می‌نویسید؟ از اینجا شروع کنید','btn btn-primary'); linkto('dashboard/workspace','رفتن به میزکار کد','btn btn-outline'); echo '</div></div><dl class="projects-hero-stats"><div><dt>پروژه</dt><dd>'.fa($total).'</dd></div><div><dt>تمرین پایتون</dt><dd>'.fa($python).'</dd></div><div><dt>پروژهٔ یادگیری ماشین</dt><dd>'.fa($ml).'</dd></div><div><dt>زمان تخمینی</dt><dd>'.fa((int)round($minutes/60)).' ساعت</dd></div></dl></div></section><section class="section container projects-section">'; project_cards(); echo '</section></main>';
 }
 function page_project(string $index): void {
     global $me,$plan;

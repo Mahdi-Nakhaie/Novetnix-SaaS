@@ -126,7 +126,7 @@ class LayoutStyleTests(unittest.TestCase):
         rule = re.search(r'body\.is-panel \.panel-content :is\(([^)]+)\)\{transform:none\}', source)
         self.assertIsNotNone(rule)
         targets = rule[1].split(',')
-        for selector in ('.stat-card', '.challenge-card', '.course-card', '.project-card', '.panel-card', '.card-3d', '.btn', '.feature-icon', '.project-visual', '.visual-glyph', '.section-header h2'):
+        for selector in ('.stat-card', '.challenge-card', '.course-card', '.project-card', '.panel-card', '.card-3d', '.btn', '.feature-icon', '.project-cover-art', '.project-cover-glyph', '.section-header h2'):
             self.assertIn(selector, targets)
         self.assertGreater(rule.start(), source.index('.stat-card:hover{transform:perspective'))
         self.assertGreater(rule.start(), source.index('/* Hover interaction layer */'))

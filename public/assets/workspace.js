@@ -195,10 +195,22 @@
     select(files['main.py'] ? 'main.py' : Object.keys(files)[0] || '');
     message('نسخه ' + revision.toLocaleString('fa-IR') + ' از سرور باز شد.' + (runner ? '' : ' موتور اجرا راه‌اندازی نشده است؛ ذخیره فایل‌ها فعال است.'));
     refreshButtons();
-    if (runner) {
+    const runtimeNode = root.querySelector('[data-ws-runtime]');
+    if (!runner) {
+      runtimeNode.textContent = 'موتور اجرای Python در دسترس نیست؛ ذخیره و ویرایش فایل‌ها فعال است.';
+      runtimeNode.dataset.state = 'offline';
+    } else {
+      runtimeNode.textContent = 'در حال بررسی اتصال به موتور Python…';
+      runtimeNode.dataset.state = 'checking';
       request('/workspace/runtime').then(runtime => {
-        root.querySelector('[data-ws-runtime]').textContent = 'Python ' + runtime.python + ' | ' + Object.entries(runtime.packages).map(([name, version]) => name + '==' + version).join(' | ');
-      }).catch(error => { runner = false; refreshButtons(); message(error.message + ' ذخیره فایل‌ها همچنان در دسترس است.'); });
+        runtimeNode.textContent = 'Python ' + runtime.python + ' | ' + Object.entries(runtime.packages).map(([name, version]) => name + '==' + version).join(' | ');
+        runtimeNode.dataset.state = 'ready';
+      }).catch(error => {
+        runner = false; refreshButtons();
+        runtimeNode.textContent = 'اتصال به موتور Python برقرار نشد؛ ذخیره و ویرایش فایل‌ها فعال است.';
+        runtimeNode.dataset.state = 'offline';
+        message(error.message + ' ذخیره فایل‌ها همچنان در دسترس است.');
+      });
     }
     if (runId && !timer) poll();
   }

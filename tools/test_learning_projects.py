@@ -33,7 +33,7 @@ class ReferenceTests(unittest.TestCase):
         for filename in ('house-price-regression', 'multiclass-flower-classification', 'python-welcome-card', 'python-shopping-receipt', 'python-temperature-converter', 'python-grade-conditions', 'python-even-numbers', 'python-measurement-summary', 'python-word-count', 'python-book-search', 'python-inventory'):
             self.assertTrue((ROOT / 'public/assets' / (filename+'.jpg')).is_file())
             self.assertIn(filename, source)
-        self.assertIn('h($image[1])', source)
+        self.assertIn('h($cover[1])', source)
         self.assertIn('type="image/webp"', source)
 
     def test_catalog_preserves_ml_and_adds_beginner_projects(self):
