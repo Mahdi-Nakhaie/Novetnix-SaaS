@@ -68,7 +68,7 @@ class HeaderLayoutTest(unittest.TestCase):
         cls.css = (ROOT / 'public/assets/header.css').read_text(encoding='utf-8')
 
     def test_shared_header_styles_exclude_private_panels(self):
-        self.assertIn("if (!$panel) echo '<link rel=\"stylesheet\" href=\"/assets/header.css?v=6\">';", VIEWS)
+        self.assertIn("if (!$panel) echo '<link rel=\"stylesheet\" href=\"/assets/header.css?v=7\">';", VIEWS)
         for selector in re.findall(r'([^{}]+)\{', self.css):
             if not selector.strip().startswith('@'):
                 self.assertTrue(selector.strip().startswith('body .site-header'), selector)
@@ -83,10 +83,9 @@ class HeaderLayoutTest(unittest.TestCase):
         self.assertNotIn('position: absolute', self.css)
 
     def test_navigation_only_increases_spacing_and_type(self):
-        self.assertRegex(self.css, r'\.main-nav a\s*\{[^}]*font-size: clamp\(\.78rem, \.5vw \+ \.42rem, 1\.125rem\);')
-        self.assertIn('font-size: clamp(.75rem, .82vw, .95rem);', self.css)
-        self.assertIn('gap: clamp(2px, .35vw, 8px);', self.css)
-        self.assertIn('gap: clamp(3px, .4vw, 10px);', self.css)
+        self.assertRegex(self.css, r'\.main-nav a\s*\{[^}]*font-size: clamp\(\.88rem, \.5vw \+ \.45rem, 1\.25rem\);')
+        self.assertIn('font-size: clamp(.78rem, .6vw + .2rem, 1.02rem);', self.css)
+        self.assertIn('gap: clamp(4px, .5vw, 12px);', self.css)
         self.assertIn('flex-wrap: nowrap;', self.css)
         self.assertIn('min-height: 48px;', self.css)
         self.assertIn('@media (min-width: 1181px) and (max-width: 1919px)', self.css)
