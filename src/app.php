@@ -6,6 +6,7 @@ require_once __DIR__.'/auth.php';
 require_once __DIR__.'/workspace.php';
 require_once __DIR__.'/darycheh.php';
 require_once __DIR__.'/darycheh_admin.php';
+require_once __DIR__.'/coins.php';
 require_once __DIR__.'/learning_projects.php';
 require_once __DIR__.'/learning_project_views.php';
 require_once __DIR__.'/payments.php';

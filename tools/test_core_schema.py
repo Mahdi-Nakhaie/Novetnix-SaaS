@@ -27,7 +27,8 @@ class CoreSchemaTest(unittest.TestCase):
         self.assertIn('project_completions', tables(SQLITE_SCHEMA))
         self.assertTrue({'direct_messages', 'message_requests'} <= tables(SQLITE_SCHEMA))
         self.assertIn('auth_tokens', tables(SQLITE_SCHEMA))
-        self.assertEqual(len(tables(SQLITE_SCHEMA)), 36)
+        self.assertTrue({'coin_ledger', 'hint_unlocks'} <= tables(SQLITE_SCHEMA))
+        self.assertEqual(len(tables(SQLITE_SCHEMA)), 38)
 
     def test_quiz_schema_links_each_lesson_to_one_valid_threshold(self):
         self.db.execute("INSERT INTO courses(slug,title,description) VALUES ('main','Main','')")

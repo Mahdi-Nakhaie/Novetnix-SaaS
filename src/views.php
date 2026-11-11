@@ -20,7 +20,7 @@ function head_page(string $title,string $description='',bool $panel=false,bool $
     $darychehAssets=($path==='dashboard/darycheh' || str_starts_with($path,'dashboard/darycheh/')) ? '<link rel="stylesheet" href="/assets/darycheh.css?v=1"><script src="/assets/darycheh.js?v=1" defer></script>' : '';
     if (!$panel) echo '<link rel="stylesheet" href="/assets/header.css?v=3">';
     $adminPanel=$panel && ($me['role'] ?? '')==='admin';
-    echo '<link rel="stylesheet" href="/assets/style.css?v=32">'.($adminPanel?'<link rel="stylesheet" href="/assets/admin.css?v=1">':'').'<script src="/assets/app.js?v=5" defer></script><script src="/assets/playback-events.js" defer></script>'.$darychehAssets.'</head><body class="'.($panel?'is-panel':'').($adminPanel?' is-admin':'').'">';
+    echo '<link rel="stylesheet" href="/assets/style.css?v=34">'.($adminPanel?'<link rel="stylesheet" href="/assets/admin.css?v=1">':'').'<script src="/assets/app.js?v=5" defer></script><script src="/assets/playback-events.js" defer></script>'.$darychehAssets.'</head><body class="'.($panel?'is-panel':'').($adminPanel?' is-admin':'').'">';
     echo '<div class="noventix-loading" id="noventix-loading" role="status" aria-live="polite" hidden><div class="noventix-loading-card"><span class="noventix-loading-mark" aria-hidden="true">N</span><strong>Noventix</strong><span class="noventix-loading-track" aria-hidden="true"><span></span></span><p>در حال آماده‌سازی فضای یادگیری...</p></div></div>';
     if ($panel) { panel_nav(); return; }
     echo '<header class="site-header"><div class="container header-inner"><a href="/" class="brand" aria-label="Noventix، صفحه اصلی"><img src="/assets/noventix-logo.webp?v=2" alt="Noventix" width="72" height="72"><span class="brand-name" lang="en" dir="ltr">Noventix</span></a><nav class="main-nav" aria-label="ناوبری اصلی">';
@@ -208,11 +208,18 @@ function project_card(int $i,array $p): void {
     echo '<span class="project-cover-topic" dir="ltr">'.h(strtoupper((string)$p['topic'])).'</span></a>';
     echo '<div class="project-body"><div class="project-tags"><span class="pill">'.h($p['topic']).'</span><span class="project-level">'.h($p['level']).'</span>'.($minutes?'<span class="project-duration">'.fa($minutes).' دقیقه</span>':'').'</div>';
     echo '<h3><a href="'.h(url('project/'.$i)).'">'.h($p['title']).'</a></h3><p>'.h($p['description']).'</p>';
+    echo '<p class="project-goal"><span>هدف</span>'.h($p['goal']).'</p>';
+    echo '<div class="project-rewards"><span class="project-xp">'.fa((int)$p['xp']).' XP</span><span class="project-coins">'.fa(coin_reward_for($p)).' سکه</span></div>';
     echo '<div class="project-foot"><span class="project-skills" dir="ltr">'.h($p['skills']).'</span><a class="project-cta" href="'.h(url('project/'.$i)).'">مشاهده پروژه<span aria-hidden="true">←</span></a></div></div></article>';
 }
-function project_cards(int $limit=99): void {
+function project_cards(int $limit=99,?string $topic=null): void {
     echo '<div class="project-grid">';
-    foreach (array_slice(PROJECTS,0,$limit,true) as $i=>$p) project_card((int)$i,$p);
+    $shown=0;
+    foreach (PROJECTS as $i=>$p) {
+        if ($topic!==null && ($p['topic'] ?? '')!==$topic) continue;
+        if ($shown>=$limit) break;
+        project_card((int)$i,$p); $shown++;
+    }
     echo '</div>';
 }
 function course_cards(array $courses): void {

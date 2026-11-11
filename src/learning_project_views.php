@@ -2,11 +2,22 @@
 declare(strict_types=1);
 
 function lp_progress_view(int $userId): void {
-    panel_head('امتیاز و پیشرفت واقعی','XP فقط پس از ارزیابی موفق پروژه ثبت می‌شود؛ شروع چالش یا اجرای عادی جایزه ندارد.');
+    panel_head('امتیاز، سکه و پیشرفت','XP و سکه فقط پس از ارزیابی موفق پروژه ثبت می‌شوند؛ شروع چالش یا اجرای عادی جایزه ندارد.');
     $rows=q('SELECT learning_key,xp,completed_at FROM project_completions WHERE user_id=? ORDER BY completed_at DESC',[$userId])->fetchAll();
-    echo '<div class="stat-grid"><div class="stat-card"><span>XP دریافت‌شده</span><strong>'.fa(lp_xp($userId)).'</strong></div><div class="stat-card"><span>پروژه‌های تکمیل‌شده</span><strong>'.fa(count($rows)).' از '.fa(count(PROJECTS)).'</strong></div></div><div class="panel-list">';
+    $balance=coin_balance($userId);
+    $earned=(int)q("SELECT COALESCE(SUM(amount),0) FROM coin_ledger WHERE user_id=? AND amount>0",[$userId])->fetchColumn();
+    $spent=(int)q("SELECT COALESCE(-SUM(amount),0) FROM coin_ledger WHERE user_id=? AND amount<0",[$userId])->fetchColumn();
+    echo '<div class="stat-grid"><div class="stat-card"><span>XP دریافت‌شده</span><strong>'.fa(lp_xp($userId)).'</strong></div><div class="stat-card"><span>موجودی سکه</span><strong>'.fa($balance).'</strong></div><div class="stat-card"><span>پروژه‌های تکمیل‌شده</span><strong>'.fa(count($rows)).' از '.fa(count(PROJECTS)).'</strong></div><div class="stat-card"><span>سکهٔ خرج‌شده</span><strong>'.fa($spent).'</strong></div></div>';
+    echo '<section class="panel-card"><h2>سکه‌ها چطور کار می‌کنند؟</h2><ul class="check-list"><li>در شروع '.fa(COIN_WELCOME_BONUS).' سکهٔ هدیه می‌گیری.</li><li>هر چالش تکمیل‌شده هم XP می‌دهد و هم سکه؛ چالش سخت‌تر سکهٔ بیشتری دارد.</li><li>هر راهنمایی '.fa(COIN_HINT_COST).' سکه هزینه دارد و پس از بازشدن در حساب تو می‌ماند.</li><li>سکه فقط از راه تمرین واقعی به دست می‌آید؛ خرید سکه وجود ندارد.</li></ul><p class="muted">مجموع سکهٔ کسب‌شده تا امروز: '.fa($earned).' سکه.</p></section>';
+    $history=coin_history($userId,15);
+    if ($history) {
+        echo '<section class="panel-card"><h2>آخرین گردش سکه</h2><div class="panel-list">';
+        foreach ($history as $entry) echo '<div class="usage-row"><span>'.h(coin_reason_label((string)$entry['reason'])).'<small class="muted"> · '.h(jdate($entry['created_at'])).'</small></span><strong class="'.((int)$entry['amount']>0?'coin-plus':'coin-minus').'">'.((int)$entry['amount']>0?'+':'').fa((int)$entry['amount']).'</strong></div>';
+        echo '</div></section>';
+    }
+    echo '<div class="panel-list">';
     if (!$rows) echo '<p class="empty-state">هنوز پروژه‌ای با ارزیابی معتبر تکمیل نشده است.</p>';
-    foreach ($rows as $row) foreach (PROJECTS as $index=>$definition) if ($definition['key']===$row['learning_key']) echo '<article class="panel-card"><h2><a href="'.h(url('project/'.$index)).'">'.h($definition['title']).'</a></h2><p>'.fa($row['xp']).' XP · '.h(jdate($row['completed_at'])).'</p></article>';
+    foreach ($rows as $row) foreach (PROJECTS as $index=>$definition) if ($definition['key']===$row['learning_key']) echo '<article class="panel-card"><h2><a href="'.h(url('project/'.$index)).'">'.h($definition['title']).'</a></h2><p>'.fa($row['xp']).' XP · '.fa(coin_reward_for($definition)).' سکه · '.h(jdate($row['completed_at'])).'</p></article>';
     echo '</div>';
 }
 
