@@ -68,7 +68,7 @@ class HeaderLayoutTest(unittest.TestCase):
         cls.css = (ROOT / 'public/assets/header.css').read_text(encoding='utf-8')
 
     def test_shared_header_styles_exclude_private_panels(self):
-        self.assertIn("if (!$panel) echo '<link rel=\"stylesheet\" href=\"/assets/header.css?v=5\">';", VIEWS)
+        self.assertIn("if (!$panel) echo '<link rel=\"stylesheet\" href=\"/assets/header.css?v=6\">';", VIEWS)
         for selector in re.findall(r'([^{}]+)\{', self.css):
             if not selector.strip().startswith('@'):
                 self.assertTrue(selector.strip().startswith('body .site-header'), selector)
@@ -83,15 +83,23 @@ class HeaderLayoutTest(unittest.TestCase):
         self.assertNotIn('position: absolute', self.css)
 
     def test_navigation_only_increases_spacing_and_type(self):
-        self.assertRegex(self.css, r'\.main-nav a\s*\{[^}]*font-size: 1.125rem;')
-        self.assertIn('font-size: calc(clamp(.8rem, .9vw, .95rem) + .125rem);', self.css)
-        self.assertIn('gap: .7rem;', self.css)
-        self.assertIn('gap: 1rem;', self.css)
+        self.assertRegex(self.css, r'\.main-nav a\s*\{[^}]*font-size: clamp\(\.78rem, \.5vw \+ \.42rem, 1\.125rem\);')
+        self.assertIn('font-size: clamp(.75rem, .82vw, .95rem);', self.css)
+        self.assertIn('gap: clamp(2px, .35vw, 8px);', self.css)
+        self.assertIn('gap: clamp(3px, .4vw, 10px);', self.css)
         self.assertIn('flex-wrap: nowrap;', self.css)
         self.assertIn('min-height: 48px;', self.css)
         self.assertIn('@media (min-width: 1181px) and (max-width: 1919px)', self.css)
         self.assertIn('@media (max-width: 1180px)', self.css)
         self.assertIn('@media (max-width: 560px)', self.css)
+
+    def test_navigation_stays_on_one_row_between_brand_and_actions(self):
+        self.assertIn('grid-template-areas: "brand nav actions";', self.css)
+        self.assertNotIn('"brand actions"', self.css)
+        self.assertNotIn('"nav nav"', self.css)
+        self.assertRegex(self.css, r'\.main-nav\s*\{[^}]*flex-wrap: nowrap;')
+        self.assertRegex(self.css, r'\.main-nav\s*\{[^}]*justify-self: center;')
+        self.assertRegex(self.css, r'\.header-actions \.btn\s*\{[^}]*flex: 0 0 auto;')
 
     def test_mobile_alignment_and_focus_are_preserved(self):
         self.assertIn('grid-template-areas: "brand toggle";', self.css)

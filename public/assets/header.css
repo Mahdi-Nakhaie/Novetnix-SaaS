@@ -79,7 +79,7 @@ body .site-header .main-nav {
   justify-content: center;
   justify-self: center;
   flex-wrap: nowrap;
-  gap: 1rem;
+  gap: clamp(3px, .4vw, 10px);
   min-width: 0;
   margin: 0;
   padding: 0;
@@ -91,8 +91,8 @@ body .site-header .main-nav a {
   align-items: center;
   justify-content: center;
   min-height: 48px;
-  padding: var(--space-2) var(--space-3);
-  font-size: 1.125rem;
+  padding: var(--space-2) clamp(3px, .4vw, 8px);
+  font-size: clamp(.78rem, .5vw + .42rem, 1.125rem);
   font-weight: 700;
   line-height: 1.7;
   white-space: nowrap;
@@ -113,30 +113,34 @@ body .site-header :is(a, button):focus-visible {
 
 @media (min-width: 1181px) and (max-width: 1919px) {
   body .site-header .main-nav {
-    gap: .7rem;
+    gap: clamp(2px, .35vw, 8px);
   }
 
   body .site-header .main-nav a {
-    padding-inline: .45rem;
-    font-size: calc(clamp(.8rem, .9vw, .95rem) + .125rem);
+    padding-inline: clamp(3px, .4vw, 8px);
+    font-size: clamp(.75rem, .82vw, .95rem);
   }
 }
 
 @media (min-width: 1181px) and (max-width: 1480px) {
-  body .site-header .header-inner {
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas:
-      "brand actions"
-      "nav nav";
-    gap: var(--space-3) var(--space-5);
-    padding-block: var(--space-3);
+  body .site-header .brand img {
+    width: 44px;
+    height: 44px;
   }
 
-  body .site-header .main-nav {
-    justify-self: stretch;
-    justify-content: center;
-    padding-block-start: var(--space-3);
-    border-block-start: 1px solid var(--brand-line);
+  body .site-header .brand-name {
+    font-size: 1.15rem;
+  }
+
+  body .site-header .cart-button {
+    width: 44px;
+    min-width: 44px;
+    padding-inline: 0;
+    gap: 0;
+  }
+
+  body .site-header .cart-button span {
+    display: none;
   }
 }
 
