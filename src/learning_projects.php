@@ -38,9 +38,7 @@ function lp_grant(array $run,array $result,int $userId): bool {
         $stored=ws_run_owned($userId,(int)$run['id']);
         if ((int)$workspace['revision']!==(int)$stored['revision'] || $stored['state']!=='succeeded' || !$stored['remote_id'] || !hash_equals((string)$stored['result_json'],json_encode($result,JSON_THROW_ON_ERROR)) || !hash_equals(hash('sha256',$workspace['files_json']),hash('sha256',$stored['snapshot_json'])) || lp_completion($userId,$definition['key'])) { $pdo->commit(); return false; }
         q('INSERT INTO project_completions(user_id,learning_key,project_id,run_id,revision,snapshot_hash,assessment_version,xp) VALUES (?,?,?,?,?,?,?,?)',[$userId,$definition['key'],$stored['project_id'],$stored['id'],$stored['revision'],hash('sha256',$stored['snapshot_json']),lp_version(),$definition['xp']]);
-        $coins=coin_reward_for($definition);
-        coin_grant($userId,$coins,'project',$definition['key']);
-        record_activity_event($userId,'project_completed',['key'=>$definition['key'],'run_id'=>(int)$stored['id'],'xp'=>$definition['xp'],'coins'=>$coins]);
+        record_activity_event($userId,'project_completed',['key'=>$definition['key'],'run_id'=>(int)$stored['id'],'xp'=>$definition['xp']]);
         $pdo->commit(); return true;
     } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
 }

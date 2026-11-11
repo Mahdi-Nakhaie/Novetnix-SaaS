@@ -451,25 +451,6 @@
   root.querySelector('[data-hf-refresh]').addEventListener('click', () => hfRefresh().catch(error => hfText(error.message)));
   hfRefresh().catch(error => hfText(error.message));
   Object.entries(buttons).forEach(([action, button]) => button.addEventListener('click', () => act(action)));
-  const hintsPanel = root.querySelector('[data-ws-hints]');
-  if (hintsPanel) {
-    const hintBalance = hintsPanel.querySelector('[data-ws-hint-balance]');
-    hintsPanel.addEventListener('click', async event => {
-      const button = event.target.closest('[data-ws-hint-unlock]');
-      if (!button || button.disabled) return;
-      button.disabled = true;
-      try {
-        const result = await request('/workspace/hint-unlock', form({id: project, hint: button.dataset.wsHintUnlock}));
-        const item = button.closest('[data-ws-hint]');
-        item.classList.add('is-unlocked');
-        item.querySelector('.ws-hint-text').textContent = result.hint;
-        item.querySelector('.ws-hint-head').insertAdjacentHTML('beforeend', '<span class="ws-hint-state">بازشده</span>');
-        button.remove();
-        if (hintBalance) hintBalance.textContent = Number(result.balance).toLocaleString('fa-IR');
-        message('راهنمایی باز شد؛ ' + Number(result.balance).toLocaleString('fa-IR') + ' سکه باقی مانده است.');
-      } catch (error) { message(error.message); button.disabled = false; }
-    });
-  }
   code.addEventListener('input', () => { dirty = true; updateLines(); refreshButtons(); });
   code.addEventListener('scroll', () => { lines.scrollTop = code.scrollTop; });
   code.addEventListener('keydown', event => {

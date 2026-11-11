@@ -105,17 +105,59 @@ function payment_callback(): never {
     flash($message,isset($paid)&&$paid?'success':'error'); redirect('dashboard/payment-history');
 }
 function payment_checkout(): void {
-    echo '<section class="panel-card"><h2>خرید اشتراک با زرین‌پال</h2><p>اشتراک ۳۰ روزه؛ مبلغ به تومان است. Nova AI فعلاً به‌زودی است و فعال نیست. تمدید همان پلن به زمان باقی‌مانده اضافه می‌شود؛ تغییر پلن از امروز است و ماندهٔ پلن قبلی منتقل نمی‌شود.</p>';
-    if (!payment_ready()) echo '<p role="status">درگاه واقعی هنوز توسط مدیر تنظیم نشده است. پرداخت آزمایشی یا فعال‌سازی خودکار وجود ندارد.</p>';
+    global $plan;
+    $ready=payment_ready();
+    echo '<div class="sub-hero"><div><span class="eyebrow">اشتراک Noventix</span><h1>پلن مناسب مسیرت را انتخاب کن</h1><p>هر پلن دسترسی به بخشی از محتوای منتشرشده را باز می‌کند. اشتراک ۳۰ روزه است و پس از تأیید پرداخت فعال می‌شود.</p></div><div class="sub-current"><span>پلن فعلی</span><strong>'.h(PLANS[$plan]['name']).'</strong></div></div>';
+    if (!$ready) echo '<div class="sub-notice" role="status"><strong>درگاه پرداخت هنوز فعال نشده است.</strong><span>پرداخت آزمایشی یا فعال‌سازی خودکار وجود ندارد؛ تا آماده‌شدن درگاه، دورهٔ رایگان و امکانات عمومی در دسترس‌اند.</span></div>';
+    echo '<div class="sub-plans">';
     foreach (PLANS as $key=>$p) {
         if (!$p['price']) continue;
         $courses=payment_plan_courses($key);
-        echo '<h3>'.h($p['name']).'</h3><p>'.h($p['summary']).'</p>';
-        if (!$courses) echo '<p>خرید غیرفعال است: محتوای پولی قابل‌دسترسی یا مزیت اضافهٔ فعال برای فروش موجود نیست.</p>';
-        else { echo '<ul>'; foreach ($courses as $course) echo '<li><a href="'.h(url('course/'.$course['slug'])).'">'.h($course['title']).'</a></li>'; echo '</ul>'; }
-        form_start('payment/start'); echo '<input type="hidden" name="plan" value="'.h($key).'"><input type="hidden" name="request_key" value="'.bin2hex(random_bytes(16)).'"><button class="btn btn-primary"'.(!payment_ready() || !$courses?' disabled':'').'>خرید '.h($p['name']).' — '.money($p['price']).'</button></form>';
+        $featured=$key==='gold';
+        echo '<article class="sub-plan'.($featured?' is-featured':'').'">';
+        if ($featured) echo '<span class="sub-plan-flag">پیشنهاد ما</span>';
+        echo '<header class="sub-plan-head"><h2>'.h($p['name']).'</h2><span class="sub-plan-tag">'.h($p['tag']).'</span></header>';
+        echo '<p class="sub-plan-summary">'.h($p['summary']).'</p>';
+        echo '<div class="sub-plan-price">'.money((int)$p['price']).'<small>/ ۳۰ روز</small></div>';
+        echo '<ul class="sub-plan-features">';
+        foreach ($p['features'] as $feature) echo '<li>'.h($feature).'</li>';
+        echo '</ul>';
+        if ($courses) {
+            echo '<div class="sub-plan-courses"><span>دوره‌های این پلن</span><ul>';
+            foreach ($courses as $course) echo '<li><a href="'.h(url('course/'.$course['slug'])).'">'.h($course['title']).'</a></li>';
+            echo '</ul></div>';
+        } else {
+            echo '<p class="sub-plan-inactive">این پلن در حال حاضر محتوای پولی فعالی برای فروش ندارد.</p>';
+        }
+        form_start('payment/start','sub-plan-form');
+        echo '<input type="hidden" name="plan" value="'.h($key).'"><input type="hidden" name="request_key" value="'.bin2hex(random_bytes(16)).'"><button class="btn '.($featured?'btn-primary':'btn-outline').' full"'.(!$ready || !$courses?' disabled':'').'>'.($ready && $courses?'خرید پلن '.h($p['name']):'خرید غیرفعال').'</button></form>';
+        echo '</article>';
     }
-    echo '<a href="/dashboard/payment-history">تاریخچه و بررسی مجدد پرداخت‌ها</a></section>';
+    echo '</div>';
+    echo '<section class="sub-compare"><div class="section-header"><span class="eyebrow">مقایسهٔ پلن‌ها</span><h2>امکانات هر پلن در یک نگاه</h2></div><div class="sub-compare-scroll" role="region" tabindex="0" aria-label="جدول مقایسهٔ امکانات پلن‌ها"><table class="sub-compare-table"><caption>مقایسهٔ امکانات پلن‌های Noventix</caption><thead><tr><th scope="col">امکانات</th>';
+    foreach (PLANS as $key=>$p) if ($p['price']) echo '<th scope="col">'.h($p['name']).'</th>';
+    echo '</tr></thead><tbody>';
+    $rows=[
+        ['قیمت ماهانه',array_map(fn($p)=>money((int)$p['price']),array_filter(PLANS,fn($p)=>$p['price']))],
+        ['پروژهٔ ذخیره‌شده',array_fill(0,4,'۲۰ پروژه')],
+        ['فضای فایل',array_fill(0,4,'۲۰ مگابایت')],
+        ['محتوای مجاز',['داده و ML','+ پردازش متن','+ یادگیری عمیق و API','همان طلایی']],
+        ['میزکار پایتون',array_fill(0,4,'دارد')],
+        ['انجمن و پروفایل مهارتی',array_fill(0,4,'دارد')],
+        ['Nova AI',array_fill(0,4,'به‌زودی')],
+    ];
+    foreach ($rows as [$label,$values]) { echo '<tr><th scope="row">'.h($label).'</th>'; foreach ($values as $value) echo '<td>'.h($value).'</td>'; echo '</tr>'; }
+    echo '</tbody></table></div></section>';
+    echo '<section class="sub-terms"><h2>شرایط پرداخت</h2><div class="sub-terms-grid">';
+    foreach ([
+        ['مدت اشتراک','هر پرداخت یک دورهٔ ۳۰ روزه فعال می‌کند و از لحظهٔ تأیید پرداخت محاسبه می‌شود.'],
+        ['تمدید','تمدید همان پلن به زمان باقی‌ماندهٔ شما اضافه می‌شود و روزی از دست نمی‌رود.'],
+        ['تغییر پلن','با تغییر پلن، دورهٔ جدید از همان روز شروع می‌شود و ماندهٔ پلن قبلی منتقل نمی‌شود.'],
+        ['فعال‌سازی','دسترسی فقط پس از تأیید پرداخت توسط درگاه فعال می‌شود؛ ثبت درخواست به‌تنهایی اشتراک نمی‌سازد.'],
+        ['بازگشت وجه','اگر پرداخت تأیید نشود، مبلغی به حساب شما اضافه نمی‌شود. برای پیگیری از تاریخچهٔ پرداخت استفاده کنید.'],
+        ['پایان دوره','با پایان دوره دسترسی به محتوای همان پلن متوقف می‌شود؛ حساب و پروژه‌های شما حذف نمی‌شوند.'],
+    ] as [$title,$text]) echo '<article class="sub-term"><h3>'.h($title).'</h3><p>'.h($text).'</p></article>';
+    echo '</div><div class="sub-terms-actions">'; linkto('dashboard/payment-history','تاریخچه و بررسی مجدد پرداخت‌ها','btn btn-outline'); linkto('pricing','مشاهدهٔ صفحهٔ قیمت‌گذاری','btn btn-outline'); echo '</div></section>';
 }
 function payment_history(array $u,bool $admin=false): void {
     $rows=q('SELECT * FROM payment_orders'.($admin?'':' WHERE user_id=?').' ORDER BY id DESC LIMIT 100',$admin?[]:[$u['id']])->fetchAll();

@@ -191,15 +191,6 @@ function ws_get(string $path): never {
         if ($path==='workspace/runtime') ws_reply(200,ws_runner('GET','/health'));
         if ($path==='workspace/run-state') ws_reply(200,ws_run_sync(ws_run_owned($userId,(int)($_GET['id'] ?? 0)),$userId));
         $row=ws_owned($userId,(int)($_GET['id'] ?? 0));
-        if ($path==='workspace/hint') {
-            $definition=lp_definition((int)$row['catalog_index']);
-            if (!$definition) ws_fail('پروژه آموزشی پیدا نشد.',404);
-            $index=filter_var($_GET['hint'] ?? '',FILTER_VALIDATE_INT);
-            $guidance=json_decode(file_get_contents(dirname(__DIR__).'/curriculum/project-guidance.json'),true,512,JSON_THROW_ON_ERROR)[$definition['key']] ?? [];
-            if ($index===false || $index===null || !isset($guidance[$index])) ws_fail('راهنمای درخواستی وجود ندارد.',404);
-            $unlocked=hint_unlocked($userId,$definition['key'],$index);
-            ws_reply(200,['hint'=>$unlocked ? $guidance[$index] : null,'unlocked'=>$unlocked,'cost'=>COIN_HINT_COST,'balance'=>coin_balance($userId)]);
-        }
         if ($path==='workspace/project-solution') {
             $definition=lp_definition((int)$row['catalog_index']);
             if (!$definition) ws_fail('پروژه آموزشی پیدا نشد.',404);
@@ -268,15 +259,6 @@ function ws_post(string $path): never {
         if ($path==='workspace/save' || $path==='workspace/upload') {
             $manifest=$path==='workspace/upload'?ws_uploads(json_decode($row['files_json'],true,512,JSON_THROW_ON_ERROR)):ws_manifest(json_decode((string)($_POST['files'] ?? ''),true,512,JSON_THROW_ON_ERROR));
             ws_save($userId,$id,$revision,$manifest); ws_reply(200,['revision'=>$revision+1]);
-        }
-        if ($path==='workspace/hint-unlock') {
-            $definition=lp_definition((int)$row['catalog_index']);
-            if (!$definition) ws_fail('پروژه آموزشی پیدا نشد.',404);
-            $index=filter_var($_POST['hint'] ?? '',FILTER_VALIDATE_INT);
-            $guidance=json_decode(file_get_contents(dirname(__DIR__).'/curriculum/project-guidance.json'),true,512,JSON_THROW_ON_ERROR)[$definition['key']] ?? [];
-            if ($index===false || $index===null || !isset($guidance[$index])) ws_fail('راهنمای درخواستی وجود ندارد.',404);
-            if (!hint_unlock($userId,$definition['key'],$index,COIN_HINT_COST)) ws_fail('سکهٔ کافی برای بازکردن این راهنمایی ندارید.',402);
-            ws_reply(200,['hint'=>$guidance[$index],'unlocked'=>true,'balance'=>coin_balance($userId)]);
         }
         if ($path==='workspace/run') {
             if (!ws_runner_ready()) ws_fail('موتور اجرای ایزوله هنوز راه‌اندازی نشده است؛ خروجی ساختگی نمایش داده نمی‌شود.',503);

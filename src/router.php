@@ -19,7 +19,7 @@ function route(): void {
     }
     if ($path==='payment/zarinpal/callback') payment_callback();
     if ($path==='dashboard/payment-history') { $u=require_user(); head_page('تاریخچه پرداخت','',true); notice(); echo '<main class="panel-content">'; payment_history($u); echo '</main>'; foot_page(true); return; }
-    if (in_array($path,['workspace/project-solution','workspace/data','workspace/download','workspace/run-state','workspace/runtime','workspace/hint','workspace/datasets-search','workspace/datasets-detail','workspace/datasets-state'],true)) ws_get($path);
+    if (in_array($path,['workspace/project-solution','workspace/data','workspace/download','workspace/run-state','workspace/runtime','workspace/datasets-search','workspace/datasets-detail','workspace/datasets-state'],true)) ws_get($path);
     if ($path==='dashboard/workspace' || preg_match('~^dashboard/workspace/([1-9][0-9]*)$~D',$path,$workspaceMatch)) {
         $u=require_user(); $workspaceId=isset($workspaceMatch[1])?(int)$workspaceMatch[1]:0;
         if ($workspaceId) ws_owned((int)$u['id'],$workspaceId);
@@ -166,43 +166,61 @@ function page_course(string $slug): void {
     echo '<div class="cta-panel course-final-cta"><span class="eyebrow">قدم بعدی</span><h2>آماده‌ای شروع کنی؟</h2><p>از اولین جلسه شروع کن و قدم‌به‌قدم جلو برو.</p>'; course_start_action($course,$me,$enrolled,'btn btn-light'); echo '</div></section></main>'; foot_page();
 }
 function page_projects(): void {
-    $total=count(PROJECTS);
-    $python=0; $ml=0; $minutes=0;
-    foreach (PROJECTS as $p) {
-        if (($p['topic'] ?? '')==='Python') $python++; else $ml++;
-        $minutes+=(int)($p['minutes'] ?? 0);
-    }
-    $topic=in_array($_GET['topic'] ?? '',['Python','Machine Learning'],true) ? (string)$_GET['topic'] : null;
-    echo '<main><section class="projects-hero"><div class="container projects-hero-inner"><div class="projects-hero-copy"><span class="eyebrow">پروژه‌ها</span><h1>یادگیری با ساختن، نه فقط خواندن</h1><p>'.fa($total).' پروژهٔ واقعی با پیش‌نیاز روشن، ورودی مشخص، خروجی قابل بررسی و ارزیابی خودکار؛ از اولین تمرین پایتون تا مدل یادگیری ماشین.</p><div class="projects-hero-actions">'; linkto('articles/python-basics-hello','اولین بار است پایتون می‌نویسید؟ از اینجا شروع کنید','btn btn-primary'); linkto('dashboard/workspace','رفتن به میزکار کد','btn btn-outline'); echo '</div></div><dl class="projects-hero-stats"><div><dt>پروژه</dt><dd>'.fa($total).'</dd></div><div><dt>تمرین پایتون</dt><dd>'.fa($python).'</dd></div><div><dt>پروژهٔ یادگیری ماشین</dt><dd>'.fa($ml).'</dd></div><div><dt>زمان تخمینی</dt><dd>'.fa((int)round($minutes/60)).' ساعت</dd></div></dl></div></section><section class="section container projects-section"><div class="projects-toolbar"><div class="projects-filters" role="group" aria-label="فیلتر موضوع پروژه"><a class="projects-filter'.($topic===null?' is-active':'').'" href="'.h(url('projects')).'">همه</a><a class="projects-filter'.($topic==='Python'?' is-active':'').'" href="'.h(url('projects?topic=Python')).'">پایتون · '.fa($python).'</a><a class="projects-filter'.($topic==='Machine Learning'?' is-active':'').'" href="'.h(url('projects?topic=Machine+Learning')).'">یادگیری ماشین · '.fa($ml).'</a></div><p class="projects-count">'.fa($topic===null?$total:($topic==='Python'?$python:$ml)).' پروژه</p></div>'; project_cards(99,$topic); echo '</section></main>';
+    echo '<main><section class="page-hero container projects-hero"><span class="eyebrow">پروژه‌ها</span><h1>یادگیری با ساختن، نه فقط خواندن</h1><p>'.fa(count(PROJECTS)).' پروژه؛ از ۲۴ تمرین پایتون مقدماتی تا یادگیری ماشین، با پیش‌نیاز، ورودی، خروجی و ارزیابی واقعی.</p>';
+    linkto('articles/python-basics-hello','اولین بار است پایتون می‌نویسید؟ از اینجا شروع کنید','btn btn-primary');
+    echo '</section><section class="section container">'; project_cards(); echo '</section></main>';
 }
 function page_project(string $index): void {
-    global $me,$plan;
     $i=filter_var($index,FILTER_VALIDATE_INT);
     if ($i===false || !isset(PROJECTS[$i])) { page_not_found(); return; }
-    if ($me) {
-        $row=q('SELECT w.project_id FROM project_workspaces w JOIN projects p ON p.id=w.project_id WHERE p.user_id=? AND p.catalog_index=? AND w.deleted_at IS NULL',[$me['id'],100+$i])->fetchColumn();
-        if (!$row) {
-            try { $row=ws_create((int)$me['id'],0,PROJECTS[$i]['title'],100+$i,lp_starter(PROJECTS[$i])); }
-            catch (InvalidArgumentException $e) { flash($e->getMessage(),'error'); lp_page($i); return; }
-        }
-        redirect('dashboard/workspace/'.(int)$row);
-    }
     lp_page($i);
 }
 function page_pricing(): void {
-    echo '<main><section class="pricing-hero"><div class="container"><span class="eyebrow">پلن‌های Noventix</span><h1>برای هر هدف، یک مسیر رشد</h1><p>از اولین قدم در برنامه‌نویسی تا ساختن پروژه‌های جدی؛ مسیرت را با تمرکز، تمرین و هدف روشن انتخاب کن.</p><div class="pricing-hero-facts"><span>یادگیری هدفمند</span><span>نگاه پروژه‌محور</span><span>رشد مهارت‌های کاربردی</span></div></div></section><section class="section container" aria-labelledby="plans-heading"><div class="section-header"><span class="eyebrow">مسیر خودت را انتخاب کن</span><h2 id="plans-heading">یک قدم نزدیک‌تر به حرفه‌ای شدن</h2><p>چه در شروع راه باشی و چه به دنبال چالش‌های عمیق‌تر، برای قدم بعدی‌ات هدف داشته باش.</p></div>';
-    upcoming_plan_cards();
-    echo '<section id="plan-features" class="plan-comparison" aria-labelledby="plan-features-title"><div class="section-header"><span class="eyebrow">امکانات پلن‌ها</span><h2 id="plan-features-title">جزئیات هر مسیر در یک نگاه</h2></div><div class="plan-comparison-shell"><div class="plan-comparison-scroll" role="region" tabindex="0" aria-label="جدول مقایسهٔ امکانات پلن‌ها"><table class="plan-comparison-table"><caption>مقایسهٔ امکانات پلن‌های Noventix · به‌زودی</caption><thead><tr><th scope="col">امکانات</th>';
-    foreach (['برنزی','نقره‌ای','طلایی','تیتانیومی'] as $name) echo '<th scope="col">پلن '.h($name).'</th>';
-    echo '</tr></thead><tbody>';
-    foreach (['محتوای آموزشی','تمرین‌های کاربردی','پروژه‌های عملی','میزکار کدنویسی','ارزیابی پیشرفت','پشتیبانی آموزشی'] as $feature) {
-        echo '<tr><th scope="row">'.h($feature).'</th>';
-        for ($i=0;$i<4;$i++) echo '<td><span class="plan-feature-pending">به‌زودی</span></td>';
-        echo '</tr>';
+    $paid=array_filter(PLANS,static fn(array $p): bool=>$p['price']>0);
+    echo '<main><section class="pricing-hero"><div class="container"><span class="eyebrow">پلن‌های Noventix</span><h1>برای هر هدف، یک مسیر رشد</h1><p>از اولین قدم در برنامه‌نویسی تا ساختن پروژه‌های جدی؛ مسیرت را با تمرکز، تمرین و هدف روشن انتخاب کن.</p><div class="pricing-hero-facts"><span>یادگیری هدفمند</span><span>نگاه پروژه‌محور</span><span>رشد مهارت‌های کاربردی</span></div></div></section>';
+    echo '<section class="section container" aria-labelledby="plans-heading"><div class="section-header"><span class="eyebrow">مسیر خودت را انتخاب کن</span><h2 id="plans-heading">یک قدم نزدیک‌تر به حرفه‌ای شدن</h2><p>هر پلن دسترسی به بخشی از محتوای منتشرشده را باز می‌کند. اشتراک ۳۰ روزه است و پس از تأیید پرداخت فعال می‌شود.</p></div>';
+    echo '<div class="pricing-plans">';
+    echo '<article class="pricing-plan is-free"><header class="pricing-plan-head"><h3>رایگان</h3><span class="pricing-plan-tag">برای شروع</span></header><p class="pricing-plan-summary">'.h(PLANS['free']['summary']).'</p><div class="pricing-plan-price">رایگان<small>برای همیشه</small></div><ul class="pricing-plan-features">';
+    foreach (PLANS['free']['features'] as $feature) echo '<li>'.h($feature).'</li>';
+    echo '</ul>'; linkto('course/'.FREE_COURSE_SLUG,'شروع دورهٔ رایگان','btn btn-outline full'); echo '</article>';
+    foreach ($paid as $key=>$p) {
+        $featured=$key==='gold';
+        echo '<article class="pricing-plan'.($featured?' is-featured':'').'">';
+        if ($featured) echo '<span class="pricing-plan-flag">پیشنهاد ما</span>';
+        echo '<header class="pricing-plan-head"><h3>'.h($p['name']).'</h3><span class="pricing-plan-tag">'.h($p['tag']).'</span></header><p class="pricing-plan-summary">'.h($p['summary']).'</p><div class="pricing-plan-price">'.money((int)$p['price']).'<small>/ ۳۰ روز</small></div><ul class="pricing-plan-features">';
+        foreach ($p['features'] as $feature) echo '<li>'.h($feature).'</li>';
+        echo '</ul>';
+        if (plan_is_available($key)) plan_purchase_button($key,'btn '.($featured?'btn-primary':'btn-outline').' full');
+        else { echo '<div class="pricing-plan-pending"><span>به‌زودی</span><small>این پلن هنوز برای فروش فعال نشده است.</small></div>'; linkto('dashboard/subscription','مشاهدهٔ وضعیت اشتراک','btn btn-outline full'); }
+        echo '</article>';
     }
-    echo '</tbody></table></div><div class="plan-comparison-lock" aria-hidden="true"><div class="plan-chain">';
-    for ($i=0;$i<26;$i++) echo '<span></span>';
-    echo '</div><strong class="plan-coming-soon">به‌زودی</strong></div></div></section><div class="pricing-start"><div><h2>اولین قدم را همین امروز بردار</h2><p>با دورهٔ رایگان شروع کن؛ مفاهیم را یاد بگیر، تمرین کن و اولین پروژه‌ات را بساز.</p></div>'; linkto('course/'.FREE_COURSE_SLUG,'شروع یادگیری رایگان ←','btn btn-primary'); echo '</div></section></main>';
+    echo '</div></section>';
+    echo '<section id="plan-features" class="section container" aria-labelledby="plan-features-title"><div class="section-header"><span class="eyebrow">امکانات پلن‌ها</span><h2 id="plan-features-title">جزئیات هر مسیر در یک نگاه</h2></div><div class="plan-comparison-shell"><div class="plan-comparison-scroll" role="region" tabindex="0" aria-label="جدول مقایسهٔ امکانات پلن‌ها"><table class="plan-comparison-table"><caption>مقایسهٔ امکانات پلن‌های Noventix</caption><thead><tr><th scope="col">امکانات</th><th scope="col">رایگان</th>';
+    foreach ($paid as $p) echo '<th scope="col">'.h($p['name']).'</th>';
+    echo '</tr></thead><tbody>';
+    $rows=[
+        ['قیمت ماهانه',array_merge(['رایگان'],array_map(static fn(array $p): string=>money((int)$p['price']),array_values($paid)))],
+        ['دورهٔ مقدماتی هوش مصنوعی',array_fill(0,5,'دارد')],
+        ['محتوای تحلیل داده و یادگیری ماشین',['—','دارد','دارد','دارد','دارد']],
+        ['محتوای پردازش متن',['—','—','دارد','دارد','دارد']],
+        ['محتوای یادگیری عمیق و API',['—','—','—','دارد','دارد']],
+        ['میزکار پایتون و پروژهٔ خصوصی',array_fill(0,5,'۲۰ پروژه')],
+        ['فضای فایل',array_fill(0,5,'۲۰ مگابایت')],
+        ['انجمن و پروفایل مهارتی',array_fill(0,5,'دارد')],
+        ['Nova AI',array_fill(0,5,'به‌زودی')],
+    ];
+    foreach ($rows as [$label,$values]) { echo '<tr><th scope="row">'.h($label).'</th>'; foreach ($values as $value) echo '<td>'.h($value).'</td>'; echo '</tr>'; }
+    echo '</tbody></table></div></div></section>';
+    echo '<section class="section container"><div class="pricing-terms"><div class="section-header"><span class="eyebrow">شرایط پرداخت</span><h2>پیش از خرید بدان</h2></div><div class="pricing-terms-grid">';
+    foreach ([
+        ['مدت اشتراک','هر پرداخت یک دورهٔ ۳۰ روزه فعال می‌کند و از لحظهٔ تأیید پرداخت محاسبه می‌شود.'],
+        ['تمدید','تمدید همان پلن به زمان باقی‌ماندهٔ شما اضافه می‌شود و روزی از دست نمی‌رود.'],
+        ['تغییر پلن','با تغییر پلن، دورهٔ جدید از همان روز شروع می‌شود و ماندهٔ پلن قبلی منتقل نمی‌شود.'],
+        ['فعال‌سازی','دسترسی فقط پس از تأیید پرداخت توسط درگاه فعال می‌شود؛ ثبت درخواست به‌تنهایی اشتراک نمی‌سازد.'],
+        ['بازگشت وجه','اگر پرداخت تأیید نشود، مبلغی به حساب شما اضافه نمی‌شود. برای پیگیری از تاریخچهٔ پرداخت استفاده کنید.'],
+        ['پایان دوره','با پایان دوره دسترسی به محتوای همان پلن متوقف می‌شود؛ حساب و پروژه‌های شما حذف نمی‌شوند.'],
+    ] as [$title,$text]) echo '<article class="pricing-term"><h3>'.h($title).'</h3><p>'.h($text).'</p></article>';
+    echo '</div></div><div class="pricing-start"><div><h2>اولین قدم را همین امروز بردار</h2><p>با دورهٔ رایگان شروع کن؛ مفاهیم را یاد بگیر، تمرین کن و اولین پروژه‌ات را بساز.</p></div>'; linkto('course/'.FREE_COURSE_SLUG,'شروع یادگیری رایگان ←','btn btn-primary'); echo '</div></section></main>';
 }
 function page_about(): void {
     echo '<main><header class="about-hero"><div class="container about-hero-grid"><div><span class="eyebrow">درباره Noventix</span><h1>یادگیری را به توانایی ساختن تبدیل می‌کنیم.</h1><p class="lead">Noventix برای کسانی ساخته شده که نمی‌خواهند فقط ویدیو ببینند؛ می‌خواهند مسئله را بفهمند، کد بنویسند و نتیجه‌ای قابل ارائه بسازند.</p><div class="hero-actions">'; linkto('projects','دیدن پروژه‌ها ←','btn btn-primary'); linkto('courses','مسیرهای یادگیری','btn btn-outline'); echo '</div></div><div class="about-hero-card"><span class="about-card-mark">N</span><strong>از مفهوم تا اجرا</strong><p>محتوای فارسی، تمرین واقعی، میزکار کد و بازخورد مرحله‌به‌مرحله در یک مسیر واحد.</p><div class="about-mini-stats"><span><b>۳۴۵+</b> اصطلاح آموزشی</span><span><b>۱۲</b> پروژه داده‌محور</span></div></div></div></header><section class="section container"><div class="about-intro"><div><span class="eyebrow">چرا ساخته شد؟</span><h2>فاصلهٔ بین دانستن و ساختن</h2></div><div><p>خیلی از مسیرهای آموزشی با توضیح تمام می‌شوند؛ درست جایی که یادگیرنده باید تصمیم بگیرد، خطا کند و راه‌حل خودش را بسازد. Noventix این فاصله را با پروژه، تمرین و بازخورد پر می‌کند.</p><p>ما تلاش می‌کنیم هر مفهوم یک خروجی روشن داشته باشد: یک برنامه، یک تحلیل، یک مدل یا مهارتی که بتوانی در پروژهٔ بعدی دوباره از آن استفاده کنی.</p></div></div></section><section class="section about-values-section"><div class="container"><div class="section-header"><span class="eyebrow">روش ما</span><h2>چه چیزی تجربهٔ Noventix را متفاوت می‌کند؟</h2><p>مسیر یادگیری باید روشن، قابل اندازه‌گیری و نزدیک به دنیای واقعی باشد.</p></div><div class="features-grid about-values"><article class="feature"><span class="feature-n">۰۱ · مسیر روشن</span><h3>از هدف شروع می‌کنیم</h3><p>پیش‌نیاز، خروجی و قدم بعدی هر درس و پروژه از ابتدا مشخص است تا در مسیر گم نشوی.</p></article><article class="feature"><span class="feature-n">۰۲ · تمرین واقعی</span><h3>با ساختن یاد می‌گیریم</h3><p>به‌جای تمرین‌های بی‌هدف، با داده، کد و مسئله‌ای کار می‌کنی که نتیجهٔ آن قابل بررسی است.</p></article><article class="feature"><span class="feature-n">۰۳ · بازخورد معتبر</span><h3>پیشرفتت قابل مشاهده است</h3><p>ارزیابی پروژه‌ها و پیشرفت درس‌ها کمک می‌کند بدانی چه چیزی را یاد گرفته‌ای و کجا باید بهتر شوی.</p></article><article class="feature"><span class="feature-n">۰۴ · صداقت</span><h3>بدون وعدهٔ غیرواقعی</h3><p>دربارهٔ سطح محتوا، محدودیت ابزارها و نتیجه‌ای که می‌توانی انتظار داشته باشی شفاف صحبت می‌کنیم.</p></article></div></div></section><section class="section container"><div class="about-process"><div class="section-header"><span class="eyebrow">چرخهٔ یادگیری</span><h2>از اولین سؤال تا پروژهٔ قابل ارائه</h2></div><div class="about-process-grid"><div><span>۱</span><h3>یاد بگیر</h3><p>مفهوم را با توضیح کوتاه و مثال کاربردی می‌فهمی.</p></div><div><span>۲</span><h3>امتحان کن</h3><p>در تمرین و میزکار کد، ایده را به اجرا تبدیل می‌کنی.</p></div><div><span>۳</span><h3>ارزیابی کن</h3><p>خروجی را با معیار روشن بررسی و اصلاح می‌کنی.</p></div><div><span>۴</span><h3>به اشتراک بگذار</h3><p>در انجمن تجربه‌ات را مطرح می‌کنی و از مسیر دیگران یاد می‌گیری.</p></div></div></div></section><section class="section container"><div class="cta-panel about-cta"><span class="eyebrow">قدم بعدی</span><h2>یادگیری را با یک پروژه شروع کن</h2><p>مسیر مناسب خودت را انتخاب کن و اولین خروجی واقعی‌ات را بساز.</p>'; linkto('projects','شروع از پروژه‌ها ←','btn btn-light'); echo '</div></section></main>';

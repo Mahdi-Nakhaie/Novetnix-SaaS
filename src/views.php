@@ -20,7 +20,7 @@ function head_page(string $title,string $description='',bool $panel=false,bool $
     $darychehAssets=($path==='dashboard/darycheh' || str_starts_with($path,'dashboard/darycheh/')) ? '<link rel="stylesheet" href="/assets/darycheh.css?v=1"><script src="/assets/darycheh.js?v=1" defer></script>' : '';
     if (!$panel) echo '<link rel="stylesheet" href="/assets/header.css?v=3">';
     $adminPanel=$panel && ($me['role'] ?? '')==='admin';
-    echo '<link rel="stylesheet" href="/assets/style.css?v=34">'.($adminPanel?'<link rel="stylesheet" href="/assets/admin.css?v=1">':'').'<script src="/assets/app.js?v=5" defer></script><script src="/assets/playback-events.js" defer></script>'.$darychehAssets.'</head><body class="'.($panel?'is-panel':'').($adminPanel?' is-admin':'').'">';
+    echo '<link rel="stylesheet" href="/assets/style.css?v=37">'.($adminPanel?'<link rel="stylesheet" href="/assets/admin.css?v=1">':'').'<script src="/assets/app.js?v=5" defer></script><script src="/assets/playback-events.js" defer></script>'.$darychehAssets.'</head><body class="'.($panel?'is-panel':'').($adminPanel?' is-admin':'').'">';
     echo '<div class="noventix-loading" id="noventix-loading" role="status" aria-live="polite" hidden><div class="noventix-loading-card"><span class="noventix-loading-mark" aria-hidden="true">N</span><strong>Noventix</strong><span class="noventix-loading-track" aria-hidden="true"><span></span></span><p>در حال آماده‌سازی فضای یادگیری...</p></div></div>';
     if ($panel) { panel_nav(); return; }
     echo '<header class="site-header"><div class="container header-inner"><a href="/" class="brand" aria-label="Noventix، صفحه اصلی"><img src="/assets/noventix-logo.webp?v=2" alt="Noventix" width="72" height="72"><span class="brand-name" lang="en" dir="ltr">Noventix</span></a><nav class="main-nav" aria-label="ناوبری اصلی">';
@@ -193,34 +193,9 @@ function community_post_controls(array $post,?array $viewer,string $returnTo): v
     echo '</div>';
 }
 
-function project_cover(int $i): ?array {
+function project_cards(int $limit=99): void {
     $covers=[0=>['house-price-regression','House price regression prediction project'],1=>['multiclass-flower-classification','Multiclass flower classification project'],2=>['diabetes-risk-classification','Diabetes risk classification project'],3=>['sentiment-analysis','Sentiment analysis project'],4=>['flight-delay-prediction','Flight delay prediction project'],5=>['weather-temperature-forecast','Weather temperature forecasting project'],6=>['housing-price-prediction','Housing price prediction project'],7=>['iris-flower-classification','Iris flower classification project'],8=>['project-nine-neural-network','Flight delay analysis project'],9=>['flight-delay-analysis','Flight delay analysis project'],10=>['sentiment-classification','Sentiment classification project'],11=>['machine-learning-pipeline','Machine learning pipeline project'],12=>['python-welcome-card','کارت خوشامدگویی شخصی در پایتون'],13=>['python-shopping-receipt','محاسبهٔ مبلغ خرید در پایتون'],14=>['python-temperature-converter','تبدیل دمای سانتی‌گراد و فارنهایت'],15=>['python-grade-conditions','بررسی شرط قبولی نمره'],16=>['python-even-numbers','جداسازی و جمع اعداد زوج'],17=>['python-measurement-summary','خلاصه‌سازی فهرست اندازه‌گیری‌ها'],18=>['python-word-count','شمارش فراوانی واژه‌های متن'],19=>['python-book-search','جست‌وجو در عنوان کتاب‌ها'],20=>['python-inventory','تجمیع موجودی کالاها در پایتون'],21=>['python-cart-discount','سبد خرید با تخفیف'],22=>['python-boolean-rules','بررسی قواعد رشتهٔ آزمایشی'],23=>['python-unique-participants','فهرست یکتای شرکت‌کنندگان'],24=>['python-class-report','کارنامهٔ خلاصهٔ کلاس'],25=>['python-unicode-id','پاک‌ساز شناسهٔ عددی ساختگی'],26=>['python-csv-sales','گزارش فروش از متن CSV'],27=>['python-json-settings','بارگذاری تنظیمات برنامه'],28=>['python-file-extensions','فهرست‌ساز پسوند فایل‌ها'],29=>['python-safe-number','مبدل امن متن به عدد صحیح'],30=>['python-deadline-days','شمارندهٔ روز تا موعد'],31=>['python-study-statistics','گزارش مقاوم زمان مطالعه'],32=>['python-decimal-invoice','فاکتور دقیق با اعشار ده‌دهی'],33=>['python-prime-testing','تشخیص عدد اول با آزمون مرزی'],34=>['python-numpy-report','گزارش عددی با آرایهٔ NumPy'],35=>['python-pandas-expenses','گزارش دسته‌های هزینه با Pandas']];
-    return $covers[$i] ?? null;
-}
-function project_card(int $i,array $p): void {
-    $cover=project_cover($i);
-    $minutes=isset($p['minutes']) ? (int)$p['minutes'] : null;
-    echo '<article class="project-card"><a class="project-cover" href="'.h(url('project/'.$i)).'" tabindex="-1">';
-    echo '<span class="project-cover-art visual-'.($i%4).($i===8?' project-nine':'').($cover?' has-project-image':'').'">';
-    if ($cover) echo '<picture>'.($i<12 ? '<source srcset="/assets/'.h($cover[0]).'.webp" type="image/webp">' : '').'<img src="/assets/'.h($cover[0]).'.jpg" alt="'.h($cover[1]).'" width="1536" height="1024" loading="lazy" decoding="async"></picture>';
-    else echo '<span class="project-cover-glyph" aria-hidden="true">'.(['{ }','◈','◇','⌘'][$i%4]).'</span>';
-    echo '<span class="project-cover-index">'.fa(str_pad((string)($i+1),2,'0',STR_PAD_LEFT)).'</span>';
-    echo '<span class="project-cover-topic" dir="ltr">'.h(strtoupper((string)$p['topic'])).'</span></a>';
-    echo '<div class="project-body"><div class="project-tags"><span class="pill">'.h($p['topic']).'</span><span class="project-level">'.h($p['level']).'</span>'.($minutes?'<span class="project-duration">'.fa($minutes).' دقیقه</span>':'').'</div>';
-    echo '<h3><a href="'.h(url('project/'.$i)).'">'.h($p['title']).'</a></h3><p>'.h($p['description']).'</p>';
-    echo '<p class="project-goal"><span>هدف</span>'.h($p['goal']).'</p>';
-    echo '<div class="project-rewards"><span class="project-xp">'.fa((int)$p['xp']).' XP</span><span class="project-coins">'.fa(coin_reward_for($p)).' سکه</span></div>';
-    echo '<div class="project-foot"><span class="project-skills" dir="ltr">'.h($p['skills']).'</span><a class="project-cta" href="'.h(url('project/'.$i)).'">مشاهده پروژه<span aria-hidden="true">←</span></a></div></div></article>';
-}
-function project_cards(int $limit=99,?string $topic=null): void {
-    echo '<div class="project-grid">';
-    $shown=0;
-    foreach (PROJECTS as $i=>$p) {
-        if ($topic!==null && ($p['topic'] ?? '')!==$topic) continue;
-        if ($shown>=$limit) break;
-        project_card((int)$i,$p); $shown++;
-    }
-    echo '</div>';
+    echo '<div class="project-grid">'; foreach (array_slice(PROJECTS,0,$limit,true) as $i=>$p) { $image=$covers[$i] ?? null; echo '<article class="project-card"><div class="project-visual visual-'.($i%4).($i===8?' project-nine':'').($image ? ' has-project-image' : '').'">'.($image ? '<picture>'.($i<12 ? '<source srcset="/assets/'.h($image[0]).'.webp" type="image/webp">' : '').'<img src="/assets/'.h($image[0]).'.jpg" alt="'.h($image[1]).'" width="1536" height="1024" loading="lazy" decoding="async"></picture>' : '').'<span class="visual-number">'.fa(str_pad((string)($i+1),2,'0',STR_PAD_LEFT)).'</span>'.($image ? '' : '<span class="visual-glyph">'.(['{ }','◈','◇','⌘'][$i%4]).'</span>').'<span class="visual-label">'.h(strtoupper($p['topic'])).'</span></div><div class="project-info"><div class="meta-row"><span class="pill">'.h($p['topic']).'</span><span>'.h($p['level']).'</span></div><h3>'.h($p['title']).'</h3><p>'.h($p['description']).'</p><div class="project-bottom"><span dir="ltr">'.h($p['skills']).'</span><a href="'.h(url('project/'.$i)).'" aria-label="مشاهده پروژه '.h($p['title']).'">مشاهده پروژه ←</a></div></div></article>'; } echo '</div>';
 }
 function course_cards(array $courses): void {
     if (!$courses) { echo '<div class="empty-state"><h2>هنوز دوره‌ای منتشر نشده است.</h2><p>به‌زودی مسیرهای یادگیری جدید در این بخش قرار می‌گیرند.</p></div>'; return; }
@@ -260,14 +235,35 @@ function page_free_course(array $course): void {
     global $me;
     $canWatch=$me && trim($me['name'])!=='';
     $enrolled=$canWatch && (bool)q('SELECT 1 FROM enrollments WHERE user_id=? AND course_slug=?',[$me['id'],$course['slug']])->fetchColumn();
-    head_page('دورهٔ رایگان هوش مصنوعی؛ از اولین مفهوم تا شروع یادگیری','دورهٔ رایگان هوش مصنوعی نوونتیکس؛ جلسهٔ اول مبانی هوش مصنوعی را همین‌جا تماشا کنید. جلسهٔ دوم به‌زودی منتشر می‌شود. بدون پرداخت و بدون نیاز به پیش‌زمینه.',false,true);
+    $lessons=q("SELECT id,title,content,position,duration_minutes FROM lessons WHERE course_id=? AND status='published' ORDER BY position ASC",[(int)$course['id']])->fetchAll();
+    $first=$lessons[0] ?? null;
+    $total=count($lessons);
+    $duration=$course['estimated_duration_minutes'];
+    if ($duration===null && $lessons) {
+        $durations=array_column($lessons,'duration_minutes');
+        $duration=!in_array(null,$durations,true) ? array_sum($durations) : null;
+    }
+    $durationLabel=$duration===null ? 'مدت ثبت نشده' : fa((int)$duration).' دقیقه';
+    head_page($course['title'],$course['description'],false,true);
     notice();
     echo '<main class="free-course"><section class="fc-hero"><div class="container fc-hero-grid"><div class="fc-intro"><nav class="fc-breadcrumb" aria-label="مسیر صفحه">';
-    linkto('','خانه'); echo '<span aria-hidden="true">/</span><span aria-current="page">دورهٔ رایگان</span></nav><span class="fc-eyebrow"><span aria-hidden="true"></span>یادگیری از نقطهٔ شروع</span><h1>اولین قدمت در دنیای<br><em>هوش مصنوعی</em></h1><p class="fc-lead">برای شروع، لازم نیست همه‌چیز را بدانی. با دورهٔ رایگان نوونتیکس، از مفاهیم پایه شروع کن و قدم اول را با اطمینان بردار.</p><div class="fc-actions"><a href="#lesson-1" class="btn btn-primary">'.($canWatch?'تماشای جلسهٔ اول':'ثبت‌نام و شروع رایگان').' <span aria-hidden="true">←</span></a><a href="#course-sessions" class="fc-text-link">دیدن سرفصل‌ها</a></div><ul class="fc-facts"><li>کاملاً رایگان</li><li>بدون نیاز به پیش‌زمینه</li><li>آموزش به زبان فارسی</li></ul></div><aside class="fc-start-card" aria-label="معرفی دوره"><div class="fc-card-top"><span>مسیر شروع یادگیری</span><span class="fc-free-tag">رایگان</span></div><div class="fc-concept" aria-hidden="true"><span>AI</span><i></i><b>01</b></div><h2>از کنجکاوی، تا درک مفهوم.</h2><p>یک شروع ساده برای آشنایی با دنیایی که هر روز با آن روبه‌رو می‌شویم.</p><div class="fc-card-bottom"><span>۱ جلسه در دسترس</span><span>جلسهٔ دوم · به‌زودی</span></div></aside></div></section><section class="container fc-course-layout" aria-label="محتوای دوره"><div class="fc-main"><section id="lesson-1" class="fc-lesson" aria-labelledby="fc-lesson-title"><div class="fc-section-heading"><div><span class="fc-kicker">جلسهٔ اول · آمادهٔ تماشا</span><h2 id="fc-lesson-title">مبانی هوش مصنوعی</h2></div><span class="fc-available">منتشرشده</span></div>';
-    free_course_player($canWatch);
-    echo '<div class="fc-lesson-description"><h3>از همین‌جا شروع کن</h3><p>در جلسهٔ اول با مبانی هوش مصنوعی آشنا می‌شوی. ویدیو را با سرعت خودت دنبال کن و هرجا پرسشی داشتی، مکث کن و یادداشت بردار.</p><p class="fc-note">تماشای جلسه‌ها فقط پس از ثبت‌نام با شمارهٔ موبایل امکان‌پذیر است. پخش ویدیو به‌تنهایی پیشرفت آموزشی را ثبت نمی‌کند.</p></div></section><section class="fc-about" aria-labelledby="fc-about-title"><span class="fc-kicker">برای شروع، نه پیچیده‌تر کردن</span><h2 id="fc-about-title">این دوره برای توست اگر…</h2><div class="fc-audience"><article><span aria-hidden="true">۰۱</span><h3>تازه شروع کرده‌ای</h3><p>می‌خواهی مفاهیم پایه را بشناسی و برای اولین قدم، نقطهٔ شروع روشنی داشته باشی.</p></article><article><span aria-hidden="true">۰۲</span><h3>دنبال توضیح ساده‌ای</h3><p>ترجیح می‌دهی پیش از رفتن سراغ ابزارها و اصطلاحات تخصصی، اصل موضوع را بفهمی.</p></article></div></section></div><aside class="fc-sidebar"><section id="course-sessions" class="fc-sessions" aria-labelledby="fc-sessions-title"><div class="fc-sessions-header"><span class="fc-kicker">قدم‌به‌قدم جلو برو</span><h2 id="fc-sessions-title">جلسه‌های دوره</h2><p>۱ جلسه منتشرشده · ادامهٔ مسیر به‌زودی</p></div><ol><li class="fc-session-current"><a href="#lesson-1"><span class="fc-session-number">۰۱</span><span><strong>مبانی هوش مصنوعی</strong><small>جلسهٔ اول · تماشای رایگان</small></span><span class="fc-play-icon" aria-hidden="true">▶</span></a></li><li class="fc-session-soon"><span class="fc-session-number">۰۲</span><span><strong>جلسهٔ دوم</strong><small>به‌زودی</small></span><span class="fc-soon-tag">به‌زودی</span></li></ol><p class="fc-session-note">جلسهٔ دوم هنوز منتشر نشده است؛ پس از آماده‌شدن، همین‌جا در دسترس خواهد بود.</p></section><section class="fc-account"><span class="fc-kicker">ادامه در فضای یادگیری</span><h2>مسیرت را دنبال کن</h2><p>برای تماشای جلسه‌ها و دسترسی به فضای یادگیری دوره، باید با شمارهٔ موبایل ثبت‌نام کنی؛ ثبت‌نام همین حالا حساب تو را می‌سازد.</p>';
+    linkto('','خانه'); echo '<span aria-hidden="true">/</span><span aria-current="page">'.h($course['title']).'</span></nav><span class="fc-eyebrow"><span aria-hidden="true"></span>مسیر یادگیری · دوره</span><h1>'.h($course['title']).'</h1><p class="fc-lead">'.h($course['description']).'</p><div class="fc-actions"><a href="#lesson-1" class="btn btn-primary">'.($canWatch?'شروع تماشا':'ثبت‌نام و شروع رایگان').' <span aria-hidden="true">←</span></a><a href="#course-sessions" class="fc-text-link">دیدن سرفصل‌ها</a></div><ul class="fc-facts"><li>'.($course['slug']===FREE_COURSE_SLUG?'کاملاً رایگان':'دسترسی مطابق پلن').'</li><li>'.fa($total).' جلسه</li><li>'.h($durationLabel).'</li></ul></div><aside class="fc-start-card" aria-label="معرفی دوره"><div class="fc-card-top"><span>مسیر شروع یادگیری</span><span class="fc-free-tag">'.($course['slug']===FREE_COURSE_SLUG?'رایگان':'دوره').'</span></div><div class="fc-concept" aria-hidden="true"><span>AI</span><i></i><b>'.fa(str_pad((string)$total,2,'0',STR_PAD_LEFT)).'</b></div><h2>'.h($first['title'] ?? 'به‌زودی').'</h2><p>'.h($first ? mb_substr(trim(strip_tags((string)$first['content'])),0,120).'…' : 'جلسه‌های این دوره به‌زودی منتشر می‌شوند.').'</p><div class="fc-card-bottom"><span>'.fa($total).' جلسه در دسترس</span><span>'.h($durationLabel).'</span></div></aside></div></section><section class="container fc-course-layout" aria-label="محتوای دوره"><div class="fc-main">';
+    if (!$first) {
+        echo '<section class="fc-lesson"><div class="empty-state"><h2>هنوز جلسه‌ای منتشر نشده است</h2><p>به‌محض انتشار اولین جلسه، همین‌جا نمایش داده می‌شود.</p></div></section>';
+    } else {
+        echo '<section id="lesson-1" class="fc-lesson" aria-labelledby="fc-lesson-title"><div class="fc-section-heading"><div><span class="fc-kicker">جلسهٔ اول · آمادهٔ تماشا</span><h2 id="fc-lesson-title">'.h($first['title']).'</h2></div><span class="fc-available">منتشرشده</span></div>';
+        free_course_player($canWatch);
+        echo '<div class="fc-lesson-description"><h3>دربارهٔ این جلسه</h3><p>'.nl2br(h((string)$first['content'])).'</p><p class="fc-note">تماشای جلسه‌ها فقط پس از ثبت‌نام با شمارهٔ موبایل امکان‌پذیر است. پخش ویدیو به‌تنهایی پیشرفت آموزشی را ثبت نمی‌کند.</p></div></section>';
+    }
+    echo '<section class="fc-about" aria-labelledby="fc-about-title"><span class="fc-kicker">برای شروع، نه پیچیده‌تر کردن</span><h2 id="fc-about-title">این دوره برای توست اگر…</h2><div class="fc-audience"><article><span aria-hidden="true">۰۱</span><h3>تازه شروع کرده‌ای</h3><p>می‌خواهی مفاهیم پایه را بشناسی و برای اولین قدم، نقطهٔ شروع روشنی داشته باشی.</p></article><article><span aria-hidden="true">۰۲</span><h3>دنبال توضیح ساده‌ای</h3><p>ترجیح می‌دهی پیش از رفتن سراغ ابزارها و اصطلاحات تخصصی، اصل موضوع را بفهمی.</p></article></div></section></div><aside class="fc-sidebar"><section id="course-sessions" class="fc-sessions" aria-labelledby="fc-sessions-title"><div class="fc-sessions-header"><span class="fc-kicker">قدم‌به‌قدم جلو برو</span><h2 id="fc-sessions-title">جلسه‌های دوره</h2><p>'.fa($total).' جلسه منتشرشده</p></div><ol>';
+    foreach ($lessons as $index=>$lesson) {
+        $current=$index===0;
+        echo '<li class="'.($current?'fc-session-current':'fc-session-soon').'">'.($current?'<a href="#lesson-1">':'<span>').'<span class="fc-session-number">'.fa(str_pad((string)((int)$lesson['position']),2,'0',STR_PAD_LEFT)).'</span><span><strong>'.h($lesson['title']).'</strong><small>'.($lesson['duration_minutes']===null?'مدت ثبت نشده':fa((int)$lesson['duration_minutes']).' دقیقه').'</small></span>'.($current?'<span class="fc-play-icon" aria-hidden="true">▶</span></a>':'<span class="fc-soon-tag">در پنل</span></span>').'</li>';
+    }
+    if (!$lessons) echo '<li class="fc-session-soon"><span class="fc-session-number">—</span><span><strong>جلسه‌ای منتشر نشده</strong><small>به‌زودی</small></span></li>';
+    echo '</ol><p class="fc-session-note">جلسه‌های بعدی پس از انتشار، در همین فهرست و در فضای یادگیری پنل در دسترس قرار می‌گیرند.</p></section><section class="fc-account"><span class="fc-kicker">ادامه در فضای یادگیری</span><h2>مسیرت را دنبال کن</h2><p>برای تماشای جلسه‌ها و دسترسی به فضای یادگیری دوره، باید با شمارهٔ موبایل ثبت‌نام کنی؛ ثبت‌نام همین حالا حساب تو را می‌سازد.</p>';
     if ($canWatch) course_start_action($course,$me,$enrolled,'btn btn-outline');
-    else linkto('register?next='.rawurlencode('course/'.FREE_COURSE_SLUG),'ثبت‌نام با شماره موبایل','btn btn-outline');
+    else linkto('register?next='.rawurlencode('course/'.$course['slug']),'ثبت‌نام با شماره موبایل','btn btn-outline');
     echo '</section></aside></section><section class="container fc-bottom-note"><p>لازم نیست از همه جلوتر باشی؛ کافی‌ست اولین قدم را برداری.</p><a href="#lesson-1">شروع از جلسهٔ اول <span aria-hidden="true">↑</span></a></section></main>';
     foot_page();
 }
@@ -373,35 +369,40 @@ function panel(string $sub): void {
     $role=$me['role']; echo '<main class="panel-content"'.($role==='admin'?' id="admin-main" tabindex="-1"':'').'>';
     if ($sub==='' && $role==='admin') { admin_overview(); echo '</main>'; return; }
     if ($sub==='') {
-        echo '<div class="panel-welcome"><div><span class="eyebrow">'.($role==='admin'?'مدیریت Noventix':($role==='owner'?'فضای مالک':'فضای یادگیری شما')).'</span><h1>سلام'.($me['name']?' '.h($me['name']):'').'، خوش آمدی 👋</h1><p>'.($role==='admin'?'وضعیت پلتفرم را در یک نگاه ببین و کاربران را مدیریت کن.':'امروز هم یک قدم برای ساختن مهارت تازه بردار.').'</p></div><span class="pill">'.(COMMERCE_ENABLED?'پلن '.h(PLANS[$plan]['name']):'دسترسی رایگان محدود').'</span></div>';
-        if ($role==='admin') { $stats=[['کاربران',(int)q('SELECT COUNT(*) FROM users')->fetchColumn()],['اشتراک فعال',(int)q("SELECT COUNT(*) FROM subscriptions WHERE status='active' AND expires_at>?",[gmdate('Y-m-d H:i:s')])->fetchColumn()],['گفت‌وگوها',(int)q('SELECT COUNT(*) FROM community_posts')->fetchColumn()],['پیام‌ها',(int)q('SELECT COUNT(*) FROM contact_messages')->fetchColumn()]]; }
-        else { $stats=[['مقاله‌های من',(int)q('SELECT COUNT(*) FROM enrollments WHERE user_id=?',[$me['id']])->fetchColumn()],['پروژه‌های من',(int)q('SELECT COUNT(*) FROM projects WHERE user_id=?',[$me['id']])->fetchColumn()],['گفت‌وگوها',(int)q('SELECT COUNT(*) FROM community_posts WHERE user_id=?',[$me['id']])->fetchColumn()],[COMMERCE_ENABLED?'پلن فعال':'دسترسی',COMMERCE_ENABLED?PLANS[$plan]['name']:'رایگان محدود']]; }
-        echo '<div class="stat-grid">'; foreach ($stats as [$label,$value]) echo '<div class="stat-card"><span>'.h($label).'</span><strong>'.(is_int($value)?fa($value):h($value)).'</strong></div>'; echo '</div><section class="panel-card account-summary"><div><span class="eyebrow">حساب من</span><h2>اطلاعات حساب</h2></div><dl><div><dt>نام و نام خانوادگی</dt><dd>'.h(trim((string)$me['name'])!==''?$me['name']:'ثبت نشده').'</dd></div><div><dt>شماره تلفن</dt><dd dir="ltr">'.h(trim((string)$me['phone'])!==''?$me['phone']:'ثبت نشده').'</dd></div></dl></section><div class="panel-columns"><section class="panel-card"><span class="eyebrow">گام بعدی</span><h2>'.($role==='admin'?'مدیریت کاربران':'مسیرت را ادامه بده').'</h2><p>'.($role==='admin'?'ثبت‌نام و پیشرفت واقعی یادگیرندگان را بررسی کنید.':'دوره مقدماتی هوش مصنوعی را بدون پرداخت شروع کن و پیشرفتت را دنبال کن.').'</p>'; linkto($role==='admin'?'dashboard/users':'course/'.FREE_COURSE_SLUG,$role==='admin'?'مدیریت کاربران ←':'شروع دوره رایگان ←','btn btn-primary'); echo '</section><section class="panel-card soft"><span class="eyebrow">'.($role==='admin'?'جامعه':'کنار هم یاد می‌گیریم').'</span><h2>انجمن Noventix</h2><p>سؤال‌ها، تجربه‌ها و ایده‌ها را با جامعه یادگیری در میان بگذار.</p>'; linkto('community','ورود به انجمن ←','btn btn-outline'); echo '</section></div>';
-        if ($role!=='admin') {
+        $isAdmin=$role==='admin';
+        $firstName=trim(explode(' ',(string)$me['name'])[0] ?? '');
+        echo '<div class="dash-hero"><div class="dash-hero-copy"><span class="eyebrow">'.($isAdmin?'مرکز مدیریت Noventix':($role==='owner'?'فضای مالک':'فضای یادگیری شما')).'</span><h1>'.($firstName!==''?'سلام '.h($firstName).'، خوش آمدی':'خوش آمدی').'</h1><p>'.($isAdmin?'وضعیت پلتفرم را در یک نگاه ببین و کاربران را مدیریت کن.':'امروز هم یک قدم برای ساختن مهارت تازه بردار.').'</p><div class="dash-hero-actions">';
+        if ($isAdmin) { linkto('dashboard/users','مدیریت کاربران','btn btn-primary'); linkto('dashboard/analytics','گزارش‌ها','btn btn-outline'); }
+        else { linkto('dashboard/learning','ادامهٔ مسیر یادگیری','btn btn-primary'); linkto('projects','دیدن پروژه‌ها','btn btn-outline'); }
+        echo '</div></div><div class="dash-hero-badge"><span class="dash-badge-label">'.(COMMERCE_ENABLED?'پلن فعال':'دسترسی').'</span><strong>'.(COMMERCE_ENABLED?h(PLANS[$plan]['name']):'رایگان').'</strong></div></div>';
+        if ($isAdmin) { $stats=[['کاربران',(int)q('SELECT COUNT(*) FROM users')->fetchColumn(),'dashboard/users'],['اشتراک فعال',(int)q("SELECT COUNT(*) FROM subscriptions WHERE status='active' AND expires_at>?",[gmdate('Y-m-d H:i:s')])->fetchColumn(),'dashboard/subscriptions'],['گفت‌وگوها',(int)q('SELECT COUNT(*) FROM community_posts')->fetchColumn(),'dashboard/community'],['پیام‌ها',(int)q('SELECT COUNT(*) FROM contact_messages')->fetchColumn(),'dashboard/messages']]; }
+        else { $stats=[['مقاله‌های من',(int)q('SELECT COUNT(*) FROM enrollments WHERE user_id=?',[$me['id']])->fetchColumn(),'dashboard/learning'],['پروژه‌های من',(int)q('SELECT COUNT(*) FROM projects WHERE user_id=?',[$me['id']])->fetchColumn(),'dashboard/projects'],['گفت‌وگوها',(int)q('SELECT COUNT(*) FROM community_posts WHERE user_id=?',[$me['id']])->fetchColumn(),'dashboard/community'],['XP',lp_xp((int)$me['id']),'dashboard/gamification']]; }
+        echo '<div class="dash-stats">';
+        foreach ($stats as $index=>[$label,$value,$href]) echo '<a class="dash-stat" href="'.h(url($href)).'" style="--i:'.$index.'"><span class="dash-stat-label">'.h($label).'</span><strong class="dash-stat-value">'.fa($value).'</strong><span class="dash-stat-arrow" aria-hidden="true">←</span></a>';
+        echo '</div>';
+        if (!$isAdmin) {
             $courseError=false;
-            try {
-                $courseProgress=dashboard_course_progress((int)$me['id']);
-                $activeLesson=$courseProgress ? dashboard_active_lesson((int)$me['id'],$courseProgress) : null;
-            } catch (Throwable $e) {
-                $courseError=true;
-                $courseProgress=null;
-            }
-            if ($courseError) echo '<section class="panel-card course-progress-card"><span class="eyebrow">وضعیت دوره</span><p>دریافت مسیر یادگیری ممکن نشد. لطفاً دوباره تلاش کنید.</p></section>';
+            try { $courseProgress=dashboard_course_progress((int)$me['id']); $activeLesson=$courseProgress ? dashboard_active_lesson((int)$me['id'],$courseProgress) : null; }
+            catch (Throwable $e) { $courseError=true; $courseProgress=null; }
+            echo '<section class="dash-panel dash-course">';
+            if ($courseError) echo '<span class="eyebrow">وضعیت دوره</span><p>دریافت مسیر یادگیری ممکن نشد. لطفاً دوباره تلاش کنید.</p>';
             elseif ($courseProgress) {
-                echo '<section class="panel-card course-progress-card"><span class="eyebrow">وضعیت دوره</span><h2>'.h($courseProgress['title']).'</h2><p>'.(['completed'=>'تکمیل‌شده','in_progress'=>'در حال یادگیری','not_started'=>'شروع‌نشده'][$courseProgress['status']]).'</p><div class="course-progress-details"><div><span>پیشرفت دوره</span><strong>'.fa((string)$courseProgress['percentage']).'٪</strong></div><div><span>درس‌های تکمیل‌شده</span><strong>'.fa($courseProgress['completed']).' از '.fa($courseProgress['total']).'</strong></div><div><span>درس‌های باقی‌مانده</span><strong>'.fa($courseProgress['remaining']).'</strong></div></div><div class="progress" role="progressbar" aria-label="پیشرفت دوره" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'.h($courseProgress['percentage']).'"><span style="width:'.h($courseProgress['percentage']).'%"></span></div>';
-                echo '<div class="course-active-lesson'.($courseProgress['status']==='completed'?' is-completed':'').'">';
+                echo '<div class="dash-course-head"><div><span class="eyebrow">وضعیت دوره</span><h2>'.h($courseProgress['title']).'</h2></div><span class="dash-status is-'.h($courseProgress['status']).'">'.(['completed'=>'تکمیل‌شده','in_progress'=>'در حال یادگیری','not_started'=>'شروع‌نشده'][$courseProgress['status']]).'</span></div>';
+                echo '<div class="dash-course-metrics"><div><span>پیشرفت</span><strong>'.fa((string)$courseProgress['percentage']).'٪</strong></div><div><span>تکمیل‌شده</span><strong>'.fa($courseProgress['completed']).' از '.fa($courseProgress['total']).'</strong></div><div><span>باقی‌مانده</span><strong>'.fa($courseProgress['remaining']).'</strong></div></div>';
+                echo '<div class="dash-progress" role="progressbar" aria-label="پیشرفت دوره" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'.h($courseProgress['percentage']).'"><span style="width:'.h($courseProgress['percentage']).'%"></span></div>';
                 if ($courseProgress['status']==='completed') {
-                    echo '<strong>تبریک! این دوره را با موفقیت به پایان رساندی.</strong><span>دوره تکمیل شده</span><p>حالا وقت آن است که آموخته‌هایت را در یک مسیر عملی ادامه بدهی.</p>';
-                    linkto('projects','مرور پروژه‌های موجود ←','btn btn-primary');
-                    linkto('dashboard/course/'.$courseProgress['slug'],'مرور دوباره درس‌ها','btn btn-outline');
+                    echo '<div class="dash-course-next'.($courseProgress['status']==='completed'?' is-completed':'').'"><strong>تبریک! این دوره را با موفقیت به پایان رساندی.</strong><span class="dash-next-label">دوره تکمیل شده</span><p>حالا وقت آن است که آموخته‌هایت را در یک مسیر عملی ادامه بدهی.</p><div class="dash-course-actions">'; linkto('projects','مرور پروژه‌های موجود ←','btn btn-primary'); linkto('dashboard/course/'.$courseProgress['slug'],'مرور دوباره درس‌ها','btn btn-outline'); echo '</div></div>';
                 } elseif ($activeLesson['lesson']) {
-                    echo '<p>'.fa($courseProgress['remaining']).' درس الزامی باقی مانده است.</p>';
-                    echo '<strong>'.h($activeLesson['lesson']['title']).'</strong><span>'.($activeLesson['lesson_status']==='in_progress'?'در حال یادگیری':'شروع‌نشده').'</span>';
-                    linkto('dashboard/course/'.$courseProgress['slug'].'?lesson='.(int)$activeLesson['lesson']['id'],$activeLesson['lesson_status']==='in_progress'?'ادامهٔ یادگیری ←':'شروع یادگیری ←','btn btn-primary');
-                } else echo '<span>هنوز درسی برای این دوره منتشر نشده است.</span>';
-                echo '</div></section>';
-            } else echo '<section class="panel-card course-progress-card"><span class="eyebrow">وضعیت دوره</span><p>هنوز در دوره‌ای ثبت‌نام نکرده‌اید.</p></section>';
+                    echo '<div class="dash-course-next"><span class="dash-next-label">درس بعدی</span><strong>'.h($activeLesson['lesson']['title']).'</strong><p>'.fa($courseProgress['remaining']).' درس الزامی باقی مانده است.</p><div class="dash-course-actions">'; linkto('dashboard/course/'.$courseProgress['slug'].'?lesson='.(int)$activeLesson['lesson']['id'],$activeLesson['lesson_status']==='in_progress'?'ادامهٔ یادگیری ←':'شروع یادگیری ←','btn btn-primary'); echo '</div></div>';
+                } else echo '<p class="muted">هنوز درسی برای این دوره منتشر نشده است.</p>';
+            } else echo '<span class="eyebrow">وضعیت دوره</span><h2>هنوز در دوره‌ای ثبت‌نام نکرده‌اید</h2><p>با دورهٔ مقدماتی هوش مصنوعی شروع کن؛ رایگان و بدون پیش‌نیاز.</p><div class="dash-course-actions">'; linkto('course/'.FREE_COURSE_SLUG,'شروع دورهٔ رایگان ←','btn btn-primary'); echo '</div>';
+            echo '</section>';
         }
+        echo '<div class="dash-grid">';
+        echo '<section class="dash-panel"><span class="eyebrow">'.($isAdmin?'مدیریت':'گام بعدی').'</span><h2>'.($isAdmin?'مدیریت کاربران':'مسیرت را ادامه بده').'</h2><p>'.($isAdmin?'ثبت‌نام و پیشرفت واقعی یادگیرندگان را بررسی کنید.':'دورهٔ مقدماتی هوش مصنوعی را بدون پرداخت شروع کن و پیشرفتت را دنبال کن.').'</p>'; linkto($isAdmin?'dashboard/users':'course/'.FREE_COURSE_SLUG,$isAdmin?'مدیریت کاربران ←':'شروع دورهٔ رایگان ←','btn btn-primary'); echo '</section>';
+        echo '<section class="dash-panel"><span class="eyebrow">'.($isAdmin?'جامعه':'کنار هم یاد می‌گیریم').'</span><h2>انجمن Noventix</h2><p>سؤال‌ها، تجربه‌ها و ایده‌ها را با جامعهٔ یادگیری در میان بگذار.</p>'; linkto('community','ورود به انجمن ←','btn btn-outline'); echo '</section>';
+        echo '<section class="dash-panel dash-account"><span class="eyebrow">حساب من</span><h2>اطلاعات حساب</h2><dl><div><dt>نام</dt><dd>'.h(trim((string)$me['name'])!==''?$me['name']:'ثبت نشده').'</dd></div><div><dt>شماره تلفن</dt><dd dir="ltr">'.h(trim((string)$me['phone'])!==''?$me['phone']:'ثبت نشده').'</dd></div></dl>'; linkto('dashboard/profile','ویرایش پروفایل','btn btn-outline'); echo '</section>';
+        echo '</div>';
     } elseif ($sub==='profile') {
         panel_head('پروفایل من','اطلاعات حساب و خلاصهٔ مهارت شما.');
         $summary=skill_profile_for((int)$me['id']);

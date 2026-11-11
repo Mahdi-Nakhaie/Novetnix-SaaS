@@ -10,6 +10,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 ROUTER = (ROOT / "src/router.php").read_text(encoding="utf-8")
 VIEWS = (ROOT / "src/views.php").read_text(encoding="utf-8")
 APP = (ROOT / "src/app.php").read_text(encoding="utf-8")
+DATA = (ROOT / "src/data.php").read_text(encoding="utf-8")
 SCHEMA = (ROOT / "database/schema.sqlite.sql").read_text(encoding="utf-8")
 
 
@@ -26,12 +27,12 @@ def query(source, table):
 class UpcomingPricingTest(unittest.TestCase):
     def test_home_and_pricing_use_the_same_plan_cards(self):
         self.assertIn('upcoming_plan_cards();', body(VIEWS, 'home'))
-        self.assertIn('upcoming_plan_cards();', body(ROUTER, 'page_pricing'))
-        cards = body(VIEWS, 'upcoming_plan_cards')
+        pricing = body(ROUTER, 'page_pricing')
+        self.assertIn('pricing-plans', pricing)
+        self.assertIn('pricing-plan-features', pricing)
         for plan in ('bronze', 'silver', 'gold', 'titanium'):
-            self.assertIn(f"'{plan}'=>", cards)
-        self.assertIn('plan-chain', cards)
-        self.assertIn('به‌زودی', cards)
+            self.assertIn(f"'{plan}' =>", DATA)
+        self.assertIn('pricing-terms', pricing)
 
     def test_home_link_targets_pricing_comparison(self):
         self.assertIn("linkto('pricing#plan-features','مشاهدهٔ امکانات پلن‌ها'", body(VIEWS, 'home'))
@@ -39,13 +40,12 @@ class UpcomingPricingTest(unittest.TestCase):
 
     def test_comparison_is_accessible_and_pending(self):
         pricing = body(ROUTER, 'page_pricing')
-        for markup in ('<caption>', 'scope="col"', 'scope="row"', 'tabindex="0"', 'plan-comparison-lock', 'aria-hidden="true"'):
+        for markup in ('<caption>', 'scope="col"', 'scope="row"', 'tabindex="0"', 'aria-label="جدول مقایسهٔ امکانات پلن‌ها"'):
             self.assertIn(markup, pricing)
-        self.assertIn('<td><span class="plan-feature-pending">به‌زودی</span></td>', pricing)
+        self.assertIn('Nova AI', pricing)
         self.assertNotIn('checkout', pricing)
         css = (ROOT / 'public/assets/style.css').read_text(encoding='utf-8')
         self.assertIn('.plan-comparison-scroll{overflow-x:auto;', css)
-        self.assertIn('.plan-comparison-lock{position:absolute;inset:0;pointer-events:none;', css)
 
 
 class PublicCoursesTest(unittest.TestCase):

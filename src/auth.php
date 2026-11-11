@@ -135,8 +135,6 @@ function delete_account(int $userId): bool {
         q('DELETE FROM darycheh_actions WHERE attempt_id IN (SELECT id FROM darycheh_attempts WHERE user_id=?)',[$userId]);
         q('DELETE FROM darycheh_attempts WHERE user_id=?',[$userId]);
         q('DELETE FROM project_completions WHERE user_id=?',[$userId]);
-        q('DELETE FROM coin_ledger WHERE user_id=?',[$userId]);
-        q('DELETE FROM hint_unlocks WHERE user_id=?',[$userId]);
         q('DELETE FROM workspace_dataset_imports WHERE owner=?',[$userId]);
         q('DELETE FROM workspace_runs WHERE project_id IN (SELECT id FROM projects WHERE user_id=?)',[$userId]);
         q('DELETE FROM project_workspaces WHERE project_id IN (SELECT id FROM projects WHERE user_id=?)',[$userId]);
