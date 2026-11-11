@@ -93,7 +93,7 @@ body .site-header .main-nav a {
   justify-content: center;
   min-height: 48px;
   padding: var(--space-2) clamp(5px, .55vw, 11px);
-  font-size: clamp(.8rem, 2.02vw - 11.6px, 1.16rem);
+  font-size: clamp(.78rem, 1.98vw - 11.4px, 1.12rem);
   font-weight: 700;
   line-height: 1.7;
   white-space: nowrap;

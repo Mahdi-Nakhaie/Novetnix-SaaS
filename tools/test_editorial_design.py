@@ -68,7 +68,7 @@ class HeaderLayoutTest(unittest.TestCase):
         cls.css = (ROOT / 'public/assets/header.css').read_text(encoding='utf-8')
 
     def test_shared_header_styles_exclude_private_panels(self):
-        self.assertIn("if (!$panel) echo '<link rel=\"stylesheet\" href=\"/assets/header.css?v=9\">';", VIEWS)
+        self.assertIn("if (!$panel) echo '<link rel=\"stylesheet\" href=\"/assets/header.css?v=10\">';", VIEWS)
         for selector in re.findall(r'([^{}]+)\{', self.css):
             if not selector.strip().startswith('@'):
                 self.assertTrue(selector.strip().startswith('body .site-header'), selector)
@@ -83,7 +83,7 @@ class HeaderLayoutTest(unittest.TestCase):
         self.assertNotIn('position: absolute', self.css)
 
     def test_navigation_only_increases_spacing_and_type(self):
-        self.assertRegex(self.css, r'\.main-nav a\s*\{[^}]*font-size: clamp\(\.8rem, 2\.02vw - 11\.6px, 1\.16rem\);')
+        self.assertRegex(self.css, r'\.main-nav a\s*\{[^}]*font-size: clamp\(\.78rem, 1\.98vw - 11\.4px, 1\.12rem\);')
         self.assertIn('gap: clamp(6px, .55vw, 12px);', self.css)
         self.assertIn('padding-inline: clamp(5px, .55vw, 11px);', self.css)
         self.assertIn('flex-wrap: nowrap;', self.css)

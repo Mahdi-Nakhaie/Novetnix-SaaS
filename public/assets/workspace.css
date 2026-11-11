@@ -56,6 +56,11 @@
 .ws-challenge-topic{font-size:.8125rem;line-height:1.9;font-weight:700;color:#5b3d80;overflow-wrap:anywhere}
 .ws-challenge-badge{margin-inline-start:auto;flex:0 0 auto;padding:.2rem .6rem;border-radius:999px;border:1px solid #bfe7d1;background:#eefaf3;color:#146b41;font-size:.75rem;font-weight:800;line-height:1.9}
 .ws-challenge-desc{color:#73667e;font-size:.9rem;line-height:1.95;margin:0;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.ws-challenge-goal{margin:0;color:#6b5085;font-size:.85rem;line-height:1.95;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ws-challenge-goal-label{display:inline-block;margin-inline-end:.4rem;padding:.05rem .45rem;border-radius:6px;background:#f2edf9;color:#5b3d80;font-size:.75rem;font-weight:800}
+.ws-challenge-guide-link{display:inline-flex;align-items:center;min-height:44px;color:#7c1fd1;font-size:.8125rem;font-weight:800;text-decoration:underline;text-underline-offset:4px}
+.ws-challenge-guide-link:hover{color:#5b3d80;text-decoration:none}
+.ws-challenge-guide-link:focus-visible{outline:3px solid #9571d0;outline-offset:3px;border-radius:4px}
 .ws-challenge-time{display:flex;align-items:center;gap:.4rem;color:#6b5085;font-size:.8125rem;font-weight:700;line-height:1.9}
 .ws-challenge-time-icon{display:inline-flex;color:#8b5cf6}
 .ws-challenge-meta-row{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .75rem;padding-top:.1rem}
