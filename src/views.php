@@ -369,40 +369,35 @@ function panel(string $sub): void {
     $role=$me['role']; echo '<main class="panel-content"'.($role==='admin'?' id="admin-main" tabindex="-1"':'').'>';
     if ($sub==='' && $role==='admin') { admin_overview(); echo '</main>'; return; }
     if ($sub==='') {
-        $isAdmin=$role==='admin';
-        $firstName=trim(explode(' ',(string)$me['name'])[0] ?? '');
-        echo '<div class="dash-hero"><div class="dash-hero-copy"><span class="eyebrow">'.($isAdmin?'مرکز مدیریت Noventix':($role==='owner'?'فضای مالک':'فضای یادگیری شما')).'</span><h1>'.($firstName!==''?'سلام '.h($firstName).'، خوش آمدی':'خوش آمدی').'</h1><p>'.($isAdmin?'وضعیت پلتفرم را در یک نگاه ببین و کاربران را مدیریت کن.':'امروز هم یک قدم برای ساختن مهارت تازه بردار.').'</p><div class="dash-hero-actions">';
-        if ($isAdmin) { linkto('dashboard/users','مدیریت کاربران','btn btn-primary'); linkto('dashboard/analytics','گزارش‌ها','btn btn-outline'); }
-        else { linkto('dashboard/learning','ادامهٔ مسیر یادگیری','btn btn-primary'); linkto('projects','دیدن پروژه‌ها','btn btn-outline'); }
-        echo '</div></div><div class="dash-hero-badge"><span class="dash-badge-label">'.(COMMERCE_ENABLED?'پلن فعال':'دسترسی').'</span><strong>'.(COMMERCE_ENABLED?h(PLANS[$plan]['name']):'رایگان').'</strong></div></div>';
-        if ($isAdmin) { $stats=[['کاربران',(int)q('SELECT COUNT(*) FROM users')->fetchColumn(),'dashboard/users'],['اشتراک فعال',(int)q("SELECT COUNT(*) FROM subscriptions WHERE status='active' AND expires_at>?",[gmdate('Y-m-d H:i:s')])->fetchColumn(),'dashboard/subscriptions'],['گفت‌وگوها',(int)q('SELECT COUNT(*) FROM community_posts')->fetchColumn(),'dashboard/community'],['پیام‌ها',(int)q('SELECT COUNT(*) FROM contact_messages')->fetchColumn(),'dashboard/messages']]; }
-        else { $stats=[['مقاله‌های من',(int)q('SELECT COUNT(*) FROM enrollments WHERE user_id=?',[$me['id']])->fetchColumn(),'dashboard/learning'],['پروژه‌های من',(int)q('SELECT COUNT(*) FROM projects WHERE user_id=?',[$me['id']])->fetchColumn(),'dashboard/projects'],['گفت‌وگوها',(int)q('SELECT COUNT(*) FROM community_posts WHERE user_id=?',[$me['id']])->fetchColumn(),'dashboard/community'],['XP',lp_xp((int)$me['id']),'dashboard/gamification']]; }
-        echo '<div class="dash-stats">';
-        foreach ($stats as $index=>[$label,$value,$href]) echo '<a class="dash-stat" href="'.h(url($href)).'" style="--i:'.$index.'"><span class="dash-stat-label">'.h($label).'</span><strong class="dash-stat-value">'.fa($value).'</strong><span class="dash-stat-arrow" aria-hidden="true">←</span></a>';
-        echo '</div>';
-        if (!$isAdmin) {
+        echo '<div class="panel-welcome"><div><span class="eyebrow">'.($role==='admin'?'مدیریت Noventix':($role==='owner'?'فضای مالک':'فضای یادگیری شما')).'</span><h1>سلام'.($me['name']?' '.h($me['name']):'').'، خوش آمدی 👋</h1><p>'.($role==='admin'?'وضعیت پلتفرم را در یک نگاه ببین و کاربران را مدیریت کن.':'امروز هم یک قدم برای ساختن مهارت تازه بردار.').'</p></div><span class="pill">'.(COMMERCE_ENABLED?'پلن '.h(PLANS[$plan]['name']):'دسترسی رایگان محدود').'</span></div>';
+        if ($role==='admin') { $stats=[['کاربران',(int)q('SELECT COUNT(*) FROM users')->fetchColumn()],['اشتراک فعال',(int)q("SELECT COUNT(*) FROM subscriptions WHERE status='active' AND expires_at>?",[gmdate('Y-m-d H:i:s')])->fetchColumn()],['گفت‌وگوها',(int)q('SELECT COUNT(*) FROM community_posts')->fetchColumn()],['پیام‌ها',(int)q('SELECT COUNT(*) FROM contact_messages')->fetchColumn()]]; }
+        else { $stats=[['مقاله‌های من',(int)q('SELECT COUNT(*) FROM enrollments WHERE user_id=?',[$me['id']])->fetchColumn()],['پروژه‌های من',(int)q('SELECT COUNT(*) FROM projects WHERE user_id=?',[$me['id']])->fetchColumn()],['گفت‌وگوها',(int)q('SELECT COUNT(*) FROM community_posts WHERE user_id=?',[$me['id']])->fetchColumn()],[COMMERCE_ENABLED?'پلن فعال':'دسترسی',COMMERCE_ENABLED?PLANS[$plan]['name']:'رایگان محدود']]; }
+        echo '<div class="stat-grid">'; foreach ($stats as [$label,$value]) echo '<div class="stat-card"><span>'.h($label).'</span><strong>'.(is_int($value)?fa($value):h($value)).'</strong></div>'; echo '</div><section class="panel-card account-summary"><div><span class="eyebrow">حساب من</span><h2>اطلاعات حساب</h2></div><dl><div><dt>نام و نام خانوادگی</dt><dd>'.h(trim((string)$me['name'])!==''?$me['name']:'ثبت نشده').'</dd></div><div><dt>شماره تلفن</dt><dd dir="ltr">'.h(trim((string)$me['phone'])!==''?$me['phone']:'ثبت نشده').'</dd></div></dl></section><div class="panel-columns"><section class="panel-card"><span class="eyebrow">گام بعدی</span><h2>'.($role==='admin'?'مدیریت کاربران':'مسیرت را ادامه بده').'</h2><p>'.($role==='admin'?'ثبت‌نام و پیشرفت واقعی یادگیرندگان را بررسی کنید.':'دوره مقدماتی هوش مصنوعی را بدون پرداخت شروع کن و پیشرفتت را دنبال کن.').'</p>'; linkto($role==='admin'?'dashboard/users':'course/'.FREE_COURSE_SLUG,$role==='admin'?'مدیریت کاربران ←':'شروع دوره رایگان ←','btn btn-primary'); echo '</section><section class="panel-card soft"><span class="eyebrow">'.($role==='admin'?'جامعه':'کنار هم یاد می‌گیریم').'</span><h2>انجمن Noventix</h2><p>سؤال‌ها، تجربه‌ها و ایده‌ها را با جامعه یادگیری در میان بگذار.</p>'; linkto('community','ورود به انجمن ←','btn btn-outline'); echo '</section></div>';
+        if ($role!=='admin') {
             $courseError=false;
-            try { $courseProgress=dashboard_course_progress((int)$me['id']); $activeLesson=$courseProgress ? dashboard_active_lesson((int)$me['id'],$courseProgress) : null; }
-            catch (Throwable $e) { $courseError=true; $courseProgress=null; }
-            echo '<section class="dash-panel dash-course">';
-            if ($courseError) echo '<span class="eyebrow">وضعیت دوره</span><p>دریافت مسیر یادگیری ممکن نشد. لطفاً دوباره تلاش کنید.</p>';
+            try {
+                $courseProgress=dashboard_course_progress((int)$me['id']);
+                $activeLesson=$courseProgress ? dashboard_active_lesson((int)$me['id'],$courseProgress) : null;
+            } catch (Throwable $e) {
+                $courseError=true;
+                $courseProgress=null;
+            }
+            if ($courseError) echo '<section class="panel-card course-progress-card"><span class="eyebrow">وضعیت دوره</span><p>دریافت مسیر یادگیری ممکن نشد. لطفاً دوباره تلاش کنید.</p></section>';
             elseif ($courseProgress) {
-                echo '<div class="dash-course-head"><div><span class="eyebrow">وضعیت دوره</span><h2>'.h($courseProgress['title']).'</h2></div><span class="dash-status is-'.h($courseProgress['status']).'">'.(['completed'=>'تکمیل‌شده','in_progress'=>'در حال یادگیری','not_started'=>'شروع‌نشده'][$courseProgress['status']]).'</span></div>';
-                echo '<div class="dash-course-metrics"><div><span>پیشرفت</span><strong>'.fa((string)$courseProgress['percentage']).'٪</strong></div><div><span>تکمیل‌شده</span><strong>'.fa($courseProgress['completed']).' از '.fa($courseProgress['total']).'</strong></div><div><span>باقی‌مانده</span><strong>'.fa($courseProgress['remaining']).'</strong></div></div>';
-                echo '<div class="dash-progress" role="progressbar" aria-label="پیشرفت دوره" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'.h($courseProgress['percentage']).'"><span style="width:'.h($courseProgress['percentage']).'%"></span></div>';
+                echo '<section class="panel-card course-progress-card"><span class="eyebrow">وضعیت دوره</span><h2>'.h($courseProgress['title']).'</h2><p>'.(['completed'=>'تکمیل‌شده','in_progress'=>'در حال یادگیری','not_started'=>'شروع‌نشده'][$courseProgress['status']]).'</p><div class="course-progress-details"><div><span>پیشرفت دوره</span><strong>'.fa((string)$courseProgress['percentage']).'٪</strong></div><div><span>درس‌های تکمیل‌شده</span><strong>'.fa($courseProgress['completed']).' از '.fa($courseProgress['total']).'</strong></div><div><span>درس‌های باقی‌مانده</span><strong>'.fa($courseProgress['remaining']).'</strong></div></div><div class="progress" role="progressbar" aria-label="پیشرفت دوره" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'.h($courseProgress['percentage']).'"><span style="width:'.h($courseProgress['percentage']).'%"></span></div>';
+                echo '<div class="course-active-lesson'.($courseProgress['status']==='completed'?' is-completed':'').'">';
                 if ($courseProgress['status']==='completed') {
-                    echo '<div class="dash-course-next'.($courseProgress['status']==='completed'?' is-completed':'').'"><strong>تبریک! این دوره را با موفقیت به پایان رساندی.</strong><span class="dash-next-label">دوره تکمیل شده</span><p>حالا وقت آن است که آموخته‌هایت را در یک مسیر عملی ادامه بدهی.</p><div class="dash-course-actions">'; linkto('projects','مرور پروژه‌های موجود ←','btn btn-primary'); linkto('dashboard/course/'.$courseProgress['slug'],'مرور دوباره درس‌ها','btn btn-outline'); echo '</div></div>';
+                    echo '<strong>تبریک! این دوره را با موفقیت به پایان رساندی.</strong><span>دوره تکمیل شده</span><p>حالا وقت آن است که آموخته‌هایت را در یک مسیر عملی ادامه بدهی.</p>';
+                    linkto('projects','مرور پروژه‌های موجود ←','btn btn-primary');
+                    linkto('dashboard/course/'.$courseProgress['slug'],'مرور دوباره درس‌ها','btn btn-outline');
                 } elseif ($activeLesson['lesson']) {
-                    echo '<div class="dash-course-next"><span class="dash-next-label">درس بعدی</span><strong>'.h($activeLesson['lesson']['title']).'</strong><p>'.fa($courseProgress['remaining']).' درس الزامی باقی مانده است.</p><div class="dash-course-actions">'; linkto('dashboard/course/'.$courseProgress['slug'].'?lesson='.(int)$activeLesson['lesson']['id'],$activeLesson['lesson_status']==='in_progress'?'ادامهٔ یادگیری ←':'شروع یادگیری ←','btn btn-primary'); echo '</div></div>';
-                } else echo '<p class="muted">هنوز درسی برای این دوره منتشر نشده است.</p>';
-            } else echo '<span class="eyebrow">وضعیت دوره</span><h2>هنوز در دوره‌ای ثبت‌نام نکرده‌اید</h2><p>با دورهٔ مقدماتی هوش مصنوعی شروع کن؛ رایگان و بدون پیش‌نیاز.</p><div class="dash-course-actions">'; linkto('course/'.FREE_COURSE_SLUG,'شروع دورهٔ رایگان ←','btn btn-primary'); echo '</div>';
-            echo '</section>';
+                    echo '<p>'.fa($courseProgress['remaining']).' درس الزامی باقی مانده است.</p>';
+                    echo '<strong>'.h($activeLesson['lesson']['title']).'</strong><span>'.($activeLesson['lesson_status']==='in_progress'?'در حال یادگیری':'شروع‌نشده').'</span>';
+                    linkto('dashboard/course/'.$courseProgress['slug'].'?lesson='.(int)$activeLesson['lesson']['id'],$activeLesson['lesson_status']==='in_progress'?'ادامهٔ یادگیری ←':'شروع یادگیری ←','btn btn-primary');
+                } else echo '<span>هنوز درسی برای این دوره منتشر نشده است.</span>';
+                echo '</div></section>';
+            } else echo '<section class="panel-card course-progress-card"><span class="eyebrow">وضعیت دوره</span><p>هنوز در دوره‌ای ثبت‌نام نکرده‌اید.</p></section>';
         }
-        echo '<div class="dash-grid">';
-        echo '<section class="dash-panel"><span class="eyebrow">'.($isAdmin?'مدیریت':'گام بعدی').'</span><h2>'.($isAdmin?'مدیریت کاربران':'مسیرت را ادامه بده').'</h2><p>'.($isAdmin?'ثبت‌نام و پیشرفت واقعی یادگیرندگان را بررسی کنید.':'دورهٔ مقدماتی هوش مصنوعی را بدون پرداخت شروع کن و پیشرفتت را دنبال کن.').'</p>'; linkto($isAdmin?'dashboard/users':'course/'.FREE_COURSE_SLUG,$isAdmin?'مدیریت کاربران ←':'شروع دورهٔ رایگان ←','btn btn-primary'); echo '</section>';
-        echo '<section class="dash-panel"><span class="eyebrow">'.($isAdmin?'جامعه':'کنار هم یاد می‌گیریم').'</span><h2>انجمن Noventix</h2><p>سؤال‌ها، تجربه‌ها و ایده‌ها را با جامعهٔ یادگیری در میان بگذار.</p>'; linkto('community','ورود به انجمن ←','btn btn-outline'); echo '</section>';
-        echo '<section class="dash-panel dash-account"><span class="eyebrow">حساب من</span><h2>اطلاعات حساب</h2><dl><div><dt>نام</dt><dd>'.h(trim((string)$me['name'])!==''?$me['name']:'ثبت نشده').'</dd></div><div><dt>شماره تلفن</dt><dd dir="ltr">'.h(trim((string)$me['phone'])!==''?$me['phone']:'ثبت نشده').'</dd></div></dl>'; linkto('dashboard/profile','ویرایش پروفایل','btn btn-outline'); echo '</section>';
-        echo '</div>';
     } elseif ($sub==='profile') {
         panel_head('پروفایل من','اطلاعات حساب و خلاصهٔ مهارت شما.');
         $summary=skill_profile_for((int)$me['id']);

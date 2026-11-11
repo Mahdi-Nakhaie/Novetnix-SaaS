@@ -14,32 +14,62 @@ function lp_page(int $index): void {
     global $me;
     $p=PROJECTS[$index];
     $guidance=json_decode(file_get_contents(dirname(__DIR__).'/curriculum/project-guidance.json'),true,512,JSON_THROW_ON_ERROR)[$p['key']];
+    $row=$me?q('SELECT w.* FROM project_workspaces w JOIN projects p ON p.id=w.project_id WHERE p.user_id=? AND p.catalog_index=? AND w.deleted_at IS NULL',[$me['id'],100+$index])->fetch():false;
+    $completion=$me?lp_completion((int)$me['id'],$p['key']):false;
+    $sources=[];
+    if ($p['datasets']) {
+        $manifest=json_decode(file_get_contents(dirname(__DIR__).'/curriculum/data/manifest.json'),true,512,JSON_THROW_ON_ERROR);
+        foreach ($manifest as $source) if (in_array($source['file'],$p['datasets'],true)) $sources[]=$source;
+    }
     head_page($p['title'],$p['description'],false,true); notice();
-    echo '<link rel="stylesheet" href="/assets/learning-projects.css?v=3"><main class="article lp-page"><div class="container narrow-container"><span class="eyebrow">'.h($p['topic']).' · '.h($p['level']).'</span><h1>'.h($p['title']).'</h1><p class="lead">'.h($p['description']).'</p><p>'.fa($p['minutes']).' دقیقه · '.fa($p['xp']).' XP · '.h($p['skills']).'</p><section class="panel-card lp-craft"><h2>هدف و راهنمای انجام با روش CRAFT</h2><h3><bdi>C · Challenge</bdi> | چالش</h3><p>'.h($p['description']).'</p><p>'.h($p['goal']).'</p><h3><bdi>R · Route</bdi> | مسیر</h3><ol>';
-    foreach ($p['steps'] as $step) echo '<li>'.h($step).'</li>';
-    echo '</ol><h3><bdi>A · Applicable Knowledge</bdi> | دانش کاربردی</h3><p>'.h($p['skills']).'</p><p>کتابخانه‌های موردنیاز این مسئله: '.h(implode(', ',$p['dependencies']) ?: 'json, pathlib').'</p><h3><bdi>F · Forge</bdi> | ساختن</h3><p>در main.py تابع solve را کامل کن؛ پاسخ را طبق قرارداد زیر برگردان تا در result.json ذخیره شود. اجرای عادی برای بررسی خروجی است و ارزیابی برای سنجش حل مسئله با ورودی‌های دیگر.</p><h4>ورودی</h4><p>'.h($p['input']).'</p><h4>خروجی</h4><p>'.h($p['output']).'</p><p>'.h($p['notes']).'</p><h4>مثال ورودی و خروجی</h4><pre class="lp-output" dir="ltr">'.h(json_encode($p['example'],JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE)).'</pre><h3><bdi>T · Transfer</bdi> | انتقال</h3><p>'.h($guidance[0]).'</p><p>این تمرین انتقال برای خودآزمایی است و جزو ارزیابی خودکار و XP این پروژه نیست.</p><h3>معیارهای موفقیت</h3><ul>';
+    echo '<link rel="stylesheet" href="/assets/learning-projects.css?v=4"><main class="lp-page lp-detail">';
+    echo '<section class="lp-hero"><div class="container lp-hero-inner"><div class="lp-hero-copy"><nav class="lp-breadcrumb" aria-label="مسیر صفحه">';
+    linkto('projects','پروژه‌ها'); echo '<span aria-hidden="true">/</span><span aria-current="page">'.h($p['title']).'</span></nav>';
+    echo '<div class="lp-tags"><span class="lp-tag is-topic" dir="ltr">'.h($p['topic']).'</span><span class="lp-tag">'.h($p['level']).'</span>'.($completion?'<span class="lp-tag is-done">تکمیل‌شده</span>':'').'</div>';
+    echo '<h1>'.h($p['title']).'</h1><p class="lp-lead">'.h($p['description']).'</p><div class="lp-hero-actions">';
+    if ($completion) linkto('dashboard/workspace/'.(int)$row['project_id'],'بازکردن در میزکار ←','btn btn-primary');
+    elseif ($row) linkto('dashboard/workspace/'.(int)$row['project_id'],'ادامه در میزکار ←','btn btn-primary');
+    elseif ($me) { form_start('projects/start','lp-start-form'); echo '<input type="hidden" name="index" value="'.$index.'"><button class="btn btn-primary">شروع پروژه و ذخیرهٔ فایل‌های اولیه</button></form>'; }
+    else linkto('login','برای نوشتن و اجرای کد وارد شوید','btn btn-primary');
+    linkto('dashboard/workspace','میزکار پایتون','btn btn-outline');
+    echo '</div></div><dl class="lp-hero-facts"><div><dt>زمان تخمینی</dt><dd>'.fa((int)$p['minutes']).' دقیقه</dd></div><div><dt>پاداش</dt><dd>'.fa((int)$p['xp']).' XP</dd></div><div><dt>دیتاست</dt><dd>'.fa(count($p['datasets'])).' فایل</dd></div><div><dt>مراحل</dt><dd>'.fa(count($p['steps'])).' گام</dd></div></dl></div></section>';
+    echo '<div class="container lp-detail-grid"><div class="lp-detail-main">';
+    echo '<section class="lp-block"><h2>هدف این پروژه</h2><p class="lp-goal">'.h($p['goal']).'</p><div class="lp-skills"><span class="lp-block-label">مهارت‌هایی که تمرین می‌کنی</span><ul>';
+    foreach (explode('·',$p['skills']) as $skill) { $skill=trim($skill); if ($skill!=='') echo '<li dir="ltr">'.h($skill).'</li>'; }
+    echo '</ul></div></section>';
+    echo '<section class="lp-block"><h2>مسیر انجام پروژه</h2><ol class="lp-steps">';
+    foreach ($p['steps'] as $stepIndex=>$step) echo '<li><span class="lp-step-num">'.fa($stepIndex+1).'</span><p>'.h($step).'</p></li>';
+    echo '</ol></section>';
+    echo '<section class="lp-block"><h2>ورودی و خروجی</h2><div class="lp-io"><article class="lp-io-card"><span class="lp-block-label">ورودی</span><p>'.h($p['input']).'</p></article><article class="lp-io-card"><span class="lp-block-label">خروجی</span><p>'.h($p['output']).'</p></article></div><p class="lp-note">'.h($p['notes']).'</p><details class="lp-example"><summary>نمونهٔ ورودی و خروجی</summary><pre dir="ltr">'.h(json_encode($p['example'],JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE)).'</pre></details></section>';
+    echo '<section class="lp-block"><h2>معیارهای موفقیت</h2><ul class="lp-criteria">';
     foreach ($p['criteria'] as $criterion) echo '<li>'.h($criterion).'</li>';
-    echo '</ul></section><details class="panel-card lp-help"><summary>راهنمایی برای فهم مسئله و نوشتن کد</summary><p>'.h($guidance[1]).'</p><h3>از کجا شروع کنم؟</h3><ol><li>نمونهٔ ورودی را بخوان و نتیجهٔ موردانتظار را ابتدا بدون کد پیدا کن.</li><li>'.h($p['steps'][0]).'</li><li>تابع solve را کامل کن و نام کلیدها و نوع خروجی را دقیقاً مطابق نمونه نگه دار.</li><li>کد را ذخیره و اجرا کن؛ سپس ارزیابی را بزن. چاپ متن به‌تنهایی جای پاسخ result.json نیست.</li></ol><p>'.h($p['notes']).'</p></details>';
+    echo '</ul><p class="lp-footnote">ارزیابی خودکار با ورودی‌های تازه انجام می‌شود؛ اجرای عادی فقط خروجی برنامه را نشان می‌دهد.</p></section>';
+    echo '<details class="lp-block lp-hints"><summary>راهنمایی برای فهم مسئله</summary><p>'.h($guidance[1]).'</p><h3>از کجا شروع کنم؟</h3><ol><li>نمونهٔ ورودی را بخوان و نتیجهٔ موردانتظار را ابتدا بدون کد پیدا کن.</li><li>'.h($p['steps'][0]).'</li><li>تابع solve را کامل کن و نام کلیدها و نوع خروجی را دقیقاً مطابق نمونه نگه دار.</li><li>کد را در میزکار ذخیره و اجرا کن؛ سپس ارزیابی را بزن.</li></ol></details>';
+    echo '<section class="lp-block"><h2>تمرین انتقال</h2><p>'.h($guidance[0]).'</p><p class="lp-footnote">این تمرین برای خودآزمایی است و جزو ارزیابی خودکار و XP این پروژه نیست.</p></section>';
+    echo '</div><aside class="lp-detail-side">';
+    echo '<section class="lp-side-card"><span class="lp-block-label">شروع سریع</span><h2>'.($completion?'تکمیل‌شده':'آمادهٔ شروع').'</h2><p>'.($completion?'پاداش '.fa($completion['xp']).' XP در '.h(jdate($completion['completed_at'])).' ثبت شد.':'فایل‌های اولیه، دیتاست و ارزیابی خودکار از قبل آماده‌اند.').'</p>';
+    if ($row||$completion) linkto('dashboard/workspace/'.(int)$row['project_id'],'بازکردن میزکار ←','btn btn-primary full');
+    echo '</section>';
+    if (!empty($p['dependencies'])) {
+        echo '<section class="lp-side-card"><span class="lp-block-label">کتابخانه‌های لازم</span><ul class="lp-deps">';
+        foreach ($p['dependencies'] as $dep) echo '<li dir="ltr">'.h($dep).'</li>';
+        echo '</ul><p class="lp-footnote">در محیط میزکار آماده‌اند؛ نصب آنلاین لازم نیست.</p></section>';
+    }
+    if ($sources) {
+        echo '<section class="lp-side-card"><span class="lp-block-label">منبع داده</span>';
+        foreach ($sources as $source) echo '<div class="lp-source"><strong dir="ltr">'.h($source['file']).'</strong><span>'.fa($source['rows']).' ردیف · '.h($source['license']).'</span><small>'.h($source['attribution']).'</small><small dir="ltr">'.h($source['source']).'</small><p>نسخهٔ محلی همراه پروژه؛ هنگام اجرا دانلود خارجی لازم نیست.</p></div>';
+        echo '</section>';
+    }
     if (!empty($p['prerequisites'])) {
-        echo '<section class="panel-card"><h2>پیش‌نیاز و ترتیب یادگیری</h2><ul>';
+        echo '<section class="lp-side-card"><span class="lp-block-label">پیش‌نیاز</span><ul class="lp-prereq">';
         foreach ($p['prerequisites'] as $prerequisite) echo '<li>'.h($prerequisite).'</li>';
         echo '</ul>';
         foreach ($p['prerequisite_articles'] as $slug) { $article=article_entry($slug); if ($article) linkto('articles/'.$slug,$article['title'].' ←','inline-link'); }
-        echo '<p>برای شروع، مقالهٔ بالا را بخوانید. Python 3 و کتابخانه‌های موردنیاز در میزکار آماده‌اند؛ نصب آنلاین از ترمینال میزکار لازم نیست.</p></section>';
+        echo '</section>';
     }
-    if ($p['datasets']) {
-        echo '<details class="panel-card"><summary>منبع و وضعیت دیتاست‌ها</summary>';
-        $sources=json_decode(file_get_contents(dirname(__DIR__).'/curriculum/data/manifest.json'),true,512,JSON_THROW_ON_ERROR);
-        foreach ($sources as $source) if (in_array($source['file'],$p['datasets'],true)) echo '<p dir="auto">'.h($source['file'].' · '.$source['license'].' · '.$source['attribution']).'</p><p dir="ltr">'.h($source['source']).'</p><p>نسخه محلی همراه پروژه؛ '.fa($source['rows']).' ردیف. هنگام اجرا دانلود خارجی لازم نیست.</p>';
-        echo '</details>';
-    }
-    $row=$me?q('SELECT w.* FROM project_workspaces w JOIN projects p ON p.id=w.project_id WHERE p.user_id=? AND p.catalog_index=? AND w.deleted_at IS NULL',[$me['id'],100+$index])->fetch():false;
-    if (!$row) {
-        if ($me) { form_start('projects/start'); echo '<input type="hidden" name="index" value="'.$index.'"><button class="btn btn-primary">شروع پروژه و ذخیره فایل‌های اولیه</button></form>'; }
-        else linkto('login','برای نوشتن و اجرای کد وارد شوید','btn btn-primary');
-    } else {
-        $completion=lp_completion((int)$me['id'],$p['key']);
-        echo '<script src="/assets/learning-projects.js?v=2" defer></script><section class="panel-card lp-editor" data-lp-id="'.(int)$row['project_id'].'" data-csrf="'.h(csrf()).'"><h2>محیط ساده Python</h2><details class="lp-help"><summary>راهنمایی هنگام کدنویسی</summary><p>'.h($guidance[1]).'</p><p>قرارداد خروجی: '.h($p['output']).'</p></details><p data-lp-completion>'.($completion?'تکمیل‌شده · '.fa($completion['xp']).' XP · '.h($completion['completed_at']):'برای دریافت XP، همین نسخه ذخیره‌شده باید تمام معیارهای ارزیابی را بگذراند.').'</p><p>اجرا فقط خروجی برنامه را نشان می‌دهد؛ ارزیابی جداگانه و با ورودی‌های تازه انجام می‌شود. تغییر کد، اعتبار ارزیابی نسخه قبلی را به نسخه جدید منتقل نمی‌کند.</p><p role="status" aria-live="polite" data-lp-status>در حال بارگذاری…</p><label>فایل<select data-lp-file aria-label="انتخاب فایل"></select></label><label for="lp-code">کد یا ورودی نمونه</label><textarea id="lp-code" dir="ltr" spellcheck="false" rows="20" data-lp-code disabled></textarea><div class="lp-toolbar"><button type="button" class="btn btn-outline" data-lp-action="save" disabled>ذخیره</button><button type="button" class="btn btn-primary" data-lp-action="run" disabled>اجرای واقعی</button><button type="button" class="btn btn-primary" data-lp-action="assess" disabled>ارزیابی و دریافت XP</button><button type="button" class="btn btn-outline" data-lp-action="solution" disabled>نمایش راه‌حل مرجع</button></div><h3>خروجی و خطا</h3><pre class="lp-output" dir="ltr" data-lp-output>اجرا نشده است.</pre><div data-lp-checks></div><div data-lp-artifacts></div><details data-lp-reference hidden><summary>راه‌حل مرجع مستقل از کد شما</summary><pre class="lp-output" dir="ltr" data-lp-solution></pre></details><p>راه‌حل پس از یک تلاش اجرایی واقعی قابل مشاهده است؛ بازکردن آن کد شما را تغییر نمی‌دهد. کد تغییرکرده ذخیره‌نشده، با بستن صفحه از دست می‌رود.</p></section>';
-    }
-    echo '</div></main>'; foot_page();
+    echo '<section class="lp-side-card lp-side-nav"><span class="lp-block-label">پروژه‌های دیگر</span>';
+    if ($index>0) { $prev=PROJECTS[$index-1]; echo '<a href="'.h(url('project/'.($index-1))).'"><span>← قبلی</span><strong>'.h($prev['title']).'</strong></a>'; }
+    if (isset(PROJECTS[$index+1])) { $next=PROJECTS[$index+1]; echo '<a class="is-next" href="'.h(url('project/'.($index+1))).'"><span>بعدی →</span><strong>'.h($next['title']).'</strong></a>'; }
+    echo '</section></aside></div></main>';
+    foot_page();
 }
