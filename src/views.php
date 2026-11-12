@@ -17,7 +17,7 @@ function head_page(string $title,string $description='',bool $panel=false,bool $
         if ($me && trim($me['name'])!=='') echo '<script src="/assets/free-course.js?v=2" defer></script>';
     }
     if ($path==='' || $path==='articles' || str_starts_with($path,'articles/')) echo '<link rel="stylesheet" href="/assets/articles.css?v=3">';
-    if ($path==='landing') echo '<link rel="stylesheet" href="/assets/landing.css?v=1">';
+    if ($path==='landing') echo '<link rel="stylesheet" href="/assets/landing.css?v=2">';
     $darychehAssets=($path==='dashboard/darycheh' || str_starts_with($path,'dashboard/darycheh/')) ? '<link rel="stylesheet" href="/assets/darycheh.css?v=1"><script src="/assets/darycheh.js?v=1" defer></script>' : '';
     if (!$panel) echo '<link rel="stylesheet" href="/assets/header.css?v=10">';
     $adminPanel=$panel && ($me['role'] ?? '')==='admin';
@@ -699,7 +699,7 @@ function page_landing(): void {
     global $me;
     $courses=published_courses();
     $paid=array_filter(PLANS,static fn(array $p): bool=>$p['price']>0);
-    $planOrder=['free','bronze','silver','gold','titanium'];
+    $planOrder=['bronze','silver','gold','titanium'];
 
     echo '<main class="lp">';
 
@@ -758,16 +758,14 @@ average = <span class="tk-fn">analyze</span>(scores)
     echo '</div></div></section>';
 
     // 6 — Pricing (real PLANS data)
-    echo '<section class="lp__section" id="lp-plans" aria-labelledby="lp-plans-title"><div class="lp__container"><div class="lp__head lp__head--center"><span class="lp__eyebrow">پلن‌ها</span><h2 class="lp__title" id="lp-plans-title">برای هر هدف، یک مسیر رشد</h2><p class="lp__lede">از رایگان تا تیتانیومی؛ هر پلن منابع اجرا، سقف پروژه و امکانات بیشتری را باز می‌کند.</p></div><div class="lp-pricing__grid">';
+    echo '<section class="lp__section" id="lp-plans" aria-labelledby="lp-plans-title"><div class="lp__container"><div class="lp__head lp__head--center"><span class="lp__eyebrow">پلن‌ها</span><h2 class="lp__title" id="lp-plans-title">برای هر هدف، یک مسیر رشد</h2><p class="lp__lede">برنزی، نقره‌ای، طلایی و تیتانیومی؛ هر پلن منابع اجرا، سقف پروژه و امکانات بیشتری را باز می‌کند.</p></div><div class="lp-pricing__grid">';
     foreach ($planOrder as $id) {
         $p=PLANS[$id];
         $featured=$id==='gold';
-        $isFree=$id==='free';
-        echo '<article class="lp-plan'.($featured?' lp-plan--featured':'').'" data-plan="'.h($id).'"><span class="lp-plan__tag">'.h($p['tag']).'</span><h3 class="lp-plan__name">پلن '.h($p['name']).'</h3><div class="lp-plan__price">'.($isFree?'رایگان':money((int)$p['price'])).($isFree?'<small> برای همیشه</small>':'<small> / ماه</small>').'</div><p class="lp-plan__desc">'.h($p['summary']).'</p><ul class="lp-plan__list">';
+        echo '<article class="lp-plan'.($featured?' lp-plan--featured':'').'" data-plan="'.h($id).'"><span class="lp-plan__tag">'.h($p['tag']).'</span><h3 class="lp-plan__name">پلن '.h($p['name']).'</h3><div class="lp-plan__price">'.money((int)$p['price']).'<small> / ماه</small></div><p class="lp-plan__desc">'.h($p['summary']).'</p><ul class="lp-plan__list">';
         foreach (array_slice($p['features'],0,4) as $feature) echo '<li>'.h($feature).'</li>';
         echo '</ul><div class="lp-plan__cta">';
-        if ($isFree) linkto('register','شروع رایگان','lp__btn lp__btn--ghost lp__btn--sm lp__btn--block');
-        elseif (plan_is_available($id)) { plan_purchase_button($id,'lp__btn '.($featured?'lp__btn--gold':'lp__btn--primary').' lp__btn--sm lp__btn--block'); }
+        if (plan_is_available($id)) { plan_purchase_button($id,'lp__btn '.($featured?'lp__btn--gold':'lp__btn--primary').' lp__btn--sm lp__btn--block'); }
         else linkto('pricing','دیدن جزئیات پلن','lp__btn lp__btn--ghost lp__btn--sm lp__btn--block');
         echo '</div></article>';
     }
