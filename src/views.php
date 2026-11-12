@@ -17,7 +17,7 @@ function head_page(string $title,string $description='',bool $panel=false,bool $
         if ($me && trim($me['name'])!=='') echo '<script src="/assets/free-course.js?v=2" defer></script>';
     }
     if ($path==='' || $path==='articles' || str_starts_with($path,'articles/')) echo '<link rel="stylesheet" href="/assets/articles.css?v=3">';
-    if ($path==='landing') echo '<link rel="stylesheet" href="/assets/landing.css?v=3"><script src="/assets/three.min.js?v=1" defer></script><script src="/assets/three-scene.js?v=1" defer></script><script src="/assets/landing.js?v=1" defer></script>';
+    if ($path==='landing') echo '<link rel="stylesheet" href="/assets/landing.css?v=4"><script src="/assets/three.min.js?v=1" defer></script><script src="/assets/three-scene.js?v=1" defer></script><script src="/assets/landing.js?v=2" defer></script>';
     $darychehAssets=($path==='dashboard/darycheh' || str_starts_with($path,'dashboard/darycheh/')) ? '<link rel="stylesheet" href="/assets/darycheh.css?v=1"><script src="/assets/darycheh.js?v=1" defer></script>' : '';
     if (!$panel) echo '<link rel="stylesheet" href="/assets/header.css?v=10">';
     $adminPanel=$panel && ($me['role'] ?? '')==='admin';
@@ -704,7 +704,7 @@ function page_landing(): void {
     echo '<main class="lp">';
 
     // 1 — Hero
-    echo '<section class="lp-hero" aria-labelledby="lp-hero-title"><div class="lp__container"><div class="lp-hero__grid"><div class="lp-hero__copy"><span class="lp__eyebrow"><span class="dot" aria-hidden="true"></span> پلتفرم یادگیری و اجرای هوش مصنوعی</span><h1 class="lp-hero__title" id="lp-hero-title">در کمتر از ۵ دقیقه،<br><em>ایده‌ات را به پروژه تبدیل کن</em></h1><p class="lp-hero__lede">Noventix محیطی آماده برای نوشتن، اجرا و ارائه پروژه‌های پایتون و هوش مصنوعی است؛ بدون درگیری با پیچیدگی راه‌اندازی محیط. کد بنویس، اجرا کن و مهارتت را با پروژه‌های واقعی بساز.</p><div class="lp-hero__actions">';
+    echo '<section class="lp-hero" aria-labelledby="lp-hero-title"><div class="lp-float" aria-hidden="true"><span class="lp-float__chip">import pandas as pd</span><span class="lp-float__chip">model.fit(X, y)</span><span class="lp-float__chip">for row in rows:</span><span class="lp-float__chip">accuracy = 0.94</span><span class="lp-float__chip">return result</span></div><div class="lp__container"><div class="lp-hero__grid"><div class="lp-hero__copy"><span class="lp__eyebrow"><span class="dot" aria-hidden="true"></span> پلتفرم یادگیری و اجرای هوش مصنوعی</span><h1 class="lp-hero__title" id="lp-hero-title">در کمتر از ۵ دقیقه،<br><em>ایده‌ات را به پروژه تبدیل کن</em></h1><p class="lp-hero__lede">Noventix محیطی آماده برای نوشتن، اجرا و ارائه پروژه‌های پایتون و هوش مصنوعی است؛ بدون درگیری با پیچیدگی راه‌اندازی محیط. کد بنویس، اجرا کن و مهارتت را با پروژه‌های واقعی بساز.</p><div class="lp-hero__actions">';
     linkto('register','شروع رایگان ←','lp__btn lp__btn--primary');
     linkto('course/'.FREE_COURSE_SLUG,'دیدن دوره‌ها','lp__btn lp__btn--ghost');
     echo '</div><ul class="lp-hero__proof"><li>میزکار کد آنلاین</li><li>مسیر پروژه‌محور</li><li>یادگیری به زبان فارسی</li></ul></div><div class="lp-hero__visual"><div class="lp-scene" aria-hidden="true"><canvas class="lp-scene__canvas" data-three-scene></canvas><span class="lp-scene__glow"></span></div><div class="lp-code" aria-label="نمونه اجرای کد پایتون در Noventix"><div class="lp-code__bar"><span class="lp-code__dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="lp-code__file"><span class="lp-code__lang" dir="ltr">PYTHON</span><span dir="ltr">first_project.py</span></span><button type="button" class="lp-code__copy" data-copy-code aria-label="کپی کد نمونه">کپی</button></div><div class="lp-code__scroll"><pre class="lp-code__body" dir="ltr" tabindex="0" aria-label="کد نمونه محاسبه میانگین نمرات"><code><span class="lp-code__line"><span class="tk-cm"># اولین پروژه: میانگین امتیازها</span></span>
@@ -716,10 +716,14 @@ function page_landing(): void {
 <span class="lp-code__line">average = <span class="tk-fn">analyze</span>(scores)</span>
 <span class="lp-code__line"><span class="tk-fn">print</span>(<span class="tk-str">f"Average: {average:.1f}"</span>)</span></code></pre></div><div class="lp-code__out"><span class="lp-code__out-dot" aria-hidden="true"></span><span dir="ltr">Average: 16.0</span><span class="lp-code__out-tag">اجرای امن · Python 3</span></div></div></div></div></div></section>';
 
-    // 2 — Trust strip
-    echo '<section class="lp-trust" aria-label="چه چیزهایی همین حالا در دسترس است"><div class="lp__container"><p class="lp-trust__label">همین حالا در Noventix در دسترس</p><div class="lp-trust__grid">';
-    foreach ([['میزکار پایتون در مرورگر','◇'],['پروژه‌های واقعی، از مقدماتی تا یادگیری ماشین','◈'],['آزمون پایان هر جلسه','✦'],['انجمن یادگیرندگان','⌘'],['واژه‌نامهٔ هوش مصنوعی','◇']] as [$label,$mark]) echo '<span class="lp-trust__chip"><span class="lp-trust__chip-mark" aria-hidden="true">'.h($mark).'</span>'.h($label).'</span>';
-    echo '</div></div></section>';
+    // 2 — Trust marquee (circular badges moving along a track)
+    $trustItems=[['میزکار پایتون','◇'],['پروژه‌های واقعی','◈'],['آزمون هر جلسه','✦'],['انجمن یادگیرندگان','⌘'],['واژه‌نامهٔ تخصصی','◇'],['پروفایل مهارتی','✳']];
+    $trustMarkup=static function(array $items): string {
+        $html='';
+        foreach ($items as [$label,$mark]) $html.='<li class="lp-trust__item"><span class="lp-trust__disc" aria-hidden="true">'.h($mark).'</span><span class="lp-trust__text">'.h($label).'</span></li>';
+        return $html;
+    };
+    echo '<section class="lp-trust" aria-label="چه چیزهایی همین حالا در دسترس است"><div class="lp__container"><p class="lp-trust__label">همین حالا در Noventix در دسترس</p></div><div class="lp-marquee lp-marquee--trust"><div class="lp-marquee__track"><ul class="lp-marquee__group">'.$trustMarkup($trustItems).'</ul><ul class="lp-marquee__group" aria-hidden="true">'.$trustMarkup($trustItems).'</ul></div></div></section>';
 
     // 3 — Differentiators
     echo '<section class="lp__section lp__section--tinted"><div class="lp__container"><div class="lp__head lp__head--center"><span class="lp__eyebrow">چرا Noventix</span><h2 class="lp__title">کاملاً متفاوت با مسیری که تا حالا رفته‌اید</h2><p class="lp__lede">ما کارهای دشوار محیط توسعه را از سر راهتان برداشته‌ایم تا فقط روی یادگیری و ساختن تمرکز کنید.</p></div><div class="lp-diff">';
@@ -732,20 +736,20 @@ function page_landing(): void {
 
     echo '</div></div></section>';
 
-    // 4 — Feature grid
-    echo '<section class="lp__section" aria-labelledby="lp-features-title"><div class="lp__container"><div class="lp__head lp__head--center"><span class="lp__eyebrow">امکانات پلتفرم</span><h2 class="lp__title" id="lp-features-title">هر آنچه برای یادگیری و ساختن لازم داری</h2><p class="lp__lede">ابزارهای آموزش، تمرین و اجرا در یک محیط یکپارچه، بدون پراکندگی.</p></div><div class="lp-features">';
+    // 4 — Feature rail (horizontal scroll track)
+    echo '<section class="lp__section" aria-labelledby="lp-features-title"><div class="lp__container"><div class="lp__head lp__head--center"><span class="lp__eyebrow">امکانات پلتفرم</span><h2 class="lp__title" id="lp-features-title">هر آنچه برای یادگیری و ساختن لازم داری</h2><p class="lp__lede">ابزارهای آموزش، تمرین و اجرا در یک محیط یکپارچه، بدون پراکندگی. برای دیدن همه، مسیر را افقی بکش.</p></div></div><div class="lp-rail" data-rail><div class="lp-rail__viewport"><div class="lp-rail__track">';
     $features=[
-        ['میزکار کد آنلاین','◇','ادیتور، مدیریت فایل و اجرای امن پایتون در مرورگر؛ بدون نصب چیزی.','',''],
-        ['آزمون پایان جلسه','✦','تعمیق یادگیری با آزمون هدفمند؛ عبور از هر جلسه، پیش‌نیاز جلسهٔ بعد.','','gold'],
-        ['مسیر پروژه‌محور','◈','از تمرین‌های مقدماتی تا تحلیل داده و یادگیری ماشین، روی مسئله‌های واقعی.','',''],
-        ['انجمن یادگیرندگان','⌘','پرسش، هم‌اندیشی و راه‌حل‌های بهتر در کنار بقیهٔ اعضای جامعه.','',''],
-        ['واژه‌نامهٔ تخصصی','◇','اصطلاحات هوش مصنوعی، یادگیری ماشین و علم داده با تعریف روشن.','','gold'],
-        ['پروفایل مهارتی','✦','پیشرفت واقعی بر اساس پروژه‌های تأییدشده، نه فقط کلیک ویدیو.','',''],
+        ['میزکار کد آنلاین','◇','ادیتور، مدیریت فایل و اجرای امن پایتون در مرورگر؛ بدون نصب چیزی.',''],
+        ['آزمون پایان جلسه','✦','تعمیق یادگیری با آزمون هدفمند؛ عبور از هر جلسه، پیش‌نیاز جلسهٔ بعد.','gold'],
+        ['مسیر پروژه‌محور','◈','از تمرین‌های مقدماتی تا تحلیل داده و یادگیری ماشین، روی مسئله‌های واقعی.',''],
+        ['انجمن یادگیرندگان','⌘','پرسش، هم‌اندیشی و راه‌حل‌های بهتر در کنار بقیهٔ اعضای جامعه.',''],
+        ['واژه‌نامهٔ تخصصی','◇','اصطلاحات هوش مصنوعی، یادگیری ماشین و علم داده با تعریف روشن.','gold'],
+        ['پروفایل مهارتی','✦','پیشرفت واقعی بر اساس پروژه‌های تأییدشده، نه فقط کلیک ویدیو.',''],
     ];
-    foreach ($features as [$title,$mark,$desc,,$variant]) {
-        echo '<article class="lp-feature"><span class="lp-feature__icon'.($variant?' lp-feature__icon--'.$variant:'').'" aria-hidden="true">'.h($mark).'</span><h3>'.h($title).'</h3><p>'.h($desc).'</p></article>';
+    foreach ($features as $index=>[$title,$mark,$desc,$variant]) {
+        echo '<article class="lp-feature"><span class="lp-feature__step" aria-hidden="true">'.fa(str_pad((string)($index+1),2,'0',STR_PAD_LEFT)).'</span><span class="lp-feature__icon'.($variant?' lp-feature__icon--'.$variant:'').'" aria-hidden="true">'.h($mark).'</span><h3>'.h($title).'</h3><p>'.h($desc).'</p></article>';
     }
-    echo '</div></div></section>';
+    echo '</div></div><div class="lp-rail__controls"><button type="button" class="lp-rail__btn" data-rail-prev aria-label="امکانات قبلی">‹</button><button type="button" class="lp-rail__btn" data-rail-next aria-label="امکانات بعدی">›</button></div></div></section>';
 
     // 5 — Workflow steps
     echo '<section class="lp__section lp__section--tinted" aria-labelledby="lp-flow-title"><div class="lp__container"><div class="lp__head lp__head--center"><span class="lp__eyebrow">شروع در سه قدم</span><h2 class="lp__title" id="lp-flow-title">از ثبت‌نام تا اولین اجرا</h2><p class="lp__lede">نیازی به دانش پیش‌زمینه از زیرساخت نداری؛ مسیر روشن است.</p></div><div class="lp-steps">';
@@ -757,7 +761,29 @@ function page_landing(): void {
     foreach ($steps as [$num,$title,$desc]) echo '<article class="lp-step"><span class="lp-step__num" aria-hidden="true">'.h($num).'</span><h3>'.h($title).'</h3><p>'.h($desc).'</p></article>';
     echo '</div></div></section>';
 
-    // 6 — Pricing (real PLANS data)
+    // 6 — Articles (reuses the real catalogue, same as the home page)
+    echo '<section class="lp__section" aria-labelledby="lp-articles-title"><div class="lp__container"><div class="lp__head lp__head--split"><div><span class="lp__eyebrow">مقاله‌های آموزشی</span><h2 class="lp__title" id="lp-articles-title">از کجا شروع می‌کنی؟</h2><p class="lp__lede">راهنماهای فارسی با پیش‌نیاز، مثال قابل اجرا و پروژهٔ مرتبط؛ مطالعهٔ مقاله‌ها رایگان است.</p></div>';
+    linkto('articles','همهٔ مقاله‌ها ←','lp__btn lp__btn--ghost lp__btn--sm');
+    echo '</div><div class="lp-read-grid">';
+    foreach (array_slice(articles(),0,3) as $article) {
+        echo '<article class="lp-read"><div class="lp-read__meta"><span class="lp-read__tag">'.h($article['category']).'</span><span>'.fa($article['reading_minutes']).' دقیقه مطالعه</span></div><h3><a href="'.h(url('articles/'.$article['slug'])).'">'.h($article['title']).'</a></h3><p>'.h($article['description']).'</p><a class="lp-read__link" href="'.h(url('articles/'.$article['slug'])).'" aria-label="'.h('مطالعهٔ '.$article['title']).'">مطالعهٔ مقاله ←</a></article>';
+    }
+    echo '</div></div></section>';
+
+    // 7 — Projects (real catalogue, same cards as the home page)
+    echo '<section class="lp__section lp__section--tinted" aria-labelledby="lp-projects-title"><div class="lp__container"><div class="lp__head lp__head--split"><div><span class="lp__eyebrow">یادگیری در عمل</span><h2 class="lp__title" id="lp-projects-title">پروژه‌هایی برای دنیای واقعی</h2><p class="lp__lede">از تمرین‌های مقدماتی پایتون تا تحلیل داده و یادگیری ماشین؛ '.fa(count(PROJECTS)).' پروژه با پیش‌نیاز، ورودی، خروجی و ارزیابی واقعی.</p></div>';
+    linkto('projects','همهٔ پروژه‌ها ←','lp__btn lp__btn--ghost lp__btn--sm');
+    echo '</div><div class="lp-project-grid">';
+    $covers=[['house-price-regression','House price regression prediction project'],['multiclass-flower-classification','Multiclass flower classification project'],['flight-delay-prediction','Flight delay prediction project']];
+    $projectIndex=0;
+    foreach (array_slice(PROJECTS,0,3,true) as $i=>$project) {
+        $image=$covers[$projectIndex] ?? null;
+        echo '<article class="lp-project"><a class="lp-project__media" href="'.h(url('project/'.$i)).'" tabindex="-1" aria-hidden="true">'.($image?'<img src="/assets/'.h($image[0]).'.webp" alt="" width="1536" height="1024" loading="lazy" decoding="async">':'').'</a><div class="lp-project__body"><div class="lp-project__meta"><span class="lp-read__tag">'.h($project['topic']).'</span><span>'.h($project['level']).'</span></div><h3><a href="'.h(url('project/'.$i)).'">'.h($project['title']).'</a></h3><p>'.h($project['description']).'</p><a class="lp-read__link" href="'.h(url('project/'.$i)).'" aria-label="'.h('مشاهدهٔ پروژهٔ '.$project['title']).'">مشاهدهٔ پروژه ←</a></div></article>';
+        $projectIndex++;
+    }
+    echo '</div></div></section>';
+
+    // 8 — Pricing (real PLANS data)
     echo '<section class="lp__section" id="lp-plans" aria-labelledby="lp-plans-title"><div class="lp__container"><div class="lp__head lp__head--center"><span class="lp__eyebrow">پلن‌ها</span><h2 class="lp__title" id="lp-plans-title">برای هر هدف، یک مسیر رشد</h2><p class="lp__lede">برنزی، نقره‌ای، طلایی و تیتانیومی؛ هر پلن منابع اجرا، سقف پروژه و امکانات بیشتری را باز می‌کند.</p></div><div class="lp-pricing__grid">';
     foreach ($planOrder as $id) {
         $p=PLANS[$id];
@@ -771,7 +797,7 @@ function page_landing(): void {
     }
     echo '</div><div class="center-link" style="margin-top:2rem">'; linkto('pricing','مقایسهٔ کامل امکانات پلن‌ها ←','btn btn-outline'); echo '</div></div></section>';
 
-    // 7 — FAQ
+    // 9 — FAQ
     echo '<section class="lp__section lp__section--tinted" aria-labelledby="lp-faq-title"><div class="lp__container"><div class="lp__head lp__head--center"><span class="lp__eyebrow">پرسش‌های پرتکرار</span><h2 class="lp__title" id="lp-faq-title">پیش از شروع، بدان</h2></div><div class="lp-faq">';
     $faqs=[
         ['میزکار کد به چه دانشی نیاز دارد؟','فقط آشنایی مقدماتی با پایتون کافی است. جلسه‌ها از مفاهیم پایه شروع می‌شوند و اگر تجربهٔ قبلی نداری، از مسیر مقدماتی و مقاله‌های آموزشی وارد شو.'],
@@ -783,7 +809,7 @@ function page_landing(): void {
     foreach ($faqs as $i=>[$q,$a]) echo '<details class="lp-faq__item"'.($i===0?' open':'').'><summary>'.h($q).'</summary><div class="lp-faq__body"><p>'.h($a).'</p></div></details>';
     echo '</div></div></section>';
 
-    // 8 — Final CTA
+    // 10 — Final CTA
     echo '<section class="lp__section"><div class="lp__container"><div class="lp-cta"><h2>پروژهٔ بعدی‌ات منتظر توست</h2><p>مسیرت را انتخاب کن، یاد بگیر و چیزی بساز که بتوانی به آن افتخار کنی.</p><div class="lp-cta__actions">';
     linkto($me?'dashboard':'register',$me?'ورود به پنل':'رایگان شروع کن ←','lp__btn lp__btn--gold');
     linkto('pricing','مشاهدهٔ پلن‌ها','lp__btn lp__btn--ghost');
