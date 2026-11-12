@@ -19,7 +19,7 @@
 .plan-comparison-table{width:100%;min-width:680px;border-collapse:collapse;text-align:center;font-size:.9375rem}
 .plan-comparison-table caption{text-align:start;padding:20px 24px;font-weight:700;color:var(--ink-2);border-bottom:1px solid var(--line)}
 .plan-comparison-table th,.plan-comparison-table td{padding:20px 16px;border-bottom:1px solid var(--line);line-height:1.8}
-.plan-comparison-table thead{background:var(--brand-soft);color:var(--brand)}.plan-comparison-table th:first-child{text-align:start;min-width:180px}.plan-comparison-table tbody th{font-weight:600;color:var(--ink-2)}.plan-comparison-table tbody tr:last-child>*{border-bottom:0}.plan-comparison-table tbody tr:nth-child(even){background:#faf9fc}
+.plan-comparison-table thead{background:var(--brand-soft);color:var(--brand)}.plan-comparison-table th:first-child{text-align:start;min-width:180px}.plan-comparison-table tbody th{font-weight:600;color:var(--ink-2)}.plan-comparison-table tbody tr:last-child>*{border-bottom:0}.plan-comparison-table tbody tr:nth-child(even){background:#faf9fc}.plan-comparison-table tr.plan-comparison-group>*{background:var(--ink);color:#fff;font-weight:800;font-size:.8125rem;letter-spacing:.02em;text-align:start;padding-block:12px}
 .plan-feature-pending{font-size:.875rem;color:var(--ink-2)}
 .plan-comparison-lock{position:absolute;inset:0;pointer-events:none;overflow:hidden}.plan-comparison-lock .plan-chain{position:absolute;inset-block-start:50%;inset-inline-start:-10%;width:120%;transform:translateY(-50%) rotate(-8deg)}.plan-comparison-lock .plan-coming-soon{padding:12px 32px;font-size:1.25rem}
 @media(max-width:560px){.plan-comparison{scroll-margin-block-start:100px}.plan-comparison-table th,.plan-comparison-table td{padding:16px 12px}.plan-comparison-table caption{padding:16px}}
@@ -605,8 +605,10 @@ input[aria-invalid="true"],textarea[aria-invalid="true"],select[aria-invalid="tr
 
 /* auth */
 .auth-page{display:grid;place-items:center;padding:clamp(2rem,6vw,4.5rem) 1rem}
-.auth-card{background:#fff;border:1px solid var(--line);border-radius:var(--r-xl);padding:clamp(1.6rem,4vw,2.5rem);box-shadow:var(--shadow-lg);max-width:440px;width:100%;text-align:center}
-.auth-card img{width:70px;height:70px;margin-bottom:.6rem}
+.auth-shell{width:100%;max-width:560px;display:grid;justify-items:center}
+.auth-card{background:#fff;border:1px solid var(--line);border-radius:var(--r-xl);padding:clamp(1.8rem,4.5vw,2.9rem);box-shadow:var(--shadow-lg);max-width:560px;width:100%;text-align:center}
+.auth-card img{width:64px;height:64px;margin-bottom:.6rem}
+@media(max-width:560px){.auth-card{padding:1.5rem 1.15rem;border-radius:var(--r-lg)}}
 .auth-card .stack-form{text-align:start;margin-top:1.2rem}
 .auth-card .inline-link{display:inline-block;margin-top:1rem;font-size:.86rem}
 .auth-card .stack-form button{justify-self:stretch}
@@ -1323,7 +1325,7 @@ body.is-panel .panel-content :is(.feature,.course-card,.project-card,.price-card
 @media(max-width:700px){.sub-plans,.sub-terms-grid{grid-template-columns:minmax(0,1fr)}.sub-current{width:100%}}
 
 /* Pricing plans */
-.pricing-plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,17.5rem),1fr));gap:1.35rem;margin-bottom:2.6rem;align-items:stretch}
+.pricing-plans{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1.35rem;margin-bottom:2.6rem;align-items:stretch}
 .pricing-plan{position:relative;display:flex;flex-direction:column;gap:1rem;padding:1.7rem 1.5rem;border:1px solid var(--line);border-radius:var(--r-lg);background:#fff;box-shadow:var(--shadow-sm);transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease;min-width:0}
 .pricing-plan:hover{transform:translateY(-3px);border-color:var(--brand-line);box-shadow:var(--shadow)}
 .pricing-plan.is-featured{border-color:var(--brand);box-shadow:0 20px 44px -26px rgba(106,13,173,.5)}
@@ -1342,5 +1344,68 @@ body.is-panel .panel-content :is(.feature,.course-card,.project-card,.price-card
 .pricing-plan-pending span{font-weight:800;color:#8a5a06;font-size:.95rem}
 .pricing-plan-pending small{font-size:.8125rem;color:#7a6a4a;line-height:1.9}
 .pricing-plan .btn.full{margin-top:.2rem}
+.pricing-terms{display:grid;gap:1.4rem}
+.pricing-terms-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem}
+.pricing-term{padding:1.1rem 1.2rem;border:1px solid var(--line);border-radius:var(--r-md);background:#fff}
+.pricing-term h3{margin:0 0 .4rem;font-size:.98rem;color:var(--brand-2)}
+.pricing-term p{margin:0;font-size:.86rem;line-height:1.95;color:var(--ink-2)}
+.pricing-start{margin-top:1.6rem}
+@media(max-width:1100px){.pricing-plans{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.pricing-plans{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:900px){.pricing-terms-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.pricing-terms-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* Sandbox checkout */
+.sandbox-gateway{text-align:start}
+.sandbox-gateway h1{margin:.2rem 0 .6rem}
+.sandbox-summary{display:grid;gap:.6rem;margin:1.2rem 0;padding:1rem 1.1rem;border:1px solid var(--line);border-radius:var(--r-md);background:#fbfaff}
+.sandbox-summary div{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;font-size:.9rem}
+.sandbox-summary span{color:var(--muted)}
+.sandbox-summary strong{color:var(--ink);font-weight:800}
+.sandbox-items{list-style:none;margin:0 0 1.2rem;padding:0;display:grid;gap:.5rem;font-size:.9rem}
+.sandbox-items li{display:flex;justify-content:space-between;gap:1rem;padding-bottom:.5rem;border-bottom:1px dashed var(--line)}
+.sandbox-gateway .stack-form{margin-top:.6rem}
+
+/* Course sales page */
+.course-sales-hero{background:linear-gradient(180deg,#fbf9ff 0%,#fff 100%);border-bottom:1px solid var(--line);padding-block:clamp(2.4rem,6vw,4.5rem)}
+.course-sales-hero-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr);gap:clamp(1.6rem,4vw,3rem);align-items:start}
+.course-sales-intro h1{font-size:clamp(1.8rem,3.6vw,2.9rem);line-height:1.55;margin-block:.6rem 1rem}
+.course-sales-intro .fc-lead{max-width:680px;color:var(--ink-2);line-height:2.1}
+.course-sales-actions{display:flex;flex-wrap:wrap;align-items:center;gap:1rem;margin-top:1.6rem}
+.course-sales-actions form{margin:0}
+.course-sales-card{position:sticky;top:1.5rem;display:grid;gap:.9rem;padding:1.6rem 1.5rem;border:1px solid var(--brand-line);border-radius:var(--r-lg);background:#fff;box-shadow:var(--shadow)}
+.course-sales-badge{justify-self:start;padding:.2rem .7rem;border-radius:999px;background:var(--brand-soft);color:var(--brand-2);font-size:.8rem;font-weight:800}
+.course-sales-price{display:flex;align-items:baseline;gap:.5rem;flex-wrap:wrap;font-size:1.7rem;font-weight:800;color:var(--brand-2);line-height:1.5}
+.course-sales-price small{font-size:.8125rem;color:var(--muted);font-weight:700}
+.course-sales-includes{list-style:none;margin:0;padding:0;display:grid;gap:.55rem;font-size:.88rem;line-height:1.95;color:var(--ink-2)}
+.course-sales-includes li{display:flex;gap:.55rem;align-items:baseline}
+.course-sales-includes li::before{content:"✓";color:var(--brand);font-weight:800;flex:none}
+.course-sales-note{margin:0;font-size:.8rem;line-height:1.9;color:var(--muted)}
+.course-sales-body{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(260px,.7fr);gap:clamp(1.6rem,4vw,3rem);align-items:start}
+.course-sales-main{display:grid;gap:2.4rem;min-width:0}
+.course-sales-block h2{margin-block:.4rem .8rem;font-size:clamp(1.25rem,2.2vw,1.6rem)}
+.course-sales-block p{color:var(--ink-2);line-height:2.1}
+.course-sales-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+.course-sales-grid article{padding:1.1rem 1.2rem;border:1px solid var(--line);border-radius:var(--r-md);background:#fff}
+.course-sales-grid h3{margin:0 0 .4rem;font-size:1rem;color:var(--ink)}
+.course-sales-grid p{margin:0;font-size:.88rem;line-height:1.95}
+.course-sales-list{display:grid;gap:.6rem;margin:0;padding:0;list-style:none;color:var(--ink-2);line-height:2}
+.course-sales-list li{display:flex;gap:.6rem;align-items:baseline}
+.course-sales-list li::before{content:"•";color:var(--brand);font-weight:800;flex:none}
+.course-sales-sessions{list-style:none;margin:0;padding:0;display:grid;gap:.8rem}
+.course-sales-sessions li{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:1rem;align-items:start;padding:1rem 1.1rem;border:1px solid var(--line);border-radius:var(--r-md);background:#fff}
+.course-sales-session-n{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;background:var(--brand-soft);color:var(--brand-2);font-weight:800}
+.course-sales-sessions h3{margin:0 0 .3rem;font-size:1rem}
+.course-sales-sessions p{margin:0;font-size:.86rem;line-height:1.9;color:var(--ink-2)}
+.course-sales-sessions small{color:var(--muted);font-size:.8rem;white-space:nowrap}
+.course-sales-side{position:sticky;top:1.5rem;display:grid;gap:1.2rem}
+.course-sales-buy{display:grid;gap:.8rem;padding:1.4rem 1.3rem;border:1px solid var(--brand-line);border-radius:var(--r-lg);background:#fff;box-shadow:var(--shadow-sm)}
+.course-sales-buy p{margin:0;font-size:.86rem;line-height:1.95;color:var(--ink-2)}
+.course-sales-faq{padding:1.3rem 1.2rem;border:1px solid var(--line);border-radius:var(--r-lg);background:#fbfaff}
+.course-sales-faq h2{margin:0 0 .7rem;font-size:1.05rem}
+.course-sales-faq details{padding:.6rem 0;border-top:1px solid var(--line)}
+.course-sales-faq details:first-of-type{border-top:0}
+.course-sales-faq summary{cursor:pointer;font-weight:700;font-size:.9rem;color:var(--ink)}
+.course-sales-faq p{margin:.5rem 0 0;font-size:.85rem;line-height:1.95;color:var(--ink-2)}
+@media(max-width:960px){.course-sales-hero-grid,.course-sales-body{grid-template-columns:minmax(0,1fr)}.course-sales-card,.course-sales-side{position:static}}
+@media(max-width:640px){.course-sales-grid{grid-template-columns:minmax(0,1fr)}.course-sales-sessions li{grid-template-columns:40px minmax(0,1fr)}.course-sales-sessions small{grid-column:2}}

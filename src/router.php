@@ -24,6 +24,7 @@ function route(): void {
         dr_page($u,isset($darychehMatch[1])?(int)$darychehMatch[1]:null); foot_page(true); return;
     }
     if ($path==='payment/zarinpal/callback') payment_callback();
+    if (preg_match('~^payment/sandbox/(S[a-f0-9]{34})$~D',$path,$sandboxMatch)) { payment_sandbox_page($sandboxMatch[1]); return; }
     if ($path==='dashboard/payment-history') { $u=require_user(); head_page('تاریخچه پرداخت','',true); notice(); echo '<main class="panel-content">'; payment_history($u); echo '</main>'; foot_page(true); return; }
     if (in_array($path,['workspace/project-solution','workspace/data','workspace/download','workspace/run-state','workspace/runtime','workspace/datasets-search','workspace/datasets-detail','workspace/datasets-state'],true)) ws_get($path);
     if ($path==='dashboard/workspace' || preg_match('~^dashboard/workspace/([1-9][0-9]*)$~D',$path,$workspaceMatch)) {
@@ -49,7 +50,7 @@ function route(): void {
     if (str_starts_with($path,'course/')) { page_course(trim(substr($path,7))); return; }
     if ($path==='projects') { head_page('پروژه‌ها','پروژه‌های واقعی پایتون، علم داده و هوش مصنوعی برای تبدیل دانش به مهارت.',false,true); notice(); page_projects(); foot_page(); return; }
     if (str_starts_with($path,'project/')) { page_project(substr($path,8)); return; }
-    if ($path==='pricing') { head_page('قیمت‌گذاری','پلن‌های آیندهٔ یادگیری Noventix؛ بزودی.'); notice(); page_pricing(); foot_page(); return; }
+    if ($path==='pricing') { head_page('قیمت‌گذاری','پلن‌های یادگیری Noventix؛ مقایسهٔ امکانات، سهمیه و شرایط خرید.'); notice(); page_pricing(); foot_page(); return; }
     if ($path==='about') { head_page('درباره ما','داستان، رویکرد آموزشی و اصول تجربه یادگیری در Noventix.'); notice(); page_about(); foot_page(); return; }
     if ($path==='contact') { head_page('تماس با ما','راه‌های ارتباط با تیم Noventix و شبکه‌های اجتماعی.'); notice(); page_contact(); foot_page(); return; }
     if ($path==='community') { page_community(); return; }
@@ -153,13 +154,14 @@ function page_courses(array $courses): void {
 }
 function course_start_action(array $course,?array $me,bool $enrolled,string $class): void {
     if (!$me || trim($me['name'])==='') { linkto('login','برای شروع وارد شوید ←',$class); return; }
+    if ($enrolled) { linkto('dashboard/course/'.$course['slug'],'ورود به فضای یادگیری ←',$class); return; }
     if (!can_course($course['slug'],plan_for($me))) {
-        if (COMMERCE_ENABLED) linkto('dashboard/subscription','مشاهده پلن موردنیاز ←',$class);
-        else echo '<p class="muted">فعلاً فقط دورهٔ رایگان باز است؛ ثبت‌نام این دوره در دسترس نیست.</p>';
+        // A paid course is bought on its own, independent of any plan.
+        $price=course_product_price($course);
+        form_start('cart/add');
+        echo '<input type="hidden" name="key" value="'.h('course:'.$course['slug']).'"><button class="'.h($class).'">افزودن به سبد خرید · '.money($price).'</button></form>';
         return;
     }
-    if ($enrolled) { linkto('dashboard/course/'.$course['slug'],'ورود به فضای یادگیری ←',$class); return; }
-    if (!COMMERCE_ENABLED && $course['slug']!==FREE_COURSE_SLUG) { echo '<p class="muted">ثبت‌نام این دوره فعلاً در دسترس نیست.</p>'; return; }
     form_start('courses/enroll');
     echo '<input type="hidden" name="slug" value="'.h($course['slug']).'"><button class="'.h($class).'">شروع یادگیری دوره ←</button></form>';
 }
@@ -176,10 +178,11 @@ function page_course(string $slug): void {
     }
     $durationLabel=$duration===null ? 'مدت ثبت نشده' : fa((int)$duration).' دقیقه';
     $enrolled=$me && trim($me['name'])!=='' && (bool)q('SELECT 1 FROM enrollments WHERE user_id=? AND course_slug=?',[$me['id'],$course['slug']])->fetchColumn();
-    head_page($course['title'],$course['description']); notice(); echo '<main class="course-overview"><section class="course-overview-hero"><div class="container narrow-container"><span class="eyebrow">مسیر یادگیری · دوره</span><h1>'.h($course['title']).'</h1><p class="lead">'.h($course['description']).'</p><div class="article-meta"><span>'.$durationLabel.'</span><span>'.fa(count($lessons)).' جلسه</span><span>'.($course['slug']===FREE_COURSE_SLUG?'رایگان':'دسترسی مطابق پلن فعال').'</span><span>یادگیری پروژه‌محور</span></div><div class="course-hero-actions">'; course_start_action($course,$me,$enrolled,'btn btn-primary'); echo '</div></div></section><section class="section container narrow-container"><div class="course-overview-grid"><div><span class="eyebrow">برای چه کسی؟</span><h2>شروعی روشن برای ساختن با AI</h2><p class="muted">برای مبتدی‌هایی که می‌خواهند مفاهیم هوش مصنوعی را با یک مسیر عملی و قابل فهم یاد بگیرند.</p></div><div class="course-audience-list"><span>مبتدی و علاقه‌مند به AI</span><span>یادگیری همراه با پروژه</span><span>حرکت از مفهوم به اجرا</span></div></div></section><section class="section alt-section"><div class="container"><div class="section-header"><span class="eyebrow">خروجی دوره</span><h2>چه چیزهایی یاد می‌گیری؟</h2></div><div class="features-grid course-benefits"><article class="feature"><h3>مفاهیم پایه AI</h3><p>درک اصولی مفاهیم مهم بدون پیچیده‌گویی.</p></article><article class="feature"><h3>روند ساخت پروژه</h3><p>آشنایی با مسیر تبدیل ایده به یک نمونه عملی.</p></article><article class="feature"><h3>تمرین واقعی</h3><p>یادگیری با مثال‌هایی که به ساختن کمک می‌کنند.</p></article><article class="feature"><h3>حرکت به اجرا</h3><p>اتصال دانسته‌ها به یک تجربه قابل ارائه.</p></article></div></div></section><section class="section container narrow-container"><div class="section-header"><span class="eyebrow">Curriculum</span><h2>مسیر جلسات</h2><p>جلسه‌ها از محتوای منتشرشدهٔ همین Course ساخته می‌شوند.</p></div>';
+    $owned=$enrolled || ($me && entitlement_can_course($me,$course['slug']));
+    head_page($course['title'],$course['description']); notice(); echo '<main class="course-overview"><section class="course-overview-hero"><div class="container narrow-container"><span class="eyebrow">مسیر یادگیری · دوره</span><h1>'.h($course['title']).'</h1><p class="lead">'.h($course['description']).'</p><div class="article-meta"><span>'.$durationLabel.'</span><span>'.fa(count($lessons)).' جلسه</span><span>'.($owned?'دسترسی فعال':'دورهٔ پولی').'</span><span>یادگیری پروژه‌محور</span></div><div class="course-hero-actions">'; course_start_action($course,$me,$enrolled,'btn btn-primary'); echo '</div></div></section><section class="section container narrow-container"><div class="course-overview-grid"><div><span class="eyebrow">برای چه کسی؟</span><h2>شروعی روشن برای ساختن با AI</h2><p class="muted">برای مبتدی‌هایی که می‌خواهند مفاهیم هوش مصنوعی را با یک مسیر عملی و قابل فهم یاد بگیرند.</p></div><div class="course-audience-list"><span>مبتدی و علاقه‌مند به AI</span><span>یادگیری همراه با پروژه</span><span>حرکت از مفهوم به اجرا</span></div></div></section><section class="section alt-section"><div class="container"><div class="section-header"><span class="eyebrow">خروجی دوره</span><h2>چه چیزهایی یاد می‌گیری؟</h2></div><div class="features-grid course-benefits"><article class="feature"><h3>مفاهیم پایه AI</h3><p>درک اصولی مفاهیم مهم بدون پیچیده‌گویی.</p></article><article class="feature"><h3>روند ساخت پروژه</h3><p>آشنایی با مسیر تبدیل ایده به یک نمونه عملی.</p></article><article class="feature"><h3>تمرین واقعی</h3><p>یادگیری با مثال‌هایی که به ساختن کمک می‌کنند.</p></article><article class="feature"><h3>حرکت به اجرا</h3><p>اتصال دانسته‌ها به یک تجربه قابل ارائه.</p></article></div></div></section><section class="section container narrow-container"><div class="section-header"><span class="eyebrow">Curriculum</span><h2>مسیر جلسات</h2><p>جلسه‌ها از محتوای منتشرشدهٔ همین Course ساخته می‌شوند.</p></div>';
     if (!$lessons) echo '<div class="empty-state">هنوز جلسه‌ای برای این دوره منتشر نشده است.</div>';
     else { echo '<div class="lesson-list">'; foreach ($lessons as $lesson) { echo '<article class="lesson-card"><div class="lesson-number">'.fa((int)$lesson['position']).'</div><div><div class="meta-row"><span class="pill">منتشرشده</span><span>'.($lesson['duration_minutes']===null?'مدت ثبت نشده':fa((int)$lesson['duration_minutes']).' دقیقه').'</span></div><h3>'.h($lesson['title']).'</h3></div></article>'; } echo '</div>'; }
-    echo '<div class="cta-panel course-final-cta"><span class="eyebrow">قدم بعدی</span><h2>آماده‌ای شروع کنی؟</h2><p>از اولین جلسه شروع کن و قدم‌به‌قدم جلو برو.</p>'; course_start_action($course,$me,$enrolled,'btn btn-light'); echo '</div></section></main>'; foot_page();
+    echo '<div class="cta-panel course-final-cta"><span class="eyebrow">قدم بعدی</span><h2>آماده‌ای شروع کنی؟</h2><p>'.($owned?'از اولین جلسه شروع کن و قدم‌به‌قدم جلو برو.':'دوره را به سبد خرید اضافه کن و پس از پرداخت، به همهٔ جلسه‌ها دسترسی پیدا کن.').'</p>'; course_start_action($course,$me,$enrolled,'btn btn-light'); echo '</div></section></main>'; foot_page();
 }
 function page_projects(): void {
     echo '<main><section class="page-hero container projects-hero"><span class="eyebrow">پروژه‌ها</span><h1>یادگیری با ساختن، نه فقط خواندن</h1><p>'.fa(count(PROJECTS)).' پروژه؛ از ۲۴ تمرین پایتون مقدماتی تا یادگیری ماشین، با پیش‌نیاز، ورودی، خروجی و ارزیابی واقعی.</p>';
@@ -196,9 +199,6 @@ function page_pricing(): void {
     echo '<main><section class="pricing-hero"><div class="container"><span class="eyebrow">پلن‌های Noventix</span><h1>برای هر هدف، یک مسیر رشد</h1><p>از اولین قدم در برنامه‌نویسی تا ساختن پروژه‌های جدی؛ مسیرت را با تمرکز، تمرین و هدف روشن انتخاب کن.</p><div class="pricing-hero-facts"><span>یادگیری هدفمند</span><span>نگاه پروژه‌محور</span><span>رشد مهارت‌های کاربردی</span></div></div></section>';
     echo '<section class="section container" aria-labelledby="plans-heading"><div class="section-header"><span class="eyebrow">مسیر خودت را انتخاب کن</span><h2 id="plans-heading">یک قدم نزدیک‌تر به حرفه‌ای شدن</h2><p>هر پلن دسترسی به بخشی از محتوای منتشرشده را باز می‌کند. اشتراک ۳۰ روزه است و پس از تأیید پرداخت فعال می‌شود.</p></div>';
     echo '<div class="pricing-plans">';
-    echo '<article class="pricing-plan is-free"><header class="pricing-plan-head"><h3>رایگان</h3><span class="pricing-plan-tag">برای شروع</span></header><p class="pricing-plan-summary">'.h(PLANS['free']['summary']).'</p><div class="pricing-plan-price">رایگان<small>برای همیشه</small></div><ul class="pricing-plan-features">';
-    foreach (PLANS['free']['features'] as $feature) echo '<li>'.h($feature).'</li>';
-    echo '</ul>'; linkto('course/'.FREE_COURSE_SLUG,'شروع دورهٔ رایگان','btn btn-outline full'); echo '</article>';
     foreach ($paid as $key=>$p) {
         $featured=$key==='gold';
         echo '<article class="pricing-plan'.($featured?' is-featured':'').'">';
@@ -211,22 +211,25 @@ function page_pricing(): void {
         echo '</article>';
     }
     echo '</div></section>';
-    echo '<section id="plan-features" class="section container" aria-labelledby="plan-features-title"><div class="section-header"><span class="eyebrow">امکانات پلن‌ها</span><h2 id="plan-features-title">جزئیات هر مسیر در یک نگاه</h2></div><div class="plan-comparison-shell"><div class="plan-comparison-scroll" role="region" tabindex="0" aria-label="جدول مقایسهٔ امکانات پلن‌ها"><table class="plan-comparison-table"><caption>مقایسهٔ امکانات پلن‌های Noventix</caption><thead><tr><th scope="col">امکانات</th><th scope="col">رایگان</th>';
+    echo '<section id="plan-features" class="section container" aria-labelledby="plan-features-title"><div class="section-header"><span class="eyebrow">امکانات پلن‌ها</span><h2 id="plan-features-title">جزئیات هر مسیر در یک نگاه</h2></div><div class="plan-comparison-shell"><div class="plan-comparison-scroll" role="region" tabindex="0" aria-label="جدول مقایسهٔ امکانات پلن‌ها"><table class="plan-comparison-table"><caption>مقایسهٔ امکانات پلن‌های Noventix</caption><thead><tr><th scope="col">امکانات</th>';
     foreach ($paid as $p) echo '<th scope="col">'.h($p['name']).'</th>';
     echo '</tr></thead><tbody>';
-    // Rows come from COMPARISON so a quota can never disagree with its plan card.
-    foreach (COMPARISON as $label=>$values) { echo '<tr><th scope="row">'.h($label).'</th>'; foreach ($values as $value) echo '<td>'.h($value).'</td>'; echo '</tr>'; }
+    // Rows come from COMPARISON_GROUPS so a quota can never disagree with its
+    // plan card. The free column is dropped because the free plan is not sold.
+    foreach (COMPARISON_GROUPS as $group=>$rows) {
+        echo '<tr class="plan-comparison-group"><th scope="rowgroup" colspan="'.(count($paid)+1).'">'.h($group).'</th></tr>';
+        foreach ($rows as $label) { echo '<tr><th scope="row">'.h($label).'</th>'; foreach (array_slice(COMPARISON[$label],1) as $value) echo '<td>'.h($value).'</td>'; echo '</tr>'; }
+    }
     echo '</tbody></table></div></div></section>';
     echo '<section class="section container"><div class="pricing-terms"><div class="section-header"><span class="eyebrow">شرایط پرداخت</span><h2>پیش از خرید بدان</h2></div><div class="pricing-terms-grid">';
     foreach ([
-        ['مدت اشتراک','هر پرداخت یک دورهٔ ۳۰ روزه فعال می‌کند و از لحظهٔ تأیید پرداخت محاسبه می‌شود.'],
-        ['تمدید','تمدید همان پلن به زمان باقی‌ماندهٔ شما اضافه می‌شود و روزی از دست نمی‌رود.'],
-        ['تغییر پلن','با تغییر پلن، دورهٔ جدید از همان روز شروع می‌شود و ماندهٔ پلن قبلی منتقل نمی‌شود.'],
-        ['فعال‌سازی','دسترسی فقط پس از تأیید پرداخت توسط درگاه فعال می‌شود؛ ثبت درخواست به‌تنهایی اشتراک نمی‌سازد.'],
-        ['بازگشت وجه','اگر پرداخت تأیید نشود، مبلغی به حساب شما اضافه نمی‌شود. برای پیگیری از تاریخچهٔ پرداخت استفاده کنید.'],
-        ['پایان دوره','با پایان دوره دسترسی به محتوای همان پلن متوقف می‌شود؛ حساب و پروژه‌های شما حذف نمی‌شوند.'],
+        ['مدت اشتراک','هر پرداخت یک دورهٔ ۳۰ روزه فعال می‌کند.'],
+        ['تمدید','تمدید همان پلن به زمان باقی‌مانده اضافه می‌شود.'],
+        ['تغییر پلن','پلن جدید از همان روز شروع می‌شود.'],
+        ['فعال‌سازی','دسترسی فقط پس از تأیید پرداخت باز می‌شود.'],
+        ['پایان دوره','با پایان اشتراک، حساب و پروژه‌ها حذف نمی‌شوند.'],
     ] as [$title,$text]) echo '<article class="pricing-term"><h3>'.h($title).'</h3><p>'.h($text).'</p></article>';
-    echo '</div></div><div class="pricing-start"><div><h2>اولین قدم را همین امروز بردار</h2><p>با دورهٔ رایگان شروع کن؛ مفاهیم را یاد بگیر، تمرین کن و اولین پروژه‌ات را بساز.</p></div>'; linkto('course/'.FREE_COURSE_SLUG,'شروع یادگیری رایگان ←','btn btn-primary'); echo '</div></section></main>';
+    echo '</div></div><div class="pricing-start"><div><h2>پلن مناسب مسیرت را انتخاب کن</h2><p>هر پلن دسترسی به دوره‌ها، پروژه‌ها و امکانات میزکار را باز می‌کند؛ با یک پلن شروع کن و مسیرت را هدفمند ادامه بده.</p></div>'; linkto('register','ساخت حساب و شروع ←','btn btn-primary'); echo '</div></section></main>';
 }
 function page_about(): void {
     echo '<main><header class="about-hero"><div class="container about-hero-grid"><div><span class="eyebrow">درباره Noventix</span><h1>یادگیری را به توانایی ساختن تبدیل می‌کنیم.</h1><p class="lead">Noventix برای کسانی ساخته شده که نمی‌خواهند فقط ویدیو ببینند؛ می‌خواهند مسئله را بفهمند، کد بنویسند و نتیجه‌ای قابل ارائه بسازند.</p><div class="hero-actions">'; linkto('projects','دیدن پروژه‌ها ←','btn btn-primary'); linkto('courses','مسیرهای یادگیری','btn btn-outline'); echo '</div></div><div class="about-hero-card"><span class="about-card-mark">N</span><strong>از مفهوم تا اجرا</strong><p>محتوای فارسی، تمرین واقعی، میزکار کد و بازخورد مرحله‌به‌مرحله در یک مسیر واحد.</p><div class="about-mini-stats"><span><b>۳۴۵+</b> اصطلاح آموزشی</span><span><b>۱۲</b> پروژه داده‌محور</span></div></div></div></header><section class="section container"><div class="about-intro"><div><span class="eyebrow">چرا ساخته شد؟</span><h2>فاصلهٔ بین دانستن و ساختن</h2></div><div><p>خیلی از مسیرهای آموزشی با توضیح تمام می‌شوند؛ درست جایی که یادگیرنده باید تصمیم بگیرد، خطا کند و راه‌حل خودش را بسازد. Noventix این فاصله را با پروژه، تمرین و بازخورد پر می‌کند.</p><p>ما تلاش می‌کنیم هر مفهوم یک خروجی روشن داشته باشد: یک برنامه، یک تحلیل، یک مدل یا مهارتی که بتوانی در پروژهٔ بعدی دوباره از آن استفاده کنی.</p></div></div></section><section class="section about-values-section"><div class="container"><div class="section-header"><span class="eyebrow">روش ما</span><h2>چه چیزی تجربهٔ Noventix را متفاوت می‌کند؟</h2><p>مسیر یادگیری باید روشن، قابل اندازه‌گیری و نزدیک به دنیای واقعی باشد.</p></div><div class="features-grid about-values"><article class="feature"><span class="feature-n">۰۱ · مسیر روشن</span><h3>از هدف شروع می‌کنیم</h3><p>پیش‌نیاز، خروجی و قدم بعدی هر درس و پروژه از ابتدا مشخص است تا در مسیر گم نشوی.</p></article><article class="feature"><span class="feature-n">۰۲ · تمرین واقعی</span><h3>با ساختن یاد می‌گیریم</h3><p>به‌جای تمرین‌های بی‌هدف، با داده، کد و مسئله‌ای کار می‌کنی که نتیجهٔ آن قابل بررسی است.</p></article><article class="feature"><span class="feature-n">۰۳ · بازخورد معتبر</span><h3>پیشرفتت قابل مشاهده است</h3><p>ارزیابی پروژه‌ها و پیشرفت درس‌ها کمک می‌کند بدانی چه چیزی را یاد گرفته‌ای و کجا باید بهتر شوی.</p></article><article class="feature"><span class="feature-n">۰۴ · صداقت</span><h3>بدون وعدهٔ غیرواقعی</h3><p>دربارهٔ سطح محتوا، محدودیت ابزارها و نتیجه‌ای که می‌توانی انتظار داشته باشی شفاف صحبت می‌کنیم.</p></article></div></div></section><section class="section container"><div class="about-process"><div class="section-header"><span class="eyebrow">چرخهٔ یادگیری</span><h2>از اولین سؤال تا پروژهٔ قابل ارائه</h2></div><div class="about-process-grid"><div><span>۱</span><h3>یاد بگیر</h3><p>مفهوم را با توضیح کوتاه و مثال کاربردی می‌فهمی.</p></div><div><span>۲</span><h3>امتحان کن</h3><p>در تمرین و میزکار کد، ایده را به اجرا تبدیل می‌کنی.</p></div><div><span>۳</span><h3>ارزیابی کن</h3><p>خروجی را با معیار روشن بررسی و اصلاح می‌کنی.</p></div><div><span>۴</span><h3>به اشتراک بگذار</h3><p>در انجمن تجربه‌ات را مطرح می‌کنی و از مسیر دیگران یاد می‌گیری.</p></div></div></div></section><section class="section container"><div class="cta-panel about-cta"><span class="eyebrow">قدم بعدی</span><h2>یادگیری را با یک پروژه شروع کن</h2><p>مسیر مناسب خودت را انتخاب کن و اولین خروجی واقعی‌ات را بساز.</p>'; linkto('projects','شروع از پروژه‌ها ←','btn btn-light'); echo '</div></section></main>';
@@ -330,7 +333,7 @@ function page_login(bool $register=false): void {
     $registration=$register ? ($_SESSION['registration_form'] ?? []) : [];
     if ($register) unset($_SESSION['registration_form']);
     head_page($register?'ثبت‌نام':'ورود به حساب',$register?'ساخت حساب کاربری با شماره موبایل در Noventix.':'ورود به حساب کاربری Noventix با شماره موبایل و رمز عبور.'); notice();
-    echo '<main class="auth-page"><div class="auth-card"><img src="/assets/nova.png" alt="مسکات Nova" width="70" height="70"><h1>'.($register?'ساخت حساب کاربری':'ورود به حساب').'</h1><p class="muted">'.($register?'برای شروع، مشخصات خود را وارد کنید و حساب جدید بسازید.':'خوش برگشتی! با شماره موبایل و رمز عبورت وارد حساب شو.').'</p>';
+    echo '<main class="auth-page"><div class="auth-shell"><section class="auth-card"><img src="/assets/nova.png" alt="مسکات Nova" width="64" height="64"><h1>'.($register?'ساخت حساب کاربری':'ورود به حساب').'</h1><p class="muted">'.($register?'برای شروع، مشخصات خود را وارد کنید و حساب جدید بسازید.':'خوش برگشتی! با شماره موبایل و رمز عبورت وارد حساب شو.').'</p>';
     if ($register) {
     form_start('auth/request','stack-form',true); echo '<h2>ایجاد حساب</h2><label>نام<input name="first_name" required minlength="2" maxlength="50" autocomplete="given-name" value="'.h((string)($registration['first_name'] ?? '')).'" /></label><label>نام خانوادگی<input name="last_name" required minlength="2" maxlength="50" autocomplete="family-name" value="'.h((string)($registration['last_name'] ?? '')).'" /></label><label>شماره موبایل<input type="tel" dir="ltr" name="phone" required data-validation="phone" placeholder="09123456789 یا +989123456789" autocomplete="tel" value="'.h((string)($registration['phone'] ?? '')).'" /></label><label>رمز عبور<span class="password-field"><input id="register-password" type="password" name="password" required minlength="8" maxlength="72" autocomplete="new-password" data-validation="password"><button type="button" class="password-toggle" data-password-toggle="register-password" aria-controls="register-password" aria-pressed="false" aria-label="نمایش رمز" title="نمایش رمز"><svg class="password-icon password-icon-show" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg><svg class="password-icon password-icon-hide" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 3 18 18M10.6 6.2A10.6 10.6 0 0 1 12 6c6.5 0 10 6 10 6a17.5 17.5 0 0 1-3.2 3.7M6.1 6.1C3.4 8 2 12 2 12s3.5 6 10 6a10.6 10.6 0 0 0 3.4-.5"/></svg></button></span></label><label>تکرار رمز عبور<span class="password-field"><input id="register-password-confirmation" type="password" name="password_confirmation" required minlength="8" maxlength="72" autocomplete="new-password" data-validation="password-confirmation" data-password-match="register-password"><button type="button" class="password-toggle" data-password-toggle="register-password-confirmation" aria-controls="register-password-confirmation" aria-pressed="false" aria-label="نمایش رمز" title="نمایش رمز"><svg class="password-icon password-icon-show" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg><svg class="password-icon password-icon-hide" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 3 18 18M10.6 6.2A10.6 10.6 0 0 1 12 6c6.5 0 10 6 10 6a17.5 17.5 0 0 1-3.2 3.7M6.1 6.1C3.4 8 2 12 2 12s3.5 6 10 6a10.6 10.6 0 0 0 3.4-.5"/></svg></button></span></label><p class="fine-print">رمز باید دست‌کم ۸ نویسه و شامل حرف انگلیسی و عدد باشد.</p><button class="btn btn-primary">ثبت‌نام در سایت</button></form>';
     echo '<nav class="auth-switch" aria-label="انتقال بین ورود و ثبت‌نام"><span>قبلاً حساب ساخته‌ای؟</span><a href="'.h(url('login')).'">ورود به حساب</a></nav>';
@@ -338,7 +341,7 @@ function page_login(bool $register=false): void {
     form_start('auth/login','stack-form',true); echo '<label>شماره موبایل<input type="tel" dir="ltr" name="phone" required data-validation="phone" placeholder="09123456789 یا +989123456789" autocomplete="username"></label><label>رمز عبور<input type="password" name="password" required autocomplete="current-password"></label><div class="captcha-box"><strong dir="ltr">'.h($captcha).'</strong><span>کد امنیتی را وارد کنید</span></div><label>کپچا<input name="captcha" required maxlength="5" pattern="[A-Za-z0-9]{5}" dir="ltr" autocomplete="off"></label><button class="btn btn-primary">ورود به حساب</button></form>';
     echo '<nav class="auth-switch" aria-label="انتقال بین ورود و ثبت‌نام"><span>هنوز حساب نداری؟</span><a href="'.h(url('register')).'">ساخت حساب جدید</a></nav>';
     }
-    echo '</div></main>'; foot_page();
+    echo '</section></div></main>'; foot_page();
 }
 function page_admin_login(): void {
     $u=require_user();
@@ -348,7 +351,7 @@ function page_admin_login(): void {
     if ($u['role']==='admin' && !$setup) redirect('dashboard');
     head_page($setup?'تعیین رمز جدید مدیریت':'ورود مدیر','تأیید ورود به پنل مدیریت.'); notice();
     $captcha=captcha_code();
-    echo '<main class="auth-page"><div class="auth-card">';
+    echo '<main class="auth-page"><div class="auth-shell"><section class="auth-card">';
     if ($setup) {
         echo '<h1>تعیین رمز جدید مدیریت</h1><p class="muted">برای تأیید مالکیت، رمز فعلی حسابی را که با آن وارد سایت می‌شوید وارد کنید؛ سپس رمز جدید مدیریت را انتخاب کنید. این مجوز یک‌بارمصرف است.</p>';
         form_start('auth/admin-password','stack-form',true);
@@ -358,10 +361,10 @@ function page_admin_login(): void {
         form_start('auth/admin','stack-form',true);
         echo '<label>رمز مدیریت<input type="password" dir="ltr" name="password" required autocomplete="current-password"></label>';
     }
-    echo '<div class="captcha-box"><strong dir="ltr">'.h($captcha).'</strong><span>کد امنیتی را وارد کنید</span></div><label>کپچا<input name="captcha" required maxlength="5" pattern="[A-Za-z0-9]{5}" dir="ltr" autocomplete="off"></label><button class="btn btn-primary">'.($setup?'ذخیرهٔ رمز جدید و ورود به مدیریت':'ورود به پنل مدیریت').'</button></form></div></main>';
+    echo '<div class="captcha-box"><strong dir="ltr">'.h($captcha).'</strong><span>کد امنیتی را وارد کنید</span></div><label>کپچا<input name="captcha" required maxlength="5" pattern="[A-Za-z0-9]{5}" dir="ltr" autocomplete="off"></label><button class="btn btn-primary">'.($setup?'ذخیرهٔ رمز جدید و ورود به مدیریت':'ورود به پنل مدیریت').'</button></form></section></div></main>';
     foot_page();
 }
 function page_verify(): void {
     $phone=$_SESSION['verify_phone'] ?? ''; if (!$phone) redirect('login');
-    head_page('تأیید شماره','تأیید کد پیامک‌شده.'); notice(); echo '<main class="auth-page"><div class="auth-card"><h1>کد تأیید را وارد کنید</h1><p class="muted" dir="ltr">'.h($phone).'</p>'; form_start('auth/verify','stack-form',true); echo '<label>کد ۶ رقمی<input inputmode="numeric" dir="ltr" name="code" required pattern="[0-9۰-۹]{6}" autocomplete="one-time-code"></label><button class="btn btn-primary">تأیید و ورود</button></form>'; form_start('auth/resend','stack-form'); echo '<button class="btn btn-outline">ارسال دوباره کد</button></form>'; linkto('register','ویرایش شماره ←','inline-link'); echo '</div></main>'; foot_page();
+    head_page('تأیید شماره','تأیید کد پیامک‌شده.'); notice(); echo '<main class="auth-page"><div class="auth-shell"><section class="auth-card"><h1>کد تأیید را وارد کنید</h1><p class="muted" dir="ltr">'.h($phone).'</p>'; form_start('auth/verify','stack-form',true); echo '<label>کد ۶ رقمی<input inputmode="numeric" dir="ltr" name="code" required pattern="[0-9۰-۹]{6}" autocomplete="one-time-code"></label><button class="btn btn-primary">تأیید و ورود</button></form>'; form_start('auth/resend','stack-form'); echo '<button class="btn btn-outline">ارسال دوباره کد</button></form>'; linkto('register','ویرایش شماره ←','inline-link'); echo '</section></div></main>'; foot_page();
 }
