@@ -207,7 +207,7 @@ function page_pricing(): void {
         foreach ($p['features'] as $feature) echo '<li>'.h($feature).'</li>';
         echo '</ul>';
         if (plan_is_available($key)) plan_purchase_button($key,'btn '.($featured?'btn-primary':'btn-outline').' full');
-        else { echo '<div class="pricing-plan-pending"><span>به‌زودی</span><small>این پلن هنوز برای فروش فعال نشده است.</small></div>'; linkto('dashboard/subscription','مشاهدهٔ وضعیت اشتراک','btn btn-outline full'); }
+        else { echo '<div class="pricing-plan-foot"><span>اشتراک ۳۰ روزه</span>'; linkto('dashboard/subscription','مشاهدهٔ وضعیت اشتراک','inline-link'); echo '</div>'; }
         echo '</article>';
     }
     echo '</div></section>';

@@ -2,7 +2,7 @@
 .account-active-actions form{margin:0;width:100%}
 .account-active-actions .btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;box-sizing:border-box;margin:0}
 .upcoming-plans{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px;margin-block-end:40px;align-items:stretch}
-.upcoming-plan{--metal:#946139;--metal-soft:#faf2eb;position:relative;isolation:isolate;overflow:hidden;display:flex;flex-direction:column;gap:14px;min-width:0;padding:28px 22px 0;border:1px solid var(--line);border-top:4px solid var(--metal);border-radius:var(--r-lg);background:linear-gradient(180deg,var(--metal-soft),#fff 180px);box-shadow:var(--shadow-sm);text-align:start}
+.upcoming-plan{--metal:#946139;--metal-soft:#faf2eb;position:relative;isolation:isolate;overflow:hidden;display:flex;flex-direction:column;gap:14px;min-width:0;padding:28px 22px;border:1px solid var(--line);border-top:4px solid var(--metal);border-radius:var(--r-lg);background:linear-gradient(180deg,var(--metal-soft),#fff 180px);box-shadow:var(--shadow-sm);text-align:start}.upcoming-plan .plan-price{margin-block-start:auto;padding-block-start:2px}.upcoming-plan>.btn,.upcoming-plan>form{align-self:stretch;margin-block-start:6px}.upcoming-plan>form .btn{width:100%}
 .upcoming-plan.plan-silver{--metal:#536278;--metal-soft:#eef2f6}.upcoming-plan.plan-gold{--metal:#856009;--metal-soft:#fff8e7}.upcoming-plan.plan-titanium{--metal:#5b4a86;--metal-soft:#f2edfa}
 .upcoming-plan h2{color:var(--metal);margin:0;font-size:1.6rem}.upcoming-plan h3{margin:0;font-size:1rem;line-height:1.8}.upcoming-plan .plan-description{margin:0;color:var(--ink-2);font-size:.9375rem;line-height:1.95;min-height:8em}
 .plan-focus{list-style:none;padding:0;margin:6px 0 24px;display:grid;gap:14px;font-size:.875rem;color:var(--ink-2)}.plan-focus li{display:flex;align-items:baseline;gap:10px;line-height:1.8}.plan-focus li::before{content:"";width:6px;height:6px;flex:0 0 6px;border-radius:50%;background:var(--metal)}
@@ -1340,9 +1340,9 @@ body.is-panel .panel-content :is(.feature,.course-card,.project-card,.price-card
 .pricing-plan-features{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;font-size:.88rem;line-height:1.95;color:var(--ink-2);flex:1}
 .pricing-plan-features li{display:flex;gap:.55rem;align-items:baseline}
 .pricing-plan-features li::before{content:"✓";color:var(--brand);font-weight:800;flex:none}
-.pricing-plan-pending{display:grid;gap:.25rem;padding:.8rem 1rem;border:1px solid #f0dcae;border-radius:var(--r-md);background:#fdf8ec;text-align:center}
-.pricing-plan-pending span{font-weight:800;color:#8a5a06;font-size:.95rem}
-.pricing-plan-pending small{font-size:.8125rem;color:#7a6a4a;line-height:1.9}
+.pricing-plan-foot{display:grid;gap:.35rem;justify-items:center;padding:.8rem 1rem;border:1px solid var(--line);border-radius:var(--r-md);background:#faf9fc;text-align:center}
+.pricing-plan-foot span{font-weight:700;color:var(--ink-2);font-size:.9rem}
+.pricing-plan-foot .inline-link{font-size:.86rem}
 .pricing-plan .btn.full{margin-top:.2rem}
 .pricing-terms{display:grid;gap:1.4rem}
 .pricing-terms-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem}
