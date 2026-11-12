@@ -25,14 +25,24 @@ function fa(int|string $v): string { return strtr((string)$v,['0'=>'۰','1'=>'۱
 function latin_digits(string $v): string { return strtr($v,['۰'=>'0','۱'=>'1','۲'=>'2','۳'=>'3','۴'=>'4','۵'=>'5','۶'=>'6','۷'=>'7','۸'=>'8','۹'=>'9','٠'=>'0','١'=>'1','٢'=>'2','٣'=>'3','٤'=>'4','٥'=>'5','٦'=>'6','٧'=>'7','٨'=>'8','٩'=>'9']); }
 function published_courses(): array { return q("SELECT slug,title,description FROM courses WHERE status='published' ORDER BY id ASC")->fetchAll(); }
 // Published curriculum: hash, title, minutes, short summary, lesson text.
-// The summary is plain text (no <br>); the lesson text may use <br> for paragraphs.
+// The summary is plain text (no \n); the lesson text may use \n for paragraphs.
 const AI_FOUNDATIONS_LESSONS = [
-    ['ereh151','مفاهیم پایه و مبانی هوش مصنوعی',52,'آشنایی با مفهوم هوش مصنوعی، تفاوت آن با برنامه‌نویسی معمولی، یادگیری ماشین و نمونه‌های واقعی از زندگی روزمره.','هوش مصنوعی شاخه‌ای از علوم رایانه است که به ساختن سامانه‌هایی می‌پردازد که کاری انجام می‌دهند که تا پیش از این به هوش انسان نیاز داشت: تشخیص چهره در عکس، ترجمهٔ متن، پیشنهاد فیلم و پاسخ دادن به پرسش‌ها.<br>تفاوت اصلی هوش مصنوعی با برنامهٔ معمولی در این است که برنامهٔ معمولی قاعده‌ها را از پیش می‌داند، اما یک مدل هوش مصنوعی این قاعده‌ها را از تعداد زیادی نمونه یاد می‌گیرد.<br>در این جلسه مفهوم داده، ویژگی و برچسب، یادگیری نظارت‌شده و بدون نظارت و مسیر کلی دوره را مرور می‌کنیم: ابتدا مفهوم‌ها، بعد داده، سپس اولین مدل، و در پایان نمونه‌ای از کاربردهای واقعی.'],
-    ['jlckro2','آشنایی با زبان برنامه‌نویسی پایتون و نحوهٔ نصب پایتون',20,'نصب پایتون، آشنایی با محیط اجرا، pip و کتابخانه‌های پایه‌ای که در ادامهٔ دوره به آن‌ها نیاز داریم.','پایتون یک زبان برنامه‌نویسی سطح بالا و خوانا است که به‌خاطر کتابخانه‌های قدرتمندش، زبان اصلی کار با هوش مصنوعی و تحلیل داده شده است.<br>در این جلسه پایتون را از سایت رسمی نصب می‌کنیم، گزینهٔ Add Python to PATH را فعال می‌کنیم و با pip بسته‌ها را نصب می‌کنیم. محیط مجازی (venv) را می‌سازیم تا بسته‌های هر پروژه جدا بمانند.<br>در پایان یک اسکریپت ساده می‌نویسیم و کتابخانه‌های پایه مانند NumPy، pandas و matplotlib را نصب و آزمایش می‌کنیم.'],
-    ['ooz6d75','اولین پروژهٔ عملی و پروژهٔ تشخیص چهره',60,'کار با OpenCV: خواندن و نمایش تصویر، تبدیل رنگ، تغییر اندازه، آستانه‌گذاری و تشخیص چهره با Haar Cascade.','در این جلسه اولین پروژهٔ عملی را با کتابخانهٔ OpenCV می‌سازیم. تصویر را با cv2.imread می‌خوانیم، با cv2.imshow نمایش می‌دهیم و ابعاد آن را با img.shape بررسی می‌کنیم.<br>ترتیب رنگ OpenCV به‌صورت BGR است؛ با cv2.cvtColor آن را به RGB تبدیل می‌کنیم تا با matplotlib درست نمایش داده شود. سپس تصویر را برش می‌دهیم، با cv2.resize تغییر اندازه می‌دهیم و با cv2.cvtColor به خاکستری تبدیل می‌کنیم.<br>با cv2.threshold تصویر را دودویی می‌کنیم و در نهایت با CascadeClassifier و فایل haarcascade_frontalface_default.xml چهره‌ها را با detectMultiScale پیدا می‌کنیم و با cv2.rectangle دور آن‌ها کادر می‌کشیم.'],
-    ['bakrn6p','پروژهٔ رگرسیون و پیش‌بینی دی‌اکسید کربن تولیدشده توسط یک ماشین',63,'رگرسیون، تحلیل داده، هیستوگرام، همبستگی و مقایسهٔ مدل‌های LinearRegression، KNN، درخت تصمیم و XGBoost برای پیش‌بینی CO2.','رگرسیون برای پیش‌بینی یک مقدار پیوستهٔ عددی به کار می‌رود. در این پروژه مقدار دی‌اکسید کربن تولیدشده توسط خودرو را از روی ویژگی‌هایی مانند حجم موتور، تعداد سیلندر و مصرف سوخت پیش‌بینی می‌کنیم.<br>داده را با pandas می‌خوانیم و با info، describe و isnull بررسی می‌کنیم. توزیع متغیر هدف را با هیستوگرام (histplot) و همبستگی متغیرها را با heatmap و scatter_matrix می‌بینیم.<br>داده را با train_test_split به آموزش و آزمون تقسیم می‌کنیم و چند مدل را مقایسه می‌کنیم: LinearRegression، DecisionTreeRegressor، RandomForestRegressor، KNeighborsRegressor، XGBoost و GradientBoostingRegressor. عملکرد هر مدل را با MAE، RMSE و R2 می‌سنجیم و در پایان CO2 یک خودروی جدید را پیش‌بینی می‌کنیم.'],
-    ['atrkj08','پروژهٔ Classification و پروژهٔ تشخیص دیابت',58,'دسته‌بندی، مقیاس‌بندی داده، LabelEncoder و مقایسهٔ مدل‌های LogisticRegression، KNN، RandomForest، Naive Bayes و SVM برای تشخیص دیابت.','دسته‌بندی (classification) برای پیش‌بینی یک برچسب یا کلاس به کار می‌رود. در این پروژه ابتلا یا عدم ابتلا به دیابت را از روی ویژگی‌هایی مانند قند خون، فشار خون و سن پیش‌بینی می‌کنیم.<br>داده را با pandas می‌خوانیم، مقادیر متنی را با LabelEncoder به عدد تبدیل می‌کنیم و مقادیر گمشده را با میانگین ستون پر می‌کنیم. توزیع کلاس‌ها را با countplot و توزیع قند خون را با هیستوگرام می‌بینیم و همبستگی را با heatmap بررسی می‌کنیم.<br>داده را با train_test_split تقسیم و با MinMaxScaler مقیاس‌بندی می‌کنیم. سپس چند مدل را مقایسه می‌کنیم: LogisticRegression، KNeighborsClassifier، RandomForestClassifier، DecisionTreeClassifier، XGBoost، GradientBoostingClassifier، GaussianNB و SVM. دقت هر مدل را با accuracy_score می‌سنجیم و وضعیت یک بیمار جدید را پیش‌بینی می‌کنیم.'],
-    ['frzh61x','پروژهٔ عملی یادگیری بدون نظارت و پروژهٔ خوشه‌بندی ارقام دست‌نویس',51,'خوشه‌بندی با KMeans، کاهش ابعاد با PCA، روش Elbow، Silhouette و ارزیابی خوشه‌ها با NMI و ARI روی مجموعهٔ ارقام دست‌نویس.','یادگیری بدون نظارت یعنی داده‌ها برچسب ندارند و مدل خودش الگو و گروه پیدا می‌کند. در این پروژه ارقام دست‌نویس را با KMeans خوشه‌بندی می‌کنیم.<br>مجموعه‌دادهٔ load_digits شامل تصاویر ۸×۸ است. داده را با StandardScaler مقیاس‌بندی می‌کنیم و با PCA ابعاد را کاهش می‌دهیم؛ پارامتر n_components=0.90 مؤلفه‌هایی را نگه می‌دارد که ۹۰٪ واریانس را توضیح می‌دهند و نمودار مجموع تجمعی واریانس (np.cumsum) این انتخاب را نشان می‌دهد.<br>تعداد مناسب خوشه را با روش Elbow (نمودار inertia) و Silhouette بررسی می‌کنیم. سپس KMeans را با ۱۰ خوشه اجرا می‌کنیم و کیفیت خوشه‌بندی را با silhouette_score، NMI و ARI می‌سنجیم. در پایان با PCA دوبعدی خوشه‌ها را روی نمودار می‌بینیم و مراکز خوشه را با inverse_transform به تصویر ۸×۸ برمی‌گردانیم.'],
+    ['ereh151','مفاهیم پایه و مبانی هوش مصنوعی',52,'آشنایی با مفهوم هوش مصنوعی، تفاوت آن با برنامه‌نویسی معمولی، یادگیری ماشین و نمونه‌های واقعی از زندگی روزمره.','هوش مصنوعی شاخه‌ای از علوم رایانه است که به ساختن سامانه‌هایی می‌پردازد که کاری انجام می‌دهند که تا پیش از این به هوش انسان نیاز داشت: تشخیص چهره در عکس، ترجمهٔ متن، پیشنهاد فیلم و پاسخ دادن به پرسش‌ها.\nتفاوت اصلی هوش مصنوعی با برنامهٔ معمولی در این است که برنامهٔ معمولی قاعده‌ها را از پیش می‌داند، اما یک مدل هوش مصنوعی این قاعده‌ها را از تعداد زیادی نمونه یاد می‌گیرد.\nدر این جلسه مفهوم داده، ویژگی و برچسب، یادگیری نظارت‌شده و بدون نظارت و مسیر کلی دوره را مرور می‌کنیم: ابتدا مفهوم‌ها، بعد داده، سپس اولین مدل، و در پایان نمونه‌ای از کاربردهای واقعی.'],
+    ['jlckro2','آشنایی با زبان برنامه‌نویسی پایتون و نحوهٔ نصب پایتون',20,'نصب پایتون، آشنایی با محیط اجرا، pip و کتابخانه‌های پایه‌ای که در ادامهٔ دوره به آن‌ها نیاز داریم.','پایتون یک زبان برنامه‌نویسی سطح بالا و خوانا است که به‌خاطر کتابخانه‌های قدرتمندش، زبان اصلی کار با هوش مصنوعی و تحلیل داده شده است.\nدر این جلسه پایتون را از سایت رسمی نصب می‌کنیم، گزینهٔ Add Python to PATH را فعال می‌کنیم و با pip بسته‌ها را نصب می‌کنیم. محیط مجازی (venv) را می‌سازیم تا بسته‌های هر پروژه جدا بمانند.\nدر پایان یک اسکریپت ساده می‌نویسیم و کتابخانه‌های پایه مانند NumPy، pandas و matplotlib را نصب و آزمایش می‌کنیم.'],
+    ['ooz6d75','اولین پروژهٔ عملی و پروژهٔ تشخیص چهره',60,'کار با OpenCV: خواندن و نمایش تصویر، تبدیل رنگ، تغییر اندازه، آستانه‌گذاری و تشخیص چهره با Haar Cascade.','در این جلسه اولین پروژهٔ عملی را با کتابخانهٔ OpenCV می‌سازیم. تصویر را با cv2.imread می‌خوانیم، با cv2.imshow نمایش می‌دهیم و ابعاد آن را با img.shape بررسی می‌کنیم.\nترتیب رنگ OpenCV به‌صورت BGR است؛ با cv2.cvtColor آن را به RGB تبدیل می‌کنیم تا با matplotlib درست نمایش داده شود. سپس تصویر را برش می‌دهیم، با cv2.resize تغییر اندازه می‌دهیم و با cv2.cvtColor به خاکستری تبدیل می‌کنیم.\nبا cv2.threshold تصویر را دودویی می‌کنیم و در نهایت با CascadeClassifier و فایل haarcascade_frontalface_default.xml چهره‌ها را با detectMultiScale پیدا می‌کنیم و با cv2.rectangle دور آن‌ها کادر می‌کشیم.'],
+    ['bakrn6p','پروژهٔ رگرسیون و پیش‌بینی دی‌اکسید کربن تولیدشده توسط یک ماشین',63,'رگرسیون، تحلیل داده، هیستوگرام، همبستگی و مقایسهٔ مدل‌های LinearRegression، KNN، درخت تصمیم و XGBoost برای پیش‌بینی CO2.','رگرسیون برای پیش‌بینی یک مقدار پیوستهٔ عددی به کار می‌رود. در این پروژه مقدار دی‌اکسید کربن تولیدشده توسط خودرو را از روی ویژگی‌هایی مانند حجم موتور، تعداد سیلندر و مصرف سوخت پیش‌بینی می‌کنیم.\nداده را با pandas می‌خوانیم و با info، describe و isnull بررسی می‌کنیم. توزیع متغیر هدف را با هیستوگرام (histplot) و همبستگی متغیرها را با heatmap و scatter_matrix می‌بینیم.\nداده را با train_test_split به آموزش و آزمون تقسیم می‌کنیم و چند مدل را مقایسه می‌کنیم: LinearRegression، DecisionTreeRegressor، RandomForestRegressor، KNeighborsRegressor، XGBoost و GradientBoostingRegressor. عملکرد هر مدل را با MAE، RMSE و R2 می‌سنجیم و در پایان CO2 یک خودروی جدید را پیش‌بینی می‌کنیم.'],
+    ['atrkj08','پروژهٔ Classification و پروژهٔ تشخیص دیابت',58,'دسته‌بندی، مقیاس‌بندی داده، LabelEncoder و مقایسهٔ مدل‌های LogisticRegression، KNN، RandomForest، Naive Bayes و SVM برای تشخیص دیابت.','دسته‌بندی (classification) برای پیش‌بینی یک برچسب یا کلاس به کار می‌رود. در این پروژه ابتلا یا عدم ابتلا به دیابت را از روی ویژگی‌هایی مانند قند خون، فشار خون و سن پیش‌بینی می‌کنیم.\nداده را با pandas می‌خوانیم، مقادیر متنی را با LabelEncoder به عدد تبدیل می‌کنیم و مقادیر گمشده را با میانگین ستون پر می‌کنیم. توزیع کلاس‌ها را با countplot و توزیع قند خون را با هیستوگرام می‌بینیم و همبستگی را با heatmap بررسی می‌کنیم.\nداده را با train_test_split تقسیم و با MinMaxScaler مقیاس‌بندی می‌کنیم. سپس چند مدل را مقایسه می‌کنیم: LogisticRegression، KNeighborsClassifier، RandomForestClassifier، DecisionTreeClassifier، XGBoost، GradientBoostingClassifier، GaussianNB و SVM. دقت هر مدل را با accuracy_score می‌سنجیم و وضعیت یک بیمار جدید را پیش‌بینی می‌کنیم.'],
+    ['frzh61x','پروژهٔ عملی یادگیری بدون نظارت و پروژهٔ خوشه‌بندی ارقام دست‌نویس',51,'خوشه‌بندی با KMeans، کاهش ابعاد با PCA، روش Elbow، Silhouette و ارزیابی خوشه‌ها با NMI و ARI روی مجموعهٔ ارقام دست‌نویس.','یادگیری بدون نظارت یعنی داده‌ها برچسب ندارند و مدل خودش الگو و گروه پیدا می‌کند. در این پروژه ارقام دست‌نویس را با KMeans خوشه‌بندی می‌کنیم.\nمجموعه‌دادهٔ load_digits شامل تصاویر ۸×۸ است. داده را با StandardScaler مقیاس‌بندی می‌کنیم و با PCA ابعاد را کاهش می‌دهیم؛ پارامتر n_components=0.90 مؤلفه‌هایی را نگه می‌دارد که ۹۰٪ واریانس را توضیح می‌دهند و نمودار مجموع تجمعی واریانس (np.cumsum) این انتخاب را نشان می‌دهد.\nتعداد مناسب خوشه را با روش Elbow (نمودار inertia) و Silhouette بررسی می‌کنیم. سپس KMeans را با ۱۰ خوشه اجرا می‌کنیم و کیفیت خوشه‌بندی را با silhouette_score، NMI و ARI می‌سنجیم. در پایان با PCA دوبعدی خوشه‌ها را روی نمودار می‌بینیم و مراکز خوشه را با inverse_transform به تصویر ۸×۸ برمی‌گردانیم.'],
+];
+
+// Downloadable files per session, served from public/assets/course/.
+const AI_FOUNDATIONS_ATTACHMENTS = [
+    1=>[],
+    2=>[],
+    3=>[['haarcascade_frontalface_default.xml','مدل تشخیص چهره (Haar Cascade)'],['session3_b69258c4.ipynb','نوت‌بوک جلسهٔ سوم']],
+    4=>[['co2.csv','دادهٔ CO2 خودروها'],['session4_8237cf19.ipynb','نوت‌بوک جلسهٔ چهارم'],['scatter_matrix_2f7ed8c5.jpg','نمودار Scatter Matrix']],
+    5=>[['diabetes.csv','دادهٔ دیابت'],['session5_4575eeb5.ipynb','نوت‌بوک جلسهٔ پنجم'],['scatter_matrix_a8f78b22.jpg','نمودار Scatter Matrix']],
+    6=>[['session6_cd7aa13b.ipynb','نوت‌بوک جلسهٔ ششم']],
 ];
 
 function seed_ai_foundations(): void {
@@ -99,7 +109,7 @@ function course_workspace(int $userId,string $slug,?int $requestedLesson=null): 
     if ($requestedLesson!==null && !q("SELECT id FROM lessons WHERE id=? AND course_id=? AND status='published'",[$requestedLesson,$course['id']])->fetch()) return null;
     $course['lessons']=q("SELECT id,title,content,position,duration_minutes,video_url FROM lessons WHERE course_id=? AND status='published' ORDER BY position ASC",[$course['id']])->fetchAll();
     $progress=[];
-    foreach (q("SELECT p.lesson_id,p.watched_seconds,p.last_position,p.percentage,p.completed,p.status,p.completed_at,p.quiz_version FROM lesson_progress p INNER JOIN lessons l ON l.id=p.lesson_id WHERE p.user_id=? AND l.course_id=? AND l.status='published'",[$userId,$course['id']])->fetchAll() as $row) $progress[(int)$row['lesson_id']]=$row;
+    foreach (q("SELECT p.lesson_id,p.watched_seconds,p.last_position,p.percentage,p.completed,p.status,p.completed_at,p.quiz_version,p.quiz_score,p.quiz_answers FROM lesson_progress p INNER JOIN lessons l ON l.id=p.lesson_id WHERE p.user_id=? AND l.course_id=? AND l.status='published'",[$userId,$course['id']])->fetchAll() as $row) $progress[(int)$row['lesson_id']]=$row;
     foreach ($course['lessons'] as &$lesson) $lesson['learning_status']=lesson_learning_status($progress[(int)$lesson['id']] ?? null,lesson_quiz_for_lesson((int)$lesson['id']));
     unset($lesson);
     // A session unlocks only after the previous one is completed (its quiz passed).
@@ -111,6 +121,13 @@ function course_workspace(int $userId,string $slug,?int $requestedLesson=null): 
     unset($lesson);
     $selectedId=$requestedLesson ?? (int)($course['lessons'][0]['id'] ?? 0);
     $course['quiz']=$selectedId ? lesson_quiz_for_lesson($selectedId) : null;
+    $course['quiz_result']=null;
+    if ($selectedId && isset($progress[$selectedId]) && $progress[$selectedId]['quiz_score']!==null) {
+        $course['quiz_result']=[
+            'score'=>(int)$progress[$selectedId]['quiz_score'],
+            'answers'=>json_decode((string)$progress[$selectedId]['quiz_answers'],true) ?: [],
+        ];
+    }
     return $course;
 }
 function dashboard_course_progress(int $userId): ?array {
@@ -325,6 +342,10 @@ function submit_lesson_quiz(array $u): void {
     $passed=is_array($answers) ? lesson_quiz_passed($quiz,$answers) : null;
     if ($passed===null) { flash('پاسخ‌های آزمون معتبر نیستند.','error'); redirect($target); }
     $userId=(int)$u['id']; $courseId=(int)$course['id'];
+    $score=0;
+    foreach ($quiz['questions'] as $i=>$question) if ((int)($answers[$i] ?? -1)===$question['correct']) $score++;
+    $scorePercent=(int)round($score*100/count($quiz['questions']));
+    $answersJson=json_encode(array_map('intval',$answers),JSON_THROW_ON_ERROR);
     $pdo=db();
     try {
         $pdo->beginTransaction();
@@ -335,21 +356,26 @@ function submit_lesson_quiz(array $u): void {
         if ($passed) {
             $at=gmdate('Y-m-d H:i:s');
             $version=hash('sha256',json_encode($quiz,JSON_THROW_ON_ERROR));
-            if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql') q("INSERT INTO lesson_progress(user_id,lesson_id,completed,status,completed_at,quiz_version) VALUES (?,?,1,'completed',?,?) ON DUPLICATE KEY UPDATE completed_at=IF(completed=1 AND completed_at IS NOT NULL,completed_at,VALUES(completed_at)),completed=1,status='completed',quiz_version=VALUES(quiz_version),updated_at=CURRENT_TIMESTAMP",[$userId,$lessonId,$at,$version]);
-            else q("INSERT INTO lesson_progress(user_id,lesson_id,completed,status,completed_at,quiz_version) VALUES (?,?,1,'completed',?,?) ON CONFLICT(user_id,lesson_id) DO UPDATE SET completed_at=CASE WHEN lesson_progress.completed=1 AND lesson_progress.completed_at IS NOT NULL THEN lesson_progress.completed_at ELSE excluded.completed_at END,completed=1,status='completed',quiz_version=excluded.quiz_version,updated_at=CURRENT_TIMESTAMP",[$userId,$lessonId,$at,$version]);
+            if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql') q("INSERT INTO lesson_progress(user_id,lesson_id,completed,status,completed_at,quiz_version,quiz_score,quiz_answers) VALUES (?,?,1,'completed',?,?,?,?) ON DUPLICATE KEY UPDATE completed_at=IF(completed=1 AND completed_at IS NOT NULL,completed_at,VALUES(completed_at)),completed=1,status='completed',quiz_version=VALUES(quiz_version),quiz_score=VALUES(quiz_score),quiz_answers=VALUES(quiz_answers),updated_at=CURRENT_TIMESTAMP",[$userId,$lessonId,$at,$version,$scorePercent,$answersJson]);
+            else q("INSERT INTO lesson_progress(user_id,lesson_id,completed,status,completed_at,quiz_version,quiz_score,quiz_answers) VALUES (?,?,1,'completed',?,?,?,?) ON CONFLICT(user_id,lesson_id) DO UPDATE SET completed_at=CASE WHEN lesson_progress.completed=1 AND lesson_progress.completed_at IS NOT NULL THEN lesson_progress.completed_at ELSE excluded.completed_at END,completed=1,status='completed',quiz_version=excluded.quiz_version,quiz_score=excluded.quiz_score,quiz_answers=excluded.quiz_answers,updated_at=CURRENT_TIMESTAMP",[$userId,$lessonId,$at,$version,$scorePercent,$answersJson]);
             $progress=q('SELECT completed,status,completed_at,quiz_version FROM lesson_progress WHERE user_id=? AND lesson_id=?',[$userId,$lessonId])->fetch();
             if (verified_lesson_completion($progress ?: null,lesson_quiz_for_lesson($lessonId))) {
                 record_learning_event_once($userId,'lesson_completed','lesson_id',$lessonId,['course_id'=>$courseId,'lesson_id'=>$lessonId]);
                 if (course_lessons_complete($userId,$courseId)) record_learning_event_once($userId,'course_completed','course_id',$courseId,['course_id'=>$courseId]);
             }
+        } else {
+            // A failed attempt still records the score and answers so the learner
+            // can review exactly which questions were wrong.
+            if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql') q("INSERT INTO lesson_progress(user_id,lesson_id,completed,status,quiz_score,quiz_answers) VALUES (?,?,0,'started',?,?) ON DUPLICATE KEY UPDATE quiz_score=VALUES(quiz_score),quiz_answers=VALUES(quiz_answers),updated_at=CURRENT_TIMESTAMP",[$userId,$lessonId,$scorePercent,$answersJson]);
+            else q("INSERT INTO lesson_progress(user_id,lesson_id,completed,status,quiz_score,quiz_answers) VALUES (?,?,0,'started',?,?) ON CONFLICT(user_id,lesson_id) DO UPDATE SET quiz_score=excluded.quiz_score,quiz_answers=excluded.quiz_answers,updated_at=CURRENT_TIMESTAMP",[$userId,$lessonId,$scorePercent,$answersJson]);
         }
         $pdo->commit();
     } catch (Throwable $e) {
         if ($pdo->inTransaction()) $pdo->rollBack();
         progress_response(500,['error'=>'ثبت وضعیت یادگیری انجام نشد.']);
     }
-    if (!$passed) { flash('در آزمون پذیرفته نشدید؛ می‌توانید دوباره تلاش کنید.','error'); redirect($target); }
-    flash('آزمون را با موفقیت گذراندید؛ درس تکمیل شد.'); redirect($target);
+    if (!$passed) { flash('نمرهٔ شما '.fa($scorePercent).'٪ شد؛ برای قبولی به '.fa((int)$quiz['pass_percent']).'٪ نیاز دارید. پاسخ‌های درست را پایین همین صفحه ببینید.','error'); redirect($target); }
+    flash('آزمون را با نمرهٔ '.fa($scorePercent).'٪ گذراندید؛ درس تکمیل شد.'); redirect($target);
 }
 function save_lesson_progress(array $u): void {
     if (isset($_POST['quiz_submit'])) { submit_lesson_quiz($u); return; }

@@ -208,11 +208,26 @@ input[aria-invalid="true"],textarea[aria-invalid="true"],select[aria-invalid="tr
 .current-lesson h2{margin:.45rem 0 .6rem;font-size:clamp(1.25rem,2.4vw,1.8rem)}
 .current-lesson p{color:var(--ink-2);line-height:2;margin:1rem 0 0;white-space:pre-line}
 .current-lesson-meta{display:flex;gap:.7rem;flex-wrap:wrap;color:var(--muted);font-size:.82rem;font-weight:800}
-.lesson-quiz-question{border:0;border-top:1px solid var(--line);padding:1rem 0;margin:0;min-width:0}
+.lesson-quiz-question{border:0;padding:1rem 0;margin:0;min-width:0}
 .lesson-quiz-question legend{font-weight:800;padding-top:.8rem;overflow-wrap:anywhere}
 .lesson-quiz-question label{display:flex;align-items:flex-start;gap:.6rem;padding:.65rem 0;line-height:1.8;cursor:pointer;overflow-wrap:anywhere}
 .lesson-quiz-question input{flex:none;margin-top:.5rem}
 .lesson-quiz .btn{max-width:100%;white-space:normal}
+.quiz-result{display:grid;gap:.3rem;padding:.9rem 1rem;border-radius:12px;margin:.4rem 0 1rem;font-weight:700}
+.quiz-result.is-passed{background:#e2f5ea;color:#16794a}
+.quiz-result.is-failed{background:#fdecea;color:#b3261e}
+.quiz-result span{font-weight:500;font-size:.9rem}
+.lesson-quiz-question.is-wrong legend{color:#b3261e}
+.quiz-mark{font-size:.8rem;font-weight:800;margin-inline-start:.4rem}
+.quiz-mark.is-correct{color:#16794a}
+.quiz-mark.is-wrong{color:#b3261e}
+.lesson-attachments{margin-top:1.4rem;padding-top:1rem;border-top:1px solid var(--line)}
+.lesson-attachments h3{font-size:1rem;margin:0 0 .7rem}
+.lesson-attachments ul{list-style:none;margin:0;padding:0;display:grid;gap:.5rem}
+.lesson-attachments a{display:flex;align-items:center;gap:.6rem;padding:.7rem .9rem;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:inherit;flex-wrap:wrap}
+.lesson-attachments a:hover{border-color:var(--brand)}
+.lesson-attachments small{color:var(--muted);font-size:.75rem;margin-inline-start:auto}
+.attachment-icon{color:var(--brand);font-weight:900}
 .lesson-navigation{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem;margin-top:1.2rem}
 .lesson-nav-link{display:flex;flex-direction:column;gap:.35rem;border:1px solid var(--line);background:#fff;border-radius:var(--r-md);padding:.9rem 1rem;color:var(--ink);text-decoration:none;min-width:0}
 .lesson-nav-link span{color:var(--muted);font-size:.8125rem;font-weight:800}.lesson-nav-link strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lesson-nav-link.is-next{text-align:start}.lesson-nav-link.is-disabled{opacity:.55;cursor:default}

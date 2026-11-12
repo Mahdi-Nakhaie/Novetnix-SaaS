@@ -284,16 +284,35 @@ function page_course_workspace(?array $course,string $requestedLesson): void {
         echo '<div class="video-placeholder-inner"><strong>ویدیوی این جلسه هنوز اضافه نشده است</strong><span>تا زمان انتشار ویدیو، متن درس را در همین صفحه مطالعه کنید.</span></div>';
     }
     echo '</div>'; if ($videoHash) echo '<p class="workspace-video-note">این ویدیو از آپارات پخش می‌شود؛ برای ثبت پیشرفت و تکمیل درس، آزمون پایان درس را با موفقیت بگذرانید.</p>';
-    echo '<section class="current-lesson"><div class="workspace-kicker">جلسه '.fa((int)$current['position']).' از '.fa(count($course['lessons'])).'</div><h2>'.h($current['title']).'</h2><div class="current-lesson-meta"><span>'.h(course_workspace_duration($current['duration_minutes']===null?null:(int)$current['duration_minutes'])).'</span><span>متن درس</span></div><p>'.nl2br(h($current['content'])).'</p></section>';
+    echo '<section class="current-lesson"><div class="workspace-kicker">جلسه '.fa((int)$current['position']).' از '.fa(count($course['lessons'])).'</div><h2>'.h($current['title']).'</h2><div class="current-lesson-meta"><span>'.h(course_workspace_duration($current['duration_minutes']===null?null:(int)$current['duration_minutes'])).'</span><span>متن درس</span></div><p>'.nl2br(h($current['content'])).'</p>';
+    $attachments=AI_FOUNDATIONS_ATTACHMENTS[(int)$current['position']] ?? [];
+    if ($attachments) {
+        echo '<div class="lesson-attachments"><h3>فایل‌های پیوست و دانلود</h3><ul>';
+        foreach ($attachments as [$file,$label]) echo '<li><a href="'.h(url('assets/course/'.$file)).'" download><span class="attachment-icon" aria-hidden="true">⬇</span><span>'.h($label).'</span><small dir="ltr">'.h($file).'</small></a></li>';
+        echo '</ul></div>';
+    }
+    echo '</section>';
     ws_lesson_exercises((int)$GLOBALS['me']['id'],(int)$current['id']);
     echo '<section class="current-lesson lesson-quiz"><h2>آزمون پایان درس</h2>';
     if ($course['quiz']) {
+        $result=$course['quiz_result'] ?? null;
+        if ($result!==null) {
+            $passed=$result['score']>=(int)$course['quiz']['pass_percent'];
+            echo '<div class="quiz-result '.($passed?'is-passed':'is-failed').'"><strong>نمرهٔ شما: '.fa($result['score']).'٪</strong><span>'.($passed?'قبول — این جلسه تکمیل شد.':'قبول نشدید؛ حد قبولی '.fa($course['quiz']['pass_percent']).'٪ است. پاسخ‌های درست را پایین ببینید و دوباره تلاش کنید.').'</span></div>';
+        }
         echo '<p>برای تکمیل درس باید به حداقل '.fa($course['quiz']['pass_percent']).'٪ پرسش‌ها پاسخ درست بدهید.</p>';
         form_start('progress/save');
         echo '<input type="hidden" name="quiz_submit" value="1"><input type="hidden" name="lesson_id" value="'.(int)$current['id'].'">';
         foreach ($course['quiz']['questions'] as $i=>$question) {
-            echo '<fieldset class="lesson-quiz-question"><legend>'.fa($i+1).'. '.h($question['prompt']).'</legend>';
-            foreach ($question['options'] as $j=>$option) echo '<label><input type="radio" name="answers['.$i.']" value="'.$j.'" required><span>'.h($option).'</span></label>';
+            $chosen=$result!==null && isset($result['answers'][$i]) ? (int)$result['answers'][$i] : null;
+            $wrong=$chosen!==null && $chosen!==$question['correct'];
+            echo '<fieldset class="lesson-quiz-question'.($wrong?' is-wrong':'').'"><legend>'.fa($i+1).'. '.h($question['prompt']).'</legend>';
+            foreach ($question['options'] as $j=>$option) {
+                $mark='';
+                if ($result!==null && $j===$question['correct']) $mark=' <span class="quiz-mark is-correct">✓ پاسخ درست</span>';
+                elseif ($wrong && $j===$chosen) $mark=' <span class="quiz-mark is-wrong">✗ پاسخ شما</span>';
+                echo '<label><input type="radio" name="answers['.$i.']" value="'.$j.'"'.($chosen===$j?' checked':'').' required><span>'.h($option).$mark.'</span></label>';
+            }
             echo '</fieldset>';
         }
         echo '<button type="submit" class="btn btn-primary">ثبت پاسخ‌ها</button></form>';
