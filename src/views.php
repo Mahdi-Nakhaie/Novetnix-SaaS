@@ -17,7 +17,7 @@ function head_page(string $title,string $description='',bool $panel=false,bool $
         if ($me && trim($me['name'])!=='') echo '<script src="/assets/free-course.js?v=2" defer></script>';
     }
     if ($path==='' || $path==='articles' || str_starts_with($path,'articles/')) echo '<link rel="stylesheet" href="/assets/articles.css?v=3">';
-    if ($path==='landing') echo '<link rel="stylesheet" href="/assets/landing.css?v=2">';
+    if ($path==='landing') echo '<link rel="stylesheet" href="/assets/landing.css?v=3"><script src="/assets/three.min.js?v=1" defer></script><script src="/assets/three-scene.js?v=1" defer></script><script src="/assets/landing.js?v=1" defer></script>';
     $darychehAssets=($path==='dashboard/darycheh' || str_starts_with($path,'dashboard/darycheh/')) ? '<link rel="stylesheet" href="/assets/darycheh.css?v=1"><script src="/assets/darycheh.js?v=1" defer></script>' : '';
     if (!$panel) echo '<link rel="stylesheet" href="/assets/header.css?v=10">';
     $adminPanel=$panel && ($me['role'] ?? '')==='admin';
@@ -707,14 +707,14 @@ function page_landing(): void {
     echo '<section class="lp-hero" aria-labelledby="lp-hero-title"><div class="lp__container"><div class="lp-hero__grid"><div class="lp-hero__copy"><span class="lp__eyebrow"><span class="dot" aria-hidden="true"></span> پلتفرم یادگیری و اجرای هوش مصنوعی</span><h1 class="lp-hero__title" id="lp-hero-title">در کمتر از ۵ دقیقه،<br><em>ایده‌ات را به پروژه تبدیل کن</em></h1><p class="lp-hero__lede">Noventix محیطی آماده برای نوشتن، اجرا و ارائه پروژه‌های پایتون و هوش مصنوعی است؛ بدون درگیری با پیچیدگی راه‌اندازی محیط. کد بنویس، اجرا کن و مهارتت را با پروژه‌های واقعی بساز.</p><div class="lp-hero__actions">';
     linkto('register','شروع رایگان ←','lp__btn lp__btn--primary');
     linkto('course/'.FREE_COURSE_SLUG,'دیدن دوره‌ها','lp__btn lp__btn--ghost');
-    echo '</div><ul class="lp-hero__proof"><li>میزکار کد آنلاین</li><li>مسیر پروژه‌محور</li><li>یادگیری به زبان فارسی</li></ul></div><div class="lp-hero__visual"><div class="lp-code" aria-label="نمونه اجرای کد پایتون در Noventix"><div class="lp-code__bar"><span class="lp-code__dots" aria-hidden="true"><i></i><i></i><i></i></span><span>میزکار Noventix</span><span class="lp-code__filename" dir="ltr">first_project.py</span></div><pre class="lp-code__body" dir="ltr" tabindex="0" aria-label="کد نمونه محاسبه میانگین نمرات"><code><span class="tk-cm"># اولین پروژه: میانگین امتیازها</span>
-<span class="tk-kw">def</span> <span class="tk-fn">analyze</span>(scores):
-    total = <span class="tk-fn">sum</span>(scores)
-    <span class="tk-kw">return</span> total / <span class="tk-fn">len</span>(scores)
-
-scores = [<span class="tk-num">12</span>, <span class="tk-num">16</span>, <span class="tk-num">20</span>]
-average = <span class="tk-fn">analyze</span>(scores)
-<span class="tk-fn">print</span>(<span class="tk-str">f"Average: {average:.1f}"</span>)</code></pre><div class="lp-code__out"><span class="lp-code__out-dot" aria-hidden="true"></span><span dir="ltr">Average: 16.0</span><span class="lp-code__filename">اجرای امن · Python 3</span></div></div></div></div></div></section>';
+    echo '</div><ul class="lp-hero__proof"><li>میزکار کد آنلاین</li><li>مسیر پروژه‌محور</li><li>یادگیری به زبان فارسی</li></ul></div><div class="lp-hero__visual"><div class="lp-scene" aria-hidden="true"><canvas class="lp-scene__canvas" data-three-scene></canvas><span class="lp-scene__glow"></span></div><div class="lp-code" aria-label="نمونه اجرای کد پایتون در Noventix"><div class="lp-code__bar"><span class="lp-code__dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="lp-code__file"><span class="lp-code__lang" dir="ltr">PYTHON</span><span dir="ltr">first_project.py</span></span><button type="button" class="lp-code__copy" data-copy-code aria-label="کپی کد نمونه">کپی</button></div><div class="lp-code__scroll"><pre class="lp-code__body" dir="ltr" tabindex="0" aria-label="کد نمونه محاسبه میانگین نمرات"><code><span class="lp-code__line"><span class="tk-cm"># اولین پروژه: میانگین امتیازها</span></span>
+<span class="lp-code__line"><span class="tk-kw">def</span> <span class="tk-fn">analyze</span>(scores):</span>
+<span class="lp-code__line">    total = <span class="tk-fn">sum</span>(scores)</span>
+<span class="lp-code__line">    <span class="tk-kw">return</span> total / <span class="tk-fn">len</span>(scores)</span>
+<span class="lp-code__line"></span>
+<span class="lp-code__line">scores = [<span class="tk-num">12</span>, <span class="tk-num">16</span>, <span class="tk-num">20</span>]</span>
+<span class="lp-code__line">average = <span class="tk-fn">analyze</span>(scores)</span>
+<span class="lp-code__line"><span class="tk-fn">print</span>(<span class="tk-str">f"Average: {average:.1f}"</span>)</span></code></pre></div><div class="lp-code__out"><span class="lp-code__out-dot" aria-hidden="true"></span><span dir="ltr">Average: 16.0</span><span class="lp-code__out-tag">اجرای امن · Python 3</span></div></div></div></div></div></section>';
 
     // 2 — Trust strip
     echo '<section class="lp-trust" aria-label="چه چیزهایی همین حالا در دسترس است"><div class="lp__container"><p class="lp-trust__label">همین حالا در Noventix در دسترس</p><div class="lp-trust__grid">';

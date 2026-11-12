@@ -6,19 +6,19 @@
     var group = new THREE.Group();
     scene.add(group);
     var core = new THREE.Mesh(new THREE.IcosahedronGeometry(1.25, 2),
-      new THREE.MeshBasicMaterial({ color: 0xd8ff42, wireframe: true, transparent: true, opacity: 0.72 }));
+      new THREE.MeshBasicMaterial({ color: 0xa855f7, wireframe: true, transparent: true, opacity: 0.72 }));
     group.add(core);
     var inner = new THREE.Mesh(new THREE.IcosahedronGeometry(0.86, 1),
-      new THREE.MeshBasicMaterial({ color: 0x29b5a5, wireframe: true, transparent: true, opacity: 0.6 }));
+      new THREE.MeshBasicMaterial({ color: 0x6A0DAD, wireframe: true, transparent: true, opacity: 0.6 }));
     inner.rotation.set(0.4, 0.2, 0.25);
     group.add(inner);
     var ring = new THREE.Mesh(new THREE.TorusGeometry(1.68, 0.018, 8, 96),
-      new THREE.MeshBasicMaterial({ color: 0xd8ff42, transparent: true, opacity: 0.9 }));
+      new THREE.MeshBasicMaterial({ color: 0xa855f7, transparent: true, opacity: 0.9 }));
     ring.rotation.set(0.85, 0.2, -0.25);
     group.add(ring);
     var ringTwo = ring.clone();
     ringTwo.material = ring.material.clone();
-    ringTwo.material.color.setHex(0x29b5a5);
+    ringTwo.material.color.setHex(0x6A0DAD);
     ringTwo.rotation.set(-0.35, 0.75, 0.35);
     ringTwo.scale.setScalar(0.78);
     group.add(ringTwo);
@@ -34,7 +34,7 @@
     var geometry = new THREE.BufferGeometry();
     geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     var particles = new THREE.Points(geometry,
-      new THREE.PointsMaterial({ color: 0x9ed9a5, size: 0.025, transparent: true, opacity: 0.7 }));
+      new THREE.PointsMaterial({ color: 0xB8860B, size: 0.025, transparent: true, opacity: 0.7 }));
     group.add(particles);
     return { scene: scene, group: group, ring: ring, ringTwo: ringTwo, particles: particles };
   }
