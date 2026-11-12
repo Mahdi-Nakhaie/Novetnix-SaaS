@@ -3,6 +3,7 @@ declare(strict_types=1);
 require_once __DIR__.'/data.php';
 require_once dirname(__DIR__).'/database/connection.php';
 require_once __DIR__.'/auth.php';
+require_once __DIR__.'/entitlements.php';
 require_once __DIR__.'/workspace.php';
 require_once __DIR__.'/darycheh.php';
 require_once __DIR__.'/darycheh_admin.php';
@@ -11,6 +12,7 @@ require_once __DIR__.'/learning_project_views.php';
 require_once __DIR__.'/payments.php';
 require_once __DIR__.'/seo.php';
 require_once __DIR__.'/course_admin.php';
+require_once __DIR__.'/lesson_video.php';
 require_once __DIR__.'/skill_profile.php';
 require_once __DIR__.'/messaging.php';
 require_once __DIR__.'/profile_views.php';
@@ -22,17 +24,59 @@ function h(mixed $value): string { return htmlspecialchars((string)$value, ENT_Q
 function fa(int|string $v): string { return strtr((string)$v,['0'=>'۰','1'=>'۱','2'=>'۲','3'=>'۳','4'=>'۴','5'=>'۵','6'=>'۶','7'=>'۷','8'=>'۸','9'=>'۹']); }
 function latin_digits(string $v): string { return strtr($v,['۰'=>'0','۱'=>'1','۲'=>'2','۳'=>'3','۴'=>'4','۵'=>'5','۶'=>'6','۷'=>'7','۸'=>'8','۹'=>'9','٠'=>'0','١'=>'1','٢'=>'2','٣'=>'3','٤'=>'4','٥'=>'5','٦'=>'6','٧'=>'7','٨'=>'8','٩'=>'9']); }
 function published_courses(): array { return q("SELECT slug,title,description FROM courses WHERE status='published' ORDER BY id ASC")->fetchAll(); }
-function seed_demo_courses(): void {
+// Published curriculum: hash, title, summary, minutes, wide summary, lesson text.
+const AI_FOUNDATIONS_LESSONS = [
+    ['ereh151','هوش مصنوعی چیست؟',22,'آشنایی با مفهوم هوش مصنوعی، تفاوت آن با برنامه‌نویسی معمولی و نمونه‌های واقعی از زندگی روزمره.','هوش مصنوعی شاخه‌ای از علوم رایانه است که به ساختن سامانه‌هایی می‌پردازد که کاری انجام می‌دهند که تا پیش از این به هوش انسان نیاز داشت: تشخیص چهره در عکس، ترجمهٔ متن، پیشنهاد فیلم و پاسخ دادن به پرسش‌ها.<br>تفاوت اصلی هوش مصنوعی با برنامهٔ معمولی در این است که برنامهٔ معمولی قاعده‌ها را از پیش می‌داند، اما یک مدل هوش مصنوعی این قاعده‌ها را از تعداد زیادی نمونه یاد می‌گیرد.<br>در این جلسه مسیر کلی دوره را هم مرور می‌کنیم: ابتدا مفهوم‌ها، بعد داده، سپس اولین مدل، و در پایان نمونه‌ای از کاربردهای واقعی.'],
+    ['jlckro2','داده؛ سوخت هوش مصنوعی',25,'داده چیست، چه انواعی دارد و چرا کیفیت داده تعیین‌کنندهٔ کیفیت نتیجهٔ مدل است.','هر مدل هوش مصنوعی با داده آموزش می‌بیند. داده می‌تواند عدد باشد، مثل قیمت خانه؛ متن باشد، مثل نظرهای کاربران؛ یا تصویر و صدا باشد.<br>داده، مثل هر منبع دیگری، باید پاک‌سازی و آماده‌سازی شود. دادهٔ ناقص یا پر از خطا نتیجهٔ نادرست تولید می‌کند و این موضوع را اصطلاحاً «آشغال وارد شود، آشغال خارج می‌شود» می‌نامند.'],
+    ['ooz6d75','یادگیری ماشین چگونه کار می‌کند؟',23,'منطق آموزش مدل: نمونه‌ها، ویژگی‌ها، پاسخ‌های درست و اصلاح خطا در طول آموزش.','یادگیری ماشین زیرمجموعهٔ هوش مصنوعی است که در آن، به‌جای نوشتن قاعده‌های ثابت، نمونه‌های کافی به کامپیوتر می‌دهیم تا خودش رابطهٔ بین ورودی و خروجی را پیدا کند.<br>برای نمونه، اگر هزاران عکس از گربه و سگ را با برچسب درست به مدل بدهیم، مدل یاد می‌گیرد عکسی را که قبلاً ندیده است دسته‌بندی کند.'],
+    ['bakrn6p','نقشهٔ راه ورود به هوش مصنوعی',20,'ترتیب منطقی یادگیری از پایتون و آمار تا یادگیری ماشین و اولین پروژهٔ واقعی.','ورود به هوش مصنوعی به یک نقشهٔ راه روشن نیاز دارد. پیشنهاد ما این ترتیب است: یادگیری پایهٔ پایتون، آشنایی با کتابخانه‌هایی مانند NumPy و pandas، مرور آمار پایه، سپس اولین مدل یادگیری ماشین با scikit-learn و در پایان یک پروژهٔ کوچک کامل.<br>هدف این جلسه آن است که بدانید قدم بعدی چه چیزی است تا یادگیری‌تان پراکنده نشود.'],
+    ['atrkj08','تمرین و بررسی یادگیری',20,'پایان هر بخش با تمرین، آسیب‌شناسی اشتباه‌های رایج و بررسی پیشرفت واقعی.','یادگیری فعال یعنی بعد از دیدن هر مطلب، خودتان آن را به کار ببرید. در این جلسه به تمرین‌های کوتاهی می‌پردازیم که بعد از هر مفهوم انجام‌شان می‌دهید و در پایان، اشتباه‌های رایج تازه‌کارها را مرور می‌کنیم.'],
+    ['frzh61x','اولین قدم عملی',20,'پروژهٔ کوچک پایانی: از تعریف مسئله تا بررسی خروجی مدل و پرسش بعدی.','در این جلسه یک مسئلهٔ کوچک را از ابتدا تا پایان بررسی می‌کنیم: مسئله را تعریف می‌کنیم، داده را بررسی می‌کنیم، یک مدل ساده می‌سازیم و نتیجه را می‌سنجیم.<br>هدف، کامل‌بودن پروژه نیست؛ هدف این است که مسیر یک پروژهٔ هوش مصنوعی را یک بار زیر نظر بگذرانید تا در پروژهٔ بعدی خودتان شروع کنید.'],
+];
+
+function seed_ai_foundations(): void {
     $course=q("SELECT id FROM courses WHERE slug=?",['ai-foundations'])->fetchColumn();
-    if ($course) {
-        q('UPDATE courses SET estimated_duration_minutes=? WHERE id=?',[59,$course]);
-        q('UPDATE lessons SET duration_minutes=? WHERE course_id=? AND position=?',[19,$course,1]);
-        return;
+    if (!$course) {
+        q('INSERT INTO courses(slug,title,description,estimated_duration_minutes,status) VALUES (?,?,?,?,?)',['ai-foundations','ورود به دنیای هوش مصنوعی از صفر','شش جلسهٔ کوتاه و مرحله‌به‌مرحله برای شناخت هوش مصنوعی: از مفهوم‌های پایه تا داده و اولین قدم عملی.',390,'published']);
+        $course=(int)db()->lastInsertId();
     }
-    q('INSERT INTO courses(slug,title,description,estimated_duration_minutes,status) VALUES (?,?,?,?,?)',['ai-foundations','دوره رایگان مقدماتی هوش مصنوعی','مفاهیم پایه هوش مصنوعی را با یک مسیر کوتاه و پروژه‌محور یاد بگیر.',59,'published']);
-    $course=(int)db()->lastInsertId();
-    q('INSERT INTO lessons(course_id,title,content,position,duration_minutes,status) VALUES (?,?,?,?,?,?)',[$course,'مبانی هوش مصنوعی','با مفاهیم اصلی هوش مصنوعی و مسیر حل یک مسئله واقعی آشنا شو.',1,19,'published']);
-    q('INSERT INTO lessons(course_id,title,content,position,duration_minutes,status) VALUES (?,?,?,?,?,?)',[$course,'پروژه تشخیص چهره','یک نمونه پروژه عملی را از تعریف مسئله تا اجرای اولیه بررسی کن.',2,40,'published']);
+    $course=(int)$course;
+    $expected=sum_curriculum_minutes();
+    q('UPDATE courses SET title=?,description=?,estimated_duration_minutes=?,status=? WHERE id=?',['ورود به دنیای هوش مصنوعی از صفر','شش جلسهٔ کوتاه و مرحله‌به‌مرحله برای شناخت هوش مصنوعی: از مفهوم‌های پایه تا داده و اولین قدم عملی.',$expected,'published',$course]);
+    $seen=[];
+    foreach (AI_FOUNDATIONS_LESSONS as $index=>[$hash,$title,$minutes,$summary,$text]) {
+        $position=$index+1;
+        $seen[]=$position;
+        $id=q('SELECT id FROM lessons WHERE course_id=? AND position=?',[$course,$position])->fetchColumn();
+        if ($id) q('UPDATE lessons SET title=?,content=?,duration_minutes=?,status=?,video_url=? WHERE id=?',[$title,$summary."\n\n".$text,$minutes,'published',$hash,(int)$id]);
+        else q('INSERT INTO lessons(course_id,title,content,position,duration_minutes,status,video_url) VALUES (?,?,?,?,?,?,?)',[$course,$title,$summary."\n\n".$text,$position,$minutes,'published',$hash]);
+    }
+    // Older seeds published extra lessons; releasing them keeps the outline at
+    // the six sessions the course page promises.
+    $stale=q('SELECT id FROM lessons WHERE course_id=? AND status=? AND position NOT IN ('.implode(',',array_map('intval',$seen)).')',[$course,'published'])->fetchAll();
+    foreach ($stale as $row) q('UPDATE lessons SET status=? WHERE id=?',['draft',(int)$row['id']]);
+    // The subject-matter quiz stays in curriculum/ so editors can revise it
+    // without touching PHP; every session is graded on the same question set.
+    $quiz=json_decode((string)file_get_contents(dirname(__DIR__).'/curriculum/ai-foundations-session1-quiz.json'),true,512,JSON_THROW_ON_ERROR);
+    if (!is_array($quiz['questions'] ?? null) || !$quiz['questions']) throw new RuntimeException('Quiz content is missing.');
+    $json=json_encode($quiz['questions'],JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE);
+    $pass=(int)$quiz['pass_percent'];
+    $lessonIds=q('SELECT id FROM lessons WHERE course_id=? ORDER BY position ASC',[$course])->fetchAll(PDO::FETCH_COLUMN);
+    foreach ($lessonIds as $lessonId) {
+        $sql='INSERT INTO lesson_quizzes(lesson_id,pass_percent,questions_json) VALUES (?,?,?)';
+        $sql.=db()->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql' ? ' ON DUPLICATE KEY UPDATE pass_percent=VALUES(pass_percent),questions_json=VALUES(questions_json)' : ' ON CONFLICT(lesson_id) DO UPDATE SET pass_percent=excluded.pass_percent,questions_json=excluded.questions_json';
+        q($sql,[(int)$lessonId,$pass,$json]);
+    }
+}
+
+function sum_curriculum_minutes(): int {
+    $total=0;
+    foreach (AI_FOUNDATIONS_LESSONS as $lesson) $total+=(int)$lesson[2];
+    return $total;
+}
+
+function seed_demo_courses(): void {
+    seed_ai_foundations();
 }
 function verified_lesson_completion(?array $progress,?array $quiz): bool {
     return $progress!==null && $quiz!==null && (int)$progress['completed']===1 && $progress['status']==='completed' && !empty($progress['completed_at']) && hash_equals(hash('sha256',json_encode($quiz,JSON_THROW_ON_ERROR)),(string)($progress['quiz_version'] ?? ''));
@@ -51,7 +95,7 @@ function course_workspace(int $userId,string $slug,?int $requestedLesson=null): 
     $course=q("SELECT c.id,c.slug,c.title,c.description,c.estimated_duration_minutes FROM courses c INNER JOIN enrollments e ON e.course_slug=c.slug AND e.user_id=? WHERE c.slug=? AND c.status='published'",[$userId,$slug])->fetch();
     if (!$course || !can_course($slug,plan_for(['id'=>$userId]))) return null;
     if ($requestedLesson!==null && !q("SELECT id FROM lessons WHERE id=? AND course_id=? AND status='published'",[$requestedLesson,$course['id']])->fetch()) return null;
-    $course['lessons']=q("SELECT id,title,content,position,duration_minutes FROM lessons WHERE course_id=? AND status='published' ORDER BY position ASC",[$course['id']])->fetchAll();
+    $course['lessons']=q("SELECT id,title,content,position,duration_minutes,video_url FROM lessons WHERE course_id=? AND status='published' ORDER BY position ASC",[$course['id']])->fetchAll();
     $progress=[];
     foreach (q("SELECT p.lesson_id,p.watched_seconds,p.last_position,p.percentage,p.completed,p.status,p.completed_at,p.quiz_version FROM lesson_progress p INNER JOIN lessons l ON l.id=p.lesson_id WHERE p.user_id=? AND l.course_id=? AND l.status='published'",[$userId,$course['id']])->fetchAll() as $row) $progress[(int)$row['lesson_id']]=$row;
     foreach ($course['lessons'] as &$lesson) $lesson['learning_status']=lesson_learning_status($progress[(int)$lesson['id']] ?? null,lesson_quiz_for_lesson((int)$lesson['id']));
@@ -113,11 +157,12 @@ function plan_for(array $u): string {
     $row=q("SELECT plan FROM subscriptions WHERE user_id=? AND status='active' AND starts_at<=? AND expires_at>? ORDER BY expires_at DESC LIMIT 1",[$u['id'],gmdate('Y-m-d H:i:s'),gmdate('Y-m-d H:i:s')])->fetch();
     return $row && isset(PLANS[$row['plan']]) ? $row['plan'] : 'free';
 }
+// Course access is granted by a purchase or by the plan tier that unlocks the
+// course; can_course() keeps the plan-only form used by catalog filtering.
 function can_course(string $slug, string $plan): bool {
     if ($slug===FREE_COURSE_SLUG) return true;
     if (!COMMERCE_ENABLED) return false;
-    $need=['python-foundations'=>0,'data-analysis'=>1,'ml-basics'=>1,'nlp-practice'=>2,'deep-learning'=>3,'api-deployment'=>3];
-    return array_search($plan,array_keys(PLANS),true) >= ($need[$slug] ?? 99);
+    return entitlement_at_least($plan,entitlement_course_tier($slug));
 }
 function nova_answer(array $messages): ?string {
     $key=config_value('AVALAI_API_KEY');

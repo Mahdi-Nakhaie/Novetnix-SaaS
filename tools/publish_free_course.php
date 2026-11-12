@@ -12,23 +12,12 @@ try {
     if (!$file) throw new RuntimeException('Cannot create content backup');
     try { if (fwrite($file,$backup)!==strlen($backup)) throw new RuntimeException('Incomplete content backup'); }
     finally { fclose($file); }
-    $description='دورهٔ رایگان هوش مصنوعی برای شروع از صفر؛ جلسهٔ اول: مبانی هوش مصنوعی. جلسهٔ دوم به‌زودی منتشر می‌شود.';
-    if (!$course) {
-        q('INSERT INTO courses(slug,title,description,status) VALUES (?,?,?,?)',[FREE_COURSE_SLUG,FREE_COURSE_TITLE,$description,'published']);
-        $courseId=(int)$database->lastInsertId();
-    } else {
-        $courseId=(int)$course['id'];
-        q('UPDATE courses SET title=?,description=?,estimated_duration_minutes=NULL,status=? WHERE id=?',[FREE_COURSE_TITLE,$description,'published',$courseId]);
-    }
-    $first=q('SELECT id FROM lessons WHERE course_id=? AND position=?',[$courseId,1])->fetchColumn();
-    if ($first) q('UPDATE lessons SET title=?,status=? WHERE id=?',['مبانی هوش مصنوعی','published',$first]);
-    else q('INSERT INTO lessons(course_id,title,content,position,status) VALUES (?,?,?,?,?)',[$courseId,'مبانی هوش مصنوعی','جلسهٔ اول دورهٔ رایگان؛ آشنایی با مبانی هوش مصنوعی.',1,'published']);
-    $second=q('SELECT id FROM lessons WHERE course_id=? AND position=?',[$courseId,2])->fetchColumn();
-    if ($second) q('UPDATE lessons SET status=? WHERE id=?',['draft',$second]);
-    else q('INSERT INTO lessons(course_id,title,content,position,status) VALUES (?,?,?,?,?)',[$courseId,'جلسهٔ دوم','به‌زودی',2,'draft']);
+    if (!$course) q('INSERT INTO courses(slug,title,description,status) VALUES (?,?,?,?)',[FREE_COURSE_SLUG,FREE_COURSE_TITLE,'','published']);
+    // The six-session outline and its quizzes live in one place: seed_ai_foundations().
     seed_foundations_quiz($database);
+    seed_ai_foundations();
     $database->commit();
-    fwrite(STDOUT,"Free course published; lesson 1 available, lesson 2 coming soon.\n");
+    fwrite(STDOUT,"Free course published with six lessons and quizzes.\n");
 } catch (Throwable $error) {
     if ($database->inTransaction()) $database->rollBack();
     throw $error;

@@ -14,6 +14,12 @@ function route(): void {
     if (in_array($path,['darycheh/state','darycheh/progress'],true)) dr_api($path);
     if ($path==='dashboard/darycheh' || preg_match('~^dashboard/darycheh/([1-9][0-9]*)$~D',$path,$darychehMatch)) {
         $u=require_user();
+        if (!entitlement_can_darycheh($u)) {
+            head_page('دریچه','این بخش از پلن نقره‌ای به بالا در دسترس است.',true); notice();
+            echo '<main class="panel-content"><div class="empty-state"><span class="eyebrow">دسترسی محدود</span><h1>دریچه برای پلن شما فعال نیست</h1><p>دریچه از پلن نقره‌ای به بالا در دسترس است. برای استفاده از این بخش، پلن خود را ارتقا دهید.</p><div class="hero-actions">';
+            linkto('pricing','مشاهدهٔ پلن‌ها ←','btn btn-primary'); linkto('dashboard/subscription','وضعیت اشتراک من','btn btn-outline');
+            echo '</div></div></main>'; foot_page(true); return;
+        }
         head_page('دریچه','تمرین تصمیم‌گیری و حل مسئله',true); notice();
         dr_page($u,isset($darychehMatch[1])?(int)$darychehMatch[1]:null); foot_page(true); return;
     }
@@ -198,18 +204,8 @@ function page_pricing(): void {
     echo '<section id="plan-features" class="section container" aria-labelledby="plan-features-title"><div class="section-header"><span class="eyebrow">امکانات پلن‌ها</span><h2 id="plan-features-title">جزئیات هر مسیر در یک نگاه</h2></div><div class="plan-comparison-shell"><div class="plan-comparison-scroll" role="region" tabindex="0" aria-label="جدول مقایسهٔ امکانات پلن‌ها"><table class="plan-comparison-table"><caption>مقایسهٔ امکانات پلن‌های Noventix</caption><thead><tr><th scope="col">امکانات</th><th scope="col">رایگان</th>';
     foreach ($paid as $p) echo '<th scope="col">'.h($p['name']).'</th>';
     echo '</tr></thead><tbody>';
-    $rows=[
-        ['قیمت ماهانه',array_merge(['رایگان'],array_map(static fn(array $p): string=>money((int)$p['price']),array_values($paid)))],
-        ['دورهٔ مقدماتی هوش مصنوعی',array_fill(0,5,'دارد')],
-        ['محتوای تحلیل داده و یادگیری ماشین',['—','دارد','دارد','دارد','دارد']],
-        ['محتوای پردازش متن',['—','—','دارد','دارد','دارد']],
-        ['محتوای یادگیری عمیق و API',['—','—','—','دارد','دارد']],
-        ['میزکار پایتون و پروژهٔ خصوصی',array_fill(0,5,'۲۰ پروژه')],
-        ['فضای فایل',array_fill(0,5,'۲۰ مگابایت')],
-        ['انجمن و پروفایل مهارتی',array_fill(0,5,'دارد')],
-        ['Nova AI',array_fill(0,5,'به‌زودی')],
-    ];
-    foreach ($rows as [$label,$values]) { echo '<tr><th scope="row">'.h($label).'</th>'; foreach ($values as $value) echo '<td>'.h($value).'</td>'; echo '</tr>'; }
+    // Rows come from COMPARISON so a quota can never disagree with its plan card.
+    foreach (COMPARISON as $label=>$values) { echo '<tr><th scope="row">'.h($label).'</th>'; foreach ($values as $value) echo '<td>'.h($value).'</td>'; echo '</tr>'; }
     echo '</tbody></table></div></div></section>';
     echo '<section class="section container"><div class="pricing-terms"><div class="section-header"><span class="eyebrow">شرایط پرداخت</span><h2>پیش از خرید بدان</h2></div><div class="pricing-terms-grid">';
     foreach ([

@@ -217,6 +217,9 @@ function db(): PDO {
             $db->exec('ALTER TABLE lessons ADD COLUMN status '.($driver==='mysql' ? "VARCHAR(20) NOT NULL DEFAULT 'draft'" : "TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','published'))"));
             if ($driver==='mysql') $db->exec("ALTER TABLE lessons ADD CONSTRAINT chk_lessons_status CHECK (status IN ('draft','published'))");
         }
+        $hasLessonVideo=false;
+        for ($i=0; $i<$lessonColumns->columnCount(); $i++) if ($lessonColumns->getColumnMeta($i)['name']==='video_url') $hasLessonVideo=true;
+        if (!$hasLessonVideo) $db->exec('ALTER TABLE lessons ADD COLUMN video_url '.($driver==='mysql' ? "VARCHAR(500) NOT NULL DEFAULT ''" : "TEXT NOT NULL DEFAULT ''"));
         $progressColumns=$db->query('SELECT * FROM lesson_progress LIMIT 0');
         $progressNames=[];
         for ($i=0; $i<$progressColumns->columnCount(); $i++) $progressNames[]=$progressColumns->getColumnMeta($i)['name'];
@@ -242,7 +245,6 @@ function db(): PDO {
         $runNames=[];
         for ($i=0;$i<$runColumns->columnCount();$i++) $runNames[]=$runColumns->getColumnMeta($i)['name'];
         foreach (['assessment_key','assessment_version'] as $column) if (!in_array($column,$runNames,true)) $db->exec('ALTER TABLE workspace_runs ADD COLUMN '.$column.' '.($driver==='mysql'?'VARCHAR(64) NULL':'TEXT'));
-        seed_foundations_quiz($db);
         return $db;
     } catch (Throwable $e) {
         throw new RuntimeException('Database initialization failed.', 0, $e);

@@ -221,7 +221,7 @@ function home(array $courses): void {
 function panel_head(string $title,string $sub): void { echo '<div class="panel-heading"><h1>'.h($title).'</h1><p>'.h($sub).'</p></div>'; }
 function course_workspace_duration(?int $minutes): string { return $minutes===null ? 'مدت ثبت نشده' : fa($minutes).' دقیقه'; }
 function course_workspace_lesson_link(string $slug,array $lesson): string { return h(url('dashboard/course/'.$slug.'?lesson='.(int)$lesson['id'])); }
-function free_course_player(bool $canWatch): void {
+function free_course_player(bool $canWatch,?array $lesson=null): void {
     if (!$canWatch) {
         echo '<div class="fc-access-gate"><span class="fc-lock-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg></span><span class="fc-kicker">یک قدم تا شروع یادگیری</span><h3>برای تماشای دوره، ثبت‌نام کن</h3><p>با شمارهٔ موبایل ثبت‌نام کن؛ حساب ساخته می‌شود و جلسهٔ اول همین‌جا برایت باز می‌شود.</p>';
         linkto('register?next='.rawurlencode('course/'.FREE_COURSE_SLUG),'ثبت‌نام با شماره موبایل','btn btn-primary');
@@ -229,13 +229,18 @@ function free_course_player(bool $canWatch): void {
         echo '<small>کاملاً رایگان · بدون نیاز به پرداخت</small></div>';
         return;
     }
-    echo '<div id="fc-video" class="fc-player"><iframe src="https://www.aparat.com/video/video/embed/videohash/qbk51d2/vt/frame?titleShow=true" title="جلسهٔ اول دورهٔ رایگان: مبانی هوش مصنوعی" allow="fullscreen; picture-in-picture" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div><div class="fc-video-help"><div class="fc-playback-heading"><span class="fc-playback-dot" aria-hidden="true"></span><strong>راهنمای پخش ویدیو</strong><span>پخش از آپارات</span></div><p id="fc-player-status" role="status" aria-live="polite">اگر ویدیو پخش نمی‌شود، روش جایگزین را امتحان کنید یا آن را در آپارات ببینید.</p><div class="fc-player-tools"><button id="fc-switch-player" class="fc-player-action" type="button" aria-controls="fc-video" hidden><span class="fc-action-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-1l2 3M4 15l2 3a7 7 0 0 0 12-1"/></svg></span><span class="fc-action-copy"><strong id="fc-switch-label">پخش‌کنندهٔ جایگزین</strong><small id="fc-switch-description">تغییر روش پخش در همین صفحه</small></span></button><a class="fc-player-action fc-aparat-action" href="https://www.aparat.com/v/qbk51d2" target="_blank" rel="noopener noreferrer"><span class="fc-action-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M14 4h6v6M20 4l-9 9M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg></span><span class="fc-action-copy"><strong>تماشا در آپارات</strong><small>باز شدن ویدیو در تب جدید</small></span><span class="fc-action-arrow" aria-hidden="true">↗</span></a></div></div>';
+    $videoHash=$lesson ? lesson_aparat_hash($lesson['video_url'] ?? null) : null;
+    if (!$videoHash) {
+        echo '<div class="fc-player fc-player-empty"><div class="video-placeholder-inner"><strong>ویدیوی جلسه هنوز اضافه نشده است</strong><span>به‌محض انتشار، پخش همین‌جا در دسترس قرار می‌گیرد.</span></div></div><div class="fc-video-help"><div class="fc-playback-heading"><span class="fc-playback-dot" aria-hidden="true"></span><strong>راهنمای پخش ویدیو</strong><span>آپارات</span></div><p id="fc-player-status" role="status" aria-live="polite">ویدیوی این جلسه هنوز منتشر نشده است.</p></div>';
+        return;
+    }
+    echo '<div id="fc-video" class="fc-player"><iframe src="'.h(lesson_aparat_frame($videoHash)).'" title="'.((int)$lesson['position']===1 ? 'جلسهٔ اول دوره: ' : 'جلسه: ').h((string)$lesson['title']).'" allow="fullscreen; picture-in-picture" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div><div class="fc-video-help"><div class="fc-playback-heading"><span class="fc-playback-dot" aria-hidden="true"></span><strong>راهنمای پخش ویدیو</strong><span>پخش از آپارات</span></div><p id="fc-player-status" role="status" aria-live="polite">اگر ویدیو پخش نمی‌شود، روش جایگزین را امتحان کنید یا آن را در آپارات ببینید.</p><div class="fc-player-tools"><button id="fc-switch-player" class="fc-player-action" type="button" aria-controls="fc-video" data-aparat-hash="'.h($videoHash).'" hidden><span class="fc-action-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-1l2 3M4 15l2 3a7 7 0 0 0 12-1"/></svg></span><span class="fc-action-copy"><strong id="fc-switch-label">پخش‌کنندهٔ جایگزین</strong><small id="fc-switch-description">تغییر روش پخش در همین صفحه</small></span></button><a class="fc-player-action fc-aparat-action" href="'.h(lesson_aparat_watch($videoHash)).'" target="_blank" rel="noopener noreferrer"><span class="fc-action-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M14 4h6v6M20 4l-9 9M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg></span><span class="fc-action-copy"><strong>تماشا در آپارات</strong><small>باز شدن ویدیو در تب جدید</small></span><span class="fc-action-arrow" aria-hidden="true">↗</span></a></div></div>';
 }
 function page_free_course(array $course): void {
     global $me;
     $canWatch=$me && trim($me['name'])!=='';
     $enrolled=$canWatch && (bool)q('SELECT 1 FROM enrollments WHERE user_id=? AND course_slug=?',[$me['id'],$course['slug']])->fetchColumn();
-    $lessons=q("SELECT id,title,content,position,duration_minutes FROM lessons WHERE course_id=? AND status='published' ORDER BY position ASC",[(int)$course['id']])->fetchAll();
+    $lessons=q("SELECT id,title,content,position,duration_minutes,video_url FROM lessons WHERE course_id=? AND status='published' ORDER BY position ASC",[(int)$course['id']])->fetchAll();
     $first=$lessons[0] ?? null;
     $total=count($lessons);
     $duration=$course['estimated_duration_minutes'];
@@ -252,7 +257,7 @@ function page_free_course(array $course): void {
         echo '<section class="fc-lesson"><div class="empty-state"><h2>هنوز جلسه‌ای منتشر نشده است</h2><p>به‌محض انتشار اولین جلسه، همین‌جا نمایش داده می‌شود.</p></div></section>';
     } else {
         echo '<section id="lesson-1" class="fc-lesson" aria-labelledby="fc-lesson-title"><div class="fc-section-heading"><div><span class="fc-kicker">جلسهٔ اول · آمادهٔ تماشا</span><h2 id="fc-lesson-title">'.h($first['title']).'</h2></div><span class="fc-available">منتشرشده</span></div>';
-        free_course_player($canWatch);
+        free_course_player($canWatch,$first);
         echo '<div class="fc-lesson-description"><h3>دربارهٔ این جلسه</h3><p>'.nl2br(h((string)$first['content'])).'</p><p class="fc-note">تماشای جلسه‌ها فقط پس از ثبت‌نام با شمارهٔ موبایل امکان‌پذیر است. پخش ویدیو به‌تنهایی پیشرفت آموزشی را ثبت نمی‌کند.</p></div></section>';
     }
     echo '<section class="fc-about" aria-labelledby="fc-about-title"><span class="fc-kicker">برای شروع، نه پیچیده‌تر کردن</span><h2 id="fc-about-title">این دوره برای توست اگر…</h2><div class="fc-audience"><article><span aria-hidden="true">۰۱</span><h3>تازه شروع کرده‌ای</h3><p>می‌خواهی مفاهیم پایه را بشناسی و برای اولین قدم، نقطهٔ شروع روشنی داشته باشی.</p></article><article><span aria-hidden="true">۰۲</span><h3>دنبال توضیح ساده‌ای</h3><p>ترجیح می‌دهی پیش از رفتن سراغ ابزارها و اصطلاحات تخصصی، اصل موضوع را بفهمی.</p></article></div></section></div><aside class="fc-sidebar"><section id="course-sessions" class="fc-sessions" aria-labelledby="fc-sessions-title"><div class="fc-sessions-header"><span class="fc-kicker">قدم‌به‌قدم جلو برو</span><h2 id="fc-sessions-title">جلسه‌های دوره</h2><p>'.fa($total).' جلسه منتشرشده</p></div><ol>';
@@ -272,14 +277,13 @@ function page_course_workspace(?array $course,string $requestedLesson): void {
     $selection=course_workspace_selection($course,$requestedLesson); $current=$selection['current']; $duration=course_duration_minutes($course);
     echo '<main class="panel-content course-workspace"><nav class="workspace-breadcrumb" aria-label="مسیر صفحه">'; linkto('dashboard/learning','مسیر یادگیری',''); echo '<span aria-hidden="true">/</span><span aria-current="page">'.h($course['title']).'</span></nav><header class="workspace-header"><div><span class="eyebrow">فضای یادگیری · دوره</span><h1>'.h($course['title']).'</h1><p>'.h($course['description']).'</p></div><div class="workspace-meta"><span>'.fa(count($course['lessons'])).' جلسه</span><span>'.h(course_workspace_duration($duration)).'</span></div></header>';
     if (!$current) { echo '<section class="workspace-empty empty-state"><h2>هنوز Lesson منتشرشده‌ای وجود ندارد.</h2><p>به‌محض انتشار Lesson، مسیر یادگیری از همین‌جا نمایش داده می‌شود.</p></section></main>'; return; }
-    $hasVideo=$course['slug']==='ai-foundations' && (int)$current['position']===1;
-    echo '<div class="workspace-layout"><section class="workspace-main"><div class="video-placeholder'.($hasVideo?' has-aparat':'').'" aria-label="ویدیوی جلسه">';
-    if ($hasVideo) {
-        echo '<iframe class="aparat-embed" src="https://www.aparat.com/video/video/embed/videohash/qbk51d2/vt/frame?titleShow=true" title="جلسهٔ اول: مبانی هوش مصنوعی" allow="fullscreen; picture-in-picture" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>';
+    $videoHash=lesson_aparat_hash($current['video_url'] ?? null);    echo '<div class="workspace-layout"><section class="workspace-main"><div class="video-placeholder'.($videoHash?' has-aparat':'').'" aria-label="ویدیوی جلسه">';
+    if ($videoHash) {
+        echo '<iframe class="aparat-embed" src="'.h(lesson_aparat_frame($videoHash)).'" title="جلسهٔ '.fa((int)$current['position']).': '.h($current['title']).'" allow="fullscreen; picture-in-picture" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>';
     } else {
         echo '<div class="video-placeholder-inner"><strong>ویدیوی این جلسه هنوز اضافه نشده است</strong><span>تا زمان انتشار ویدیو، متن درس را در همین صفحه مطالعه کنید.</span></div>';
     }
-    echo '</div>'; if ($hasVideo) echo '<p class="workspace-video-note">این ویدیو از آپارات پخش می‌شود؛ برای ثبت پیشرفت و تکمیل درس، آزمون پایان درس را با موفقیت بگذرانید.</p>';
+    echo '</div>'; if ($videoHash) echo '<p class="workspace-video-note">این ویدیو از آپارات پخش می‌شود؛ برای ثبت پیشرفت و تکمیل درس، آزمون پایان درس را با موفقیت بگذرانید.</p>';
     echo '<section class="current-lesson"><div class="workspace-kicker">جلسه '.fa((int)$current['position']).' از '.fa(count($course['lessons'])).'</div><h2>'.h($current['title']).'</h2><div class="current-lesson-meta"><span>'.h(course_workspace_duration($current['duration_minutes']===null?null:(int)$current['duration_minutes'])).'</span><span>متن درس</span></div><p>'.nl2br(h($current['content'])).'</p></section>';
     ws_lesson_exercises((int)$GLOBALS['me']['id'],(int)$current['id']);
     echo '<section class="current-lesson lesson-quiz"><h2>آزمون پایان درس</h2>';
@@ -556,11 +560,11 @@ function admin_panel(string $sub): void {
     } elseif ($sub==='messages') {
         echo '<div class="panel-heading"><h1>پیام‌های تماس</h1><p>پیام‌های ثبت‌شده از فرم تماس.</p></div><div class="panel-list">'; foreach (q('SELECT * FROM contact_messages ORDER BY id DESC LIMIT 50')->fetchAll() as $r) echo '<div class="list-item"><div><h3>'.h($r['name']).' · '.h($r['email']).'</h3><p>'.nl2br(h($r['message'])).'</p></div><small>'.h($r['created_at']).'</small></div>'; echo '</div>';
     } elseif ($sub==='courses') {
-        panel_head('دوره‌ها و درس‌ها','مدیریت ساختار دوره‌ها، انتشار محتوا و ترتیب درس‌ها.');
+        panel_head('دوره‌ها و درس‌ها','مدیریت ساختار دوره‌ها، انتشار محتوا، ویدیوی آپارات هر جلسه و ترتیب درس‌ها.');
         course_admin_forms();
         try {
             $courses=q('SELECT id,title,status FROM courses ORDER BY id ASC')->fetchAll();
-            $lessons=q('SELECT id,course_id,title,position,status FROM lessons ORDER BY course_id ASC,position ASC,id ASC')->fetchAll();
+            $lessons=q('SELECT id,course_id,title,position,status,video_url FROM lessons ORDER BY course_id ASC,position ASC,id ASC')->fetchAll();
             $byCourse=[];
             foreach ($lessons as $lesson) $byCourse[(int)$lesson['course_id']][]=$lesson;
             if (!$courses) echo '<div class="panel-card"><p class="muted">هنوز دوره‌ای ثبت نشده است.</p></div>';
@@ -570,7 +574,7 @@ function admin_panel(string $sub): void {
                 if (!$items) echo '<p class="muted">این دوره هنوز درسی ندارد.</p>';
                 else {
                     echo '<div class="table-wrap"><table><thead><tr><th>عنوان درس</th><th>ترتیب</th><th>وضعیت</th><th>ویدئو</th></tr></thead><tbody>';
-                    foreach ($items as $lesson) echo '<tr><td>'.h($lesson['title']).' (ID: '.fa((int)$lesson['id']).')</td><td>'.fa((int)$lesson['position']).'</td><td>'.h($lesson['status'] ?? '—').'</td><td>ثبت نشده (فیلد ویدئو موجود نیست)</td></tr>';
+                    foreach ($items as $lesson) echo '<tr><td>'.h($lesson['title']).' (ID: '.fa((int)$lesson['id']).')</td><td>'.fa((int)$lesson['position']).'</td><td>'.h($lesson['status'] ?? '—').'</td><td>'.(($lesson['video_url'] ?? '')!==''?'<a dir="ltr" href="'.h(lesson_aparat_watch((string)$lesson['video_url'])).'" target="_blank" rel="noopener noreferrer">'.h($lesson['video_url']).'</a>':'ثبت نشده').'</td></tr>';
                     echo '</tbody></table></div>';
                 }
                 echo '</section>';

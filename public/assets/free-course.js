@@ -5,16 +5,19 @@
     const label = document.getElementById('fc-switch-label');
     const description = document.getElementById('fc-switch-description');
     if (!player || !button || !status || !label || !description) return;
+    const hash = button.dataset.aparatHash || '';
+    if (!/^[a-z0-9]+$/i.test(hash)) return;
     const iframe = player.querySelector('iframe');
     let alternative = false;
     button.hidden = false;
     button.addEventListener('click', () => {
         alternative = !alternative;
         if (alternative) {
+            const rnddiv = String(Date.now());
             const container = document.createElement('div');
-            container.id = '82531869439';
+            container.id = rnddiv;
             const script = document.createElement('script');
-            script.src = 'https://www.aparat.com/embed/qbk51d2?data[rnddiv]=82531869439&data[responsive]=yes&titleShow=true';
+            script.src = 'https://www.aparat.com/embed/' + hash + '?data[rnddiv]=' + rnddiv + '&data[responsive]=yes&titleShow=true&startTime=0';
             script.onerror = () => {
                 status.textContent = 'روش جایگزین بارگذاری نشد؛ از لینک «تماشا در آپارات» استفاده کنید یا به روش اصلی برگردید.';
             };

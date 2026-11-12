@@ -114,11 +114,11 @@ process.stdout.write(JSON.stringify(cases.map(([position, duration]) => calculat
 
     def test_aparat_embed_does_not_pretend_to_provide_player_state(self):
         workspace = function_body(VIEWS, "page_course_workspace")
-        self.assertIn("www.aparat.com/embed/qbk51d2", workspace)
+        self.assertIn("lesson_aparat_hash($current['video_url']", workspace)
+        self.assertIn("lesson_aparat_frame($videoHash)", workspace)
         self.assertNotIn("NoqtePlaybackEvents.attach", workspace)
         self.assertNotIn("connectProgress(", workspace)
-        self.assertNotIn("/progress/save", workspace)
-        self.assertIn("پیشرفت تماشا در حال حاضر به‌صورت خودکار ثبت نمی‌شود", workspace)
+        self.assertIn("برای ثبت پیشرفت و تکمیل درس، آزمون پایان درس", workspace)
 
 
 if __name__ == "__main__":

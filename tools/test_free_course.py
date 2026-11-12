@@ -1,5 +1,6 @@
 import os
 import json
+import re
 import pathlib
 import shutil
 import sqlite3
@@ -60,9 +61,10 @@ class FreeCourseHttpTest(unittest.TestCase):
         self.assertEqual(head.canonical, 'https://release.invalid/course/ai-foundations')
         self.assertEqual(head.meta['robots'], 'index,follow')
         self.assertNotIn('noindex', headers.get('X-Robots-Tag', ''))
-        self.assertIn('مبانی هوش مصنوعی', source)
-        self.assertIn('جلسهٔ دوم', source)
-        self.assertIn('به‌زودی', source)
+        self.assertIn('هوش مصنوعی چیست؟', source)
+        self.assertIn('اولین قدم عملی', source)
+        self.assertNotIn('qbk51d2', source)
+        self.assertIn('۶ جلسه', source)
         self.assertNotIn('href="#lesson-2"', source)
         document = CourseDocument(source)
         self.assertEqual(len(document.ids), len(set(document.ids)))
@@ -83,7 +85,7 @@ class FreeCourseHttpTest(unittest.TestCase):
     def register_for_course(self, phone):
         client = test_release.Client(self.base)
         client.request('/login?next=course%2Fai-foundations')
-        status, headers, _ = client.post('/auth/request', {'first_name': 'هنرجو', 'last_name': 'آزمایشی', 'phone': phone, 'password': 'FixturePass123'})
+        status, headers, _ = client.post('/auth/request', {'first_name': 'هنرجو', 'last_name': 'آزمایشی', 'phone': phone, 'password': 'FixturePass123', 'password_confirmation': 'FixturePass123'})
         self.assertEqual(status, 303)
         self.assertEqual(headers['Location'], '/course/ai-foundations')
         return client
@@ -95,7 +97,7 @@ class FreeCourseHttpTest(unittest.TestCase):
         document = CourseDocument(source)
         self.assertEqual(len(document.iframes), 1)
         iframe = document.iframes[0]
-        self.assertEqual(iframe['src'], 'https://www.aparat.com/video/video/embed/videohash/qbk51d2/vt/frame?titleShow=true')
+        self.assertEqual(iframe['src'], 'https://www.aparat.com/video/video/embed/videohash/ereh151/vt/frame?titleShow=true&startTime=0')
         self.assertTrue(iframe['title'])
         self.assertIn('allowfullscreen', iframe)
         self.assertIn('fc-switch-player', document.ids)
@@ -105,7 +107,7 @@ class FreeCourseHttpTest(unittest.TestCase):
         self.assertNotIn('fc-access-gate', source)
         client.post('/logout', {})
         guest = client.request('/course/ai-foundations')[2]
-        self.assertNotIn('qbk51d2', guest)
+        self.assertNotIn('ereh151', guest)
         self.assertEqual(CourseDocument(guest).iframes, [])
         client.request('/login?next=course%2Fai-foundations')
         status, headers, _ = client.post('/auth/login', {'phone': '09990000181', 'password': 'FixturePass123', 'captcha': client.state()['captcha']})
@@ -121,7 +123,7 @@ class FreeCourseHttpTest(unittest.TestCase):
     def test_registration_without_sms_creates_account_and_signs_in(self):
         client = test_release.Client(self.base)
         client.request('/login?next=course%2Fai-foundations')
-        status, headers, _ = client.post('/auth/request', {'first_name': 'هنرجو', 'last_name': 'بدون‌پیامک', 'phone': '09990000182', 'password': 'FixturePass123'})
+        status, headers, _ = client.post('/auth/request', {'first_name': 'هنرجو', 'last_name': 'بدون‌پیامک', 'phone': '09990000182', 'password': 'FixturePass123', 'password_confirmation': 'FixturePass123'})
         self.assertEqual((status, headers['Location']), (303, '/course/ai-foundations'))
         with sqlite3.connect(test_release.ReleaseHttpTest.database) as connection:
             row = connection.execute('SELECT name,phone_verified_at FROM users WHERE phone=?', ('09990000182',)).fetchone()
@@ -134,7 +136,7 @@ class FreeCourseHttpTest(unittest.TestCase):
         client.request('/login')
         wrong = client.post('/auth/login', {'phone': '09990000182', 'password': 'WrongPass123', 'captcha': client.state()['captcha']})
         self.assertEqual((wrong[0], wrong[1]['Location']), (303, '/login'))
-        self.assertNotIn('qbk51d2', client.request('/course/ai-foundations')[2])
+        self.assertNotIn('ereh151', client.request('/course/ai-foundations')[2])
 
     def test_highlighted_course_navigation_on_other_public_pages(self):
         client = test_release.Client(self.base)
@@ -225,7 +227,8 @@ class FreeCourseHttpTest(unittest.TestCase):
         frames = CourseDocument(source).iframes
         self.assertEqual(len(frames), 1)
         self.assertEqual(frames[0]['class'], 'aparat-embed')
-        self.assertIn('/videohash/qbk51d2/', frames[0]['src'])
+        self.assertIn('/videohash/ereh151/', frames[0]['src'])
+        self.assertIn('startTime=0', frames[0]['src'])
         self.assertIn('allowfullscreen', frames[0])
         self.assertNotIn('data[responsive]', source)
         self.assertNotIn('63043856666', source)
@@ -239,8 +242,9 @@ class FreeCourseHttpTest(unittest.TestCase):
             self.assertIn(f'name="answers[{i}]"', source)
         self.assertIn('name="quiz_submit" value="1"', source)
         self.assertIn('ثبت پیشرفت و تکمیل درس', source)
-        self.assertIn('/assets/style.css?v=8', source)
-        css = client.request('/assets/style.css?v=8')[2]
+        css_version = re.search(r'/assets/style\.css\?v=(\d+)', source).group(0)
+        self.assertIn(css_version, source)
+        css = client.request(css_version)[2]
         self.assertIn('.video-placeholder.has-aparat{display:block;position:relative;', css)
         self.assertIn('.aparat-embed{position:absolute;inset:0;display:block;width:100%;height:100%;border:0}', css)
         self.assertIn('aspect-ratio:16/9', css)
@@ -286,7 +290,8 @@ class FreeCourseHttpTest(unittest.TestCase):
             self.assertEqual(after, before)
             self.assertTrue(after[1])
             self.assertEqual(connection.execute("SELECT COUNT(*) FROM activities WHERE user_id=? AND event_name='lesson_completed'", (uid,)).fetchone()[0], 1)
-            self.assertEqual(connection.execute("SELECT COUNT(*) FROM activities WHERE user_id=? AND event_name='course_completed'", (uid,)).fetchone()[0], 1)
+            # A six-session course only completes once every published lesson passes its quiz.
+            self.assertEqual(connection.execute("SELECT COUNT(*) FROM activities WHERE user_id=? AND event_name='course_completed'", (uid,)).fetchone()[0], 0)
         other = self.register_for_course('09990000193')
         self.assertEqual(other.post('/progress/save', dict(payload, **answers))[0], 404)
         other.post('/courses/enroll', {'slug': 'ai-foundations'})
@@ -317,7 +322,7 @@ class FreeCourseHttpTest(unittest.TestCase):
             after = connection.execute('SELECT id,position,content FROM lessons ORDER BY id').fetchall()
             statuses = connection.execute('SELECT position,status FROM lessons ORDER BY position').fetchall()
         self.assertEqual(before, after)
-        self.assertEqual(statuses, [(1, 'published'), (2, 'draft')])
+        self.assertEqual(statuses, [(position, 'published') for position in range(1, 7)])
         self.assertTrue((pathlib.Path(self.temp.name) / 'repeat.json').is_file())
         status, headers, _ = test_release.Client(self.base).request('/dashboard/course/ai-foundations')
         self.assertEqual(status, 303)

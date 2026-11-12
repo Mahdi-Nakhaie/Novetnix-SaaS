@@ -46,6 +46,10 @@ function course_admin_save(string $path): never {
                     if (!q('SELECT id FROM lessons WHERE id=? AND course_id=?',[$id,$course])->fetchColumn()) throw new InvalidArgumentException('جلسه متعلق به این دوره نیست.');
                     q('UPDATE lessons SET title=?,content=?,position=?,status=?,updated_at=CURRENT_TIMESTAMP WHERE id=?',[$title,$content,$position,$status,$id]);
                 } else q('INSERT INTO lessons(course_id,title,content,position,status) VALUES (?,?,?,?,?)',[$course,$title,$content,$position,$status]);
+                $video=trim((string)($_POST['video_url'] ?? ''));
+                if ($video!=='' && lesson_aparat_hash($video)===null) throw new InvalidArgumentException('آدرس یا کد ویدیوی آپارات معتبر نیست.');
+                $savedId=$id ?: (int)$pdo->lastInsertId();
+                lesson_video_save($savedId,$video);
             }
         }
         $pdo->commit();
@@ -66,9 +70,8 @@ function course_admin_forms(): void {
         form_start('admin/'.$kind.'-save');
         echo '<h3>'.h($label).'</h3><label>شناسه (۰ برای ایجاد)<input name="id" type="number" min="0" value="0" required></label>';
         if ($kind==='course') echo '<label>شناسهٔ متنی پایدار<input name="slug" dir="ltr" required></label>';
-        else echo '<label>شناسه دوره<input name="course_id" type="number" min="1" required></label><label>ترتیب جلسه<input name="position" type="number" min="1" required></label>';
+        else echo '<label>شناسه دوره<input name="course_id" type="number" min="1" required></label><label>ترتیب جلسه<input name="position" type="number" min="1" required></label><label>ویدیوی آپارات (آدرس یا کد امبد)<input name="video_url" dir="ltr" maxlength="500" placeholder="https://www.aparat.com/embed/frzh61x?..."></label>';
         echo '<label>عنوان<input name="title" maxlength="180" required></label><label>متن / شرح<textarea name="content" rows="5" required></textarea></label><label>وضعیت<select name="status"><option value="draft">پیش‌نویس</option><option value="published">منتشرشده</option></select></label><button class="btn btn-primary">ذخیره '.h($label).'</button></form>';
     }
-    form_start('admin/quiz-save');
-    echo '<h3>آزمون جلسه</h3><p>پاسخ صحیح، اندیس صفرمبنا دارد. تغییر سؤال، ارزیابی مجدد را لازم می‌کند.</p><label>شناسه جلسه<input name="lesson_id" type="number" min="1" required></label><label>درصد قبولی<input name="pass_percent" type="number" min="1" max="100" value="100" required></label><label>سؤال‌ها (JSON)<textarea name="questions" dir="ltr" rows="6" required placeholder="[{&quot;prompt&quot;:&quot;سؤال&quot;,&quot;options&quot;:[&quot;گزینه اول&quot;,&quot;گزینه دوم&quot;],&quot;correct&quot;:0}]"></textarea></label><button class="btn btn-primary">ذخیره آزمون</button></form></section>';
+    form_start('admin/quiz-save');    echo '<h3>آزمون جلسه</h3><p>پاسخ صحیح، اندیس صفرمبنا دارد. تغییر سؤال، ارزیابی مجدد را لازم می‌کند.</p><label>شناسه جلسه<input name="lesson_id" type="number" min="1" required></label><label>درصد قبولی<input name="pass_percent" type="number" min="1" max="100" value="100" required></label><label>سؤال‌ها (JSON)<textarea name="questions" dir="ltr" rows="6" required placeholder="[{&quot;prompt&quot;:&quot;سؤال&quot;,&quot;options&quot;:[&quot;گزینه اول&quot;,&quot;گزینه دوم&quot;],&quot;correct&quot;:0}]"></textarea></label><button class="btn btn-primary">ذخیره آزمون</button></form></section>';
 }
