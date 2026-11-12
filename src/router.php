@@ -39,6 +39,7 @@ function route(): void {
     }
     $public=[''=>'home','courses'=>'courses','course'=>'course','projects'=>'projects','project'=>'project','pricing'=>'pricing','about'=>'about','contact'=>'contact','community'=>'community','login'=>'login','verify'=>'verify'];
     if ($path==='' ) { head_page('خانه','Noventix؛ آموزش پروژه‌محور پایتون، علم داده، یادگیری ماشین و یادگیری عمیق به زبان فارسی.'); notice(); home(published_courses()); foot_page(); return; }
+    if ($path==='landing') { head_page('لندینگ','Noventix؛ محیط آماده برای یادگیری و ساختن پروژه‌های پایتون و هوش مصنوعی به زبان فارسی.',false,true); notice(); page_landing(); foot_page(); return; }
     if ($path==='cart') { head_page('سبد خرید','سبد خرید دوره‌های آموزشی و پلن‌های Noventix.'); notice(); cart_page(); foot_page(); return; }
     if ($path==='courses') { header('Location: '.url('articles'),true,301); return; }
     if ($path==='articles') { page_articles(); return; }

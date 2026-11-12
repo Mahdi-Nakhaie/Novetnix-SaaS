@@ -17,6 +17,7 @@ function head_page(string $title,string $description='',bool $panel=false,bool $
         if ($me && trim($me['name'])!=='') echo '<script src="/assets/free-course.js?v=2" defer></script>';
     }
     if ($path==='' || $path==='articles' || str_starts_with($path,'articles/')) echo '<link rel="stylesheet" href="/assets/articles.css?v=3">';
+    if ($path==='landing') echo '<link rel="stylesheet" href="/assets/landing.css?v=1">';
     $darychehAssets=($path==='dashboard/darycheh' || str_starts_with($path,'dashboard/darycheh/')) ? '<link rel="stylesheet" href="/assets/darycheh.css?v=1"><script src="/assets/darycheh.js?v=1" defer></script>' : '';
     if (!$panel) echo '<link rel="stylesheet" href="/assets/header.css?v=10">';
     $adminPanel=$panel && ($me['role'] ?? '')==='admin';
@@ -689,4 +690,106 @@ function admin_panel(string $sub): void {
         panel_head('پیام‌های تماس','پیام‌های ثبت‌شده از فرم تماس.');
         echo '<div class="panel-list">'; foreach (q('SELECT * FROM contact_messages ORDER BY id DESC LIMIT 50')->fetchAll() as $r) echo '<div class="list-item"><div><h3>'.h($r['name']).' · '.h($r['email']).'</h3><p>'.nl2br(h($r['message'])).'</p></div><small>'.h(jdate($r['created_at'])).'</small></div>'; echo '</div>';
     } else { http_response_code(404); echo '<div class="empty-state">این بخش در دسترس نیست.</div>'; }
+}
+
+// Landing page: a conversion-focused standalone page inspired by managed-cloud
+// platforms, built from the real PLANS and published courses. Renders inside
+// the shared header/footer so site navigation stays intact.
+function page_landing(): void {
+    global $me;
+    $courses=published_courses();
+    $paid=array_filter(PLANS,static fn(array $p): bool=>$p['price']>0);
+    $planOrder=['free','bronze','silver','gold','titanium'];
+
+    echo '<main class="lp">';
+
+    // 1 — Hero
+    echo '<section class="lp-hero" aria-labelledby="lp-hero-title"><div class="lp__container"><div class="lp-hero__grid"><div class="lp-hero__copy"><span class="lp__eyebrow"><span class="dot" aria-hidden="true"></span> پلتفرم یادگیری و اجرای هوش مصنوعی</span><h1 class="lp-hero__title" id="lp-hero-title">در کمتر از ۵ دقیقه،<br><em>ایده‌ات را به پروژه تبدیل کن</em></h1><p class="lp-hero__lede">Noventix محیطی آماده برای نوشتن، اجرا و ارائه پروژه‌های پایتون و هوش مصنوعی است؛ بدون درگیری با پیچیدگی راه‌اندازی محیط. کد بنویس، اجرا کن و مهارتت را با پروژه‌های واقعی بساز.</p><div class="lp-hero__actions">';
+    linkto('register','شروع رایگان ←','lp__btn lp__btn--primary');
+    linkto('course/'.FREE_COURSE_SLUG,'دیدن دوره‌ها','lp__btn lp__btn--ghost');
+    echo '</div><ul class="lp-hero__proof"><li>میزکار کد آنلاین</li><li>مسیر پروژه‌محور</li><li>یادگیری به زبان فارسی</li></ul></div><div class="lp-hero__visual"><div class="lp-code" aria-label="نمونه اجرای کد پایتون در Noventix"><div class="lp-code__bar"><span class="lp-code__dots" aria-hidden="true"><i></i><i></i><i></i></span><span>میزکار Noventix</span><span class="lp-code__filename" dir="ltr">first_project.py</span></div><pre class="lp-code__body" dir="ltr" tabindex="0" aria-label="کد نمونه محاسبه میانگین نمرات"><code><span class="tk-cm"># اولین پروژه: میانگین امتیازها</span>
+<span class="tk-kw">def</span> <span class="tk-fn">analyze</span>(scores):
+    total = <span class="tk-fn">sum</span>(scores)
+    <span class="tk-kw">return</span> total / <span class="tk-fn">len</span>(scores)
+
+scores = [<span class="tk-num">12</span>, <span class="tk-num">16</span>, <span class="tk-num">20</span>]
+average = <span class="tk-fn">analyze</span>(scores)
+<span class="tk-fn">print</span>(<span class="tk-str">f"Average: {average:.1f}"</span>)</code></pre><div class="lp-code__out"><span class="lp-code__out-dot" aria-hidden="true"></span><span dir="ltr">Average: 16.0</span><span class="lp-code__filename">اجرای امن · Python 3</span></div></div></div></div></div></section>';
+
+    // 2 — Trust strip
+    echo '<section class="lp-trust" aria-label="چه چیزهایی همین حالا در دسترس است"><div class="lp__container"><p class="lp-trust__label">همین حالا در Noventix در دسترس</p><div class="lp-trust__grid">';
+    foreach ([['میزکار پایتون در مرورگر','◇'],['پروژه‌های واقعی، از مقدماتی تا یادگیری ماشین','◈'],['آزمون پایان هر جلسه','✦'],['انجمن یادگیرندگان','⌘'],['واژه‌نامهٔ هوش مصنوعی','◇']] as [$label,$mark]) echo '<span class="lp-trust__chip"><span class="lp-trust__chip-mark" aria-hidden="true">'.h($mark).'</span>'.h($label).'</span>';
+    echo '</div></div></section>';
+
+    // 3 — Differentiators
+    echo '<section class="lp__section lp__section--tinted"><div class="lp__container"><div class="lp__head lp__head--center"><span class="lp__eyebrow">چرا Noventix</span><h2 class="lp__title">کاملاً متفاوت با مسیری که تا حالا رفته‌اید</h2><p class="lp__lede">ما کارهای دشوار محیط توسعه را از سر راهتان برداشته‌ایم تا فقط روی یادگیری و ساختن تمرکز کنید.</p></div><div class="lp-diff">';
+
+    echo '<div class="lp-diff__row"><div class="lp-diff__body"><span class="lp-diff__kicker" aria-hidden="true">۱ / محیط آماده</span><h3>میزکار کد، بدون نصب و بدون تنظیمات</h3><p>در مرورگر کد بنویس، فایل و پوشه بساز و امن اجرا کن. لازم نیست برای اولین تمرین، محیط توسعه راه بیندازی؛ منابع همان لحظه در اختیار توست.</p></div><div class="lp-diff__visual"><div class="lp-mini"><div class="lp-mini__status"><span class="lp-mini__status-dot" aria-hidden="true"></span><span>محیط اجرا آماده است</span><span class="lp-mini__status-meta">READY</span></div><div class="lp-quota"><div class="lp-quota__cell"><strong>۵ ثانیه</strong><span>زمان اجرای هر پروژه</span></div><div class="lp-quota__cell"><strong>۱۲۸ MB</strong><span>حافظهٔ اجرا</span></div><div class="lp-quota__cell"><strong>Python 3</strong><span>نسخهٔ پیش‌فرض</span></div><div class="lp-quota__cell"><strong>ذخیرهٔ خودکار</strong><span>بدون از دست رفتن کار</span></div></div></div></div></div>';
+
+    echo '<div class="lp-diff__row"><div class="lp-diff__body"><span class="lp-diff__kicker" aria-hidden="true">۲ / مسیر روشن</span><h3>جلسه‌ها گام‌به‌گام باز می‌شوند</h3><p>هر جلسه با محتوای روشن و کوتاه شروع می‌شود و تا آزمون آن را نگذرانی، جلسهٔ بعد باز نمی‌شود. این ساختار باعث می‌شود پیشرفت واقعی و نه ظاهری داشته باشی.</p></div><div class="lp-diff__visual"><div class="lp-mini"><ul class="lp-timeline"><li class="lp-timeline__item lp-timeline__item--ok"><strong>جلسهٔ اول تکمیل شد</strong><span class="lp-timeline__meta">آزمون ۱۰۰٪ · باز شد</span></li><li class="lp-timeline__item lp-timeline__item--ok"><strong>جلسهٔ دوم تکمیل شد</strong><span class="lp-timeline__meta">آزمون ۱۰۰٪ · باز شد</span></li><li class="lp-timeline__item lp-timeline__item--run"><strong>جلسهٔ سوم — در حال یادگیری</strong><span class="lp-timeline__meta">آزمون پایان جلسه</span></li><li class="lp-timeline__item"><strong>جلسهٔ چهارم</strong><span class="lp-timeline__meta">پس از عبور از آزمون قبل</span></li></ul></div></div></div>';
+
+    echo '<div class="lp-diff__row"><div class="lp-diff__body"><span class="lp-diff__kicker" aria-hidden="true">۳ / تمرین واقعی</span><h3>از فهمیدن تا ساختن، با پروژه</h3><p>هر مفهوم روی یک مسئلهٔ واقعی پیاده می‌شود: از تمرین‌های مقدماتی پایتون تا تحلیل داده و یادگیری ماشین. نتیجه‌اش نمونه‌کاری است که می‌توانی ارائه کنی.</p></div><div class="lp-diff__visual"><div class="lp-mini"><div class="lp-mini__status"><span class="lp-mini__status-dot" aria-hidden="true"></span><span>پیشرفت مسیر یادگیری</span><span class="lp-mini__status-meta">LIVE</span></div><div class="lp-meter"><div class="lp-meter__row"><span class="lp-meter__label">مقدماتی</span><span class="lp-meter__track"><span class="lp-meter__fill" style="width:100%"></span></span><span class="lp-meter__val">۱۰۰٪</span></div><div class="lp-meter__row"><span class="lp-meter__label">داده</span><span class="lp-meter__track"><span class="lp-meter__fill" style="width:68%"></span></span><span class="lp-meter__val">۶۸٪</span></div><div class="lp-meter__row"><span class="lp-meter__label">یادگیری ماشین</span><span class="lp-meter__track"><span class="lp-meter__fill lp-meter__fill--gold" style="width:34%"></span></span><span class="lp-meter__val">۳۴٪</span></div></div></div></div></div>';
+
+    echo '</div></div></section>';
+
+    // 4 — Feature grid
+    echo '<section class="lp__section" aria-labelledby="lp-features-title"><div class="lp__container"><div class="lp__head lp__head--center"><span class="lp__eyebrow">امکانات پلتفرم</span><h2 class="lp__title" id="lp-features-title">هر آنچه برای یادگیری و ساختن لازم داری</h2><p class="lp__lede">ابزارهای آموزش، تمرین و اجرا در یک محیط یکپارچه، بدون پراکندگی.</p></div><div class="lp-features">';
+    $features=[
+        ['میزکار کد آنلاین','◇','ادیتور، مدیریت فایل و اجرای امن پایتون در مرورگر؛ بدون نصب چیزی.','',''],
+        ['آزمون پایان جلسه','✦','تعمیق یادگیری با آزمون هدفمند؛ عبور از هر جلسه، پیش‌نیاز جلسهٔ بعد.','','gold'],
+        ['مسیر پروژه‌محور','◈','از تمرین‌های مقدماتی تا تحلیل داده و یادگیری ماشین، روی مسئله‌های واقعی.','',''],
+        ['انجمن یادگیرندگان','⌘','پرسش، هم‌اندیشی و راه‌حل‌های بهتر در کنار بقیهٔ اعضای جامعه.','',''],
+        ['واژه‌نامهٔ تخصصی','◇','اصطلاحات هوش مصنوعی، یادگیری ماشین و علم داده با تعریف روشن.','','gold'],
+        ['پروفایل مهارتی','✦','پیشرفت واقعی بر اساس پروژه‌های تأییدشده، نه فقط کلیک ویدیو.','',''],
+    ];
+    foreach ($features as [$title,$mark,$desc,,$variant]) {
+        echo '<article class="lp-feature"><span class="lp-feature__icon'.($variant?' lp-feature__icon--'.$variant:'').'" aria-hidden="true">'.h($mark).'</span><h3>'.h($title).'</h3><p>'.h($desc).'</p></article>';
+    }
+    echo '</div></div></section>';
+
+    // 5 — Workflow steps
+    echo '<section class="lp__section lp__section--tinted" aria-labelledby="lp-flow-title"><div class="lp__container"><div class="lp__head lp__head--center"><span class="lp__eyebrow">شروع در سه قدم</span><h2 class="lp__title" id="lp-flow-title">از ثبت‌نام تا اولین اجرا</h2><p class="lp__lede">نیازی به دانش پیش‌زمینه از زیرساخت نداری؛ مسیر روشن است.</p></div><div class="lp-steps">';
+    $steps=[
+        ['۱','حساب بساز','با شماره و رمز، حساب رایگانت را بساز و وارد شوید. برای شروع کامل، دورهٔ مقدماتی و پروژه‌های عمومی در دسترس‌اند.'],
+        ['۲','میزکار را انتخاب کن','پروژه‌ات را از فهرست انتخاب کن یا از صفر بساز. فایل‌ها، پوشه و کد در میزکار خصوصی تو ذخیره می‌شوند.'],
+        ['۳','اجرا کن و پیشرفت بگیر','کد را اجرا کن، نتیجه را ببین و با آزمون جلسه‌ها جلو برو. هر قدم یک پروژه و یک مهارت قابل ارائه.'],
+    ];
+    foreach ($steps as [$num,$title,$desc]) echo '<article class="lp-step"><span class="lp-step__num" aria-hidden="true">'.h($num).'</span><h3>'.h($title).'</h3><p>'.h($desc).'</p></article>';
+    echo '</div></div></section>';
+
+    // 6 — Pricing (real PLANS data)
+    echo '<section class="lp__section" id="lp-plans" aria-labelledby="lp-plans-title"><div class="lp__container"><div class="lp__head lp__head--center"><span class="lp__eyebrow">پلن‌ها</span><h2 class="lp__title" id="lp-plans-title">برای هر هدف، یک مسیر رشد</h2><p class="lp__lede">از رایگان تا تیتانیومی؛ هر پلن منابع اجرا، سقف پروژه و امکانات بیشتری را باز می‌کند.</p></div><div class="lp-pricing__grid">';
+    foreach ($planOrder as $id) {
+        $p=PLANS[$id];
+        $featured=$id==='gold';
+        $isFree=$id==='free';
+        echo '<article class="lp-plan'.($featured?' lp-plan--featured':'').'" data-plan="'.h($id).'"><span class="lp-plan__tag">'.h($p['tag']).'</span><h3 class="lp-plan__name">پلن '.h($p['name']).'</h3><div class="lp-plan__price">'.($isFree?'رایگان':money((int)$p['price'])).($isFree?'<small> برای همیشه</small>':'<small> / ماه</small>').'</div><p class="lp-plan__desc">'.h($p['summary']).'</p><ul class="lp-plan__list">';
+        foreach (array_slice($p['features'],0,4) as $feature) echo '<li>'.h($feature).'</li>';
+        echo '</ul><div class="lp-plan__cta">';
+        if ($isFree) linkto('register','شروع رایگان','lp__btn lp__btn--ghost lp__btn--sm lp__btn--block');
+        elseif (plan_is_available($id)) { plan_purchase_button($id,'lp__btn '.($featured?'lp__btn--gold':'lp__btn--primary').' lp__btn--sm lp__btn--block'); }
+        else linkto('pricing','دیدن جزئیات پلن','lp__btn lp__btn--ghost lp__btn--sm lp__btn--block');
+        echo '</div></article>';
+    }
+    echo '</div><div class="center-link" style="margin-top:2rem">'; linkto('pricing','مقایسهٔ کامل امکانات پلن‌ها ←','btn btn-outline'); echo '</div></div></section>';
+
+    // 7 — FAQ
+    echo '<section class="lp__section lp__section--tinted" aria-labelledby="lp-faq-title"><div class="lp__container"><div class="lp__head lp__head--center"><span class="lp__eyebrow">پرسش‌های پرتکرار</span><h2 class="lp__title" id="lp-faq-title">پیش از شروع، بدان</h2></div><div class="lp-faq">';
+    $faqs=[
+        ['میزکار کد به چه دانشی نیاز دارد؟','فقط آشنایی مقدماتی با پایتون کافی است. جلسه‌ها از مفاهیم پایه شروع می‌شوند و اگر تجربهٔ قبلی نداری، از مسیر مقدماتی و مقاله‌های آموزشی وارد شو.'],
+        ['اجرای کد چقدر امن است؟','کدها در محیط ایزوله و با سهمیهٔ منابع محدود اجرا می‌شوند. زمان اجرا، حافظه و حجم فایل هر پلن مشخص است و اعداد دقیق در صفحهٔ قیمت‌گذاری آمده است.'],
+        ['آیا رمز عبور و اطلاعات من محافظت می‌شود؟','حساب‌ها با شماره و رمز محافظت می‌شوند و دسترسی به هر بخش با پلن یا خرید دوره تعیین می‌شود. جزئیات در صفحهٔ حریم خصوصی توضیح داده شده است.'],
+        ['هزینهٔ پلن‌ها چطور محاسبه می‌شود؟','پلن‌ها دورهٔ ۳۰ روزه دارند و قیمت هر پلن در همین صفحه نمایش داده می‌شود. برای خرید دوره‌های مستقل، مسیر سبد خرید جدا از پلن است.'],
+        ['می‌توانم بعداً پلنم را تغییر دهم؟','بله. امکانات و سقف منابعت از پلن فعلی خوانده می‌شود؛ برای ارتقا به صفحهٔ قیمت‌گذاری برو و پلن مناسب را انتخاب کن.'],
+    ];
+    foreach ($faqs as $i=>[$q,$a]) echo '<details class="lp-faq__item"'.($i===0?' open':'').'><summary>'.h($q).'</summary><div class="lp-faq__body"><p>'.h($a).'</p></div></details>';
+    echo '</div></div></section>';
+
+    // 8 — Final CTA
+    echo '<section class="lp__section"><div class="lp__container"><div class="lp-cta"><h2>پروژهٔ بعدی‌ات منتظر توست</h2><p>مسیرت را انتخاب کن، یاد بگیر و چیزی بساز که بتوانی به آن افتخار کنی.</p><div class="lp-cta__actions">';
+    linkto($me?'dashboard':'register',$me?'ورود به پنل':'رایگان شروع کن ←','lp__btn lp__btn--gold');
+    linkto('pricing','مشاهدهٔ پلن‌ها','lp__btn lp__btn--ghost');
+    echo '</div></div></div></section>';
+
+    echo '</main>';
 }

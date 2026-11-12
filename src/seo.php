@@ -9,7 +9,7 @@ function seo_origin(): ?string {
     return $value;
 }
 function seo_public_path(string $path): bool {
-    return in_array($path,['','articles','projects','pricing','about','contact','terms','privacy','glossary'],true)
+    return in_array($path,['','landing','articles','projects','pricing','about','contact','terms','privacy','glossary'],true)
         || (bool)preg_match('~^(course/[a-z0-9-]+|project/[0-9]+|glossary/[a-z0-9-]+)$~D',$path)
         || (str_starts_with($path,'articles/') && article_entry(substr($path,9))!==null);
 }
