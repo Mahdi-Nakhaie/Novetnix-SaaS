@@ -229,6 +229,44 @@
   pointer-events: none;
 }
 
+/* Floating code fragments behind the hero — decorative only, never read by
+   assistive tech and hidden from reduced-motion users. */
+.lp-float {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", monospace;
+  font-size: 0.78rem;
+  line-height: 1.7;
+  color: rgba(106, 13, 173, 0.16);
+  user-select: none;
+}
+
+.lp-float__chip {
+  position: absolute;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(106, 13, 173, 0.1);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 10px 24px -18px rgba(40, 18, 62, 0.5);
+  white-space: pre;
+  animation: lp-drift 26s ease-in-out infinite;
+}
+
+.lp-float__chip:nth-child(1) { inset-block-start: 8%; inset-inline-start: 4%; animation-duration: 24s; }
+.lp-float__chip:nth-child(2) { inset-block-start: 62%; inset-inline-start: 9%; animation-duration: 31s; animation-delay: -6s; color: rgba(184, 134, 11, 0.2); border-color: rgba(184, 134, 11, 0.12); }
+.lp-float__chip:nth-child(3) { inset-block-start: 26%; inset-inline-end: 6%; animation-duration: 28s; animation-delay: -12s; }
+.lp-float__chip:nth-child(4) { inset-block-start: 78%; inset-inline-end: 16%; animation-duration: 34s; animation-delay: -3s; color: rgba(106, 13, 173, 0.13); }
+.lp-float__chip:nth-child(5) { inset-block-start: 45%; inset-inline-start: 2%; animation-duration: 30s; animation-delay: -18s; }
+
+@keyframes lp-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-1deg); }
+  33% { transform: translate3d(10px, -14px, 0) rotate(1deg); }
+  66% { transform: translate3d(-8px, 9px, 0) rotate(-0.5deg); }
+}
+
 .lp-hero__grid {
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
@@ -460,6 +498,24 @@
 
 .lp-code__line:hover { background: rgba(255, 255, 255, 0.035); }
 
+/* Caret used while the hero code is being typed out. */
+.lp-code__caret {
+  display: inline-block;
+  width: 2px;
+  height: 1.05em;
+  margin-inline-start: 1px;
+  vertical-align: text-bottom;
+  background: #c99bf7;
+  animation: lp-caret 900ms steps(1) infinite;
+}
+
+.lp-code.is-typing .lp-code__line::before { opacity: 0.45; }
+
+@keyframes lp-caret {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
 .lp-code__body .tk-kw { color: #c99bf7; }
 .lp-code__body .tk-fn { color: #f2d879; }
 .lp-code__body .tk-num { color: #86c9fb; }
@@ -503,54 +559,95 @@
 }
 
 /* ==========================================================================
-   2. Logo / trust strip
+   2. Trust marquee — circular badges travelling along a track
    ========================================================================== */
 .lp-trust {
-  padding-block: clamp(2rem, 4vw, 3rem);
+  padding-block: clamp(1.75rem, 3.5vw, 2.75rem);
   border-block-end: 1px solid var(--lp-border);
+  overflow: hidden;
 }
 
 .lp-trust__label {
   text-align: center;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: var(--ink-2);
-  margin: 0 0 1.5rem;
+  margin: 0 0 1.1rem;
 }
 
-.lp-trust__grid {
+.lp-marquee {
+  position: relative;
+  overflow: hidden;
+  /* Fade the edges so badges dissolve into the page instead of being cut. */
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+.lp-marquee__track {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: 0.75rem;
+  width: max-content;
+  animation: lp-marquee 42s linear infinite;
 }
 
-.lp-trust__chip {
+.lp-marquee:hover .lp-marquee__track,
+.lp-marquee:focus-within .lp-marquee__track {
+  animation-play-state: paused;
+}
+
+.lp-marquee__group {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  margin: 0;
+  padding: 0 0.55rem;
+  list-style: none;
+  flex: none;
+}
+
+@keyframes lp-marquee {
+  from { transform: translateX(0); }
+  /* RTL: the track starts at the right edge, so we travel toward the left. */
+  to { transform: translateX(50%); }
+}
+
+.lp-trust__item {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.55rem 1.1rem;
-  border: 1px solid var(--lp-border);
-  border-radius: 999px;
-  background: var(--lp-surface);
-  font-size: 0.85rem;
+  gap: 0.6rem;
+  flex: none;
+  white-space: nowrap;
+}
+
+.lp-trust__disc {
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  flex: none;
+  border-radius: 50%;
+  border: 1px solid var(--brand-line);
+  background: linear-gradient(160deg, #fff, var(--brand-soft));
+  color: var(--brand);
+  font-size: 0.95rem;
+  box-shadow: 0 6px 14px -8px rgba(106, 13, 173, 0.5);
+}
+
+/* A hairline "track" running behind the discs, echoing the requested path. */
+.lp-marquee--trust::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 50%;
+  height: 1px;
+  z-index: -1;
+  background: linear-gradient(90deg, transparent, var(--brand-line), transparent);
+  opacity: 0.75;
+}
+
+.lp-trust__text {
+  font-size: 0.86rem;
   font-weight: 700;
   color: var(--ink-2);
-  box-shadow: var(--shadow-sm);
-  transition: border-color var(--lp-duration) var(--lp-ease),
-    transform var(--lp-duration) var(--lp-ease);
-}
-
-.lp-trust__chip:hover {
-  border-color: var(--brand-line);
-  transform: translateY(-2px);
-}
-
-.lp-trust__chip-mark {
-  color: var(--brand);
-  font-size: 0.9rem;
-  line-height: 1;
 }
 
 /* ==========================================================================
@@ -754,18 +851,59 @@
 .lp-timeline__item--run::before { background: #c98a0f; box-shadow: 0 0 0 4px rgba(201,138,15,.15); }
 
 /* ==========================================================================
-   4. Feature cards
+   4. Feature rail — horizontal scroll track with a visible path
    ========================================================================== */
-.lp-features {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 1.25rem;
+.lp-rail {
+  position: relative;
+}
+
+.lp-rail__viewport {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--brand-line) transparent;
+  /* Bleed to the container edges so cards read as one continuous track. */
+  padding-block: 0.5rem 1.25rem;
+}
+
+.lp-rail__viewport::-webkit-scrollbar { height: 8px; }
+.lp-rail__viewport::-webkit-scrollbar-track { background: rgba(40, 18, 62, 0.06); border-radius: 999px; }
+.lp-rail__viewport::-webkit-scrollbar-thumb {
+  background: var(--brand-line);
+  border-radius: 999px;
+}
+
+.lp-rail__track {
+  display: flex;
+  gap: 1.1rem;
+  width: max-content;
+  padding-inline: max(1rem, calc((100vw - var(--lp-container)) / 2 + 1rem));
+  /* The path: a rail line running through every card's centre. */
+  position: relative;
+}
+
+.lp-rail__track::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 3.55rem;
+  height: 2px;
+  background-image: linear-gradient(90deg, var(--brand-line) 55%, transparent 0);
+  background-size: 14px 2px;
+  background-repeat: repeat-x;
+  opacity: 0.85;
+  pointer-events: none;
 }
 
 .lp-feature {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+  flex: 0 0 clamp(258px, 78vw, 310px);
+  scroll-snap-align: start;
   padding: 1.5rem;
   border-radius: var(--lp-radius);
   border: 1px solid var(--lp-border);
@@ -782,22 +920,68 @@
   border-color: var(--brand-line);
 }
 
+/* Step number sits on the rail line, so cards feel threaded onto it. */
+.lp-feature__step {
+  position: absolute;
+  inset-block-start: 1.42rem;
+  inset-inline-end: 1.5rem;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
 .lp-feature__icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 44px;
   height: 44px;
-  border-radius: var(--lp-radius-sm);
+  border-radius: 50%;
   background: var(--brand-soft);
+  border: 1px solid var(--brand-line);
   color: var(--brand);
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   margin-block-end: 0.25rem;
+  /* Punch a hole in the dashed rail behind it. */
+  box-shadow: 0 0 0 6px var(--lp-surface), 0 6px 16px -10px rgba(106, 13, 173, 0.6);
 }
 
 .lp-feature__icon--gold {
   background: var(--gold-soft);
+  border-color: #ecd9a8;
   color: var(--gold);
+}
+
+.lp-rail__controls {
+  display: flex;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-block-start: 0.35rem;
+}
+
+.lp-rail__btn {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid var(--lp-border-strong);
+  background: var(--lp-surface);
+  color: var(--ink-2);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color var(--lp-duration) var(--lp-ease),
+    color var(--lp-duration) var(--lp-ease),
+    background-color var(--lp-duration) var(--lp-ease);
+}
+
+.lp-rail__btn:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+  background: var(--brand-soft);
 }
 
 .lp-feature h3 {
@@ -860,7 +1044,151 @@
 }
 
 /* ==========================================================================
-   6. Pricing cards
+   6. Articles & projects (mirrors the home page, scoped to .lp)
+   ========================================================================== */
+.lp__head--split {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  max-width: none;
+  text-align: start;
+}
+
+.lp__head--split .lp__lede {
+  max-width: 52ch;
+}
+
+.lp-read-grid,
+.lp-project-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.15rem;
+}
+
+.lp-read {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1.4rem;
+  border-radius: var(--lp-radius);
+  border: 1px solid var(--lp-border);
+  background: var(--lp-surface);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--lp-duration) var(--lp-ease),
+    box-shadow var(--lp-duration) var(--lp-ease),
+    border-color var(--lp-duration) var(--lp-ease);
+}
+
+.lp-read:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow);
+  border-color: var(--brand-line);
+}
+
+.lp-read__meta,
+.lp-project__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.lp-read__tag {
+  display: inline-block;
+  padding: 0.16rem 0.6rem;
+  border-radius: 999px;
+  background: var(--brand-soft);
+  color: var(--brand-2);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.lp-read h3,
+.lp-project h3 {
+  margin: 0;
+  font-size: 1.02rem;
+  line-height: 1.6;
+}
+
+.lp-read h3 a,
+.lp-project h3 a {
+  color: var(--ink);
+}
+
+.lp-read h3 a:hover,
+.lp-project h3 a:hover {
+  color: var(--brand);
+}
+
+.lp-read p,
+.lp-project p {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.9;
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+.lp-read__link {
+  margin-block-start: auto;
+  padding-block-start: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--brand);
+}
+
+.lp-read__link:hover { color: var(--brand-2); }
+
+.lp-project {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--lp-radius);
+  border: 1px solid var(--lp-border);
+  background: var(--lp-surface);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--lp-duration) var(--lp-ease),
+    box-shadow var(--lp-duration) var(--lp-ease);
+}
+
+.lp-project:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow);
+}
+
+.lp-project__media {
+  display: block;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: linear-gradient(150deg, var(--brand-soft), #e9e2f3);
+}
+
+.lp-project__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 480ms var(--lp-ease);
+}
+
+.lp-project:hover .lp-project__media img {
+  transform: scale(1.04);
+}
+
+.lp-project__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 1.2rem 1.35rem 1.35rem;
+  flex: 1;
+}
+
+/* ==========================================================================
+   8. Pricing cards
    ========================================================================== */
 .lp-pricing__grid {
   display: grid;
@@ -1240,8 +1568,12 @@
   .lp-faq__body { padding: 0 1rem 1rem; }
   .lp-cta { padding: 2rem 1.5rem; }
   .lp-cta__actions .lp__btn { width: 100%; }
-  .lp-trust__grid { gap: 0.5rem; }
-  .lp-trust__chip { padding: 0.45rem 0.85rem; font-size: 0.78rem; }
+  .lp-trust__text { font-size: 0.8rem; }
+  .lp-trust__disc { width: 2.3rem; height: 2.3rem; font-size: 0.85rem; }
+  .lp-rail__track { padding-inline: 1rem; }
+  .lp-read-grid,
+  .lp-project-grid { grid-template-columns: minmax(0, 1fr); }
+  .lp__head--split { flex-direction: column; align-items: stretch; }
 }
 
 @media (max-width: 380px) {
@@ -1274,7 +1606,9 @@
 .lp--motion .lp-plan,
 .lp--motion .lp-faq__item,
 .lp--motion .lp-diff__row,
-.lp--motion .lp-trust__chip,
+.lp--motion .lp-trust__item,
+.lp--motion .lp-read,
+.lp--motion .lp-project,
 .lp--motion .lp__head {
   opacity: 0;
   transform: translateY(14px);
@@ -1304,8 +1638,12 @@
   .lp-code:hover { transform: none; }
   .lp-feature:hover,
   .lp-plan:hover,
-  .lp-trust__chip:hover,
+  .lp-read:hover,
+  .lp-project:hover,
   .lp__btn:hover { transform: none; }
+  .lp-marquee__track { animation: none; }
+  .lp-float { display: none; }
+  .lp-code__caret { display: none; }
 }
 
 /* ==========================================================================
