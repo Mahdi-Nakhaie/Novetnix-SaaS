@@ -116,6 +116,16 @@ function route(): void {
             if ($requestedLesson===false || $requestedLesson===null) { http_response_code(404); exit; }
         } else $requestedLesson=null;
         $course=course_workspace((int)$u['id'],$match[1],$requestedLesson);
+        // A locked session (previous quiz not passed) falls back to the first open one.
+        if ($course && $requestedLesson!==null) {
+            foreach ($course['lessons'] as $lesson) {
+                if ((int)$lesson['id']===$requestedLesson && !empty($lesson['locked'])) {
+                    $open=null;
+                    foreach ($course['lessons'] as $candidate) if (empty($candidate['locked'])) { $open=$candidate; break; }
+                    if ($open) { flash('برای ورود به این جلسه، ابتدا آزمون جلسهٔ قبل را با موفقیت بگذرانید.','error'); redirect('dashboard/course/'.$match[1].'?lesson='.(int)$open['id']); }
+                }
+            }
+        }
         head_page('فضای یادگیری','',true); notice(); page_course_workspace($course,$requestedLesson===null?'':(string)$requestedLesson); foot_page(true);
         return;
     }

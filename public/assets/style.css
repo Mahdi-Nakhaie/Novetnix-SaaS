@@ -227,6 +227,8 @@ input[aria-invalid="true"],textarea[aria-invalid="true"],select[aria-invalid="tr
 .workspace-lesson-status{font-size:.8125rem;font-weight:800;overflow-wrap:anywhere;color:var(--muted)}
 .workspace-lesson-status.is-in_progress{color:var(--brand-2)}
 .workspace-lesson-status.is-completed{color:#16794a}
+.workspace-lesson-status.is-locked{color:var(--muted)}
+.workspace-lesson.is-locked{opacity:.6;cursor:not-allowed}
 .workspace-empty{margin-top:1rem}.workspace-error{padding:2rem}.workspace-error .empty-state{text-align:center;max-width:620px;margin:auto}
 @media(max-width:900px){.workspace-header{align-items:flex-start;flex-direction:column}.workspace-layout{grid-template-columns:1fr}.workspace-sidebar{position:static;order:2}.workspace-main{order:1}}
 @media(max-width:560px){.course-workspace{padding:1rem .8rem}.workspace-meta{width:100%}.workspace-meta span{flex:1;text-align:center}.lesson-navigation{grid-template-columns:1fr}.lesson-nav-link.is-next{text-align:start}}

@@ -14,7 +14,6 @@ try {
     finally { fclose($file); }
     if (!$course) q('INSERT INTO courses(slug,title,description,status) VALUES (?,?,?,?)',[FREE_COURSE_SLUG,FREE_COURSE_TITLE,'','published']);
     // The six-session outline and its quizzes live in one place: seed_ai_foundations().
-    seed_foundations_quiz($database);
     seed_ai_foundations();
     $database->commit();
     fwrite(STDOUT,"Free course published with six lessons and quizzes.\n");

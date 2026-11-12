@@ -24,14 +24,15 @@ function h(mixed $value): string { return htmlspecialchars((string)$value, ENT_Q
 function fa(int|string $v): string { return strtr((string)$v,['0'=>'۰','1'=>'۱','2'=>'۲','3'=>'۳','4'=>'۴','5'=>'۵','6'=>'۶','7'=>'۷','8'=>'۸','9'=>'۹']); }
 function latin_digits(string $v): string { return strtr($v,['۰'=>'0','۱'=>'1','۲'=>'2','۳'=>'3','۴'=>'4','۵'=>'5','۶'=>'6','۷'=>'7','۸'=>'8','۹'=>'9','٠'=>'0','١'=>'1','٢'=>'2','٣'=>'3','٤'=>'4','٥'=>'5','٦'=>'6','٧'=>'7','٨'=>'8','٩'=>'9']); }
 function published_courses(): array { return q("SELECT slug,title,description FROM courses WHERE status='published' ORDER BY id ASC")->fetchAll(); }
-// Published curriculum: hash, title, summary, minutes, wide summary, lesson text.
+// Published curriculum: hash, title, minutes, short summary, lesson text.
+// The summary is plain text (no <br>); the lesson text may use <br> for paragraphs.
 const AI_FOUNDATIONS_LESSONS = [
-    ['ereh151','هوش مصنوعی چیست؟',22,'آشنایی با مفهوم هوش مصنوعی، تفاوت آن با برنامه‌نویسی معمولی و نمونه‌های واقعی از زندگی روزمره.','هوش مصنوعی شاخه‌ای از علوم رایانه است که به ساختن سامانه‌هایی می‌پردازد که کاری انجام می‌دهند که تا پیش از این به هوش انسان نیاز داشت: تشخیص چهره در عکس، ترجمهٔ متن، پیشنهاد فیلم و پاسخ دادن به پرسش‌ها.<br>تفاوت اصلی هوش مصنوعی با برنامهٔ معمولی در این است که برنامهٔ معمولی قاعده‌ها را از پیش می‌داند، اما یک مدل هوش مصنوعی این قاعده‌ها را از تعداد زیادی نمونه یاد می‌گیرد.<br>در این جلسه مسیر کلی دوره را هم مرور می‌کنیم: ابتدا مفهوم‌ها، بعد داده، سپس اولین مدل، و در پایان نمونه‌ای از کاربردهای واقعی.'],
-    ['jlckro2','داده؛ سوخت هوش مصنوعی',25,'داده چیست، چه انواعی دارد و چرا کیفیت داده تعیین‌کنندهٔ کیفیت نتیجهٔ مدل است.','هر مدل هوش مصنوعی با داده آموزش می‌بیند. داده می‌تواند عدد باشد، مثل قیمت خانه؛ متن باشد، مثل نظرهای کاربران؛ یا تصویر و صدا باشد.<br>داده، مثل هر منبع دیگری، باید پاک‌سازی و آماده‌سازی شود. دادهٔ ناقص یا پر از خطا نتیجهٔ نادرست تولید می‌کند و این موضوع را اصطلاحاً «آشغال وارد شود، آشغال خارج می‌شود» می‌نامند.'],
-    ['ooz6d75','یادگیری ماشین چگونه کار می‌کند؟',23,'منطق آموزش مدل: نمونه‌ها، ویژگی‌ها، پاسخ‌های درست و اصلاح خطا در طول آموزش.','یادگیری ماشین زیرمجموعهٔ هوش مصنوعی است که در آن، به‌جای نوشتن قاعده‌های ثابت، نمونه‌های کافی به کامپیوتر می‌دهیم تا خودش رابطهٔ بین ورودی و خروجی را پیدا کند.<br>برای نمونه، اگر هزاران عکس از گربه و سگ را با برچسب درست به مدل بدهیم، مدل یاد می‌گیرد عکسی را که قبلاً ندیده است دسته‌بندی کند.'],
-    ['bakrn6p','نقشهٔ راه ورود به هوش مصنوعی',20,'ترتیب منطقی یادگیری از پایتون و آمار تا یادگیری ماشین و اولین پروژهٔ واقعی.','ورود به هوش مصنوعی به یک نقشهٔ راه روشن نیاز دارد. پیشنهاد ما این ترتیب است: یادگیری پایهٔ پایتون، آشنایی با کتابخانه‌هایی مانند NumPy و pandas، مرور آمار پایه، سپس اولین مدل یادگیری ماشین با scikit-learn و در پایان یک پروژهٔ کوچک کامل.<br>هدف این جلسه آن است که بدانید قدم بعدی چه چیزی است تا یادگیری‌تان پراکنده نشود.'],
-    ['atrkj08','تمرین و بررسی یادگیری',20,'پایان هر بخش با تمرین، آسیب‌شناسی اشتباه‌های رایج و بررسی پیشرفت واقعی.','یادگیری فعال یعنی بعد از دیدن هر مطلب، خودتان آن را به کار ببرید. در این جلسه به تمرین‌های کوتاهی می‌پردازیم که بعد از هر مفهوم انجام‌شان می‌دهید و در پایان، اشتباه‌های رایج تازه‌کارها را مرور می‌کنیم.'],
-    ['frzh61x','اولین قدم عملی',20,'پروژهٔ کوچک پایانی: از تعریف مسئله تا بررسی خروجی مدل و پرسش بعدی.','در این جلسه یک مسئلهٔ کوچک را از ابتدا تا پایان بررسی می‌کنیم: مسئله را تعریف می‌کنیم، داده را بررسی می‌کنیم، یک مدل ساده می‌سازیم و نتیجه را می‌سنجیم.<br>هدف، کامل‌بودن پروژه نیست؛ هدف این است که مسیر یک پروژهٔ هوش مصنوعی را یک بار زیر نظر بگذرانید تا در پروژهٔ بعدی خودتان شروع کنید.'],
+    ['ereh151','مفاهیم پایه و مبانی هوش مصنوعی',52,'آشنایی با مفهوم هوش مصنوعی، تفاوت آن با برنامه‌نویسی معمولی، یادگیری ماشین و نمونه‌های واقعی از زندگی روزمره.','هوش مصنوعی شاخه‌ای از علوم رایانه است که به ساختن سامانه‌هایی می‌پردازد که کاری انجام می‌دهند که تا پیش از این به هوش انسان نیاز داشت: تشخیص چهره در عکس، ترجمهٔ متن، پیشنهاد فیلم و پاسخ دادن به پرسش‌ها.<br>تفاوت اصلی هوش مصنوعی با برنامهٔ معمولی در این است که برنامهٔ معمولی قاعده‌ها را از پیش می‌داند، اما یک مدل هوش مصنوعی این قاعده‌ها را از تعداد زیادی نمونه یاد می‌گیرد.<br>در این جلسه مفهوم داده، ویژگی و برچسب، یادگیری نظارت‌شده و بدون نظارت و مسیر کلی دوره را مرور می‌کنیم: ابتدا مفهوم‌ها، بعد داده، سپس اولین مدل، و در پایان نمونه‌ای از کاربردهای واقعی.'],
+    ['jlckro2','آشنایی با زبان برنامه‌نویسی پایتون و نحوهٔ نصب پایتون',20,'نصب پایتون، آشنایی با محیط اجرا، pip و کتابخانه‌های پایه‌ای که در ادامهٔ دوره به آن‌ها نیاز داریم.','پایتون یک زبان برنامه‌نویسی سطح بالا و خوانا است که به‌خاطر کتابخانه‌های قدرتمندش، زبان اصلی کار با هوش مصنوعی و تحلیل داده شده است.<br>در این جلسه پایتون را از سایت رسمی نصب می‌کنیم، گزینهٔ Add Python to PATH را فعال می‌کنیم و با pip بسته‌ها را نصب می‌کنیم. محیط مجازی (venv) را می‌سازیم تا بسته‌های هر پروژه جدا بمانند.<br>در پایان یک اسکریپت ساده می‌نویسیم و کتابخانه‌های پایه مانند NumPy، pandas و matplotlib را نصب و آزمایش می‌کنیم.'],
+    ['ooz6d75','اولین پروژهٔ عملی و پروژهٔ تشخیص چهره',60,'کار با OpenCV: خواندن و نمایش تصویر، تبدیل رنگ، تغییر اندازه، آستانه‌گذاری و تشخیص چهره با Haar Cascade.','در این جلسه اولین پروژهٔ عملی را با کتابخانهٔ OpenCV می‌سازیم. تصویر را با cv2.imread می‌خوانیم، با cv2.imshow نمایش می‌دهیم و ابعاد آن را با img.shape بررسی می‌کنیم.<br>ترتیب رنگ OpenCV به‌صورت BGR است؛ با cv2.cvtColor آن را به RGB تبدیل می‌کنیم تا با matplotlib درست نمایش داده شود. سپس تصویر را برش می‌دهیم، با cv2.resize تغییر اندازه می‌دهیم و با cv2.cvtColor به خاکستری تبدیل می‌کنیم.<br>با cv2.threshold تصویر را دودویی می‌کنیم و در نهایت با CascadeClassifier و فایل haarcascade_frontalface_default.xml چهره‌ها را با detectMultiScale پیدا می‌کنیم و با cv2.rectangle دور آن‌ها کادر می‌کشیم.'],
+    ['bakrn6p','پروژهٔ رگرسیون و پیش‌بینی دی‌اکسید کربن تولیدشده توسط یک ماشین',63,'رگرسیون، تحلیل داده، هیستوگرام، همبستگی و مقایسهٔ مدل‌های LinearRegression، KNN، درخت تصمیم و XGBoost برای پیش‌بینی CO2.','رگرسیون برای پیش‌بینی یک مقدار پیوستهٔ عددی به کار می‌رود. در این پروژه مقدار دی‌اکسید کربن تولیدشده توسط خودرو را از روی ویژگی‌هایی مانند حجم موتور، تعداد سیلندر و مصرف سوخت پیش‌بینی می‌کنیم.<br>داده را با pandas می‌خوانیم و با info، describe و isnull بررسی می‌کنیم. توزیع متغیر هدف را با هیستوگرام (histplot) و همبستگی متغیرها را با heatmap و scatter_matrix می‌بینیم.<br>داده را با train_test_split به آموزش و آزمون تقسیم می‌کنیم و چند مدل را مقایسه می‌کنیم: LinearRegression، DecisionTreeRegressor، RandomForestRegressor، KNeighborsRegressor، XGBoost و GradientBoostingRegressor. عملکرد هر مدل را با MAE، RMSE و R2 می‌سنجیم و در پایان CO2 یک خودروی جدید را پیش‌بینی می‌کنیم.'],
+    ['atrkj08','پروژهٔ Classification و پروژهٔ تشخیص دیابت',58,'دسته‌بندی، مقیاس‌بندی داده، LabelEncoder و مقایسهٔ مدل‌های LogisticRegression، KNN، RandomForest، Naive Bayes و SVM برای تشخیص دیابت.','دسته‌بندی (classification) برای پیش‌بینی یک برچسب یا کلاس به کار می‌رود. در این پروژه ابتلا یا عدم ابتلا به دیابت را از روی ویژگی‌هایی مانند قند خون، فشار خون و سن پیش‌بینی می‌کنیم.<br>داده را با pandas می‌خوانیم، مقادیر متنی را با LabelEncoder به عدد تبدیل می‌کنیم و مقادیر گمشده را با میانگین ستون پر می‌کنیم. توزیع کلاس‌ها را با countplot و توزیع قند خون را با هیستوگرام می‌بینیم و همبستگی را با heatmap بررسی می‌کنیم.<br>داده را با train_test_split تقسیم و با MinMaxScaler مقیاس‌بندی می‌کنیم. سپس چند مدل را مقایسه می‌کنیم: LogisticRegression، KNeighborsClassifier، RandomForestClassifier، DecisionTreeClassifier، XGBoost، GradientBoostingClassifier، GaussianNB و SVM. دقت هر مدل را با accuracy_score می‌سنجیم و وضعیت یک بیمار جدید را پیش‌بینی می‌کنیم.'],
+    ['frzh61x','پروژهٔ عملی یادگیری بدون نظارت و پروژهٔ خوشه‌بندی ارقام دست‌نویس',51,'خوشه‌بندی با KMeans، کاهش ابعاد با PCA، روش Elbow، Silhouette و ارزیابی خوشه‌ها با NMI و ARI روی مجموعهٔ ارقام دست‌نویس.','یادگیری بدون نظارت یعنی داده‌ها برچسب ندارند و مدل خودش الگو و گروه پیدا می‌کند. در این پروژه ارقام دست‌نویس را با KMeans خوشه‌بندی می‌کنیم.<br>مجموعه‌دادهٔ load_digits شامل تصاویر ۸×۸ است. داده را با StandardScaler مقیاس‌بندی می‌کنیم و با PCA ابعاد را کاهش می‌دهیم؛ پارامتر n_components=0.90 مؤلفه‌هایی را نگه می‌دارد که ۹۰٪ واریانس را توضیح می‌دهند و نمودار مجموع تجمعی واریانس (np.cumsum) این انتخاب را نشان می‌دهد.<br>تعداد مناسب خوشه را با روش Elbow (نمودار inertia) و Silhouette بررسی می‌کنیم. سپس KMeans را با ۱۰ خوشه اجرا می‌کنیم و کیفیت خوشه‌بندی را با silhouette_score، NMI و ARI می‌سنجیم. در پایان با PCA دوبعدی خوشه‌ها را روی نمودار می‌بینیم و مراکز خوشه را با inverse_transform به تصویر ۸×۸ برمی‌گردانیم.'],
 ];
 
 function seed_ai_foundations(): void {
@@ -55,14 +56,15 @@ function seed_ai_foundations(): void {
     // the six sessions the course page promises.
     $stale=q('SELECT id FROM lessons WHERE course_id=? AND status=? AND position NOT IN ('.implode(',',array_map('intval',$seen)).')',[$course,'published'])->fetchAll();
     foreach ($stale as $row) q('UPDATE lessons SET status=? WHERE id=?',['draft',(int)$row['id']]);
-    // The subject-matter quiz stays in curriculum/ so editors can revise it
-    // without touching PHP; every session is graded on the same question set.
-    $quiz=json_decode((string)file_get_contents(dirname(__DIR__).'/curriculum/ai-foundations-session1-quiz.json'),true,512,JSON_THROW_ON_ERROR);
-    if (!is_array($quiz['questions'] ?? null) || !$quiz['questions']) throw new RuntimeException('Quiz content is missing.');
-    $json=json_encode($quiz['questions'],JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE);
-    $pass=(int)$quiz['pass_percent'];
+    // Each session is graded on its own 20-question set in curriculum/, so
+    // editors can revise a quiz without touching PHP.
     $lessonIds=q('SELECT id FROM lessons WHERE course_id=? ORDER BY position ASC',[$course])->fetchAll(PDO::FETCH_COLUMN);
-    foreach ($lessonIds as $lessonId) {
+    foreach ($lessonIds as $index=>$lessonId) {
+        $file=dirname(__DIR__).'/curriculum/ai-foundations-session'.($index+1).'-quiz.json';
+        $quiz=json_decode((string)file_get_contents($file),true,512,JSON_THROW_ON_ERROR);
+        if (!is_array($quiz['questions'] ?? null) || !$quiz['questions']) throw new RuntimeException('Quiz content is missing: '.basename($file));
+        $json=json_encode($quiz['questions'],JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE);
+        $pass=(int)$quiz['pass_percent'];
         $sql='INSERT INTO lesson_quizzes(lesson_id,pass_percent,questions_json) VALUES (?,?,?)';
         $sql.=db()->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql' ? ' ON DUPLICATE KEY UPDATE pass_percent=VALUES(pass_percent),questions_json=VALUES(questions_json)' : ' ON CONFLICT(lesson_id) DO UPDATE SET pass_percent=excluded.pass_percent,questions_json=excluded.questions_json';
         q($sql,[(int)$lessonId,$pass,$json]);
@@ -99,6 +101,13 @@ function course_workspace(int $userId,string $slug,?int $requestedLesson=null): 
     $progress=[];
     foreach (q("SELECT p.lesson_id,p.watched_seconds,p.last_position,p.percentage,p.completed,p.status,p.completed_at,p.quiz_version FROM lesson_progress p INNER JOIN lessons l ON l.id=p.lesson_id WHERE p.user_id=? AND l.course_id=? AND l.status='published'",[$userId,$course['id']])->fetchAll() as $row) $progress[(int)$row['lesson_id']]=$row;
     foreach ($course['lessons'] as &$lesson) $lesson['learning_status']=lesson_learning_status($progress[(int)$lesson['id']] ?? null,lesson_quiz_for_lesson((int)$lesson['id']));
+    unset($lesson);
+    // A session unlocks only after the previous one is completed (its quiz passed).
+    $previousCompleted=true;
+    foreach ($course['lessons'] as &$lesson) {
+        $lesson['locked']=!$previousCompleted;
+        $previousCompleted=$lesson['learning_status']==='completed';
+    }
     unset($lesson);
     $selectedId=$requestedLesson ?? (int)($course['lessons'][0]['id'] ?? 0);
     $course['quiz']=$selectedId ? lesson_quiz_for_lesson($selectedId) : null;
