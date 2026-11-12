@@ -33,7 +33,11 @@ function require_user(): array {
     $u=user();
     if (!$u || trim($u['name'])==='') {
         unset($_SESSION['uid'],$_SESSION['admin_verified_uid']);
-        redirect('login?next='.rawurlencode(trim(parse_url($_SERVER['REQUEST_URI'],PHP_URL_PATH) ?: '/','/')));
+        // Only a known-safe destination is restored after login; an arbitrary
+        // next= value would turn the login page into an open redirect.
+        $next=trim(parse_url($_SERVER['REQUEST_URI'],PHP_URL_PATH) ?: '/','/');
+        if (in_array($next,['cart/checkout','cart'],true)) $_SESSION['auth_return_to']=$next;
+        redirect('login?next='.rawurlencode($next));
     }
     return $u;
 }

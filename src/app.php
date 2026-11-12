@@ -105,7 +105,7 @@ function lesson_learning_status(?array $progress,?array $quiz=null): string {
 }
 function course_workspace(int $userId,string $slug,?int $requestedLesson=null): ?array {
     $course=q("SELECT c.id,c.slug,c.title,c.description,c.estimated_duration_minutes FROM courses c INNER JOIN enrollments e ON e.course_slug=c.slug AND e.user_id=? WHERE c.slug=? AND c.status='published'",[$userId,$slug])->fetch();
-    if (!$course || !can_course($slug,plan_for(['id'=>$userId]))) return null;
+    if (!$course || !user_can_course(['id'=>$userId],$slug)) return null;
     if ($requestedLesson!==null && !q("SELECT id FROM lessons WHERE id=? AND course_id=? AND status='published'",[$requestedLesson,$course['id']])->fetch()) return null;
     $course['lessons']=q("SELECT id,title,content,position,duration_minutes,video_url FROM lessons WHERE course_id=? AND status='published' ORDER BY position ASC",[$course['id']])->fetchAll();
     $progress=[];
@@ -121,6 +121,9 @@ function course_workspace(int $userId,string $slug,?int $requestedLesson=null): 
     unset($lesson);
     $selectedId=$requestedLesson ?? (int)($course['lessons'][0]['id'] ?? 0);
     $course['quiz']=$selectedId ? lesson_quiz_for_lesson($selectedId) : null;
+    // The quiz payload sent to the browser never carries the correct answers;
+    // grading happens in submit_lesson_quiz() on the server.
+    if ($course['quiz']) $course['quiz']['questions']=array_map(static fn(array $q): array=>['prompt'=>$q['prompt'],'options'=>$q['options']],$course['quiz']['questions']);
     $course['quiz_result']=null;
     if ($selectedId && isset($progress[$selectedId]) && $progress[$selectedId]['quiz_score']!==null) {
         $course['quiz_result']=[
@@ -128,6 +131,7 @@ function course_workspace(int $userId,string $slug,?int $requestedLesson=null): 
             'answers'=>json_decode((string)$progress[$selectedId]['quiz_answers'],true) ?: [],
         ];
     }
+    if ($course['quiz']) $course['quiz']['result']=$course['quiz_result'];
     return $course;
 }
 function dashboard_course_progress(int $userId): ?array {
@@ -186,9 +190,14 @@ function plan_for(array $u): string {
 // Course access is granted by a purchase or by the plan tier that unlocks the
 // course; can_course() keeps the plan-only form used by catalog filtering.
 function can_course(string $slug, string $plan): bool {
-    if ($slug===FREE_COURSE_SLUG) return true;
     if (!COMMERCE_ENABLED) return false;
     return entitlement_at_least($plan,entitlement_course_tier($slug));
+}
+// The full check for a signed-in learner: a paid purchase unlocks the course
+// even when the plan tier alone would not.
+function user_can_course(?array $user,string $slug): bool {
+    if (!$user || empty($user['id'])) return false;
+    return entitlement_can_course($user,$slug);
 }
 function nova_answer(array $messages): ?string {
     $key=config_value('AVALAI_API_KEY');
@@ -215,7 +224,7 @@ function authorized_progress_lesson(int $userId,int $lessonId): bool {
     $lesson=q("SELECT l.id FROM lessons l INNER JOIN courses c ON c.id=l.course_id INNER JOIN enrollments e ON e.course_slug=c.slug AND e.user_id=? WHERE l.id=? AND l.status='published' AND c.status='published'",[$userId,$lessonId])->fetch();
     if (!$lesson) return false;
     $slug=q('SELECT c.slug FROM lessons l JOIN courses c ON c.id=l.course_id WHERE l.id=?',[$lessonId])->fetchColumn();
-    return can_course($slug,plan_for(['id'=>$userId]));
+    return user_can_course(['id'=>$userId],$slug);
 }
 function progress_number(mixed $value): ?float {
     if ($value===null || $value==='' || !is_numeric($value)) return null;
@@ -374,7 +383,7 @@ function submit_lesson_quiz(array $u): void {
         if ($pdo->inTransaction()) $pdo->rollBack();
         progress_response(500,['error'=>'ثبت وضعیت یادگیری انجام نشد.']);
     }
-    if (!$passed) { flash('نمرهٔ شما '.fa($scorePercent).'٪ شد؛ برای قبولی به '.fa((int)$quiz['pass_percent']).'٪ نیاز دارید. پاسخ‌های درست را پایین همین صفحه ببینید.','error'); redirect($target); }
+    if (!$passed) { flash('نمرهٔ شما '.fa($scorePercent).'٪ شد؛ برای قبولی به '.fa((int)$quiz['pass_percent']).'٪ نیاز دارید. می‌توانید دوباره تلاش کنید.','error'); redirect($target); }
     flash('آزمون را با نمرهٔ '.fa($scorePercent).'٪ گذراندید؛ درس تکمیل شد.'); redirect($target);
 }
 function save_lesson_progress(array $u): void {
@@ -410,6 +419,14 @@ function handle_post(string $path): void {
         if (mb_strlen($name)<2 || mb_strlen($name)>100 || !filter_var($email,FILTER_VALIDATE_EMAIL) || mb_strlen($message)<10 || mb_strlen($message)>3000) { flash('نام، ایمیل و پیام معتبر وارد کنید.','error'); redirect('contact'); }
         q('INSERT INTO contact_messages(name,email,message) VALUES (?,?,?)',[$name,$email,$message]); flash('پیام شما ثبت شد.'); redirect('contact');
     }
+    if ($path==='cart/add' && !user()) {
+        // A signed-out shopper who picks an item is sent to sign in first, then
+        // comes back to the cart with the choice already saved.
+        cart_add((string)($_POST['key'] ?? ''));
+        $_SESSION['auth_return_to']='cart';
+        flash('برای تکمیل خرید، ابتدا وارد حساب خود شوید.','success');
+        redirect('login?next=cart');
+    }
     if ($path==='cart/add') cart_add((string)($_POST['key'] ?? ''));
     if ($path==='cart/remove') cart_remove((string)($_POST['key'] ?? ''));
     if ($path==='cart/clear') cart_clear();
@@ -426,6 +443,8 @@ function handle_post(string $path): void {
     if ($path==='progress/save') { save_lesson_progress($u); }
     if ($path==='payment/start') payment_start($u);
     if ($path==='cart/checkout') payment_cart_start($u);
+    if ($path==='payment/sandbox/confirm') payment_sandbox_confirm($u);
+    if ($path==='payment/sandbox/cancel') payment_sandbox_cancel($u);
     if ($path==='payment/retry') {
         $order=q('SELECT * FROM payment_orders WHERE id=? AND user_id=?',[(int)($_POST['id'] ?? 0),$u['id']])->fetch();
         if (!$order || !$order['authority']) { http_response_code(404); exit; }
@@ -446,7 +465,7 @@ function handle_post(string $path): void {
         $slug=trim((string)($_POST['slug'] ?? ''));
         $course=q("SELECT slug FROM courses WHERE slug=? AND status='published'",[$slug])->fetch();
         if (!$course) { http_response_code(404); exit; }
-        if (!can_course($slug,$plan)) { flash('ثبت‌نام این دوره فعلاً در دسترس نیست؛ دوره مقدماتی هوش مصنوعی رایگان است.','error'); redirect('course/'.FREE_COURSE_SLUG); }
+        if (!user_can_course($u,$slug)) { flash('برای دسترسی به این دوره، ابتدا آن را از صفحهٔ دوره به سبد خرید اضافه کنید.','error'); redirect('course/'.$slug); }
         if (db()->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql') q('INSERT IGNORE INTO enrollments(user_id,course_slug) VALUES (?,?)',[$u['id'],$slug]);
         else q('INSERT OR IGNORE INTO enrollments(user_id,course_slug) VALUES (?,?)',[$u['id'],$slug]);
         flash('دوره به مسیر یادگیری شما اضافه شد.'); redirect('dashboard/learning');

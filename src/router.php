@@ -103,7 +103,8 @@ function route(): void {
     }
     if (preg_match('~^member/([1-9][0-9]*)$~D',$path,$match)) { page_member((int)$match[1]); return; }
     if ($path==='login' || $path==='register') {
-        if (($_GET['next'] ?? null)==='course/'.FREE_COURSE_SLUG || (is_string($_GET['next'] ?? null) && preg_match('~^dashboard/darycheh(?:/[1-9][0-9]*)?$~D',$_GET['next']))) $_SESSION['auth_return_to']=$_GET['next'];
+        $next=$_GET['next'] ?? null;
+        if ($next==='course/'.FREE_COURSE_SLUG || (is_string($next) && preg_match('~^dashboard/darycheh(?:/[1-9][0-9]*)?$~D',$next)) || in_array($next,['cart','cart/checkout'],true)) $_SESSION['auth_return_to']=$next;
         page_login($path==='register'); return;
     }
     if ($path==='verify') { page_verify(); return; }
@@ -334,13 +335,15 @@ function page_login(bool $register=false): void {
     if ($register) unset($_SESSION['registration_form']);
     head_page($register?'ثبت‌نام':'ورود به حساب',$register?'ساخت حساب کاربری با شماره موبایل در Noventix.':'ورود به حساب کاربری Noventix با شماره موبایل و رمز عبور.'); notice();
     echo '<main class="auth-page"><div class="auth-shell"><section class="auth-card"><img src="/assets/nova.png" alt="مسکات Nova" width="64" height="64"><h1>'.($register?'ساخت حساب کاربری':'ورود به حساب').'</h1><p class="muted">'.($register?'برای شروع، مشخصات خود را وارد کنید و حساب جدید بسازید.':'خوش برگشتی! با شماره موبایل و رمز عبورت وارد حساب شو.').'</p>';
+    $switch='<nav class="auth-switch" aria-label="انتقال بین ورود و ثبت‌نام">';
+    $switch.=$register ? '<span>قبلاً حساب ساخته‌ای؟</span><a href="'.h(url('login')).'">ورود به حساب</a>' : '<span>هنوز حساب نداری؟</span><a href="'.h(url('register')).'">ساخت حساب جدید</a>';
+    $switch.='</nav>';
     if ($register) {
     form_start('auth/request','stack-form',true); echo '<h2>ایجاد حساب</h2><label>نام<input name="first_name" required minlength="2" maxlength="50" autocomplete="given-name" value="'.h((string)($registration['first_name'] ?? '')).'" /></label><label>نام خانوادگی<input name="last_name" required minlength="2" maxlength="50" autocomplete="family-name" value="'.h((string)($registration['last_name'] ?? '')).'" /></label><label>شماره موبایل<input type="tel" dir="ltr" name="phone" required data-validation="phone" placeholder="09123456789 یا +989123456789" autocomplete="tel" value="'.h((string)($registration['phone'] ?? '')).'" /></label><label>رمز عبور<span class="password-field"><input id="register-password" type="password" name="password" required minlength="8" maxlength="72" autocomplete="new-password" data-validation="password"><button type="button" class="password-toggle" data-password-toggle="register-password" aria-controls="register-password" aria-pressed="false" aria-label="نمایش رمز" title="نمایش رمز"><svg class="password-icon password-icon-show" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg><svg class="password-icon password-icon-hide" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 3 18 18M10.6 6.2A10.6 10.6 0 0 1 12 6c6.5 0 10 6 10 6a17.5 17.5 0 0 1-3.2 3.7M6.1 6.1C3.4 8 2 12 2 12s3.5 6 10 6a10.6 10.6 0 0 0 3.4-.5"/></svg></button></span></label><label>تکرار رمز عبور<span class="password-field"><input id="register-password-confirmation" type="password" name="password_confirmation" required minlength="8" maxlength="72" autocomplete="new-password" data-validation="password-confirmation" data-password-match="register-password"><button type="button" class="password-toggle" data-password-toggle="register-password-confirmation" aria-controls="register-password-confirmation" aria-pressed="false" aria-label="نمایش رمز" title="نمایش رمز"><svg class="password-icon password-icon-show" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg><svg class="password-icon password-icon-hide" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 3 18 18M10.6 6.2A10.6 10.6 0 0 1 12 6c6.5 0 10 6 10 6a17.5 17.5 0 0 1-3.2 3.7M6.1 6.1C3.4 8 2 12 2 12s3.5 6 10 6a10.6 10.6 0 0 0 3.4-.5"/></svg></button></span></label><p class="fine-print">رمز باید دست‌کم ۸ نویسه و شامل حرف انگلیسی و عدد باشد.</p><button class="btn btn-primary">ثبت‌نام در سایت</button></form>';
-    echo '<nav class="auth-switch" aria-label="انتقال بین ورود و ثبت‌نام"><span>قبلاً حساب ساخته‌ای؟</span><a href="'.h(url('login')).'">ورود به حساب</a></nav>';
     } else {
     form_start('auth/login','stack-form',true); echo '<label>شماره موبایل<input type="tel" dir="ltr" name="phone" required data-validation="phone" placeholder="09123456789 یا +989123456789" autocomplete="username"></label><label>رمز عبور<input type="password" name="password" required autocomplete="current-password"></label><div class="captcha-box"><strong dir="ltr">'.h($captcha).'</strong><span>کد امنیتی را وارد کنید</span></div><label>کپچا<input name="captcha" required maxlength="5" pattern="[A-Za-z0-9]{5}" dir="ltr" autocomplete="off"></label><button class="btn btn-primary">ورود به حساب</button></form>';
-    echo '<nav class="auth-switch" aria-label="انتقال بین ورود و ثبت‌نام"><span>هنوز حساب نداری؟</span><a href="'.h(url('register')).'">ساخت حساب جدید</a></nav>';
     }
+    echo $switch;
     echo '</section></div></main>'; foot_page();
 }
 function page_admin_login(): void {

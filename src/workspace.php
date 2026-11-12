@@ -63,7 +63,7 @@ function ws_template_allowed(array $template,int $userId): bool {
     if ($template['status']!=='published') return false;
     if ($template['course_id']!==null) {
         $course=q("SELECT c.slug FROM courses c JOIN enrollments e ON e.course_slug=c.slug AND e.user_id=? WHERE c.id=? AND c.status='published'",[$userId,$template['course_id']])->fetchColumn();
-        if (!$course || !can_course($course,plan_for(['id'=>$userId]))) return false;
+        if (!$course || !user_can_course(['id'=>$userId],$course)) return false;
     }
     if ($template['lesson_id']===null) return true;
     if (!authorized_progress_lesson($userId,(int)$template['lesson_id'])) return false;

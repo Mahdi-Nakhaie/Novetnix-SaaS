@@ -1384,6 +1384,7 @@ body.is-panel .panel-content :is(.feature,.course-card,.project-card,.price-card
 .course-sales-body{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(260px,.7fr);gap:clamp(1.6rem,4vw,3rem);align-items:start}
 .course-sales-main{display:grid;gap:2.4rem;min-width:0}
 .course-sales-block h2{margin-block:.4rem .8rem;font-size:clamp(1.25rem,2.2vw,1.6rem)}
+.course-sales-block .course-sales-subhead{margin-block:1.6rem .7rem;font-size:1.05rem;color:var(--ink);padding-block-start:1.2rem;border-top:1px solid var(--line)}
 .course-sales-block p{color:var(--ink-2);line-height:2.1}
 .course-sales-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
 .course-sales-grid article{padding:1.1rem 1.2rem;border:1px solid var(--line);border-radius:var(--r-md);background:#fff}
